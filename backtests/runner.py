@@ -8,6 +8,8 @@ from data.loader import DataLoader
 from data.validators import DataValidationError
 from strategies.pair_trading import PairTradingStrategy
 from backtests.metrics import BacktestMetrics
+from models.cointegration import engle_granger_test, half_life_mean_reversion
+from models.spread import SpreadModel
 
 logger = get_logger(__name__)
 
@@ -74,6 +76,49 @@ class BacktestRunner:
         self.loader = DataLoader()
         self.strategy = PairTradingStrategy()
         self.results = None
+    
+    def _find_cointegrated_pairs_in_data(self, prices_df: pd.DataFrame) -> list:
+        """
+        Find cointegrated pairs in historical price data.
+        
+        Args:
+            prices_df: DataFrame with price history
+        
+        Returns:
+            List of (sym1, sym2, pvalue, half_life) tuples
+        """
+        cointegrated_pairs = []
+        symbols = list(prices_df.columns)
+        
+        try:
+            for i, sym1 in enumerate(symbols):
+                for sym2 in symbols[i+1:]:
+                    series1 = prices_df[sym1]
+                    series2 = prices_df[sym2]
+                    
+                    # Test cointegration (Engle-Granger)
+                    result = engle_granger_test(series1, series2)
+                    pvalue = result['adf_pvalue']
+                    is_cointegrated = result['is_cointegrated']
+                    
+                    if is_cointegrated:  # 5% significance level
+                        # Calculate half-life of mean reversion
+                        from models.cointegration import half_life_mean_reversion
+                        hl = half_life_mean_reversion(series1, series2)
+                        
+                        if hl < 252:  # Half-life < 1 trading year
+                            cointegrated_pairs.append((sym1, sym2, pvalue, hl))
+                            logger.info(
+                                "cointegrated_pair_found",
+                                sym1=sym1,
+                                sym2=sym2,
+                                pvalue=pvalue,
+                                half_life=hl
+                            )
+        except Exception as e:
+            logger.error("cointegration_test_failed", error=str(e))
+        
+        return cointegrated_pairs
     
     @staticmethod
     def _generate_fallback_signals(prices_df: pd.DataFrame, period: int = 20) -> list:
@@ -226,25 +271,11 @@ class BacktestRunner:
             end=str(prices_df.index[-1])
         )
         
-        # Generate signals
-        signals = self.strategy.generate_signals(prices_df)
+        # Find cointegrated pairs upfront
+        cointegrated_pairs = self._find_cointegrated_pairs_in_data(prices_df)
         
-        logger.info("backtest_signals_generated", count=len(signals))
-        
-        # If no signals from pair trading, use fallback simple ma strategy
-        if len(signals) == 0:
-            logger.warning("using_fallback_strategy_no_pairs_cointegrated")
-            signals = self._generate_fallback_signals(prices_df)
-            logger.info("fallback_signals_generated", count=len(signals))
-        
-        # Enhanced backtest simulation with proper returns calculation
-        portfolio_value = [self.config.initial_capital]
-        daily_returns = []
-        trades = []
-        
-        # If no signals, return zero metrics
-        if len(signals) == 0:
-            logger.warning("backtest_no_signals_generated", symbols=list(price_data.keys()))
+        if len(cointegrated_pairs) == 0:
+            logger.warning("backtest_no_cointegrated_pairs", symbols=list(price_data.keys()))
             metrics = BacktestMetrics.from_returns(
                 returns=pd.Series([0.0]),
                 trades=[0.0],
@@ -254,37 +285,115 @@ class BacktestRunner:
             logger.info("backtest_completed", metrics=metrics.__dict__)
             return metrics
         
-        # Simulate trading based on signals
-        active_positions = {}
+        logger.info("backtest_cointegrated_pairs_found", count=len(cointegrated_pairs), pairs=cointegrated_pairs)
         
-        for date_idx in range(len(prices_df)):
+        # Real pair trading backtest simulation - day by day
+        portfolio_value = [self.config.initial_capital]
+        daily_returns = []
+        trades = []
+        active_positions = {}  # {pair_key: {'entry_date': idx, 'entry_z': float, 'entry_price': dict, 'side': str}}
+        
+        lookback_min = 60  # Need at least 60 days for Z-score calculation
+        for date_idx in range(lookback_min, len(prices_df)):
             date = prices_df.index[date_idx]
             daily_pnl = 0.0
             
-            # Check for signal exits
-            for position_key in list(active_positions.keys()):
-                signal_idx, entry_price, symbol_pair = active_positions[position_key]
+            # Get historical data up to current date
+            hist_prices = prices_df.iloc[:date_idx+1]
+            current_prices = prices_df.iloc[date_idx]
+            
+            # For each cointegrated pair, calculate Z-score at current date
+            for sym1, sym2, pvalue, hl in cointegrated_pairs:
+                pair_key = f"{sym1}_{sym2}"
                 
-                # For demo: hold position for 20 days then close with profit
-                days_held = date_idx - signal_idx
-                if days_held >= 20:
-                    # Close with simulated profit (2% for winning trades)
-                    exit_pnl = entry_price * 0.02 * self.config.initial_capital * 0.01
-                    daily_pnl += exit_pnl
-                    trades.append(exit_pnl)
-                    del active_positions[position_key]
-                    logger.debug("trade_closed", position=position_key, pnl=exit_pnl)
+                try:
+                    # Get historical price series for the pair
+                    y = hist_prices[sym1]
+                    x = hist_prices[sym2]
+                    
+                    # Calculate spread via OLS regression
+                    model = SpreadModel(y, x)
+                    spread = model.compute_spread(y, x)
+                    z_scores = model.compute_z_score(spread, lookback=20)
+                    current_z = z_scores.iloc[-1] if len(z_scores) > 0 else 0.0
+                    
+                    # Entry signals: |Z| > entry_z_score (from strategy config)
+                    entry_threshold = self.strategy.config.entry_z_score
+                    exit_threshold = self.strategy.config.exit_z_score
+                    
+                    # EXIT: Mean reversion signal (Z returns to ~0)
+                    if pair_key in active_positions and abs(current_z) <= exit_threshold:
+                        trade_info = active_positions[pair_key]
+                        side = trade_info['side']
+                        
+                        # Calculate real P&L based on actual price movement
+                        entry_prices = trade_info['entry_price']
+                        sym1_entry = entry_prices[sym1]
+                        sym2_entry = entry_prices[sym2]
+                        sym1_current = current_prices[sym1]
+                        sym2_current = current_prices[sym2]
+                        
+                        if side == "long":
+                            # Long spread: long sym1, short sym2
+                            pnl = (sym1_current - sym1_entry) - (sym2_current - sym2_entry)
+                        else:  # short
+                            # Short spread: short sym1, long sym2
+                            pnl = (sym2_current - sym2_entry) - (sym1_current - sym1_entry)
+                        
+                        # Normalize P&L by portfolio value
+                        pnl_dollars = pnl * self.config.initial_capital * 0.01  # ~1% allocation per pair
+                        daily_pnl += pnl_dollars
+                        trades.append(pnl_dollars)
+                        
+                        logger.debug(
+                            "trade_closed_mean_reversion",
+                            pair=pair_key,
+                            side=side,
+                            entry_z=trade_info['entry_z'],
+                            exit_z=current_z,
+                            pnl=pnl_dollars,
+                            days_held=date_idx - trade_info['entry_date']
+                        )
+                        
+                        del active_positions[pair_key]
+                    
+                    # ENTRY: Z-score extremes signal new positions
+                    elif pair_key not in active_positions and len(active_positions) < 5:  # Max 5 concurrent pairs
+                        if current_z > entry_threshold:
+                            # SHORT signal: Z > threshold means spread is overvalued
+                            active_positions[pair_key] = {
+                                'entry_date': date_idx,
+                                'entry_z': current_z,
+                                'entry_price': {sym1: current_prices[sym1], sym2: current_prices[sym2]},
+                                'side': 'short'
+                            }
+                            logger.debug(
+                                "trade_opened_short",
+                                pair=pair_key,
+                                z_score=current_z,
+                                prices={sym1: current_prices[sym1], sym2: current_prices[sym2]}
+                            )
+                        
+                        elif current_z < -entry_threshold:
+                            # LONG signal: Z < -threshold means spread is undervalued
+                            active_positions[pair_key] = {
+                                'entry_date': date_idx,
+                                'entry_z': current_z,
+                                'entry_price': {sym1: current_prices[sym1], sym2: current_prices[sym2]},
+                                'side': 'long'
+                            }
+                            logger.debug(
+                                "trade_opened_long",
+                                pair=pair_key,
+                                z_score=current_z,
+                                prices={sym1: current_prices[sym1], sym2: current_prices[sym2]}
+                            )
+                
+                except Exception as e:
+                    logger.error("pair_backtest_error", pair=pair_key, error=str(e))
+                    continue
             
-            # Check for new signals
-            for signal in signals:
-                signal_key = f"{signal.symbol_pair}_{date_idx}"
-                if signal_key not in active_positions and len(active_positions) < 3:
-                    # Enter position
-                    current_price = prices_df.iloc[date_idx, 0]  # Use first symbol price
-                    active_positions[signal_key] = (date_idx, current_price, signal.symbol_pair)
-                    logger.debug("trade_opened", signal=signal.symbol_pair, price=current_price)
-            
-            # Calculate daily return
+            # Calculate daily portfolio return
             new_value = portfolio_value[-1] + daily_pnl
             if portfolio_value[-1] > 0:
                 daily_return = daily_pnl / portfolio_value[-1]
@@ -294,7 +403,7 @@ class BacktestRunner:
             daily_returns.append(daily_return)
             portfolio_value.append(new_value)
         
-        # Calculate metrics from returns
+        # Calculate metrics from real returns
         returns_series = pd.Series(daily_returns) if daily_returns else pd.Series([0.0])
         
         metrics = BacktestMetrics.from_returns(
@@ -304,5 +413,11 @@ class BacktestRunner:
             end_date=end_date
         )
         
-        logger.info("backtest_completed", metrics=metrics.__dict__)
+        logger.info(
+            "backtest_completed",
+            total_trades=len(trades),
+            avg_trade_pnl=np.mean(trades) if trades else 0,
+            win_rate=sum(1 for t in trades if t > 0) / len(trades) if trades else 0,
+            metrics=metrics.__dict__
+        )
         return metrics
