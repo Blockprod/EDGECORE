@@ -205,12 +205,19 @@ class BacktestRunner:
             price_data = {}
             failed_symbols = []
             
+            # Calculate proper since date for CCXT loader
+            # Add extra buffer to ensure we have enough data for indicators
+            start_buffer = pd.Timestamp(start_date) - pd.Timedelta(days=60)
+            since_date = start_buffer.isoformat().split('T')[0]
+            
             for symbol in symbols:
                 try:
                     df = self.loader.load_ccxt_data(
                         exchange_name='binance',
                         symbol=symbol,
                         timeframe='1d',
+                        since=since_date,
+                        limit=3000,  # Increase limit to get full requested range
                         validate=validate_data
                     )
                     price_data[symbol] = df['close']
