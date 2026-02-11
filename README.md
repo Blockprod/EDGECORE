@@ -1,32 +1,32 @@
 # EDGECORE
 
-**Production-Grade Statistical Arbitrage Trading System**
+**Production-Grade Automated Trading System**
 
-A robust, enterprise-ready pair trading platform with advanced risk management, comprehensive monitoring, and multi-mode execution (backtest, paper, live).
+A robust, enterprise-ready trading platform with comprehensive risk management, advanced monitoring, and multi-mode execution (backtest, paper, live).
 
 ---
 
 ## Features
 
-- **Pair Trading Strategy**: Cointegration-based statistical arbitrage
+- **Trading Engine**: Advanced execution with dynamic market analysis
 - **Multi-Mode Execution**: Backtest → Paper Trading → Live (with kill-switches)
 - **Risk Management**: 
-  - Per-trade limits, position concentration caps
-  - Daily drawdown controls, consecutive loss tracking
-  - Volatility regime detection
+  - Position sizing and concentration controls
+  - Dynamic loss monitoring and drawdown protection
+  - Automated circuit breakers
 - **Market Connectivity**: 
-  - CCXT integration (200+ exchanges)
-  - Interactive Brokers support
+  - Multi-exchange support via CCXT (200+ exchanges)
+  - Multi-broker integration
 - **Monitoring & Alerting**:
   - Real-time dashboard API
   - Slack/Email alerting
-  - Structured logging with audit trails
+  - Structured audit logging
   - Prometheus metrics
 - **Resilience**:
-  - Circuit breaker pattern
-  - Exponential backoff retries
-  - Order lifecycle tracking
-  - Graceful shutdown handling
+  - Circuit breaker pattern with automatic recovery
+  - Exponential backoff for transient errors
+  - Order lifecycle management
+  - Graceful shutdown procedures
 
 ---
 
@@ -73,15 +73,13 @@ pip install -r requirements.txt
 
 3. **Customize parameters** in `config/dev.yaml`:
    ```yaml
-   strategy:
-     entry_z_score: 2.0      # Entry threshold
-     exit_z_score: 0.0       # Exit threshold  
-   risk:
-     max_daily_loss_pct: 2.0 # Kill-switch at 2% loss
-     max_concurrent_positions: 10
    execution:
      exchange: binance       # or other CCXT exchange
      use_sandbox: true       # Force sandbox mode
+   risk:
+     max_daily_loss_pct: 2.0 # Kill-switch at 2% loss
+     max_concurrent_positions: 10
+   # Additional parameters in config file
    ```
 
 ### Running
@@ -103,18 +101,18 @@ python main.py --mode live --symbols BTC/USDT --enable-live-trading
 
 ### Paper Trading (Recommended First Step)
 
-Paper trading allows you to test the system with real market data but without risking capital:
+Test the system with real market data without risking capital:
 
 ```bash
-# Start paper trading with BTC/USDT and ETH/USDT
+# Start paper trading with selected instruments
 python main.py --mode paper --symbols BTC/USDT ETH/USDT
 
 # This will:
 # 1. Start the dashboard API (http://localhost:5000)
-# 2. Load real-time price data from your configured exchange
-# 3. Execute the pair trading strategy on simulated capital
-# 4. Log all trades to audit trail
-# 5. Display metrics updates every iteration
+# 2. Load market data from your configured exchange
+# 3. Execute trading logic on simulated capital
+# 4. Log all activity to audit trail
+# 5. Display metrics updates
 ```
 
 Monitor via dashboard:
@@ -131,17 +129,17 @@ curl http://localhost:5000/api/dashboard/positions
 
 ### Backtesting
 
-Validate strategy on historical data:
+Validate performance on historical data:
 
 ```bash
-# Run backtest on BTC/USDT and ETH/USDT for full history
+# Run backtest analysis
 python main.py --mode backtest --symbols BTC/USDT ETH/USDT
 
 # Results include:
-# - Walk-forward performance analysis
-# - Drawdown, Sharpe ratio, win rate
-# - Detailed trade metrics
-# - Performance metrics by period
+# - Historical performance analysis
+# - Risk metrics (drawdown, volatility)
+# - Trade distribution and statistics
+# - Period-based performance breakdown
 ```
 
 ### Live Trading
@@ -166,20 +164,20 @@ python main.py --mode live --symbols BTC/USDT ETH/USDT --enable-live-trading
 ```
 EDGECORE/
 ├── main.py                    # Entry point
-├── config/                    # Settings & schemas
-├── strategies/                # Trading strategies (pair_trading.py)
-├── execution/                 # Order execution engines (CCXT, Interactive Brokers)
-├── risk/                      # Risk management & constraints
-├── backtests/                 # Backtest engine & metrics
-├── data/                      # Market data loading & preprocessing
-├── models/                    # ML models for spread prediction
+├── config/                    # Settings and configuration schemas
+├── strategies/                # Trading strategy implementations
+├── execution/                 # Order execution engines (CCXT, brokers)
+├── risk/                      # Risk management and constraints
+├── backtests/                 # Backtest engine and analytics
+├── data/                      # Market data loading and processing
+├── models/                    # Analysis models
 ├── monitoring/                # Dashboard API, alerts, logging
-├── persistence/               # Audit trails & data persistence
-├── research/                  # Pair discovery, parameter optimization
+├── persistence/               # Audit trails and data storage
+├── research/                  # Analysis and parameter research
 ├── common/                    # Shared utilities (errors, validators, circuit breaker)
-├── scripts/                   # Dev tools (validation, health checks)
+├── scripts/                   # Development tools (validation, health checks)
 ├── examples/                  # Usage examples
-├── tests/                     # 1200+ unit & integration tests
+├── tests/                     # Test suite (1200+ tests)
 └── docs/                      # Technical documentation
 ```
 
@@ -245,36 +243,36 @@ curl http://localhost:5000/api/dashboard/positions  # Open positions
 ## Architecture Highlights
 
 ### Multi-Mode Execution
-- **Backtest**: Walk-forward analysis with configurable rebalancing
-- **Paper**: Real-time data, simulated execution (no capital required)
-- **Live**: Production execution with kill-switches
+- **Backtest**: Historical analysis with walk-forward validation
+- **Paper**: Real-time data with simulated execution (no capital required)
+- **Live**: Production execution with integrated kill-switches
 
 ### Risk Framework
-- Trade-level: Position sizing, entry/exit rules
-- Portfolio-level: Correlation caps, concentration limits
-- Daily-level: Loss limits, consecutive loss tracking
-- Regime-level: Volatility detection, circuit breakers
+- **Order-level**: Position sizing and risk controls
+- **Portfolio-level**: Exposure management and concentration limits
+- **Daily-level**: Loss limits and trading halts
+- **System-level**: Circuit breakers and automatic recovery
 
 ### Resilience Patterns
-- **Circuit Breaker**: Automatic failures isolation
-- **Retry Logic**: Exponential backoff for transient errors
-- **Order Tracking**: Full lifecycle management
-- **Audit Trail**: Immutable trade history
+- **Circuit Breaker**: Automatic failure isolation and recovery
+- **Retry Logic**: Exponential backoff for transient failures
+- **Order Tracking**: Complete lifecycle management
+- **Audit Trail**: Immutable record of all decisions
 
 ---
 
 ## Testing
 
-**1203 tests covering:**
+Comprehensive test suite covering:
 - Unit tests for all components
-- Integration tests across layers
+- Integration tests across system layers
 - End-to-end trading workflows
-- Data integrity & JSON serialization
-- Error handling chains
+- Data integrity and serialization
+- Error handling and recovery
 - System stability under load
 
 ```bash
-# Latest test run: 1203 passed in 207.22s
+# Run all tests
 pytest tests/ -v --tb=short
 ```
 
@@ -402,20 +400,20 @@ pytest tests/ -xvs --tb=long
 
 ## License & Contact
 
-**Status**: Production Ready (Phase 5 Complete)  
-**Tested**: 1203 tests passing, E2E workflows validated  
-**Docs**: See `docs/2026-02-08/` for technical details
+**Status**: Production Ready  
+**Tested**: Comprehensive test suite with 1200+ tests  
+**Docs**: See `docs/` for technical documentation
 
 ---
 
 ## Next Steps
 
 1. Configure exchange API credentials in `.env`
-2. Review `config/dev.yaml` for strategy parameters
+2. Review `config/dev.yaml` and adjust parameters as needed
 3. Run paper trading: `python main.py --mode paper`
-4. Check dashboard: `curl http://localhost:5000/api/dashboard`
+4. Verify dashboard: `curl http://localhost:5000/api/dashboard`
 5. Run backtest for validation: `python main.py --mode backtest`
 
 ---
 
-**Built with precision. Tested with rigor. Ready for production.**
+**Production-ready trading system with enterprise-grade safety and monitoring.**
