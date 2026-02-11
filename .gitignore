@@ -1,5 +1,5 @@
-# Local project documentation (keep detailed README.md locally only)
-README.md
+# Local project documentation (keep detailed README_PRIVATE.md locally only)
+README_PRIVATE.md
 
 # Environment
 .env
