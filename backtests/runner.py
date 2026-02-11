@@ -278,7 +278,7 @@ class BacktestRunner:
             logger.warning("backtest_no_cointegrated_pairs", symbols=list(price_data.keys()))
             metrics = BacktestMetrics.from_returns(
                 returns=pd.Series([0.0]),
-                trades=[0.0],
+                trades=[],
                 start_date=start_date,
                 end_date=end_date
             )
@@ -403,12 +403,40 @@ class BacktestRunner:
             daily_returns.append(daily_return)
             portfolio_value.append(new_value)
         
+        # Force-close any remaining open positions at final price
+        if len(active_positions) > 0:
+            final_prices = prices_df.iloc[-1]
+            for pair_key, trade_info in list(active_positions.items()):
+                sym1, sym2 = pair_key.split('_')
+                side = trade_info['side']
+                entry_prices = trade_info['entry_price']
+                sym1_entry = entry_prices[sym1]
+                sym2_entry = entry_prices[sym2]
+                sym1_final = final_prices[sym1]
+                sym2_final = final_prices[sym2]
+                
+                if side == "long":
+                    pnl = (sym1_final - sym1_entry) - (sym2_final - sym2_entry)
+                else:  # short
+                    pnl = (sym2_final - sym2_entry) - (sym1_final - sym1_entry)
+                
+                pnl_dollars = pnl * self.config.initial_capital * 0.01
+                trades.append(pnl_dollars)
+                
+                logger.debug(
+                    "trade_closed_force_close",
+                    pair=pair_key,
+                    side=side,
+                    pnl=pnl_dollars,
+                    days_held=len(prices_df) - trade_info['entry_date']
+                )
+        
         # Calculate metrics from real returns
         returns_series = pd.Series(daily_returns) if daily_returns else pd.Series([0.0])
         
         metrics = BacktestMetrics.from_returns(
             returns=returns_series,
-            trades=trades if trades else [0.0],
+            trades=trades if trades else [],
             start_date=start_date,
             end_date=end_date
         )
