@@ -1,0 +1,34 @@
+strategy:
+  lookback_window: 252
+  entry_z_score: 2.0
+  exit_z_score: 0.0
+  min_correlation: 0.7
+  max_half_life: 60
+
+risk:
+  max_risk_per_trade: 0.005
+  max_concurrent_positions: 10
+  max_daily_loss_pct: 0.02
+  max_consecutive_losses: 3
+  volatility_percentile_threshold: 1.5
+  position_sizing_method: "volatility"
+  max_leverage: 3.0
+
+execution:
+  engine: "ccxt"
+  exchange: "binance"
+  timeout_seconds: 30
+  max_retries: 3
+  slippage_bps: 5.0
+  use_sandbox: true
+  paper_trading_loop_interval_seconds: 10
+  initial_capital: 100000.0
+  paper_slippage_model: "fixed_bps"
+  paper_commission_pct: 0.1
+backtest:
+  start_date: "2023-01-01"
+  end_date: "2024-01-01"
+  initial_capital: 100000.0
+  commission_bps: 2.0
+  walk_forward_periods: 4
+  out_of_sample_ratio: 0.2
