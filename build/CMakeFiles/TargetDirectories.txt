@@ -1,0 +1,4 @@
+C:/Users/averr/EDGECORE/build/CMakeFiles/backtest_engine_cpp.dir
+C:/Users/averr/EDGECORE/build/CMakeFiles/cointegration_cpp.dir
+C:/Users/averr/EDGECORE/build/CMakeFiles/edit_cache.dir
+C:/Users/averr/EDGECORE/build/CMakeFiles/rebuild_cache.dir

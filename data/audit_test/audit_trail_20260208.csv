@@ -1,0 +1,3 @@
+timestamp,event_type,symbol_pair,side,quantity,entry_price,exit_price,pnl,equity_at_event,event_id
+2026-02-08T13:31:11.336578,TRADE_ENTRY,BTC/USDT,long,10.0,50000.0,,,100000.0,2026-02-08T13:31:11.336578_BTC/USDT
+2026-02-08T13:31:11.336578,TRADE_EXIT,BTC/USDT,,10.0,,51000.0,10000.0,110000.0,2026-02-08T13:31:11.336578_BTC/USDT

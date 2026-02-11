@@ -1,0 +1,42 @@
+# Environment
+.env
+.env.local
+*.pem
+
+# API Keys
+config/credentials.json
+config/secrets.yaml
+
+# Data
+data/cache/*
+data/raw/*
+data/*.csv
+data/*.parquet
+
+# Logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backtest outputs
+backtests/results/
+backtests/*.html
+
+# OS
+.DS_Store
+Thumbs.db
