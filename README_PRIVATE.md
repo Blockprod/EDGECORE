@@ -2,56 +2,50 @@
 
 **Production-Grade Automated Trading System**
 
-A robust, enterprise-ready trading platform with comprehensive risk management, advanced monitoring, and automated execution capabilities.
+A robust, enterprise-ready trading platform with comprehensive risk management, advanced monitoring, and multi-mode execution (backtest, paper, live).
 
 ---
 
-## Overview
+## Features
 
-EDGECORE is a private trading system designed for professional deployment. This repository contains the production codebase and is not intended for public distribution or analysis.
-
-**For detailed documentation, see the `/docs` directory.**
-
----
-
-## Key Features
-
-- **Automated Execution Engine**: Real-time order management and execution
-- **Multi-Mode Operation**: Development, testing, and production modes
+- **Trading Engine**: Advanced execution with dynamic market analysis
+- **Multi-Mode Execution**: Backtest → Paper Trading → Live (with kill-switches)
 - **Risk Management**: 
-  - Comprehensive position controls
-  - Real-time loss monitoring
-  - Automated safety mechanisms
-- **Exchange Integration**: 
-  - Multi-exchange support
-  - Multi-broker compatibility
-  - Robust API abstractions
-- **Monitoring & Operations**:
-  - Real-time dashboard and metrics
-  - Alert system (Slack, Email)
+  - Position sizing and concentration controls
+  - Dynamic loss monitoring and drawdown protection
+  - Automated circuit breakers
+- **Market Connectivity**: 
+  - Multi-exchange support via CCXT (200+ exchanges)
+  - Multi-broker integration
+- **Monitoring & Alerting**:
+  - Real-time dashboard API
+  - Slack/Email alerting
   - Structured audit logging
-- **System Resilience**:
-  - Automatic error recovery
-  - Failure isolation mechanisms
-  - Graceful degradation
+  - Prometheus metrics
+- **Resilience**:
+  - Circuit breaker pattern with automatic recovery
+  - Exponential backoff for transient errors
+  - Order lifecycle management
+  - Graceful shutdown procedures
 
 ---
 
-## Setup
+## Quick Start
 
 ### Prerequisites
 
-- **Python**: 3.11.9+
+- **Python**: 3.11.9
 - **OS**: Windows / Linux / macOS
+- **Dependencies**: See `requirements.txt`
 
 ### Installation
 
 ```bash
-# Clone repository
-git clone https://github.com/Blockprod/EDGECORE.git
+# Clone and navigate
+git clone <repo>
 cd EDGECORE
 
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv venv
 source venv/Scripts/activate  # Windows: venv\Scripts\activate
 
@@ -61,45 +55,106 @@ pip install -r requirements.txt
 
 ### Configuration
 
-1. **Set environment**:
+1. **Set environment** (default: `dev`):
    ```bash
-   export EDGECORE_ENV=dev  # or prod
+   export EDGECORE_ENV=dev  # Load config/dev.yaml
    ```
 
-2. **Create `.env` file** with required secrets:
+2. **Create `.env` file**:
    ```env
-   # Exchange/Broker credentials
-   API_KEY=your_key
-   API_SECRET=your_secret
+   # CCXT Exchange API keys (optional for paper mode)
+   EXCHANGE_API_KEY=your_key
+   EXCHANGE_SECRET=your_secret
    
-   # Notifications (optional)
+   # Alerting
    SLACK_WEBHOOK_URL=https://hooks.slack.com/...
    SMTP_PASSWORD=your_password
-   
-   # Security
-   JWT_SECRET=minimum_32_bytes_long_secret_key
    ```
 
-3. **Review configuration** in `config/dev.yaml` or `config/prod.yaml`
+3. **Customize parameters** in `config/dev.yaml`:
+   ```yaml
+   execution:
+     exchange: binance       # or other CCXT exchange
+     use_sandbox: true       # Force sandbox mode
+   risk:
+     max_daily_loss_pct: 2.0 # Kill-switch at 2% loss
+     max_concurrent_positions: 10
+   # Additional parameters in config file
+   ```
+
+### Running
+
+```bash
+# Paper Trading (sandbox, no real money)
+python main.py --mode paper --symbols BTC/USDT ETH/USDT
+
+# Backtest (historical analysis)
+python main.py --mode backtest --symbols BTC/USDT ETH/USDT
+
+# Live Trading (EXTREME CAUTION - requires explicit approval)
+python main.py --mode live --symbols BTC/USDT --enable-live-trading
+```
 
 ---
 
-## Running the System
+## Usage
+
+### Paper Trading (Recommended First Step)
+
+Test the system with real market data without risking capital:
 
 ```bash
-# Development mode
-python main.py --mode backtest
+# Start paper trading with selected instruments
+python main.py --mode paper --symbols BTC/USDT ETH/USDT
 
-# Testing mode (simulated execution)
-python main.py --mode paper
-
-# Production mode (real execution)
-python main.py --mode live
+# This will:
+# 1. Start the dashboard API (http://localhost:5000)
+# 2. Load market data from your configured exchange
+# 3. Execute trading logic on simulated capital
+# 4. Log all activity to audit trail
+# 5. Display metrics updates
 ```
 
-Monitor system status via dashboard API:
+Monitor via dashboard:
 ```bash
+# Check system health
 curl http://localhost:5000/health
+
+# Get dashboard metrics
+curl http://localhost:5000/api/dashboard
+
+# View positions
+curl http://localhost:5000/api/dashboard/positions
+```
+
+### Backtesting
+
+Validate performance on historical data:
+
+```bash
+# Run backtest analysis
+python main.py --mode backtest --symbols BTC/USDT ETH/USDT
+
+# Results include:
+# - Historical performance analysis
+# - Risk metrics (drawdown, volatility)
+# - Trade distribution and statistics
+# - Period-based performance breakdown
+```
+
+### Live Trading
+
+**⚠️ PRODUCTION MODE - EXTREME CAUTION REQUIRED**
+
+```bash
+# Deploy live trading (only after Phase 2 & 3 complete)
+python main.py --mode live --symbols BTC/USDT ETH/USDT --enable-live-trading
+
+# System will:
+# 1. Verify reconciliation with broker
+# 2. Activate hard-stop kill-switches
+# 3. Begin live capital deployment
+# 4. Monitor positions continuously
 ```
 
 ---
@@ -108,63 +163,257 @@ curl http://localhost:5000/health
 
 ```
 EDGECORE/
-├── main.py                 # Entry point
-├── config/                 # Configuration management
-├── execution/              # Execution engines
-├── risk/                   # Risk controls
-├── backtests/              # Analysis tools
-├── data/                   # Data management
-├── monitoring/             # Dashboard and metrics
-├── persistence/            # Data storage
-├── common/                 # Shared utilities
-├── scripts/                # Operational tools
-├── tests/                  # Test suite
-└── docs/                   # Technical documentation
+├── main.py                    # Entry point
+├── config/                    # Settings and configuration schemas
+├── strategies/                # Trading strategy implementations
+├── execution/                 # Order execution engines (CCXT, brokers)
+├── risk/                      # Risk management and constraints
+├── backtests/                 # Backtest engine and analytics
+├── data/                      # Market data loading and processing
+├── models/                    # Analysis models
+├── monitoring/                # Dashboard API, alerts, logging
+├── persistence/               # Audit trails and data storage
+├── research/                  # Analysis and parameter research
+├── common/                    # Shared utilities (errors, validators, circuit breaker)
+├── scripts/                   # Development tools (validation, health checks)
+├── examples/                  # Usage examples
+├── tests/                     # Test suite (1200+ tests)
+└── docs/                      # Technical documentation
 ```
+
+---
+
+## Development
+
+### Running Tests
+
+```bash
+# All tests
+pytest tests/ -v
+
+# Specific test class
+pytest tests/test_e2e_comprehensive.py::TestDashboardAccuracy -v
+
+# With coverage
+pytest tests/ --cov=. --cov-report=html
+```
+
+### Validation
+
+```bash
+# Type checking
+python scripts/validate_types.py
+
+# System health check
+python scripts/check_health.py
+
+# Run examples
+python examples/examples_backtest.py
+python examples/examples_pair_discovery.py
+```
+
+### Key Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/check_health.py` | System environment validation |
+| `scripts/validate_types.py` | MyPy type checking |
+| `scripts/verify_fix.py` | Test import verification |
+| `scripts/quick_test.py` | Critical tests runner |
+
+---
+
+## Dashboard API
+
+Real-time monitoring via REST API:
+
+```bash
+# Health check (no auth)
+curl http://localhost:5000/health
+
+# Dashboard snapshot (requires API key)
+curl -H "X-API-Key: your-key" http://localhost:5000/api/dashboard
+curl http://localhost:5000/api/dashboard/system     # System metrics
+curl http://localhost:5000/api/dashboard/risk       # Risk metrics
+curl http://localhost:5000/api/dashboard/positions  # Open positions
+```
+
+---
+
+## Architecture Highlights
+
+### Multi-Mode Execution
+- **Backtest**: Historical analysis with walk-forward validation
+- **Paper**: Real-time data with simulated execution (no capital required)
+- **Live**: Production execution with integrated kill-switches
+
+### Risk Framework
+- **Order-level**: Position sizing and risk controls
+- **Portfolio-level**: Exposure management and concentration limits
+- **Daily-level**: Loss limits and trading halts
+- **System-level**: Circuit breakers and automatic recovery
+
+### Resilience Patterns
+- **Circuit Breaker**: Automatic failure isolation and recovery
+- **Retry Logic**: Exponential backoff for transient failures
+- **Order Tracking**: Complete lifecycle management
+- **Audit Trail**: Immutable record of all decisions
 
 ---
 
 ## Testing
 
-Run the comprehensive test suite:
+Comprehensive test suite covering:
+- Unit tests for all components
+- Integration tests across system layers
+- End-to-end trading workflows
+- Data integrity and serialization
+- Error handling and recovery
+- System stability under load
 
 ```bash
-pytest tests/ -v
+# Run all tests
+pytest tests/ -v --tb=short
 ```
 
 ---
 
 ## Security
 
-- All secrets managed via environment variables (`.env` file)
-- API authentication and rate limiting
-- Structured logging and audit trails
-- Safe defaults for all operations
+- No hardcoded secrets (uses `.env`)
+- API key authentication for dashboard
+- Rate limiting on all endpoints
+- Structured audit logging
+- Safe sandbox defaults
 
 ---
 
-## Safety Mechanisms
+## Safety
 
-Critical safeguards are built into the system:
+**EDGECORE includes comprehensive safety mechanisms to protect against catastrophic losses:**
 
-- Automated trading halts on error conditions
-- Position and risk limits enforced
-- System reconciliation checks
-- Complete audit trail of all actions
-- Graceful shutdown procedures
+### Hard-Stop Kill Switches
+- **2% Daily Loss Limit**: Automatic trading halt if daily loss exceeds 2%
+- **15% Maximum Drawdown**: Systematic position closure if equity drawdown exceeds 15%
+- **10 Consecutive API Errors**: Automatic trading suspension on repeated API failures
 
-**For production deployment, review all safety configurations before going live.**
+### Trading Safeguards
+- All positions tracked with stop-loss orders
+- Maximum concurrent positions limited (default: 10)
+- Per-trade size limits enforced
+- Unusual spread volatility triggers circuit breaker
+
+### Operational Safeguards
+- Startup reconciliation (equity verification before trading)
+- Periodic reconciliation (hourly validation)
+- Graceful shutdown procedures (closes all positions safely)
+- Complete audit trail of all trades and decisions
+
+### Production Requirements
+**NEVER deploy live trading without:**
+1. ✅ 2+ weeks of successful paper trading
+2. ✅ All tests passing (80%+ coverage)
+3. ✅ Risk limits reviewed by team
+4. ✅ Kill-switches tested and verified
+5. ✅ Initial capital ≤ $5,000
+6. ✅ 24-hour continuous monitoring capability
+7. ✅ Disaster recovery procedures in place
 
 ---
 
-## Documentation
+## Configuration Files
 
-Technical documentation and operational guides are located in `/docs`.
-
-For questions or issues, contact the development team.
+| File | Purpose |
+|------|---------|
+| `config/dev.yaml` | Development settings |
+| `config/prod.yaml` | Production settings |
+| `config/schemas.py` | Configuration validation |
+| `.env` | Secrets & API keys |
 
 ---
 
-**Status**: Production-Ready  
-**Version**: Phase 4 (2026-02-11)  
-**License**: Private - Blockprod Inc.
+## � Deployment
+
+### Docker Deployment
+
+EDGECORE includes production-ready Docker support:
+
+```bash
+# Build Docker image
+docker build -t edgecore:latest .
+
+# Run container
+docker run -e EDGECORE_ENV=prod \
+  -v ~/.ssh/id_rsa:/app/.ssh/id_rsa:ro \
+  --env-file .env \
+  edgecore:latest python main.py --mode paper --symbols BTC/USDT
+
+# Docker Compose (with monitoring/logging)
+docker-compose up -d
+```
+
+### Docker Compose Services
+
+The included `docker-compose.yml` includes:
+- **edgecore**: Main trading system
+- **prometheus**: Metrics collection  
+- **grafana**: Dashboard visualization
+- **loki**: Log aggregation
+
+All services run on isolated `trading-network`.
+
+### Production Checklist
+
+- [ ] Secrets configured in `.env` (API keys, passwords)
+- [ ] Database backups enabled
+- [ ] Log rotation configured
+- [ ] Monitoring alerts set up
+- [ ] Kill-switches tested
+- [ ] Paper trading validated for 24h+
+- [ ] Risk limits reviewed
+
+---
+
+## Troubleshooting
+
+### Import errors
+```bash
+python scripts/verify_fix.py
+```
+
+### Type errors
+```bash
+python scripts/validate_types.py
+```
+
+### Environment issues
+```bash
+python scripts/check_health.py
+```
+
+### Test failures
+```bash
+pytest tests/ -xvs --tb=long
+```
+
+---
+
+## License & Contact
+
+**Status**: Production Ready  
+**Tested**: Comprehensive test suite with 1200+ tests  
+**Docs**: See `docs/` for technical documentation
+
+---
+
+## Next Steps
+
+1. Configure exchange API credentials in `.env`
+2. Review `config/dev.yaml` and adjust parameters as needed
+3. Run paper trading: `python main.py --mode paper`
+4. Verify dashboard: `curl http://localhost:5000/api/dashboard`
+5. Run backtest for validation: `python main.py --mode backtest`
+
+---
+
+**Production-ready trading system with enterprise-grade safety and monitoring.**
