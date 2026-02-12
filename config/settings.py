@@ -2,7 +2,7 @@ import os
 import yaml
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Dict, Any
+from typing import Dict, Any, List
 from dotenv import load_dotenv
 from structlog import get_logger
 
@@ -18,6 +18,13 @@ class StrategyConfig:
     exit_z_score: float = 0.0   # Exit threshold
     min_correlation: float = 0.7  # Min correlation for pairs
     max_half_life: int = 60  # Max half-life (days) for spread mean reversion
+
+@dataclass
+class TradingUniverseConfig:
+    """Trading universe configuration (which symbols to trade)."""
+    symbols: list = field(default_factory=lambda: [
+        "BTC/USDT", "ETH/USDT",  # Default: just top 2 if config not available
+    ])
 
 @dataclass
 class RiskConfig:
@@ -82,6 +89,7 @@ class Settings:
         config_path = Path(__file__).parent / f"{self.env}.yaml"
         
         self.strategy = StrategyConfig()
+        self.trading_universe = TradingUniverseConfig()
         self.risk = RiskConfig()
         self.execution = ExecutionConfig()
         self.backtest = BacktestConfig()
@@ -110,6 +118,10 @@ class Settings:
         if 'strategy' in config:
             for key, value in config['strategy'].items():
                 setattr(self.strategy, key, value)
+        
+        if 'trading_universe' in config:
+            if 'symbols' in config['trading_universe']:
+                self.trading_universe.symbols = config['trading_universe']['symbols']
         
         if 'risk' in config:
             for key, value in config['risk'].items():
