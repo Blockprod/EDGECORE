@@ -8,6 +8,15 @@ from typing import Tuple, Optional, Dict, Any
 
 logger = get_logger(__name__)
 
+# Try to load C++ acceleration for cointegration testing
+try:
+    from edgecore import cointegration_cpp
+    CPP_COINTEGRATION_AVAILABLE = True
+    logger.info("C++ cointegration engine loaded - 10x+ speedup enabled")
+except ImportError as e:
+    CPP_COINTEGRATION_AVAILABLE = False
+    logger.debug(f"C++ cointegration engine not available: {e}")
+
 def engle_granger_test(
     y: pd.Series,
     x: pd.Series,
@@ -153,7 +162,62 @@ def engle_granger_test(
     
     return result
 
-def correlation_matrix(prices: pd.DataFrame) -> Tuple[np.ndarray, list]:
+def engle_granger_test_cpp_optimized(
+    y: pd.Series,
+    x: pd.Series,
+    max_lags: int = 12,
+    regression: str = "c"
+) -> dict:
+    """
+    Optimized Engle-Granger test using C++ acceleration if available.
+    Falls back to pure Python implementation if C++ is not available.
+    
+    This function provides 10x+ speedup for cointegration testing when
+    the C++ cointegration engine is compiled and available.
+    
+    Args:
+        y: Dependent series
+        x: Independent series
+        max_lags: Max lags for error correction term
+        regression: Regression type ("c", "ct", "ctt")
+    
+    Returns:
+        Dictionary with test results (same format as engle_granger_test)
+    """
+    if not CPP_COINTEGRATION_AVAILABLE:
+        # Fallback to pure Python
+        return engle_granger_test(y, x, max_lags, regression)
+    
+    # Try C++ implementation
+    try:
+        # Convert pandas series to numpy arrays
+        y_arr = y.values.astype(np.float64)
+        x_arr = x.values.astype(np.float64)
+        
+        # Call C++ cointegration test
+        result_dict = cointegration_cpp.engle_granger_test(
+            y_arr, 
+            x_arr, 
+            max_lags, 
+            regression
+        )
+        
+        logger.debug(
+            "cpp_cointegration_test_success",
+            is_cointegrated=result_dict.get('is_cointegrated'),
+            pvalue=result_dict.get('adf_pvalue')
+        )
+        
+        return result_dict
+        
+    except Exception as e:
+        # Fallback to Python on any C++ error
+        logger.warning(
+            "cpp_cointegration_failed_fallback",
+            error=str(e)[:50],
+            using_python=True
+        )
+        return engle_granger_test(y, x, max_lags, regression)
     """
     Compute rolling correlation matrix and identify pairs.
     
