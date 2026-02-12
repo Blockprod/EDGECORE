@@ -8,7 +8,7 @@ from data.loader import DataLoader
 from data.validators import DataValidationError
 from strategies.pair_trading import PairTradingStrategy
 from backtests.metrics import BacktestMetrics
-from models.cointegration import engle_granger_test, half_life_mean_reversion
+from models.cointegration import engle_granger_test, engle_granger_test_cpp_optimized, half_life_mean_reversion
 from models.spread import SpreadModel
 
 logger = get_logger(__name__)
@@ -96,8 +96,8 @@ class BacktestRunner:
                     series1 = prices_df[sym1]
                     series2 = prices_df[sym2]
                     
-                    # Test cointegration (Engle-Granger)
-                    result = engle_granger_test(series1, series2)
+                    # Test cointegration (Engle-Granger with C++ acceleration)
+                    result = engle_granger_test_cpp_optimized(series1, series2)
                     pvalue = result['adf_pvalue']
                     is_cointegrated = result['is_cointegrated']
                     
