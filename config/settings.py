@@ -85,7 +85,20 @@ class Settings:
         if self._initialized:
             return
         
-        self.env = os.getenv("EDGECORE_ENV", "dev")
+        # Support multiple environment variable names: EDGECORE_ENV, ENVIRONMENT, ENV
+        self.env = (
+            os.getenv("EDGECORE_ENV") or 
+            os.getenv("ENVIRONMENT") or 
+            os.getenv("ENV") or 
+            "dev"
+        ).lower()
+        
+        # Validate environment
+        valid_envs = ["dev", "test", "prod"]
+        if self.env not in valid_envs:
+            logger.warning("invalid_environment", env=self.env, valid=valid_envs)
+            self.env = "dev"
+        
         config_path = Path(__file__).parent / f"{self.env}.yaml"
         
         self.strategy = StrategyConfig()
@@ -97,7 +110,10 @@ class Settings:
         self.raw_config = {}
         
         if config_path.exists():
+            logger.info("loading_config", env=self.env, path=str(config_path))
             self._load_yaml(config_path)
+        else:
+            logger.warning("config_not_found", env=self.env, path=str(config_path))
         
         # Safety check: prevent live trading unless explicitly enabled
         if self.execution.use_sandbox == False:
@@ -105,6 +121,13 @@ class Settings:
                 logger.warning("LIVE_TRADING_DISABLED_BY_DEFAULT")
                 self.execution.use_sandbox = True  # Force sandbox mode
                 logger.info("sandbox_mode_forced", reason="ENABLE_LIVE_TRADING env var not set")
+        
+        logger.info(
+            "config_loaded",
+            env=self.env,
+            num_symbols=len(self.trading_universe.symbols),
+            initial_capital=self.execution.initial_capital
+        )
         
         self._initialized = True
     
@@ -138,6 +161,84 @@ class Settings:
         if 'secrets' in config:
             for key, value in config['secrets'].items():
                 setattr(self.secrets, key, value)
+    
+    def reload_symbols(self, symbols: List[str] = None) -> None:
+        """
+        Hot-reload trading symbols without restarting the application.
+        
+        Args:
+            symbols: List of symbols to use. If None, reload from config file.
+        
+        Examples:
+            settings = get_settings()
+            # Reload from YAML file
+            settings.reload_symbols()
+            # Or switch to specific symbols dynamically
+            settings.reload_symbols(["BTC/USDT", "ETH/USDT"])
+        """
+        if symbols is not None:
+            # Use provided symbols
+            old_symbols = self.trading_universe.symbols
+            self.trading_universe.symbols = symbols
+            logger.info(
+                "symbols_reloaded_manual",
+                old_count=len(old_symbols),
+                new_count=len(symbols),
+                symbols=symbols[:5]  # Log first 5 for clarity
+            )
+        else:
+            # Reload from YAML file
+            config_path = Path(__file__).parent / f"{self.env}.yaml"
+            if config_path.exists():
+                old_symbols = self.trading_universe.symbols.copy()
+                with open(config_path, 'r') as f:
+                    config = yaml.safe_load(f) or {}
+                
+                if 'trading_universe' in config and 'symbols' in config['trading_universe']:
+                    self.trading_universe.symbols = config['trading_universe']['symbols']
+                    logger.info(
+                        "symbols_reloaded_from_config",
+                        env=self.env,
+                        old_count=len(old_symbols),
+                        new_count=len(self.trading_universe.symbols),
+                        symbols=self.trading_universe.symbols[:5]  # Log first 5
+                    )
+                else:
+                    logger.warning("no_symbols_in_config", path=str(config_path))
+            else:
+                logger.error("config_file_not_found", path=str(config_path))
+    
+    def get_symbols_for_env(self) -> List[str]:
+        """Get current trading symbols for active environment."""
+        return self.trading_universe.symbols
+    
+    def switch_environment(self, env: str) -> None:
+        """
+        Switch to a different environment (dev, test, prod).
+        
+        Args:
+            env: Environment name (dev, test, or prod)
+        """
+        valid_envs = ["dev", "test", "prod"]
+        if env not in valid_envs:
+            logger.warning("invalid_environment_switch", env=env, valid=valid_envs)
+            return
+        
+        old_env = self.env
+        self.env = env
+        config_path = Path(__file__).parent / f"{self.env}.yaml"
+        
+        if config_path.exists():
+            self._load_yaml(config_path)
+            logger.info(
+                "environment_switched",
+                old_env=old_env,
+                new_env=env,
+                num_symbols=len(self.trading_universe.symbols)
+            )
+        else:
+            logger.error("config_file_not_found", path=str(config_path))
+            self.env = old_env  # Revert on error
 
 def get_settings() -> Settings:
     """Get global settings singleton."""
