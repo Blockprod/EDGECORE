@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from scipy import stats
+from scipy.linalg import LinAlgError
 from statsmodels.tsa.stattools import adfuller, grangercausalitytests
 from structlog import get_logger
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Dict, Any
 
 logger = get_logger(__name__)
 
@@ -25,27 +26,124 @@ def engle_granger_test(
     Returns:
         Dictionary with test results
     """
-    # Step 1: OLS regression
-    X = np.column_stack([np.ones(len(x)), x.values])
-    beta = np.linalg.lstsq(X, y.values, rcond=None)[0]
-    residuals = y.values - X @ beta
+    # Input validation
+    if len(y) < 20 or len(x) < 20:
+        return {
+            'beta': np.nan,
+            'intercept': np.nan,
+            'residuals': np.array([]),
+            'adf_statistic': np.nan,
+            'adf_pvalue': 1.0,  # Not significant
+            'is_cointegrated': False,
+            'critical_values': {},
+            'error': 'Insufficient data'
+        }
     
-    # Step 2: ADF test on residuals
-    adf_result = adfuller(residuals, regression=regression, autolag='AIC')
+    # Check for NaN values
+    if y.isna().any() or x.isna().any():
+        return {
+            'beta': np.nan,
+            'intercept': np.nan,
+            'residuals': np.array([]),
+            'adf_statistic': np.nan,
+            'adf_pvalue': 1.0,
+            'is_cointegrated': False,
+            'critical_values': {},
+            'error': 'NaN values in data'
+        }
     
-    coint_score = adf_result[0]
-    coint_pvalue = adf_result[1]
-    is_cointegrated = coint_pvalue < 0.05
+    # Check for zero or near-zero variance
+    if x.std() < 1e-10 or y.std() < 1e-10:
+        return {
+            'beta': np.nan,
+            'intercept': np.nan,
+            'residuals': np.array([]),
+            'adf_statistic': np.nan,
+            'adf_pvalue': 1.0,
+            'is_cointegrated': False,
+            'critical_values': {},
+            'error': 'Zero variance in data'
+        }
     
-    result = {
-        'beta': beta[1],
-        'intercept': beta[0],
-        'residuals': residuals,
-        'adf_statistic': coint_score,
-        'adf_pvalue': coint_pvalue,
-        'is_cointegrated': is_cointegrated,
-        'critical_values': adf_result[4]
-    }
+    try:
+        # Normalize data to improve numerical stability
+        x_normalized = (x - x.mean()) / x.std()
+        y_normalized = (y - y.mean()) / y.std()
+        
+        # Step 1: OLS regression with proper error handling
+        X = np.column_stack([np.ones(len(x_normalized)), x_normalized.values])
+        
+        # Check condition number to detect ill-conditioned matrices
+        cond_number = np.linalg.cond(X)
+        if cond_number > 1e10:  # Matrix is ill-conditioned
+            return {
+                'beta': np.nan,
+                'intercept': np.nan,
+                'residuals': np.array([]),
+                'adf_statistic': np.nan,
+                'adf_pvalue': 1.0,
+                'is_cointegrated': False,
+                'critical_values': {},
+                'error': f'Ill-conditioned matrix (condition number: {cond_number:.2e})'
+            }
+        
+        beta = np.linalg.lstsq(X, y_normalized.values, rcond=None)[0]
+        residuals = y_normalized.values - X @ beta
+        
+        # Check for NaN in residuals
+        if np.isnan(residuals).any() or np.isinf(residuals).any():
+            return {
+                'beta': np.nan,
+                'intercept': np.nan,
+                'residuals': np.array([]),
+                'adf_statistic': np.nan,
+                'adf_pvalue': 1.0,
+                'is_cointegrated': False,
+                'critical_values': {},
+                'error': 'Invalid residuals (NaN or Inf)'
+            }
+        
+        # Step 2: ADF test on residuals with error handling
+        try:
+            adf_result = adfuller(residuals, regression=regression, autolag='AIC')
+        except (LinAlgError, ValueError) as e:
+            return {
+                'beta': beta[1],
+                'intercept': beta[0],
+                'residuals': residuals,
+                'adf_statistic': np.nan,
+                'adf_pvalue': 1.0,  # Not significant
+                'is_cointegrated': False,
+                'critical_values': {},
+                'error': f'ADF test failed: {str(e)[:50]}'
+            }
+        
+        coint_score = adf_result[0]
+        coint_pvalue = adf_result[1]
+        is_cointegrated = coint_pvalue < 0.05
+        
+        result = {
+            'beta': beta[1],
+            'intercept': beta[0],
+            'residuals': residuals,
+            'adf_statistic': coint_score,
+            'adf_pvalue': coint_pvalue,
+            'is_cointegrated': is_cointegrated,
+            'critical_values': adf_result[4]
+        }
+        
+    except Exception as e:
+        logger.error("engle_granger_test_exception", error=str(e)[:100])
+        return {
+            'beta': np.nan,
+            'intercept': np.nan,
+            'residuals': np.array([]),
+            'adf_statistic': np.nan,
+            'adf_pvalue': 1.0,
+            'is_cointegrated': False,
+            'critical_values': {},
+            'error': str(e)[:50]
+        }
     
     logger.info(
         "eg_test_complete",

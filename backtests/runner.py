@@ -102,11 +102,12 @@ class BacktestRunner:
                     is_cointegrated = result['is_cointegrated']
                     
                     if is_cointegrated:  # 5% significance level
-                        # Calculate half-life of mean reversion
+                        # Calculate half-life of mean reversion from residuals
                         from models.cointegration import half_life_mean_reversion
-                        hl = half_life_mean_reversion(series1, series2)
+                        residuals_series = pd.Series(result['residuals'])
+                        hl = half_life_mean_reversion(residuals_series)
                         
-                        if hl < 252:  # Half-life < 1 trading year
+                        if hl is not None and hl < 252:  # Half-life < 1 trading year
                             cointegrated_pairs.append((sym1, sym2, pvalue, hl))
                             logger.info(
                                 "cointegrated_pair_found",
