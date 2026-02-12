@@ -672,8 +672,8 @@ def main():
     parser.add_argument(
         "--symbols",
         nargs="+",
-        default=["BTC/USDC", "ETH/USDC"],
-        help="Trading pairs"
+        default=None,  # Will load from config if not provided
+        help="Trading pairs (if not provided, uses config/dev.yaml trading_universe.symbols)"
     )
     parser.add_argument(
         "--start-date",
@@ -688,6 +688,11 @@ def main():
     
     args = parser.parse_args()
     settings = get_settings()
+    
+    # If symbols not provided via CLI, use config
+    if args.symbols is None:
+        args.symbols = settings.trading_universe.symbols
+        logger.info("using_symbols_from_config", num_symbols=len(args.symbols))
     
     # Initialize alerters (optional - based on environment variables)
     # Slack: requires SLACK_WEBHOOK_URL

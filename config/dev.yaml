@@ -5,13 +5,66 @@ strategy:
   min_correlation: 0.7
   max_half_life: 60
 
-risk:
-  max_risk_per_trade: 0.005
-  max_concurrent_positions: 10
-  max_daily_loss_pct: 0.02
-  max_consecutive_losses: 3
-  volatility_percentile_threshold: 1.5
-  position_sizing_method: "volatility"
+trading_universe:
+  # 50+ major cryptocurrencies for Statistical Arbitrage
+  # Wider universe = better cointegration discovery
+  symbols:
+    # Top tier (mega cap)
+    - "BTC/USDT"
+    - "ETH/USDT"
+    # Large cap
+    - "BNB/USDT"
+    - "XRP/USDT"
+    - "ADA/USDT"
+    - "SOL/USDT"
+    - "DOGE/USDT"
+    - "AVAX/USDT"
+    - "LINK/USDT"
+    - "DOT/USDT"
+    # Mid cap
+    - "MATIC/USDT"
+    - "LTC/USDT"
+    - "TRX/USDT"
+    - "NEAR/USDT"
+    - "ATOM/USDT"
+    - "HBAR/USDT"
+    - "FTT/USDT"
+    - "ARB/USDT"
+    - "OP/USDT"
+    - "AAVE/USDT"
+    # Exchange tokens
+    - "UNI/USDT"
+    - "CAKE/USDT"
+    - "SUSHI/USDT"
+    # Gaming/Metaverse
+    - "SAND/USDT"
+    - "MANA/USDT"
+    - "ENJ/USDT"
+    - "GALA/USDT"
+    # Layer 2 / Cross-chain
+    - "FLOW/USDT"
+    - "VET/USDT"
+    # Classic alts
+    - "ETC/USDT"
+    - "LTC/USDT"
+    - "ZEC/USDT"
+    - "XLM/USDT"
+    - "XMR/USDT"
+    # DeFi tokens
+    - "MKR/USDT"
+    - "SNX/USDT"
+    - "YFI/USDT"
+    - "COMP/USDT"
+    - "CRV/USDT"
+    - "LDO/USDT"
+    - "GMX/USDT"
+    # Layer 2 new
+    - "IMX/USDT"
+    - "LUNC/USDT"
+    - "ONE/USDT"
+    - "FIL/USDT"
+    - "ICP/USDT"
+
   max_leverage: 3.0
 
 execution:
