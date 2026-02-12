@@ -5,32 +5,163 @@ strategy:
   min_correlation: 0.7
   max_half_life: 60
 
-risk:
-  max_risk_per_trade: 0.005
-  max_concurrent_positions: 5
-  max_daily_loss_pct: 0.01
-  max_consecutive_losses: 2
-  volatility_percentile_threshold: 1.5
-  position_sizing_method: "volatility"
+trading_universe:
+  # 100+ major cryptocurrencies for production
+  # Optimized for liquidity and cointegration discovery
+  symbols:
+    # Tier 1: Mega cap (BTC, ETH)
+    - "BTC/USDT"
+    - "ETH/USDT"
+    
+    # Tier 2: Large cap (market cap > $50B)
+    - "BNB/USDT"
+    - "XRP/USDT"
+    - "ADA/USDT"
+    - "SOL/USDT"
+    - "DOGE/USDT"
+    - "AVAX/USDT"
+    - "LINK/USDT"
+    - "DOT/USDT"
+    - "TRX/USDT"
+    - "NEAR/USDT"
+    - "UNI/USDT"
+    - "LTC/USDT"
+    - "ATOM/USDT"
+    - "MATIC/USDT"
+    - "ICP/USDT"
+    - "HBAR/USDT"
+    - "FIL/USDT"
+    - "XLM/USDT"
+    - "VET/USDT"
+    - "ETC/USDT"
+    - "BCH/USDT"
+    - "BSV/USDT"
+    - "XMR/USDT"
+    - "ZEC/USDT"
+    - "AAVE/USDT"
+    - "MKR/USDT"
+    - "CRV/USDT"
+    
+    # Tier 3: Mid cap (market cap $5B - $50B)
+    - "FTT/USDT"
+    - "ARB/USDT"
+    - "OP/USDT"
+    - "LIDO/USDT"
+    - "LDO/USDT"
+    - "APE/USDT"
+    - "CHZ/USDT"
+    - "BLUR/USDT"
+    - "SUSHI/USDT"
+    - "CAKE/USDT"
+    - "YFI/USDT"
+    - "COMP/USDT"
+    - "SNX/USDT"
+    - "GMX/USDT"
+    - "FLOW/USDT"
+    - "IMX/USDT"
+    - "SAND/USDT"
+    - "MANA/USDT"
+    - "ENJ/USDT"
+    - "GALA/USDT"
+    - "AXS/USDT"
+    - "WAXP/USDT"
+    - "AGLD/USDT"
+    - "MAGIC/USDT"
+    - "DYDX/USDT"
+    - "JUP/USDT"
+    - "PENDLE/USDT"
+    - "RAF/USDT"
+    - "MNT/USDT"
+    - "STRK/USDT"
+    - "SEI/USDT"
+    - "PYTH/USDT"
+    - "INJ/USDT"
+    - "TIA/USDT"
+    - "DYM/USDT"
+    
+    # Tier 4: Emerging/Alt coins
+    - "PEPE/USDT"
+    - "SHIB/USDT"
+    - "FLOKI/USDT"
+    - "BONK/USDT"
+    - "WIF/USDT"
+    - "MOG/USDT"
+    - "POPCAT/USDT"
+    - "GOAT/USDT"
+    - "TURBO/USDT"
+    - "PNUT/USDT"
+    
+    # Tier 5: DeFi protocols
+    - "AURA/USDT"
+    - "BAL/USDT"
+    - "CURVE/USDT"
+    - "CONVEX/USDT"
+    - "CURVE/USDT"
+    - "DPI/USDT"
+    - "REN/USDT"
+    - "RSR/USDT"
+    - "BADGER/USDT"
+    - "LOOKSRARE/USDT"
+    - "LOOKS/USDT"
+    - "X2Y2/USDT"
+    - "WBTC/USDT"
+    - "USDC/USDT"
+    - "USDE/USDT"
+    - "FDUSD/USDT"
+    - "TUSD/USDT"
+    - "DAI/USDT"
+    
+    # Tier 6: Layer 1 alternatives
+    - "ALGO/USDT"
+    - "COSMOS/USDT"
+    - "KAVA/USDT"
+    - "BAND/USDT"
+    - "ONG/USDT"
+    - "GRT/USDT"
+    - "ANKR/USDT"
+    - "RAMP/USDT"
+    - "ONE/USDT"
+    - "MINA/USDT"
+    - "FET/USDT"
+    - "RENDER/USDT"
+    - "AI/USDT"
+    
+    # Tier 7: Oracle & Infrastructure
+    - "ORACLE/USDT"
+    - "THETA/USDT"
+    - "LAR/USDT"
+    - "STORJ/USDT"
+    - "AR/USDT"
+    - "GRAPH/USDT"
+    - "API3/USDT"
+    - "BAND/USDT"
+    
+    # Tier 8: Exchange tokens
+    - "OKB/USDT"
+    - "HT/USDT"
+    - "LEO/USDT"
+    - "CRO/USDT"
+    - "KCS/USDT"
+    - "MEXC/USDT"
+
   max_leverage: 2.0
 
 execution:
   engine: "ccxt"
   exchange: "binance"
-  timeout_seconds: 10
+  timeout_seconds: 15
   max_retries: 5
   slippage_bps: 3.0
-  use_sandbox: true
-  # Override with ENABLE_LIVE_TRADING=true env var ONLY for live trading
-  paper_trading_loop_interval_seconds: 3600
-  initial_capital: 5000.0
+  use_sandbox: false
+  paper_trading_loop_interval_seconds: 5
+  initial_capital: 1000000.0
   paper_slippage_model: "adaptive"
-  paper_commission_pct: 0.15
+  paper_commission_pct: 0.08
 
 backtest:
   start_date: "2022-01-01"
   end_date: "2024-01-01"
-  initial_capital: 1000000.0
+  initial_capital: 5000000.0
   commission_bps: 1.0
   walk_forward_periods: 12
   out_of_sample_ratio: 0.2
