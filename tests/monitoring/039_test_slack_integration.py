@@ -66,7 +66,7 @@ class TestSlackAlerterBasic:
         mock_post.return_value.status_code = 200
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
-        data = {'symbol': 'BTC/USDT', 'price': 45000.50, 'quantity': 0.5}
+        data = {'symbol': 'AAPL', 'price': 45000.50, 'quantity': 0.5}
 
         success, reason = alerter.send_alert(
             level='INFO',
@@ -286,7 +286,7 @@ class TestSlackAlerterHelpers:
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
         success = alerter.send_trade_alert(
-            symbol='BTC/USDT',
+            symbol='AAPL',
             side='buy',
             quantity=0.5,
             price=45000.50,
@@ -331,7 +331,7 @@ class TestSlackAlerterHelpers:
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
         alerter.send_trade_alert(
-            symbol='BTC/USDT',
+            symbol='AAPL',
             side='sell',
             quantity=0.25,
             price=44000,
@@ -414,7 +414,7 @@ class TestSlackAlerterIntegration:
         alerter.send_alert('CRITICAL', 'Kill Switch', 'Activated')
         alerter.send_alert('ERROR', 'Order Failed', 'Insufficient funds')
         alerter.send_alert('WARNING', 'High Drawdown', 'At 45% threshold')
-        alerter.send_alert('INFO', 'Trade Executed', 'BTC buy')
+        alerter.send_alert('INFO', 'Trade Executed', 'AAPL buy')
 
         # All should be sent
         assert mock_post.call_count == 4
@@ -429,7 +429,7 @@ class TestSlackAlerterIntegration:
             level='ERROR',
             title='Test Error',
             message='Detailed error message',
-            data={'symbol': 'BTC/USDT', 'amount': 100}
+            data={'symbol': 'AAPL', 'amount': 100}
         )
 
         call_args = mock_post.call_args

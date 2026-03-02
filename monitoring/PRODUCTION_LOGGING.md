@@ -121,7 +121,7 @@ TestDecorators: 2/2 ✅
     "duration_ms": 123.45,
     "cache_hit": true,
     "extra": {
-        "symbol": "BTC/USDT",
+        "symbol": "AAPL",
         "qty": 1.5,
         "price": 45000.50
     }
@@ -405,12 +405,12 @@ class RiskEngine:
 ### Execution Engine Integration
 
 ```python
-from execution.ccxt_engine import CCXTExecutionEngine
+from execution.ibkr_engine import IBKRExecutionEngine
 from monitoring.logging_config import log_context, get_logger, log_performance
 
 logger = get_logger('execution.engine')
 
-class CCXTExecutionEngine:
+class IBKRExecutionEngine:
     def place_order(self, symbol, side, qty, price):
         with log_context(action='place_order'):
             start = time.time()
@@ -502,7 +502,7 @@ with log_context(request_id='req-123'):  # Repeated
 log_performance(
     logger,
     duration_ms=duration,
-    symbol='BTC/USDT',
+    symbol='AAPL',
     qty=1.5,
     price=45000.50
 )

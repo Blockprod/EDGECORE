@@ -1,42 +1,49 @@
+# EDGECORE — Equity Test Configuration
+# Market: US Equities via Interactive Brokers (sandbox)
+# Small universe for fast unit tests and CI.
+
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
   exit_z_score: 0.0
   min_correlation: 0.7
   max_half_life: 60
+  use_kalman: true
+  max_position_loss_pct: 0.03
 
 trading_universe:
-  # 10 major cryptocurrencies for testing
-  # Quick backtests / unit tests
+  # Minimal 10-symbol universe for testing (2 per sector)
   symbols:
-    - "BTC/USDT"
-    - "ETH/USDT"
-    - "BNB/USDT"
-    - "SOL/USDT"
-    - "ADA/USDT"
-    - "LINK/USDT"
-    - "XRP/USDT"
-    - "DOGE/USDT"
-    - "MATIC/USDT"
-    - "LTC/USDT"
+    - "AAPL"    # Technology
+    - "MSFT"    # Technology
+    - "JPM"     # Financials
+    - "BAC"     # Financials
+    - "JNJ"     # Healthcare
+    - "PFE"     # Healthcare
+    - "XOM"     # Energy
+    - "CVX"     # Energy
+    - "KO"      # Consumer Staples
+    - "PEP"     # Consumer Staples
 
-  max_leverage: 3.0
+  max_leverage: 2.0
 
 execution:
-  engine: "ccxt"
-  exchange: "binance"
+  engine: "ibkr"
   timeout_seconds: 10
   max_retries: 3
-  slippage_bps: 5.0
+  slippage_bps: 2.0
   use_sandbox: true
   paper_trading_loop_interval_seconds: 60
   initial_capital: 50000.0
-  paper_slippage_model: "fixed_bps"
-  paper_commission_pct: 0.1
 
 backtest:
-  start_date: "2023-01-01"
-  end_date: "2024-01-01"
+  start_date: "2020-01-01"
+  end_date: "2023-01-01"
   initial_capital: 50000.0
   commission_bps: 2.0
   walk_forward_periods: 4

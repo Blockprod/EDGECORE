@@ -20,7 +20,7 @@ def test_t1_1():
         'volume': 1000.0
     }, index=dates)
     
-    validator = OHLCVValidator("BTC/USDT")
+    validator = OHLCVValidator("AAPL")
     result = validator.validate(df_fresh, raise_on_error=False, max_age_hours=2.0)
     assert result.is_valid == True, f"Fresh data should be valid, got: {result.errors}"
     print(f"[OK] Fresh data validation passed ({len(result.errors)} errors, {result.checks_passed} checks passed)")
@@ -86,7 +86,6 @@ def test_t1_1():
     print(f"[OK] 3h old data accepted with 4h limit")
     
     print("\n[PASS] T1.1 Validation Successful\n")
-    return True
 
 
 if __name__ == "__main__":

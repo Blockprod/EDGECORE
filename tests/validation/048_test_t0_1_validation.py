@@ -28,7 +28,6 @@ def test_t0_1():
     print(f"[OK] Positions tracking initialized (empty)")
     
     print("\n[PASS] T0.1 Validation Successful\n")
-    return True
 
 if __name__ == "__main__":
     try:

@@ -1,0 +1,239 @@
+# ============================================================================
+# EDGECORE — Unified Configuration
+# ============================================================================
+# Master configuration for the EDGECORE statistical arbitrage system.
+# Market: US Equities via Interactive Brokers
+# Annualisation: 252 trading days
+#
+# Environment-specific overrides can be placed in dev.yaml / prod.yaml / test.yaml
+# and will be merged on top of this base config.
+# ============================================================================
+
+# --------------------------------------------------------------------------
+# Market & Venue
+# --------------------------------------------------------------------------
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
+# --------------------------------------------------------------------------
+# Trading Universe
+# --------------------------------------------------------------------------
+trading_universe:
+  # US large-cap equity pairs grouped by sector.
+  # Each group contains economically related companies where cointegration
+  # has a genuine fundamental basis (same industry, common factors).
+  symbols:
+    # --- Technology (Mega Cap) ---
+    - "AAPL"      # Apple
+    - "MSFT"      # Microsoft
+    - "GOOGL"     # Alphabet
+    - "META"      # Meta Platforms
+    - "NVDA"      # NVIDIA
+    - "AMD"       # Advanced Micro Devices
+    - "INTC"      # Intel
+    - "AVGO"      # Broadcom
+    - "CRM"       # Salesforce
+    - "ADBE"      # Adobe
+    # --- Financials ---
+    - "JPM"       # JPMorgan Chase
+    - "BAC"       # Bank of America
+    - "GS"        # Goldman Sachs
+    - "MS"        # Morgan Stanley
+    - "WFC"       # Wells Fargo
+    - "C"         # Citigroup
+    - "BLK"       # BlackRock
+    - "SCHW"      # Charles Schwab
+    # --- Healthcare / Pharma ---
+    - "JNJ"       # Johnson & Johnson
+    - "PFE"       # Pfizer
+    - "UNH"       # UnitedHealth
+    - "MRK"       # Merck
+    - "ABBV"      # AbbVie
+    - "LLY"       # Eli Lilly
+    - "TMO"       # Thermo Fisher
+    - "ABT"       # Abbott Labs
+    # --- Consumer Staples ---
+    - "KO"        # Coca-Cola
+    - "PEP"       # PepsiCo
+    - "PG"        # Procter & Gamble
+    - "CL"        # Colgate-Palmolive
+    - "WMT"       # Walmart
+    - "COST"      # Costco
+    # --- Energy ---
+    - "XOM"       # ExxonMobil
+    - "CVX"       # Chevron
+    - "COP"       # ConocoPhillips
+    - "SLB"       # Schlumberger
+    - "EOG"       # EOG Resources
+    # --- Industrials ---
+    - "CAT"       # Caterpillar
+    - "DE"        # Deere & Company
+    - "HON"       # Honeywell
+    - "GE"        # GE Aerospace
+    - "RTX"       # RTX (Raytheon)
+    - "LMT"       # Lockheed Martin
+    # --- Utilities ---
+    - "NEE"       # NextEra Energy
+    - "DUK"       # Duke Energy
+    - "SO"        # Southern Company
+    - "D"         # Dominion Energy
+    # --- REITs ---
+    - "PLD"       # Prologis
+    - "AMT"       # American Tower
+    - "SPG"       # Simon Property Group
+
+  max_leverage: 2.0
+
+# --------------------------------------------------------------------------
+# Strategy Parameters
+# --------------------------------------------------------------------------
+strategy:
+  # Pair selection
+  lookback_window: 120              # Days for cointegration window
+  entry_z_score: 1.0                # Z-score threshold to enter
+  exit_z_score: 0.5                 # Z-score threshold to exit
+  min_correlation: 0.7              # Minimum Pearson correlation
+  max_half_life: 60                 # Max half-life (days) for spread MR
+  use_kalman: true                  # Kalman filter hedge ratio (ON)
+  max_position_loss_pct: 0.10       # 10% P&L stop per position
+
+  # Statistical testing
+  bonferroni_correction: true       # Bonferroni for multiple testing
+  significance_level: 0.05          # Nominal significance (before Bonferroni)
+  johansen_confirmation: true       # Confirm EG pairs with Johansen
+  newey_west_consensus: true        # Require OLS + HAC agreement
+
+  # Hedge ratio management
+  hedge_ratio_reestimation_days: 7  # Days between re-estimation
+  emergency_vol_threshold_sigma: 3.0
+
+  # Regime detection
+  regime_min_duration: 1            # Min bars before regime transition
+  instant_transition_percentile: 99.0
+
+  # Adaptive cache TTL by regime (hours)
+  cache_ttl_high_vol: 2
+  cache_ttl_normal_vol: 12
+  cache_ttl_low_vol: 24
+
+  # Leg correlation monitoring
+  leg_correlation_window: 30
+  leg_correlation_decay_threshold: 0.3
+
+  # Internal safety limits (defense in depth)
+  internal_max_positions: 50
+  internal_max_drawdown_pct: 20.0
+  internal_max_daily_trades: 200
+
+# --------------------------------------------------------------------------
+# Risk Management
+# --------------------------------------------------------------------------
+risk:
+  max_risk_per_trade: 0.005         # 0.5% of equity per trade
+  max_concurrent_positions: 10      # Max open pair positions
+  max_daily_loss_pct: 0.02          # 2% daily drawdown circuit breaker
+  max_consecutive_losses: 5         # Consecutive loss kill-switch
+  max_leverage: 2.0                 # Max portfolio leverage
+  max_drawdown_pct: 0.10            # 10% portfolio drawdown hard stop
+  volatility_percentile_threshold: 1.5
+  position_sizing_method: "volatility"  # "volatility" | "kelly" | "equal"
+
+  # Kill-switch thresholds
+  kill_switch:
+    max_drawdown_pct: 0.15          # 15% portfolio drawdown
+    max_daily_loss_pct: 0.03        # 3% single-day loss
+    max_consecutive_losses: 5       # Consecutive losing trades
+    extreme_vol_sigma: 4.0          # VIX-equivalent spike
+    data_stale_seconds: 300         # No data for 5 minutes
+
+  # Trailing stop
+  trailing_stop:
+    sigma_multiplier: 1.0           # Trailing stop at 1-sigma
+    min_profit_to_activate: 0.005   # 0.5% profit before trailing starts
+
+  # Time stop
+  time_stop:
+    max_holding_days: 60            # Close after 60 days regardless
+
+# --------------------------------------------------------------------------
+# Portfolio Engine
+# --------------------------------------------------------------------------
+portfolio:
+  sizing_method: "volatility_inverse"  # "equal_weight" | "volatility_inverse" | "kelly" | "signal_weighted"
+  heat_limit_pct: 0.95               # Max 95% capital deployed
+  concentration:
+    max_pair_weight: 0.20             # Max 20% in single pair
+    max_sector_weight: 0.40           # Max 40% in single sector
+    max_symbol_weight: 0.25           # Max 25% in single symbol
+  hedging:
+    beta_neutral: true                # Portfolio-level beta hedging
+    pca_monitoring: true              # PCA factor concentration check
+    max_factor_concentration: 0.60    # Max factor exposure
+
+# --------------------------------------------------------------------------
+# Execution
+# --------------------------------------------------------------------------
+execution:
+  engine: "ibkr"                    # "ibkr" | "paper" | "backtest"
+  timeout_seconds: 30
+  max_retries: 3
+  slippage_bps: 2.0
+  use_sandbox: true                 # IBKR paper trading gateway
+  initial_capital: 100000.0
+  paper_slippage_model: "fixed_bps" # "fixed_bps" | "adaptive" | "volume_based"
+  paper_commission_pct: 0.005       # 0.005% ≈ $0.005/share IBKR
+  paper_trading_loop_interval_seconds: 10
+
+# --------------------------------------------------------------------------
+# Backtesting
+# --------------------------------------------------------------------------
+backtest:
+  start_date: "2018-01-01"
+  end_date: "2026-01-01"
+  initial_capital: 100000.0
+  commission_bps: 2.0
+  walk_forward_periods: 6
+  out_of_sample_ratio: 0.2
+
+# --------------------------------------------------------------------------
+# OOS Validation
+# --------------------------------------------------------------------------
+validation:
+  oos_acceptance_threshold: 0.70    # 70% of pairs must validate OOS
+  half_life_drift_tolerance: 0.50   # Max ±50% HL drift
+  oos_window_days: 21               # Forward test window
+
+# --------------------------------------------------------------------------
+# Monitoring & Alerting
+# --------------------------------------------------------------------------
+monitoring:
+  log_level: "INFO"
+  structured_logging: true          # structlog JSON format
+  log_file: "logs/edgecore.log"
+
+  # Slack alerts
+  slack:
+    enabled: false                  # Set true + provide webhook in .env
+    channel: "#edgecore-alerts"
+
+  # Email alerts
+  email:
+    enabled: false
+    recipients: []
+
+  # Dashboard
+  dashboard:
+    enabled: false
+    port: 8501                      # Streamlit default
+
+# --------------------------------------------------------------------------
+# Secrets Management
+# --------------------------------------------------------------------------
+secrets:
+  rotation_interval_days: 90
+  rotation_time_utc: "02:00"
+  auto_load_from_env: true
+  mask_ratio: 0.8
+  audit_trail_enabled: true

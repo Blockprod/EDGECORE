@@ -260,7 +260,7 @@ class DashboardGenerator:
             # Total return
             total_return = (equity_history[-1] - equity_history[0]) / equity_history[0]
 
-            # Sharpe ratio (simplified - assuming ~252 trading days per year)
+            # Sharpe ratio (252 days/year  - US equity trading days)
             if len(returns) > 1:
                 import numpy as np
                 returns_arr = np.array(returns)

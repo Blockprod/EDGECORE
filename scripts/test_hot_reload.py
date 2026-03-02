@@ -34,7 +34,7 @@ def test_hot_reload():
     
     # Test 3: Manual symbol override
     print("3. Manual Symbol Override")
-    custom_symbols = ["BTC/USDT", "ETH/USDT", "SOL/USDT"]
+    custom_symbols = ["AAPL", "MSFT", "GOOGL"]
     settings.reload_symbols(custom_symbols)
     print(f"   Changed to: {settings.trading_universe.symbols}")
     print()

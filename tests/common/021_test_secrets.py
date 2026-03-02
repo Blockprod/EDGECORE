@@ -12,7 +12,7 @@ Covers:
 
 import pytest
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 from common.secrets import (
@@ -90,7 +90,7 @@ class TestSecretMetadata:
         """Test creating metadata."""
         meta = SecretMetadata(
             name="TEST_KEY",
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
         assert meta.name == "TEST_KEY"
@@ -101,7 +101,7 @@ class TestSecretMetadata:
         """Test rotation not needed."""
         meta = SecretMetadata(
             name="TEST_KEY",
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             rotation_interval_days=90
         )
         
@@ -109,7 +109,7 @@ class TestSecretMetadata:
     
     def test_needs_rotation_true(self):
         """Test rotation needed."""
-        old_date = datetime.utcnow() - timedelta(days=100)
+        old_date = datetime.now(timezone.utc) - timedelta(days=100)
         meta = SecretMetadata(
             name="TEST_KEY",
             created_at=old_date,
@@ -120,7 +120,7 @@ class TestSecretMetadata:
     
     def test_needs_rotation_no_interval(self):
         """Test no rotation tracking if interval not set."""
-        old_date = datetime.utcnow() - timedelta(days=1000)
+        old_date = datetime.now(timezone.utc) - timedelta(days=1000)
         meta = SecretMetadata(
             name="TEST_KEY",
             created_at=old_date
@@ -132,7 +132,7 @@ class TestSecretMetadata:
         """Test access tracking."""
         meta = SecretMetadata(
             name="TEST_KEY",
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
         original_time = meta.last_accessed
@@ -145,12 +145,12 @@ class TestSecretMetadata:
         """Test rotation timestamp."""
         meta = SecretMetadata(
             name="TEST_KEY",
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
-        before_rotate = datetime.utcnow()
+        before_rotate = datetime.now(timezone.utc)
         meta.mark_rotated()
-        after_rotate = datetime.utcnow()
+        after_rotate = datetime.now(timezone.utc)
         
         assert before_rotate <= meta.rotated_at <= after_rotate
 
@@ -264,7 +264,7 @@ class TestSecretsVault:
         vault = SecretsVault(auto_load_env=False)
         
         # Create old secret
-        old_date = datetime.utcnow() - timedelta(days=100)
+        old_date = datetime.now(timezone.utc) - timedelta(days=100)
         vault.store_secret("OLD_KEY", "value", rotation_interval_days=90)
         vault._metadata["OLD_KEY"].created_at = old_date
         
@@ -335,7 +335,7 @@ class TestSecretsVault:
         
         vault.store_secret("OLD_KEY", "value")
         # Manually backdate
-        vault._audit_log[0]['timestamp'] = datetime.utcnow() - timedelta(days=10)
+        vault._audit_log[0]['timestamp'] = datetime.now(timezone.utc) - timedelta(days=10)
         
         vault.store_secret("NEW_KEY", "value")
         
@@ -351,14 +351,14 @@ class TestLoadFromEnvironment:
     def test_load_from_env_with_api_keys(self):
         """Test loading API keys from environment."""
         with patch.dict(os.environ, {
-            'BINANCE_API_KEY': 'test_key_123',
-            'BINANCE_SECRET_KEY': 'test_secret_456',
+            'IBKR_API_KEY': 'test_key_123',
+            'IBKR_SECRET_KEY': 'test_secret_456',
             'OTHER_VAR': 'not_secret'
         }):
             vault = SecretsVault(auto_load_env=True)
             
-            assert vault.has_secret('BINANCE_API_KEY')
-            assert vault.has_secret('BINANCE_SECRET_KEY')
+            assert vault.has_secret('IBKR_API_KEY')
+            assert vault.has_secret('IBKR_SECRET_KEY')
             assert vault.has_secret('OTHER_VAR') is False
     
     def test_load_with_prefix(self):

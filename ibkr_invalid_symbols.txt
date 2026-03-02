@@ -1,0 +1,1 @@
+INVALID_SYMBOL	load_error	No data returned from IBKR for INVALID_SYMBOL

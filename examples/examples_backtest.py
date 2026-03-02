@@ -14,7 +14,7 @@ def main():
     
     Steps:
     1. Initialize BacktestRunner
-    2. Run backtest on crypto pairs
+    2. Run backtest on equity pairs
     3. Display performance metrics
     """
     
@@ -23,7 +23,7 @@ def main():
     print("="*70)
     
     # Configuration
-    symbols = ["BTC/USDC", "ETH/USDC"]
+    symbols = ["AAPL", "MSFT"]
     start_date = "2023-01-01"
     end_date = "2024-01-01"
     

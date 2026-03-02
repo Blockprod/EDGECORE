@@ -78,27 +78,27 @@ class TestExceptionClassifier:
     """Tests for classify_exception helper."""
     
     def test_classify_timeout_as_transient(self):
-        """✓ TimeoutError → TRANSIENT."""
+        """✓ TimeoutError ↓ TRANSIENT."""
         category = classify_exception(TimeoutError("timeout"))
         assert category == ErrorCategory.TRANSIENT
     
     def test_classify_connection_error_as_transient(self):
-        """✓ ConnectionError → TRANSIENT."""
+        """✓ ConnectionError ↓ TRANSIENT."""
         category = classify_exception(ConnectionError("no connection"))
         assert category == ErrorCategory.TRANSIENT
     
     def test_classify_key_error_as_fatal(self):
-        """✓ KeyError (missing field) → FATAL (logic error)."""
+        """✓ KeyError (missing field) ↓ FATAL (logic error)."""
         category = classify_exception(KeyError("missing_field"))
         assert category == ErrorCategory.FATAL
     
     def test_classify_value_error_as_fatal(self):
-        """✓ ValueError (invalid value) → FATAL (logic error)."""
+        """✓ ValueError (invalid value) ↓ FATAL (logic error)."""
         category = classify_exception(ValueError("invalid value"))
         assert category == ErrorCategory.FATAL
     
     def test_classify_generic_as_retryable(self):
-        """✓ Unknown exception → RETRYABLE (default safe)."""
+        """✓ Unknown exception ↓ RETRYABLE (default safe)."""
         category = classify_exception(Exception("unknown"))
         assert category == ErrorCategory.RETRYABLE
 
@@ -145,12 +145,12 @@ class TestErrorHandler:
     def test_handle_error_with_context(self, mock_logger):
         """✓ Error context is logged."""
         error = DataError("Bad data")
-        handle_error(error, context="load_BTC/USDT")
+        handle_error(error, context="load_AAPL")
         
         # Verify context was logged
         mock_logger.warning.assert_called()
         call_kwargs = mock_logger.warning.call_args[1]
-        assert "load_BTC/USDT" in str(call_kwargs)
+        assert "load_AAPL" in str(call_kwargs)
 
 
 class TestErrorHandlingDecorator:
@@ -277,13 +277,12 @@ class TestDataLoadingErrorHandling:
         from main import _load_market_data_for_symbols
         
         mock_loader = Mock()
-        mock_loader.load_ccxt_data.return_value = None  # No data
+        mock_loader.load_ibkr_data.return_value = None  # No data
         
         mock_settings = Mock()
-        mock_settings.execution.exchange = "binance"
         
         with pytest.raises(DataError) as exc_info:
-            _load_market_data_for_symbols(["BTC/USDT"], mock_loader, mock_settings)
+            _load_market_data_for_symbols(["AAPL"], mock_loader, mock_settings)
         
         # DataError should be TRANSIENT (can retry) or RETRYABLE
         assert exc_info.value.category in [ErrorCategory.TRANSIENT, ErrorCategory.RETRYABLE]
@@ -299,7 +298,7 @@ class TestDataLoadingErrorHandling:
         # First symbol succeeds, second fails
         # Create DataFrame with proper timestamps as index
         timestamps = pd.date_range(start='2024-01-01', periods=2, freq='h')
-        btc_df = pd.DataFrame({
+        aapl_df = pd.DataFrame({
             'open': [45000.0, 45100.0],
             'high': [45200.0, 45300.0],
             'low': [44900.0, 44950.0],
@@ -307,33 +306,32 @@ class TestDataLoadingErrorHandling:
             'volume': [100.0, 200.0]
         }, index=timestamps)
         
-        def load_side_effect(exchange, symbol, *args, **kwargs):
-            if symbol == "BTC/USDT":
-                return btc_df
+        def load_side_effect(symbol, *args, **kwargs):
+            if symbol == "AAPL":
+                return aapl_df
             else:
                 raise Exception("Network error")
         
-        mock_loader.load_ccxt_data.side_effect = load_side_effect
+        mock_loader.load_ibkr_data.side_effect = load_side_effect
         
         mock_settings = Mock()
-        mock_settings.execution.exchange = "binance"
         
         # Should succeed with partial data
         prices = _load_market_data_for_symbols(
-            ["BTC/USDT", "ETH/USDT"],
+            ["AAPL", "MSFT"],
             mock_loader,
             mock_settings
         )
         
-        assert "BTC/USDT" in prices
-        assert len(prices) == 1  # Only BTC loaded
+        assert "AAPL" in prices
+        assert len(prices) == 1  # Only AAPL loaded
 
 
 class TestRealWorldScenarios:
     """Integration tests for realistic error scenarios."""
     
     def test_transient_network_error_retries(self):
-        """Scenario: Network timeout → retry → success."""
+        """Scenario: Network timeout ↓ retry ↓ success."""
         attempt = 0
         
         @with_error_handling(
@@ -346,14 +344,14 @@ class TestRealWorldScenarios:
             attempt += 1
             if attempt < 3:
                 raise TimeoutError("network timeout")
-            return {"BTC/USDT": 45000.0}
+            return {"AAPL": 175.0}
         
         result = load_with_network_retry()
-        assert result == {"BTC/USDT": 45000.0}
+        assert result == {"AAPL": 175.0}
         assert attempt == 3
     
     def test_insufficient_balance_fails_fast(self):
-        """Scenario: Insufficient balance → fail fast (no retry)."""
+        """Scenario: Insufficient balance ↓ fail fast (no retry)."""
         attempt = 0
         
         @with_error_handling(max_retries=3)

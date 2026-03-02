@@ -199,7 +199,7 @@ def cointegrated_pair():
     df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
     df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
     
-    return {"BTC/USDT": df_x, "ETH/USDT": df_y}
+    return {"AAPL": df_x, "MSFT": df_y}
 
 
 @pytest.fixture
@@ -225,7 +225,7 @@ def independent_pair():
     df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
     df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
     
-    return {"BTC/USDT": df_x, "ETH/USDT": df_y}
+    return {"AAPL": df_x, "MSFT": df_y}
 
 
 # ============================================================================
@@ -279,7 +279,7 @@ def execution_context():
 @pytest.fixture
 def ohlcv_validator():
     """OHLCV validator."""
-    return OHLCVValidator(symbol="BTC/USDT")
+    return OHLCVValidator(symbol="AAPL")
 
 
 @pytest.fixture
@@ -351,7 +351,7 @@ def temp_data_dir(tmp_path):
     return data_dir
 
 
-def create_sample_position(symbol="BTC/USDT", quantity=1.0, entry_price=50000.0):
+def create_sample_position(symbol="AAPL", quantity=1.0, entry_price=50000.0):
     """Helper to create sample position."""
     from execution.modes import Position
     
@@ -393,7 +393,7 @@ def reset_singletons():
 
 
 if __name__ == "__main__":
-    print("✅ Conftest configured")
+    print("... Conftest configured")
     print("- 6 data generation fixtures (clean, corrupted, trending, ranging, cointegrated, independent)")
     print("- 4 execution engine fixtures (paper, backtest, live mock, bare context)")
     print("- 3 risk/monitoring fixtures (default, conservative, alerter)")

@@ -17,8 +17,8 @@ def test_t1_3():
     # Create sample data
     dates = pd.date_range('2024-01-01', periods=252, freq='D')  # 1 trading year
     sample_data = pd.DataFrame({
-        'BTC/USDT': np.random.randn(252).cumsum() + 100,
-        'ETH/USDT': np.random.randn(252).cumsum() + 50
+        'AAPL': np.random.randn(252).cumsum() + 100,
+        'MSFT': np.random.randn(252).cumsum() + 50
     }, index=dates)
     
     splits = split_walk_forward(sample_data, num_periods=4, oos_ratio=0.2)
@@ -44,7 +44,7 @@ def test_t1_3():
     print("\n[TEST] Running walk-forward backtest with synthetic data...")
     try:
         result = wf_tester.run_walk_forward(
-            symbols=['BTC/USDT', 'ETH/USDT'],
+            symbols=['AAPL', 'MSFT'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=3,

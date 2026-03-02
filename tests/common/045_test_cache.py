@@ -472,8 +472,8 @@ class TestCacheIntegration:
                 'drawdown': 0.05
             },
             'positions': [
-                {'pair': 'BTC/USDT', 'side': 'long', 'qty': 1.5},
-                {'pair': 'ETH/USDT', 'side': 'short', 'qty': 10}
+                {'pair': 'AAPL', 'side': 'long', 'qty': 1.5},
+                {'pair': 'MSFT', 'side': 'short', 'qty': 10}
             ]
         }
         
@@ -487,7 +487,7 @@ class TestCacheIntegration:
         """Should invalidate cache on trade event."""
         cache = DashboardCache()
         
-        dashboard = {'positions': [{'pair': 'BTC/USDT', 'qty': 1}]}
+        dashboard = {'positions': [{'pair': 'AAPL', 'qty': 1}]}
         cache.cache_dashboard(dashboard)
         
         # Verify cached

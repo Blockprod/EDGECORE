@@ -14,7 +14,7 @@ def test_t1_2():
     assert hasattr(settings.execution, 'paper_slippage_model')
     assert hasattr(settings.execution, 'paper_commission_pct')
     assert settings.execution.paper_slippage_model == 'fixed_bps'
-    assert settings.execution.paper_commission_pct == 0.1
+    assert settings.execution.paper_commission_pct == 0.005  # IBKR equity rate (standard IBKR equity rate)
     print(f"[OK] Slippage config loaded:")
     print(f"     - paper_slippage_model: {settings.execution.paper_slippage_model}")
     print(f"     - paper_commission_pct: {settings.execution.paper_commission_pct}")
@@ -58,7 +58,7 @@ def test_t1_2():
     )
     assert slippage_bps == 5.0
     assert exec_price > 100.0  # Buy prices go UP with slippage
-    print(f"[OK] Buy slippage: 100.00 → {exec_price:.2f} (+{slippage_bps}bps)")
+    print(f"[OK] Buy slippage: 100.00 ↓ {exec_price:.2f} (+{slippage_bps}bps)")
     
     # Test sell order slippage
     slippage_bps, exec_price = slippage_calc.calculate(
@@ -70,7 +70,7 @@ def test_t1_2():
     )
     assert slippage_bps == 5.0
     assert exec_price < 100.0  # Sell prices go DOWN with slippage
-    print(f"[OK] Sell slippage: 100.00 → {exec_price:.2f} (-{slippage_bps}bps)")
+    print(f"[OK] Sell slippage: 100.00 ↓ {exec_price:.2f} (-{slippage_bps}bps)")
     
     # Step 4: Test commission calculator
     print("\n[TEST] Testing commission calculations...")
@@ -95,7 +95,6 @@ def test_t1_2():
         print(f"[OK] Import check skipped (main.py loads on execution)")
     
     print("\n[PASS] T1.2 Validation Successful\n")
-    return True
 
 
 if __name__ == "__main__":

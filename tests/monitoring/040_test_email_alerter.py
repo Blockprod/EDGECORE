@@ -201,7 +201,7 @@ class TestEmailAlerterContent:
         )
 
         data = {
-            'symbol': 'BTC/USDT',
+            'symbol': 'AAPL',
             'current_price': 45000.50,
             'loss': -5000.00,
             'loss_percent': -45.2

@@ -30,10 +30,8 @@ class ShutdownManager:
     - Non-blocking signal handling
     """
     
-    # Class-level lock for thread safety
+    # Class-level lock for thread safety (shared is OK for the lock itself)
     _global_lock = threading.Lock()
-    _shutdown_flag = False
-    _shutdown_reason = None
     
     def __init__(self, data_dir: str = "data"):
         """
@@ -42,6 +40,10 @@ class ShutdownManager:
         Args:
             data_dir: Directory for trading_enabled file
         """
+        # Instance-level state (not shared across instances)
+        self._shutdown_flag = False
+        self._shutdown_reason = None
+        
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.trading_enabled_file = self.data_dir / "trading_enabled"
@@ -81,7 +83,10 @@ class ShutdownManager:
         try:
             signal.signal(signal.SIGINT, _sigint_handler)
             signal.signal(signal.SIGTERM, _sigterm_handler)
-            signal.signal(signal.SIGUSR1, _sigusr1_handler)
+            if hasattr(signal, 'SIGUSR1'):
+                signal.signal(signal.SIGUSR1, _sigusr1_handler)
+            else:
+                logger.info("sigusr1_not_available", reason="not supported on this platform")
             logger.debug("signal_handlers_registered")
         except Exception as e:
             logger.error("signal_handler_registration_failed", error=str(e))
@@ -97,9 +102,9 @@ class ShutdownManager:
             reason: Description of why shutdown was requested
         """
         with ShutdownManager._global_lock:
-            if not ShutdownManager._shutdown_flag:
-                ShutdownManager._shutdown_flag = True
-                ShutdownManager._shutdown_reason = reason
+            if not self._shutdown_flag:
+                self._shutdown_flag = True
+                self._shutdown_reason = reason
                 logger.warning(
                     "shutdown_requested",
                     reason=reason,
@@ -118,7 +123,7 @@ class ShutdownManager:
             - Falls back to file-based check if flag not set
         """
         with ShutdownManager._global_lock:
-            if ShutdownManager._shutdown_flag:
+            if self._shutdown_flag:
                 return True
         
         # Check file-based trigger
@@ -138,7 +143,7 @@ class ShutdownManager:
             Reason string if shutdown requested, else None
         """
         with ShutdownManager._global_lock:
-            return ShutdownManager._shutdown_reason
+            return self._shutdown_reason
     
     def cleanup(self) -> None:
         """

@@ -42,7 +42,7 @@ class TestTypedDictStructures:
         """Test OrderRecord TypedDict."""
         order: OrderRecord = {
             "order_id": "order_123",
-            "symbol": "BTC/USDT",
+            "symbol": "AAPL",
             "side": OrderSide.BUY,
             "quantity": 1.0,
             "filled_quantity": 0.5,
@@ -58,7 +58,7 @@ class TestTypedDictStructures:
         """Test PositionRecord TypedDict."""
         position: PositionRecord = {
             "position_id": "pos_456",
-            "symbol": "BTC/USDT",
+            "symbol": "AAPL",
             "quantity": 1.5,
             "entry_price": 50000.0,
             "entry_time": datetime.utcnow(),
@@ -69,7 +69,7 @@ class TestTypedDictStructures:
             "pnl_percent": 2.0,
         }
         
-        assert position["symbol"] == "BTC/USDT"
+        assert position["symbol"] == "AAPL"
         assert position["side"] == "long"
         assert position["unrealized_pnl"] == 1500.0
     
@@ -158,8 +158,8 @@ class TestTypeAliases:
     
     def test_symbol_alias(self):
         """Test Symbol type alias."""
-        symbol: Symbol = "BTC/USDT"
-        assert symbol == "BTC/USDT"
+        symbol: Symbol = "AAPL"
+        assert symbol == "AAPL"
         assert isinstance(symbol, str)
     
     def test_order_id_alias(self):
@@ -233,7 +233,7 @@ class TestTypeCompliance:
         now = datetime.utcnow()
         trade: TradeRecord = {
             "trade_id": "trade_001",
-            "symbol": "BTC/USDT",
+            "symbol": "AAPL",
             "entry_price": 50000.0,
             "exit_price": 51000.0,
             "quantity": 1.0,
@@ -340,7 +340,7 @@ class TestTypeIntegration:
         """Test order data can become position data."""
         order: OrderRecord = {
             "order_id": "order_123",
-            "symbol": "BTC/USDT",
+            "symbol": "AAPL",
             "side": OrderSide.BUY,
             "quantity": 2.0,
             "filled_quantity": 2.0,
@@ -374,7 +374,7 @@ class TestTypeIntegration:
         
         position: PositionRecord = {
             "position_id": "pos_001",
-            "symbol": "ETH/USDT",
+            "symbol": "MSFT",
             "quantity": 10.0,
             "entry_price": 2000.0,
             "entry_time": now,

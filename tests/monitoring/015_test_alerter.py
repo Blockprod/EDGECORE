@@ -2,7 +2,7 @@
 
 import pytest
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from monitoring.alerter import (
     AlertManager,
     Alert,
@@ -64,7 +64,7 @@ class TestAlertRecord:
     
     def test_alert_age_seconds(self):
         """Test alert age calculation."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         old_time = now - timedelta(seconds=60)
         
         alert = Alert(
@@ -553,14 +553,14 @@ class TestAlertGenerators:
         alert = alert_order_timeout(
             manager,
             order_id="order_123",
-            symbol="BTC/USD",
+            symbol="AAPL",
             timeout_seconds=300.0
         )
         
         assert alert is not None
         assert alert.category == AlertCategory.ORDER
         assert "order_123" in alert.message
-        assert "BTC/USD" in alert.message
+        assert "AAPL" in alert.message
 
 
 class TestAlertIntegration:

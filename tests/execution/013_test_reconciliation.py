@@ -77,8 +77,8 @@ class TestBrokerReconcilerInit:
     
     def test_init_with_positions_and_orders(self):
         """Test reconciler with positions and orders."""
-        positions = {"BTC/USD": {"size": 1.0, "price": 50000}}
-        orders = {"order_1": {"symbol": "BTC/USD", "quantity": 1}}
+        positions = {"AAPL": {"size": 1.0, "price": 50000}}
+        orders = {"order_1": {"symbol": "AAPL", "quantity": 1}}
         
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
@@ -179,13 +179,13 @@ class TestPositionReconciliation:
     
     def test_positions_match_exact(self):
         """Test exact position matches."""
-        positions = {"BTC/USD": {"size": 1.0}, "ETH/USD": {"size": 10.0}}
+        positions = {"AAPL": {"size": 1.0}, "MSFT": {"size": 10.0}}
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
             internal_positions=positions
         )
         
-        broker_positions = {"BTC/USD": {"size": 1.0}, "ETH/USD": {"size": 10.0}}
+        broker_positions = {"AAPL": {"size": 1.0}, "MSFT": {"size": 10.0}}
         matches, inconsistencies = reconciler.reconcile_positions(broker_positions)
         
         assert matches
@@ -193,7 +193,7 @@ class TestPositionReconciliation:
     
     def test_positions_match_within_tolerance(self):
         """Test position sizes within tolerance."""
-        positions = {"BTC/USD": {"size": 1.0}}
+        positions = {"AAPL": {"size": 1.0}}
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
             internal_positions=positions,
@@ -201,7 +201,7 @@ class TestPositionReconciliation:
         )
         
         # 0.05 difference should be within 0.1 tolerance
-        broker_positions = {"BTC/USD": {"size": 1.05}}
+        broker_positions = {"AAPL": {"size": 1.05}}
         matches, inconsistencies = reconciler.reconcile_positions(broker_positions)
         
         assert matches
@@ -209,7 +209,7 @@ class TestPositionReconciliation:
     
     def test_positions_mismatch_exceeds_tolerance(self):
         """Test position size mismatch beyond tolerance."""
-        positions = {"BTC/USD": {"size": 1.0}}
+        positions = {"AAPL": {"size": 1.0}}
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
             internal_positions=positions,
@@ -217,7 +217,7 @@ class TestPositionReconciliation:
         )
         
         # 0.5 difference exceeds 0.1 tolerance
-        broker_positions = {"BTC/USD": {"size": 1.5}}
+        broker_positions = {"AAPL": {"size": 1.5}}
         matches, inconsistencies = reconciler.reconcile_positions(broker_positions)
         
         assert not matches
@@ -226,7 +226,7 @@ class TestPositionReconciliation:
     
     def test_positions_missing_on_broker(self):
         """Test position missing on broker."""
-        positions = {"BTC/USD": {"size": 1.0}}
+        positions = {"AAPL": {"size": 1.0}}
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
             internal_positions=positions
@@ -261,13 +261,13 @@ class TestOrderReconciliation:
     
     def test_orders_match_exact(self):
         """Test exact order matches."""
-        orders = {"order_1": {"symbol": "BTC/USD"}, "order_2": {"symbol": "ETH/USD"}}
+        orders = {"order_1": {"symbol": "AAPL"}, "order_2": {"symbol": "MSFT"}}
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
             internal_orders=orders
         )
         
-        broker_orders = {"order_1": {"symbol": "BTC/USD"}, "order_2": {"symbol": "ETH/USD"}}
+        broker_orders = {"order_1": {"symbol": "AAPL"}, "order_2": {"symbol": "MSFT"}}
         matches, inconsistencies = reconciler.reconcile_orders(broker_orders)
         
         assert matches
@@ -277,7 +277,7 @@ class TestOrderReconciliation:
         """Test unknown order on broker."""
         reconciler = BrokerReconciler(internal_equity=100000.0)
         
-        broker_orders = {"unknown_order": {"symbol": "BTC/USD"}}
+        broker_orders = {"unknown_order": {"symbol": "AAPL"}}
         matches, inconsistencies = reconciler.reconcile_orders(broker_orders)
         
         assert not matches
@@ -296,8 +296,8 @@ class TestFullReconciliation:
     
     def test_full_reconciliation_all_ok(self):
         """Test full reconciliation with all systems OK."""
-        positions = {"BTC/USD": {"size": 1.0}}
-        orders = {"order_1": {"symbol": "BTC/USD"}}
+        positions = {"AAPL": {"size": 1.0}}
+        orders = {"order_1": {"symbol": "AAPL"}}
         
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
@@ -305,8 +305,8 @@ class TestFullReconciliation:
             internal_orders=orders
         )
         
-        broker_positions = {"BTC/USD": {"size": 1.0}}
-        broker_orders = {"order_1": {"symbol": "BTC/USD"}}
+        broker_positions = {"AAPL": {"size": 1.0}}
+        broker_orders = {"order_1": {"symbol": "AAPL"}}
         
         report = reconciler.full_reconciliation(
             broker_equity=100000.0,
@@ -395,7 +395,7 @@ class TestRecoveryActions:
     
     def test_recovery_actions_position_mismatch(self):
         """Test recovery action for position mismatch."""
-        positions = {"BTC/USD": {"size": 1.0}}
+        positions = {"AAPL": {"size": 1.0}}
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
             internal_positions=positions
@@ -419,11 +419,11 @@ class TestReconciliationIntegration:
         """Test typical daily startup reconciliation workflow."""
         # Internal state from last session
         internal_positions = {
-            "BTC/USD": {"size": 2.5, "entry_price": 40000},
-            "ETH/USD": {"size": 50.0, "entry_price": 2000}
+            "AAPL": {"size": 2.5, "entry_price": 40000},
+            "MSFT": {"size": 50.0, "entry_price": 2000}
         }
         internal_orders = {
-            "pending_1": {"symbol": "BTC/USD", "status": "pending"}
+            "pending_1": {"symbol": "AAPL", "status": "pending"}
         }
         
         reconciler = BrokerReconciler(
@@ -435,8 +435,8 @@ class TestReconciliationIntegration:
         
         # Actual broker state
         broker_positions = {
-            "BTC/USD": {"size": 2.5, "entry_price": 40000},
-            "ETH/USD": {"size": 50.0, "entry_price": 2000}
+            "AAPL": {"size": 2.5, "entry_price": 40000},
+            "MSFT": {"size": 50.0, "entry_price": 2000}
         }
         broker_orders = {}  # Order filled overnight
         
@@ -454,8 +454,8 @@ class TestReconciliationIntegration:
     
     def test_gap_detection_scenario(self):
         """Test detection of overnight gap/divergence."""
-        # Internal thinks we have 2 BTC
-        internal_positions = {"BTC/USD": {"size": 2.0}}
+        # Internal thinks we have 200 shares
+        internal_positions = {"AAPL": {"size": 2.0}}
         
         reconciler = BrokerReconciler(
             internal_equity=100000.0,
@@ -463,8 +463,8 @@ class TestReconciliationIntegration:
             position_tolerance_units=0.1
         )
         
-        # But broker actually has 1.5 BTC (partial fill unknown to system)
-        broker_positions = {"BTC/USD": {"size": 1.5}}
+        # But broker actually has 150 shares (partial fill unknown to system)
+        broker_positions = {"AAPL": {"size": 1.5}}
         
         report = reconciler.full_reconciliation(
             broker_equity=100000.0,

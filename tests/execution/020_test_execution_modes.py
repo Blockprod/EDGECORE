@@ -35,7 +35,7 @@ class TestOrder:
         """Test creating an order."""
         order = Order(
             order_id="TEST-001",
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=50000.0,
@@ -43,7 +43,7 @@ class TestOrder:
         )
         
         assert order.order_id == "TEST-001"
-        assert order.symbol == "BTC/USD"
+        assert order.symbol == "AAPL"
         assert order.side == "buy"
         assert order.status == OrderStatus.PENDING
     
@@ -51,7 +51,7 @@ class TestOrder:
         """Test order completion detection."""
         order = Order(
             order_id="TEST-001",
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=50000.0,
@@ -68,7 +68,7 @@ class TestOrder:
         """Test order fill ratio calculation."""
         order = Order(
             order_id="TEST-001",
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=10.0,
             price=50000.0,
@@ -82,7 +82,7 @@ class TestOrder:
         """Test 100% filled order."""
         order = Order(
             order_id="TEST-001",
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=10.0,
             price=50000.0,
@@ -99,7 +99,7 @@ class TestPosition:
     def test_position_long(self):
         """Test long position."""
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -112,7 +112,7 @@ class TestPosition:
     def test_position_short(self):
         """Test short position."""
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=-1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -125,7 +125,7 @@ class TestPosition:
     def test_position_pnl_long(self):
         """Test long position P&L calculation."""
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -137,7 +137,7 @@ class TestPosition:
     def test_position_pnl_short(self):
         """Test short position P&L calculation."""
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=-1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -149,7 +149,7 @@ class TestPosition:
     def test_position_pnl_pct(self):
         """Test P&L percentage calculation."""
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -177,7 +177,7 @@ class TestExecutionContext:
         context = ExecutionContext(mode=ModeType.PAPER)
         
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -185,17 +185,17 @@ class TestExecutionContext:
         )
         
         context.add_position(position)
-        retrieved = context.get_position("BTC/USD")
+        retrieved = context.get_position("AAPL")
         
         assert retrieved is not None
-        assert retrieved.symbol == "BTC/USD"
+        assert retrieved.symbol == "AAPL"
     
     def test_remove_position(self):
         """Test position removal."""
         context = ExecutionContext(mode=ModeType.PAPER)
         
         position = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -203,10 +203,10 @@ class TestExecutionContext:
         )
         
         context.add_position(position)
-        removed = context.remove_position("BTC/USD")
+        removed = context.remove_position("AAPL")
         
         assert removed is not None
-        assert context.get_position("BTC/USD") is None
+        assert context.get_position("AAPL") is None
     
     def test_add_and_get_order(self):
         """Test order management."""
@@ -214,7 +214,7 @@ class TestExecutionContext:
         
         order = Order(
             order_id="TEST-001",
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=50000.0,
@@ -233,7 +233,7 @@ class TestExecutionContext:
         
         order = Order(
             order_id="TEST-001",
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=50000.0,
@@ -250,10 +250,10 @@ class TestExecutionContext:
         """Test market price updates."""
         context = ExecutionContext(mode=ModeType.PAPER)
         
-        context.market_prices["BTC/USD"] = 50000.0
-        context.update_market_price("BTC/USD", 51000.0)
+        context.market_prices["AAPL"] = 50000.0
+        context.update_market_price("AAPL", 51000.0)
         
-        assert context.market_prices["BTC/USD"] == 51000.0
+        assert context.market_prices["AAPL"] == 51000.0
     
     def test_total_position_value(self):
         """Test total position value calculation."""
@@ -261,7 +261,7 @@ class TestExecutionContext:
         
         # Add two positions
         pos1 = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -269,7 +269,7 @@ class TestExecutionContext:
         )
         
         pos2 = Position(
-            symbol="ETH/USD",
+            symbol="MSFT",
             quantity=10.0,
             entry_price=3000.0,
             entry_time=datetime.utcnow(),
@@ -288,7 +288,7 @@ class TestExecutionContext:
         context = ExecutionContext(mode=ModeType.PAPER)
         
         pos1 = Position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
             entry_time=datetime.utcnow(),
@@ -296,7 +296,7 @@ class TestExecutionContext:
         )
         
         pos2 = Position(
-            symbol="ETH/USD",
+            symbol="MSFT",
             quantity=10.0,
             entry_price=3000.0,
             entry_time=datetime.utcnow(),
@@ -316,11 +316,11 @@ class TestPaperTradingMode:
     def test_paper_submit_market_order(self):
         """Test market order in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
-        context.market_prices["BTC/USD"] = 50000.0
+        context.market_prices["AAPL"] = 50000.0
         
         mode = PaperTradingMode(context)
         order_id = mode.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             order_type="market"
@@ -334,11 +334,11 @@ class TestPaperTradingMode:
     def test_paper_submit_limit_order(self):
         """Test limit order in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
-        context.market_prices["BTC/USD"] = 50000.0
+        context.market_prices["AAPL"] = 50000.0
         
         mode = PaperTradingMode(context)
         order_id = mode.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=49500.0,
@@ -357,7 +357,7 @@ class TestPaperTradingMode:
         
         with pytest.raises(ValueError):
             mode.submit_order(
-                symbol="BTC/USD",
+                symbol="AAPL",
                 side="buy",
                 quantity=1.0,
                 order_type="market"
@@ -366,11 +366,11 @@ class TestPaperTradingMode:
     def test_paper_cancel_order(self):
         """Test order cancellation in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
-        context.market_prices["BTC/USD"] = 50000.0
+        context.market_prices["AAPL"] = 50000.0
         
         mode = PaperTradingMode(context)
         order_id = mode.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=49500.0,
@@ -388,13 +388,13 @@ class TestPaperTradingMode:
         
         mode = PaperTradingMode(context)
         success = mode.open_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=2.0,
             entry_price=50000.0
         )
         
         assert success is True
-        position = context.get_position("BTC/USD")
+        position = context.get_position("AAPL")
         assert position is not None
         assert position.quantity == 2.0
     
@@ -404,13 +404,13 @@ class TestPaperTradingMode:
         context.cash = 100000.0
         
         mode = PaperTradingMode(context)
-        mode.open_position("BTC/USD", 1.0, 50000.0)
+        mode.open_position("AAPL", 1.0, 50000.0)
         
-        success, pnl = mode.close_position("BTC/USD", 51000.0)
+        success, pnl = mode.close_position("AAPL", 51000.0)
         
         assert success is True
         assert pnl is not None
-        assert context.get_position("BTC/USD") is None
+        assert context.get_position("AAPL") is None
     
     def test_paper_get_equity(self):
         """Test equity calculation in paper mode."""
@@ -420,8 +420,8 @@ class TestPaperTradingMode:
         mode = PaperTradingMode(context)
         
         # Open position worth 50000
-        mode.open_position("BTC/USD", 1.0, 50000.0)
-        context.update_market_price("BTC/USD", 50000.0)
+        mode.open_position("AAPL", 1.0, 50000.0)
+        context.update_market_price("AAPL", 50000.0)
         
         equity = mode.get_account_equity()
         expected = 100000.0 - 50000.0 + 50000.0  # cash - position cost + position value
@@ -434,11 +434,11 @@ class TestBacktestMode:
     def test_backtest_submit_order(self):
         """Test order submission in backtest mode."""
         context = ExecutionContext(mode=ModeType.BACKTEST)
-        context.market_prices["BTC/USD"] = 50000.0
+        context.market_prices["AAPL"] = 50000.0
         
         mode = BacktestMode(context)
         order_id = mode.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             order_type="market"
@@ -451,11 +451,11 @@ class TestBacktestMode:
     def test_backtest_slippage(self):
         """Test slippage applied in backtest."""
         context = ExecutionContext(mode=ModeType.BACKTEST)
-        context.market_prices["BTC/USD"] = 50000.0
+        context.market_prices["AAPL"] = 50000.0
         
         mode = BacktestMode(context)
         order_id = mode.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             order_type="market"
@@ -472,7 +472,7 @@ class TestBacktestMode:
         context.cash = 100000.0
         
         mode = BacktestMode(context)
-        success = mode.open_position("BTC/USD", 1.0, 50000.0)
+        success = mode.open_position("AAPL", 1.0, 50000.0)
         
         assert success is True
         # Cash reduced by position cost + commission
@@ -486,10 +486,10 @@ class TestBacktestMode:
         context.cash = 100000.0
         
         mode = BacktestMode(context)
-        mode.open_position("BTC/USD", 1.0, 50000.0)
-        context.update_market_price("BTC/USD", 51000.0)
+        mode.open_position("AAPL", 1.0, 50000.0)
+        context.update_market_price("AAPL", 51000.0)
         
-        success, pnl_net = mode.close_position("BTC/USD", 51000.0)
+        success, pnl_net = mode.close_position("AAPL", 51000.0)
         
         assert success is True
         # Gross P&L = 1000, minus commission
@@ -525,10 +525,10 @@ class TestExecutionEngine:
     def test_engine_submit_order(self):
         """Test order submission through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
-        engine.context.market_prices["BTC/USD"] = 50000.0
+        engine.context.market_prices["AAPL"] = 50000.0
         
         order_id = engine.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             order_type="market"
@@ -539,10 +539,10 @@ class TestExecutionEngine:
     def test_engine_cancel_order(self):
         """Test order cancellation through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
-        engine.context.market_prices["BTC/USD"] = 50000.0
+        engine.context.market_prices["AAPL"] = 50000.0
         
         order_id = engine.submit_order(
-            symbol="BTC/USD",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             price=49500.0,
@@ -558,7 +558,7 @@ class TestExecutionEngine:
         engine.context.cash = 100000.0
         
         success = engine.open_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0
         )
@@ -570,9 +570,9 @@ class TestExecutionEngine:
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
         
-        engine.open_position("BTC/USD", 1.0, 50000.0)
+        engine.open_position("AAPL", 1.0, 50000.0)
         
-        success, pnl = engine.close_position("BTC/USD", 51000.0)
+        success, pnl = engine.close_position("AAPL", 51000.0)
         
         assert success is True
         assert pnl is not None
@@ -582,36 +582,36 @@ class TestExecutionEngine:
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
         
-        engine.open_position("BTC/USD", 1.0, 50000.0)
-        engine.open_position("ETH/USD", 10.0, 3000.0)
+        engine.open_position("AAPL", 1.0, 50000.0)
+        engine.open_position("MSFT", 10.0, 3000.0)
         
         positions = engine.get_positions()
         
         assert len(positions) == 2
-        assert "BTC/USD" in positions
-        assert "ETH/USD" in positions
+        assert "AAPL" in positions
+        assert "MSFT" in positions
     
     def test_engine_update_prices(self):
         """Test market price updates through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         
         prices = {
-            "BTC/USD": 50000.0,
-            "ETH/USD": 3000.0
+            "AAPL": 50000.0,
+            "MSFT": 3000.0
         }
         
         engine.update_prices(prices)
         
-        assert engine.context.market_prices["BTC/USD"] == 50000.0
-        assert engine.context.market_prices["ETH/USD"] == 3000.0
+        assert engine.context.market_prices["AAPL"] == 50000.0
+        assert engine.context.market_prices["MSFT"] == 3000.0
     
     def test_engine_get_equity(self):
         """Test equity retrieval through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
-        engine.context.market_prices["BTC/USD"] = 50000.0
+        engine.context.market_prices["AAPL"] = 50000.0
         
-        engine.open_position("BTC/USD", 1.0, 50000.0)
+        engine.open_position("AAPL", 1.0, 50000.0)
         
         equity = engine.get_equity()
         
@@ -624,10 +624,10 @@ class TestExecutionModeConsistency:
     def test_all_modes_same_interface(self):
         """Test that all modes implement same interface."""
         context_paper = ExecutionContext(mode=ModeType.PAPER)
-        context_paper.market_prices["BTC/USD"] = 50000.0
+        context_paper.market_prices["AAPL"] = 50000.0
         
         context_backtest = ExecutionContext(mode=ModeType.BACKTEST)
-        context_backtest.market_prices["BTC/USD"] = 50000.0
+        context_backtest.market_prices["AAPL"] = 50000.0
         
         mode_paper = PaperTradingMode(context_paper)
         mode_backtest = BacktestMode(context_backtest)

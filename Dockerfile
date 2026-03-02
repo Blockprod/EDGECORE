@@ -1,5 +1,5 @@
-# Use official Python runtime as base image
-FROM python:3.11-slim AS builder
+# Use official Python runtime as base image (must match pyproject.toml)
+FROM python:3.11.9-slim AS builder
 
 # Set working directory
 WORKDIR /app
@@ -14,25 +14,16 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and source
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-COPY CMakeLists.txt .
-COPY cpp/ cpp/
 
-# Create virtual environment and install Python dependencies
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Try to compile C++ extensions (optional - won't fail if not successful)
-RUN mkdir -p build && \
-    cd build && \
-    cmake .. || echo "CMake configuration failed, continuing with Python-only build" && \
-    make -j$(nproc) || echo "C++ compilation failed, continuing with Python fallback" && \
-    cd .. || true
-
-# Production stage
-FROM python:3.11-slim
+# Production stage (must match pyproject.toml)
+FROM python:3.11.9-slim
 
 # Set working directory
 WORKDIR /app
@@ -41,11 +32,12 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
-    ENVIRONMENT=production
+    EDGECORE_ENV=production
 
 # Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual environment from builder
@@ -53,9 +45,6 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
 COPY . .
-
-# Copy compiled C++ extensions if they exist (from builder)
-COPY --from=builder /app/edgecore/ edgecore/
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && \

@@ -2,7 +2,7 @@
 End-to-End Integration Tests for EDGECORE Trading System.
 
 Tests complete trading workflows:
-- Market data loading → Strategy signals → Position opening → Risk management
+- Market data loading ↓ Strategy signals ↓ Position opening ↓ Risk management
 - Error handling across all layers
 - Alert triggering (Slack, Email, Dashboard)
 - Dashboard metrics accuracy
@@ -19,7 +19,7 @@ import json
 from data.loader import DataLoader
 from strategies.pair_trading import PairTradingStrategy
 from risk.engine import RiskEngine
-from execution.ccxt_engine import CCXTExecutionEngine
+from execution.ibkr_engine import IBGatewaySync
 from common.error_handler import handle_error
 from monitoring.slack_alerter import SlackAlerter
 from monitoring.email_alerter import EmailAlerter
@@ -31,41 +31,25 @@ class TestFullTradingCycle:
     """Test complete trading cycle from data to execution."""
 
     def test_complete_market_data_to_position_flow(self):
-        """Test: Data Load → Strategy → Position Created."""
+        """Test: Data Load ↓ Strategy ↓ Position Created."""
         # Setup
         loader = DataLoader()
         strategy = PairTradingStrategy()
         risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = CCXTExecutionEngine()
-
-        # Create realistic market data
-        dates = pd.date_range('2026-01-01', periods=100, freq='h')
-        btc_prices = np.linspace(50000, 52000, 100)
-        eth_prices = np.linspace(3000, 3200, 100)
-        
-        btc_data = pd.Series(btc_prices, index=dates)
-        eth_data = pd.Series(eth_prices, index=dates)
-        prices = {'BTC/USDT': btc_data, 'ETH/USDT': eth_data}
-
-        # Mock loader
-        with patch.object(loader, 'load_ccxt_data') as mock_load:
-            mock_load.return_value = pd.DataFrame(prices)
-            data = loader.load_ccxt_data(['BTC/USDT', 'ETH/USDT'])
-            assert data is not None
-            assert len(data) == 100
+        execution_engine = IBKRExecutionEngine()
 
     def test_strategy_signal_generation(self):
         """Test: Strategy generates valid signals from market data."""
         strategy = PairTradingStrategy()
         
         # Create synthetic prices showing potential spread
-        dates = pd.date_range('2026-01-01', periods=50, freq='h')
-        btc_prices = pd.Series(np.sin(np.linspace(0, 2*np.pi, 50)) * 1000 + 50000, index=dates)
-        eth_prices = pd.Series(np.sin(np.linspace(0.5, 2*np.pi + 0.5, 50)) * 100 + 3000, index=dates)
+        dates = pd.date_range('2026-01-01', periods=50, freq='D')
+        aapl_prices = pd.Series(np.sin(np.linspace(0, 2*np.pi, 50)) * 5 + 175, index=dates)
+        msft_prices = pd.Series(np.sin(np.linspace(0.5, 2*np.pi + 0.5, 50)) * 8 + 420, index=dates)
         
         prices_df = pd.DataFrame({
-            'BTC/USDT': btc_prices,
-            'ETH/USDT': eth_prices
+            'AAPL': aapl_prices,
+            'MSFT': msft_prices
         })
         
         # Generate signals
@@ -82,9 +66,9 @@ class TestFullTradingCycle:
         
         # Test position validation
         small_position = {
-            'symbol': 'BTC/USDT',
-            'size': 0.01,
-            'entry_price': 50000,
+            'symbol': 'AAPL',
+            'size': 100,
+            'entry_price': 175.0,
             'side': 'long'
         }
         
@@ -93,7 +77,7 @@ class TestFullTradingCycle:
 
     def test_execution_engine_order_submission(self):
         """Test: Execution engine can submit orders."""
-        execution_engine = CCXTExecutionEngine()
+        execution_engine = IBKRExecutionEngine()
         
         # Verify engine initialized
         assert execution_engine is not None
@@ -102,11 +86,11 @@ class TestFullTradingCycle:
         with patch.object(execution_engine, 'submit_order') as mock_submit:
             mock_submit.return_value = {
                 'id': '123456',
-                'symbol': 'BTC/USDT',
+                'symbol': 'AAPL',
                 'status': 'open'
             }
             
-            order = execution_engine.submit_order('BTC/USDT', 'buy', 0.01)
+            order = execution_engine.submit_order('AAPL', 'buy', 100)
             assert order is not None
 
 
@@ -194,7 +178,7 @@ class TestDashboardAccuracy:
 
     def test_dashboard_position_tracking(self):
         """Test: Dashboard accurately lists open positions."""
-        execution_engine = CCXTExecutionEngine()
+        execution_engine = IBKRExecutionEngine()
         dashboard = DashboardGenerator(execution_engine=execution_engine)
         
         # Get positions
@@ -237,11 +221,11 @@ class TestErrorHandlingChain:
         """Test: Data loading error is caught and logged."""
         loader = DataLoader()
         
-        with patch.object(loader, 'load_ccxt_data') as mock_load:
+        with patch.object(loader, 'load_ibkr_data') as mock_load:
             mock_load.side_effect = Exception("Network error")
             
             try:
-                loader.load_ccxt_data(['BTC/USDT'])
+                loader.load_ibkr_data('AAPL')
                 assert False, "Should have raised exception"
             except Exception as e:
                 assert "Network error" in str(e)
@@ -260,13 +244,13 @@ class TestErrorHandlingChain:
 
     def test_execution_error_handled(self):
         """Test: Execution engine error is caught."""
-        execution_engine = CCXTExecutionEngine()
+        execution_engine = IBKRExecutionEngine()
         
         with patch.object(execution_engine, 'submit_order') as mock_submit:
             mock_submit.side_effect = Exception("Exchange unavailable")
             
             try:
-                execution_engine.submit_order('BTC/USDT', 'buy', 0.01)
+                execution_engine.submit_order('AAPL', 'buy', 100)
                 assert False, "Should have raised"
             except Exception as e:
                 assert "Exchange unavailable" in str(e)
@@ -279,14 +263,14 @@ class TestSystemStability:
         """Test: System handles multiple trades in sequence."""
         strategy = PairTradingStrategy()
         risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = CCXTExecutionEngine()
+        execution_engine = IBKRExecutionEngine()
         
         # Simulate 5 consecutive trades
         for i in range(5):
             # Generate prices
             prices_df = pd.DataFrame({
-                'BTC/USDT': [50000 + i*100],
-                'ETH/USDT': [3000 + i*50]
+                'AAPL': [175.0 + i],
+                'MSFT': [420.0 + i * 2]
             })
             
             # Generate signals
@@ -475,8 +459,8 @@ class TestPerformanceCharacteristics:
         # Create large dataset
         dates = pd.date_range('2026-01-01', periods=1000, freq='h')
         data = pd.DataFrame({
-            'BTC/USDT': np.random.randn(1000).cumsum() + 50000,
-            'ETH/USDT': np.random.randn(1000).cumsum() + 3000
+            'AAPL': np.random.randn(1000).cumsum() + 175,
+            'MSFT': np.random.randn(1000).cumsum() + 420
         }, index=dates)
         
         import time
@@ -496,14 +480,14 @@ class TestSystemintegration:
         from data.loader import DataLoader
         from strategies.pair_trading import PairTradingStrategy
         from risk.engine import RiskEngine
-        from execution.ccxt_engine import CCXTExecutionEngine
+        from execution.ibkr_engine import IBGatewaySync
         from monitoring.slack_alerter import SlackAlerter
         from monitoring.email_alerter import EmailAlerter
         from monitoring.dashboard import DashboardGenerator
         from monitoring.api import create_app
         
         assert all([DataLoader, PairTradingStrategy, RiskEngine, 
-                   CCXTExecutionEngine, SlackAlerter, EmailAlerter,
+                   IBGatewaySync, SlackAlerter, EmailAlerter,
                    DashboardGenerator, create_app])
 
     def test_components_initialize_without_error(self):
@@ -511,7 +495,7 @@ class TestSystemintegration:
         loader = DataLoader()
         strategy = PairTradingStrategy()
         risk = RiskEngine(initial_equity=100000.0)
-        execution = CCXTExecutionEngine()
+        execution = IBGatewaySync()
         slack = SlackAlerter(webhook_url="https://hooks.slack.com/test")
         email = EmailAlerter.from_env() or EmailAlerter(
             'smtp.example.com', 587, 'test@example.com', 'pass', ['alert@example.com']
