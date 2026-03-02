@@ -1,7 +1,6 @@
 """Tests for order lifecycle management."""
 
 import pytest
-import math
 from datetime import datetime, timedelta
 from time import sleep
 from execution.order_lifecycle import (
@@ -420,8 +419,8 @@ class TestOrderStatistics:
         """Test statistics with various order statuses."""
         manager = OrderLifecycleManager()
         
-        order1 = manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-        order2 = manager.create_order("order_2", "MSFT", 10.0, 2000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
+        manager.create_order("order_2", "MSFT", 10.0, 2000.0)
         
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
         
@@ -458,7 +457,7 @@ class TestOrderCleanup:
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
         
-        removed = manager.cleanup_resolved_orders(older_than_seconds=3600.0)
+        manager.cleanup_resolved_orders(older_than_seconds=3600.0)
         
         # Should not remove recent orders
         assert "order_1" in manager.orders

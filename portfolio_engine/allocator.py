@@ -17,8 +17,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, Optional
 
-import numpy as np
-import pandas as pd
 from structlog import get_logger
 
 logger = get_logger(__name__)

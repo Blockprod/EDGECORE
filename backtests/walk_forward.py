@@ -14,12 +14,10 @@ training window and uses a FRESH strategy instance.  Zero data leakage.
 """
 
 from typing import List, Tuple, Dict, Any, Optional
-from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 from structlog import get_logger
 from backtests.runner import BacktestRunner
-from backtests.metrics import BacktestMetrics
 from backtests.strategy_simulator import StrategyBacktestSimulator
 from backtests.cost_model import CostModel
 from strategies.pair_trading import PairTradingStrategy

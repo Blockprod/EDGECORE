@@ -24,7 +24,7 @@ Usage::
 from __future__ import annotations
 
 import pandas as pd
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple, Union
 from structlog import get_logger

@@ -4,17 +4,11 @@ Tests for Problem #5: Performance Optimization
 Tests parallel pair discovery, caching, and performance improvements.
 """
 
-import pytest
 import pandas as pd
 import numpy as np
-from pathlib import Path
 import time
-import pickle
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timedelta
 
 from strategies.pair_trading import PairTradingStrategy
-from config.settings import get_settings
 
 
 class TestParallelPairDiscovery:
@@ -39,7 +33,7 @@ class TestParallelPairDiscovery:
             use_cache=False, 
             use_parallel=False
         )
-        seq_duration = time.time() - start_seq
+        time.time() - start_seq
         
         # Time parallel discovery
         start_par = time.time()
@@ -48,7 +42,7 @@ class TestParallelPairDiscovery:
             use_cache=False, 
             use_parallel=True
         )
-        par_duration = time.time() - start_par
+        time.time() - start_par
         
         # Parallel should be comparable (may not be faster for small datasets)
         # But should return same results

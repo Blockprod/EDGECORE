@@ -524,7 +524,7 @@ def alert_position_limit_breach(
         return alert_manager.create_alert(
             severity=AlertSeverity.WARNING,
             category=AlertCategory.POSITION,
-            title=f"Position Limit Reached",
+            title="Position Limit Reached",
             message=f"Current positions: {current_positions}/{max_positions}",
             data={"current": current_positions, "max": max_positions}
         )

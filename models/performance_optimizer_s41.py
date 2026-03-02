@@ -15,7 +15,7 @@ S4.1 Enhancement:
 import functools
 import numpy as np
 import pandas as pd
-from typing import Dict, Tuple, Optional, List
+from typing import Dict, Tuple, Optional
 from threading import Lock
 from structlog import get_logger
 

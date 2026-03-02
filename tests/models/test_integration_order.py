@@ -16,8 +16,6 @@ Coverage:
 import time
 import numpy as np
 import pandas as pd
-import pytest
-import warnings
 
 from models.cointegration import (
     verify_integration_order,
@@ -65,14 +63,14 @@ class TestVerifyIntegrationOrder:
         """A random walk should be classified as I(1)."""
         rw = _random_walk(n=500)
         result = verify_integration_order(rw, name="rw")
-        assert result['is_I1'] == True, f"Random walk misclassified: {result}"
+        assert result['is_I1'], f"Random walk misclassified: {result}"
         assert result['error'] is None
 
     def test_stationary_series_not_I1(self):
         """A stationary AR(1) should NOT be I(1) – it's I(0)."""
         s = _stationary_series(n=500)
         result = verify_integration_order(s, name="stationary")
-        assert result['is_I1'] == False, f"Stationary series misclassified: {result}"
+        assert not result['is_I1'], f"Stationary series misclassified: {result}"
 
     def test_result_keys(self):
         """Result dict should have all expected keys."""
@@ -90,7 +88,7 @@ class TestVerifyIntegrationOrder:
         """Very short series ↓ error, not I(1)."""
         short = pd.Series([1, 2, 3, 4, 5])
         result = verify_integration_order(short, name="short")
-        assert result['is_I1'] == False
+        assert not result['is_I1']
         assert result['error'] is not None
         assert "Insufficient" in result['error']
 
@@ -101,7 +99,7 @@ class TestVerifyIntegrationOrder:
         result = verify_integration_order(rw, name="rw_nan")
         # Should still work after dropna (490 observations)
         assert result['error'] is None
-        assert result['is_I1'] == True
+        assert result['is_I1']
 
     def test_all_pvalues_populated(self):
         """All p-values should be finite floats."""
@@ -156,7 +154,7 @@ class TestEngleGrangerIntegrationCheck:
         y = _random_walk(n=500)
         x = _stationary_series(n=500, seed=99)
         result = engle_granger_test(y, x, check_integration_order=True)
-        assert result['is_cointegrated'] == False
+        assert not result['is_cointegrated']
         assert 'Series not I(1)' in result.get('error', '')
         assert 'integration_order' in result
 
@@ -165,7 +163,7 @@ class TestEngleGrangerIntegrationCheck:
         y = _stationary_series(n=500, seed=1)
         x = _stationary_series(n=500, seed=2)
         result = engle_granger_test(y, x, check_integration_order=True)
-        assert result['is_cointegrated'] == False
+        assert not result['is_cointegrated']
         assert 'Series not I(1)' in result.get('error', '')
 
     def test_bypass_integration_check(self):
@@ -186,7 +184,7 @@ class TestEngleGrangerIntegrationCheck:
             assert 'beta' in result
             assert 'adf_pvalue' in result
             assert result['adf_pvalue'] == 1.0
-            assert result['is_cointegrated'] == False
+            assert not result['is_cointegrated']
 
 
 # ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
@@ -205,7 +203,7 @@ class TestCppOptimizedIntegrationCheck:
         y = _random_walk(n=500)
         x = _stationary_series(n=500, seed=99)
         result = engle_granger_test_cpp_optimized(y, x, check_integration_order=True)
-        assert result['is_cointegrated'] == False
+        assert not result['is_cointegrated']
         assert 'Series not I(1)' in result.get('error', '')
 
     def test_bypass_integration_check(self):
@@ -227,7 +225,7 @@ class TestEdgeCases:
         """Constant series ↓ not I(1)."""
         const = pd.Series(np.ones(200))
         result = verify_integration_order(const, name="constant")
-        assert result['is_I1'] == False
+        assert not result['is_I1']
 
     def test_trending_series(self):
         """Deterministic trend + noise is typically not I(1) by KPSS."""
@@ -243,18 +241,18 @@ class TestEdgeCases:
         """Long series should still work."""
         rw = _random_walk(n=5000, seed=77)
         result = verify_integration_order(rw, name="long")
-        assert result['is_I1'] == True
+        assert result['is_I1']
 
     def test_multiple_seeds_random_walk(self):
         """Multiple random walks should all be classified I(1)."""
         for seed in [10, 20, 30, 40, 50]:
             rw = _random_walk(n=500, seed=seed)
             result = verify_integration_order(rw, name=f"rw_{seed}")
-            assert result['is_I1'] == True, f"Seed {seed} misclassified: {result}"
+            assert result['is_I1'], f"Seed {seed} misclassified: {result}"
 
     def test_multiple_seeds_stationary(self):
         """Multiple stationary series should all be classified as NOT I(1)."""
         for seed in [10, 20, 30, 40, 50]:
             s = _stationary_series(n=500, seed=seed)
             result = verify_integration_order(s, name=f"ar1_{seed}")
-            assert result['is_I1'] == False, f"Seed {seed} misclassified: {result}"
+            assert not result['is_I1'], f"Seed {seed} misclassified: {result}"

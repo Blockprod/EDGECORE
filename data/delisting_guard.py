@@ -10,7 +10,6 @@ Detection criteria:
 """
 
 import pandas as pd
-import numpy as np
 from dataclasses import dataclass
 from typing import Dict, Optional
 from structlog import get_logger

@@ -9,12 +9,12 @@ Provides Monte Carlo simulation for order book dynamics, supporting:
 """
 
 import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
-from common.types import Symbol, MonteCarloConfig, MonteCarloResult, TraceLevel
+from common.types import Symbol, MonteCarloConfig, MonteCarloResult
 
 logger = logging.getLogger(__name__)
 
@@ -337,7 +337,7 @@ def create_correlated_simulations(
         np.random.seed(seed)
     
     # Generate correlated random numbers using Cholesky decomposition
-    L = np.linalg.cholesky(correlation_matrix)
+    np.linalg.cholesky(correlation_matrix)
     
     results = {}
     

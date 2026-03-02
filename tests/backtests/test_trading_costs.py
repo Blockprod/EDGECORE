@@ -8,9 +8,6 @@ Verifies that realistic trading costs are properly applied to:
 """
 
 import pytest
-import pandas as pd
-import numpy as np
-from datetime import datetime
 
 from backtests.runner import BacktestRunner, COMMISSION_BPS, SLIPPAGE_BPS, TOTAL_COST_FACTOR
 
@@ -33,7 +30,7 @@ class TestTradingCosts:
     
     def test_cost_impact_single_trade(self):
         """Test that trading costs reduce P&L for a single trade."""
-        runner = BacktestRunner()
+        BacktestRunner()
         
         # Simulate entry and exit prices
         entry_price = 100.0
@@ -41,7 +38,7 @@ class TestTradingCosts:
         position_size = 1000.0  # Notional value
         
         # Gross P&L: 1% of position
-        gross_pnl = (exit_price - entry_price) * 10  # 10 USD on 1000 notional
+        (exit_price - entry_price) * 10  # 10 USD on 1000 notional
         
         # Net P&L after costs
         # Entry cost: 1000 * 0.0015 = 1.5
@@ -61,7 +58,7 @@ class TestTradingCosts:
     
     def test_cost_increases_with_position_size(self):
         """Test that trading costs scale with position size."""
-        runner = BacktestRunner()
+        BacktestRunner()
         
         # Small position: 100 USD notional
         small_position_cost = 100 * TOTAL_COST_FACTOR * 2
@@ -76,7 +73,7 @@ class TestTradingCosts:
     
     def test_cost_reduces_profitable_trades(self):
         """Test that trading costs reduce P&L even for profitable trades."""
-        runner = BacktestRunner()
+        BacktestRunner()
         
         # Profitable trade scenario:
         # Entry spread: 2.5%
@@ -97,7 +94,7 @@ class TestTradingCosts:
     
     def test_cost_can_eliminate_small_profits(self):
         """Test that trading costs can turn small profits into losses."""
-        runner = BacktestRunner()
+        BacktestRunner()
         
         # Small profitable trade: 0.5% spread improvement
         notional_value = 5000.0
@@ -114,7 +111,7 @@ class TestTradingCosts:
     
     def test_cost_threshold_for_breakeven(self):
         """Test minimum spread improvement needed to break even."""
-        runner = BacktestRunner()
+        BacktestRunner()
         
         # To break even: spread_improvement = trading_cost
         # spread_improvement = notional * improvement_rate
@@ -136,7 +133,7 @@ class TestTradingCostsIntegration:
         """Test that trading costs are properly reflected in backtest metrics."""
         # Create a simple backtest
         # (Full backtest with trading costs would happen in actual backtest execution)
-        runner = BacktestRunner()
+        BacktestRunner()
         
         # Verify backtest runner has cost constants available
         import backtests.runner as runner_module

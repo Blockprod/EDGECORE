@@ -17,7 +17,7 @@ def check_environment():
     py_major, py_minor, py_patch = sys.version_info[:3]
     if py_major != 3 or py_minor != 11:
         print(f"    [!] WARNING: EDGECORE requires Python 3.11.x, you have {py_major}.{py_minor}.{py_patch}")
-        print(f"        Consider installing Python 3.11.9")
+        print("        Consider installing Python 3.11.9")
 
 def check_dependencies():
     """Check installed packages"""
@@ -39,7 +39,7 @@ def check_dependencies():
     
     if missing:
         print(f"\n    [!] Missing packages: {', '.join(missing)}")
-        print(f"    Run: pip install -r requirements.txt")
+        print("    Run: pip install -r requirements.txt")
         return False
     return True
 
@@ -49,7 +49,7 @@ def check_configuration():
     
     config_dir = Path("config")
     if not config_dir.exists():
-        print(f"    ✗ config/ directory not found")
+        print("    ✗ config/ directory not found")
         return False
     
     required_configs = [

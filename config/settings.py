@@ -2,7 +2,7 @@ import os
 import yaml
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Dict, Any, List
+from typing import List
 from dotenv import load_dotenv
 from structlog import get_logger
 
@@ -192,7 +192,7 @@ class Settings:
         self._validate_config()
         
         # Safety check: prevent live trading unless explicitly enabled
-        if self.execution.use_sandbox == False:
+        if not self.execution.use_sandbox:
             if os.getenv("ENABLE_LIVE_TRADING") != "true":
                 logger.warning("LIVE_TRADING_DISABLED_BY_DEFAULT")
                 self.execution.use_sandbox = True  # Force sandbox mode

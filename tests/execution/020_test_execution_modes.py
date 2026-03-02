@@ -12,8 +12,7 @@ Covers:
 """
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from datetime import datetime
 
 from execution.modes import (
     ModeType,

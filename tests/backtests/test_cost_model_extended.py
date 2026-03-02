@@ -35,7 +35,7 @@ class TestFundingRate:
     def test_funding_disabled_by_default(self):
         """Funding is OFF by default – cost should be zero."""
         model = CostModel()
-        assert model.config.include_funding == False
+        assert not model.config.include_funding
         assert model.funding_cost(5000, 7) == 0.0
 
     def test_funding_enabled(self):
@@ -231,7 +231,7 @@ class TestIntegration:
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=2.0)
         model = CostModel(cfg)
         sim = StrategyBacktestSimulator(cost_model=model, initial_capital=100000)
-        assert sim.cost_model.config.include_funding == True
+        assert sim.cost_model.config.include_funding
 
     def test_runner_imports_cost_model(self):
         """runner.py should import CostModel without error."""

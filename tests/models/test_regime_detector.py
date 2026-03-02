@@ -17,7 +17,7 @@ Test Coverage:
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 
 from models.regime_detector import (
@@ -140,11 +140,11 @@ class TestRegimeClassification:
         # Feed in high volatility first to establish a range
         base = 100.0
         for i in range(10):
-            state = detector.update(spread=base + np.random.normal(0, 5.0))
+            detector.update(spread=base + np.random.normal(0, 5.0))
         
         # Then feed in very low volatility – should be LOW relative to earlier
         for i in range(10):
-            state = detector.update(spread=100.0 + np.random.normal(0, 0.0001))
+            detector.update(spread=100.0 + np.random.normal(0, 0.0001))
         
         # Sprint 3.4: Assert exact regime, not just "is not None"
         assert detector.current_regime == VolatilityRegime.LOW, (
@@ -165,7 +165,7 @@ class TestRegimeClassification:
         for i in range(10):
             change = np.random.normal(0, 5.0)
             base = max(base + change, 0.1)
-            state = detector.update(spread=base)
+            detector.update(spread=base)
         
         # Sprint 3.4: Assert exact regime, not just "non-negative vol"
         assert detector.current_regime == VolatilityRegime.HIGH, (
@@ -559,7 +559,7 @@ class TestDifferentReturnsCalculations:
         # Feed data
         spreads = [100.0, 101.0, 102.5, 101.2, 103.0, 99.5]
         for spread in spreads:
-            state = detector.update(spread=spread)
+            detector.update(spread=spread)
         
         assert detector.volatility_history
     
@@ -570,7 +570,7 @@ class TestDifferentReturnsCalculations:
         # Feed data
         spreads = [100.0, 101.0, 102.5, 101.2, 103.0, 99.5]
         for spread in spreads:
-            state = detector.update(spread=spread)
+            detector.update(spread=spread)
         
         assert detector.volatility_history
 
@@ -597,7 +597,7 @@ class TestIntegrationWithStrategy:
         
         # Simulate feeding spread data
         for i in range(30):
-            state = detector.update(spread=100.0 + np.random.normal(0, 0.02))
+            detector.update(spread=100.0 + np.random.normal(0, 0.02))
         
         # Strategy should be able to adjust thresholds
         current_regime = detector.current_regime

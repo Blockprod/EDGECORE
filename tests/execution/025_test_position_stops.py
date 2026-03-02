@@ -16,7 +16,7 @@ from execution.position_stops import (
     PositionStop, PositionStopManager, 
     get_stop_manager, reset_stop_manager
 )
-from common.types import PositionStopConfig, StopType, PositionID, Symbol, Price
+from common.types import PositionStopConfig, StopType
 
 
 class TestPositionStopBasics:
@@ -63,10 +63,6 @@ class TestPositionStopBasics:
     
     def test_position_stop_with_config(self):
         """Verify position stop with configuration."""
-        config: PositionStopConfig = {
-            "stop_loss_price": 45000.0,
-            "take_profit_price": 60000.0
-        }
         
         stop = PositionStop(
             position_id="pos_004",
@@ -233,17 +229,17 @@ class TestTrailingStops:
         )
         
         # Price up to 55000 - SL moves to 52250 (55000 * 0.95)
-        result = stop.update(55000.0)
+        stop.update(55000.0)
         assert stop.stop_loss_price == pytest.approx(52250.0, rel=0.01)
         assert stop.trailing_high == 55000.0
         
         # Price down to 54000 - SL stays at 52250
-        result = stop.update(54000.0)
+        stop.update(54000.0)
         assert stop.stop_loss_price == pytest.approx(52250.0, rel=0.01)
         assert stop.trailing_high == 55000.0
         
         # Price moves back up to 56000 - SL moves to 53200
-        result = stop.update(56000.0)
+        stop.update(56000.0)
         assert stop.stop_loss_price == pytest.approx(53200.0, rel=0.01)
         assert stop.trailing_high == 56000.0
     
@@ -258,16 +254,16 @@ class TestTrailingStops:
         )
         
         # Price down to 2850 - SL moves to 2992.5 (2850 * 1.05)
-        result = stop.update(2850.0)
+        stop.update(2850.0)
         assert stop.stop_loss_price == pytest.approx(2992.5, rel=0.01)
         assert stop.trailing_low == 2850.0
         
         # Price up - SL stays in place
-        result = stop.update(2900.0)
+        stop.update(2900.0)
         assert stop.stop_loss_price == pytest.approx(2992.5, rel=0.01)
         
         # Price down further - SL tightens
-        result = stop.update(2800.0)
+        stop.update(2800.0)
         assert stop.stop_loss_price == pytest.approx(2940.0, rel=0.01)
         assert stop.trailing_low == 2800.0
     
@@ -282,12 +278,12 @@ class TestTrailingStops:
         )
         
         # Price up to 55000 - SL at 53000
-        result = stop.update(55000.0)
+        stop.update(55000.0)
         assert stop.stop_loss_price == 53000.0
         assert stop.trailing_high == 55000.0
         
         # Price to 57000 - SL at 55000
-        result = stop.update(57000.0)
+        stop.update(57000.0)
         assert stop.stop_loss_price == 55000.0
         assert stop.trailing_high == 57000.0
     

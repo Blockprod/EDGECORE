@@ -24,11 +24,10 @@ from __future__ import annotations
 
 import json
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set
 
 from structlog import get_logger
 
@@ -264,20 +263,8 @@ class IBKRUniverseScanner:
                 headers=headers,
             )
             try:
-                if getattr(self, "async_mode", False):
-                    # Mode async/thread: validation en parallèle
-                    from tqdm import tqdm
-                    with ThreadPoolExecutor(max_workers=8) as executor:
-                        futures = []
-                        for batch_start in range(0, total, self.batch_size):
-                            batch = symbols[batch_start : batch_start + self.batch_size]
-                            futures.append(executor.submit(self._validate_batch, batch, ib))
-                        for i, future in enumerate(tqdm(as_completed(futures), total=len(futures), desc="IBKR Async Validation", ncols=80)):
-                            batch_results = future.result()
-                            validated.extend(batch_results)
-                else:
-                    with urllib.request.urlopen(req, timeout=30) as resp:
-                        raw = json.loads(resp.read().decode("utf-8"))
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    raw = json.loads(resp.read().decode("utf-8"))
             except Exception as exc:
                 logger.warning("sec_bootstrap_http_failed", error=str(exc)[:200])
                 # Fallback: essayer de charger un fichier local

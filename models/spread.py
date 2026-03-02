@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Tuple, Optional
+from typing import Optional
 from structlog import get_logger
 from models.half_life_estimator import SpreadHalfLifeEstimator
 

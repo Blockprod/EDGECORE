@@ -8,7 +8,7 @@ Provides:
 - Protocol definitions for interfaces
 """
 
-from typing import TypedDict, Optional, Dict, List, Any, Union, Literal
+from typing import TypedDict, Dict, List, Any, Literal
 from typing_extensions import NotRequired
 from datetime import datetime
 from enum import Enum
@@ -742,8 +742,8 @@ class AlerterConfig(TypedDict):
     rate_limit_per_hour: int
 
 
-class BacktestConfig(TypedDict):
-    """Backtest configuration."""
+class BacktestConfigSimple(TypedDict):
+    """Backtest configuration (simple, flat fields)."""
     start_date: str
     end_date: str
     initial_equity: Equity

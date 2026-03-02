@@ -2,8 +2,6 @@
 Tests for LiveTradingRunner — verifies initialization, tick, and lifecycle.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
 
 

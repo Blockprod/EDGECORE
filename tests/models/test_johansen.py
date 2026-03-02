@@ -21,8 +21,7 @@ Tests:
 
 import numpy as np
 import pandas as pd
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from models.johansen import JohansenCointegrationTest, johansen_confirm_pair
 
@@ -281,7 +280,7 @@ class TestDoubleScreeningIntegration:
                 0.5, 60, 2,
                 False,  # johansen_confirm OFF
             )
-            result = PairTradingStrategy._test_pair_cointegration(args)
+            PairTradingStrategy._test_pair_cointegration(args)
             # Johansen should never be called
             mock_joh.assert_not_called()
 

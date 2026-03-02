@@ -12,7 +12,6 @@ Covers:
 
 import numpy as np
 import pandas as pd
-import pytest
 from datetime import datetime, timedelta
 from unittest import mock
 
@@ -312,7 +311,7 @@ class TestSignalEntryBlocking:
         strat = self._make_full_strategy()
         strat.max_positions = 0  # block all entries
         # Mock _check_internal_risk_limits to verify it's called
-        with mock.patch.object(strat, '_check_internal_risk_limits', return_value=(False, "max positions")) as m:
+        with mock.patch.object(strat, '_check_internal_risk_limits', return_value=(False, "max positions")):
             # Provide pre-discovered pairs with fake data
             rng = np.random.RandomState(42)
             n = 200

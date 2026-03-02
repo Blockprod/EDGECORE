@@ -10,17 +10,14 @@ Coverage:
 Total: 28 tests
 """
 
-import pytest
 import numpy as np
 import pandas as pd
-from typing import List
 import time
 from models.ml_threshold_optimizer import (
     ThresholdDataGenerator,
     ThresholdFeatureEngineer,
     MLThresholdOptimizer,
-    AdaptiveThresholdManager,
-    TrainingExample
+    AdaptiveThresholdManager
 )
 
 
@@ -61,7 +58,6 @@ class TestThresholdDataGenerator:
     
     def test_trade_simulation(self):
         """Test trade simulation with different thresholds."""
-        import numpy as np
         gen = ThresholdDataGenerator()
         # Use deterministic spread: generate_synthetic_pair_data sets its own seed
         spread = gen.generate_synthetic_pair_data('TEST', num_bars=500)
@@ -156,7 +152,7 @@ class TestThresholdFeatureEngineer:
         X, _, _ = engineer.engineer_features(examples)
         
         # Normalized features should have ~0 mean and ~1 std
-        means = X.mean(axis=0).abs()
+        X.mean(axis=0).abs()
         stds = X.std(axis=0)
         
         # Most variable features should be close to 1.0 (constant ones have std=0)
@@ -326,7 +322,7 @@ class TestMLThresholdOptimizer:
         X, y_entry, y_exit = engineer.engineer_features(examples)
         
         optimizer = MLThresholdOptimizer()
-        metrics = optimizer.train(X, y_entry, y_exit, test_size=0.2)
+        optimizer.train(X, y_entry, y_exit, test_size=0.2)
         
         # Both models should train
         assert optimizer.entry_test_metrics['test_rmse'] < 0.8
@@ -436,7 +432,7 @@ class TestS41Integration:
         
         # 3. Train model
         optimizer = MLThresholdOptimizer()
-        metrics = optimizer.train(X, y_entry, y_exit)
+        optimizer.train(X, y_entry, y_exit)
         
         # 4. Create manager
         manager = AdaptiveThresholdManager()

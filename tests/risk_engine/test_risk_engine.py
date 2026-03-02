@@ -4,7 +4,6 @@ Tests for risk_engine — KillSwitch, PositionRiskManager, PortfolioRiskManager.
 
 import os
 import pytest
-import tempfile
 from risk_engine.kill_switch import KillSwitch, KillSwitchConfig, KillReason
 from risk_engine.position_risk import PositionRiskManager, PositionRiskConfig
 from risk_engine.portfolio_risk import PortfolioRiskManager, PortfolioRiskConfig

@@ -11,9 +11,8 @@ Key Concept:
 - This prevents trading pairs with broken relationships
 """
 
-import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 from structlog import get_logger
 from typing import Dict, Tuple, Optional, List
 

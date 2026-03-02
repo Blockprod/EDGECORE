@@ -11,7 +11,7 @@ would create 50%+ AAPL concentration).
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Tuple
 
 from structlog import get_logger
 

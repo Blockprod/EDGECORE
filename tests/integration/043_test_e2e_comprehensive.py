@@ -10,8 +10,7 @@ Tests complete trading workflows:
 """
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import patch
 import pandas as pd
 import numpy as np
 import json
@@ -19,8 +18,7 @@ import json
 from data.loader import DataLoader
 from strategies.pair_trading import PairTradingStrategy
 from risk.engine import RiskEngine
-from execution.ibkr_engine import IBGatewaySync
-from common.error_handler import handle_error
+from execution.ibkr_engine import IBGatewaySync, IBKRExecutionEngine
 from monitoring.slack_alerter import SlackAlerter
 from monitoring.email_alerter import EmailAlerter
 from monitoring.dashboard import DashboardGenerator
@@ -33,10 +31,10 @@ class TestFullTradingCycle:
     def test_complete_market_data_to_position_flow(self):
         """Test: Data Load ↓ Strategy ↓ Position Created."""
         # Setup
-        loader = DataLoader()
-        strategy = PairTradingStrategy()
-        risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = IBKRExecutionEngine()
+        DataLoader()
+        PairTradingStrategy()
+        RiskEngine(initial_equity=100000.0)
+        IBKRExecutionEngine()
 
     def test_strategy_signal_generation(self):
         """Test: Strategy generates valid signals from market data."""
@@ -65,12 +63,6 @@ class TestFullTradingCycle:
         risk_engine = RiskEngine(initial_equity=100000.0)
         
         # Test position validation
-        small_position = {
-            'symbol': 'AAPL',
-            'size': 100,
-            'entry_price': 175.0,
-            'side': 'long'
-        }
         
         # Should validate without error (assuming defaults allow it)
         assert risk_engine is not None
@@ -105,7 +97,7 @@ class TestAlertingIntegration:
         with patch.object(slack_alerter, 'send_alert') as mock_alert:
             mock_alert.return_value = True
             
-            result = slack_alerter.send_alert(
+            slack_alerter.send_alert(
                 level='ERROR',
                 title='Test Error',
                 message='This is a test error'
@@ -127,7 +119,7 @@ class TestAlertingIntegration:
         with patch.object(email_alerter, 'send_alert') as mock_alert:
             mock_alert.return_value = True
             
-            result = email_alerter.send_alert(
+            email_alerter.send_alert(
                 level='CRITICAL',
                 title='System Critical Alert',
                 message='Critical event occurred'
@@ -262,8 +254,8 @@ class TestSystemStability:
     def test_multiple_consecutive_trades(self):
         """Test: System handles multiple trades in sequence."""
         strategy = PairTradingStrategy()
-        risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = IBKRExecutionEngine()
+        RiskEngine(initial_equity=100000.0)
+        IBKRExecutionEngine()
         
         # Simulate 5 consecutive trades
         for i in range(5):
@@ -431,7 +423,7 @@ class TestPerformanceCharacteristics:
         
         import time
         start = time.time()
-        response = client.get('/api/dashboard/system')
+        client.get('/api/dashboard/system')
         elapsed = time.time() - start
         
         # Should respond in under 500ms
@@ -465,7 +457,7 @@ class TestPerformanceCharacteristics:
         
         import time
         start = time.time()
-        signals = strategy.generate_signals(data)
+        strategy.generate_signals(data)
         elapsed = time.time() - start
         
         # Should process 1000 data points in reasonable time (cointegration is expensive)

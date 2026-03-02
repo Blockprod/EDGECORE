@@ -20,8 +20,7 @@ Covers:
 
 import numpy as np
 import pandas as pd
-import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 from datetime import datetime
 
 

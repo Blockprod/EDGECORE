@@ -1,13 +1,9 @@
 import pandas as pd
-import numpy as np
-from typing import Tuple, Dict, List, Optional
+from typing import Dict, List, Optional
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import json
-import time
-from datetime import datetime
 from structlog import get_logger
-from data.validators import OHLCVValidator, ValidationResult, DataValidationError
+from data.validators import OHLCVValidator, DataValidationError
 
 logger = get_logger(__name__)
 

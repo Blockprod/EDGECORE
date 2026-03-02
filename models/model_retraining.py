@@ -35,16 +35,13 @@ Example:
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Set
+from typing import Dict, List, Tuple, Optional
 from datetime import datetime, timedelta
-from pathlib import Path
-import json
 import pandas as pd
 import numpy as np
 from structlog import get_logger
 
 from models.cointegration import engle_granger_test_cpp_optimized as engle_granger_test
-from models.spread import SpreadModel
 
 logger = get_logger(__name__)
 

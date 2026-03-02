@@ -10,13 +10,11 @@ Provides:
 """
 
 from typing import Dict, Optional, Tuple, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass, field
 from structlog import get_logger
 from common.types import (
-    PositionID, Symbol, Price, Quantity, PnL,
-    PositionStopConfig, PositionStopStatus, PositionWithStops,
-    StopType
+    PositionID, Symbol, Price, PositionStopConfig, PositionStopStatus, StopType
 )
 
 logger = get_logger(__name__)

@@ -58,7 +58,7 @@ def main():
         print(f"\n[*] Loaded {len(prices_df)} observations for {len(prices)} symbols")
         
         # Screen for cointegrated pairs
-        print(f"\n[*] Screening for cointegrated pairs...")
+        print("\n[*] Screening for cointegrated pairs...")
         candidates = screen_pairs(
             prices_df,
             min_corr=0.7,
@@ -86,7 +86,7 @@ def main():
             print(f"  -''Ⓚ Spread model: {sym1} = {beta:.4f} × {sym2} + constant")
         
         print(f"\n[*] Top candidate: {candidates[0]['sym1']}_{candidates[0]['sym2']}")
-        print(f"    Ready for pair trading strategy deployment.")
+        print("    Ready for pair trading strategy deployment.")
         
     except ImportError as e:
         print(f"[!] Missing dependency: {e}")

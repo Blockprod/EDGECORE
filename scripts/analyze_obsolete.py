@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Detailed analysis of potentially obsolete test files."""
 
-import os
 import re
 from pathlib import Path
 

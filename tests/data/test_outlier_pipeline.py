@@ -11,7 +11,6 @@ Coverage:
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from data.preprocessing import remove_outliers
 from models.spread import SpreadModel

@@ -38,7 +38,7 @@ legacy percentile detector if ``hmmlearn`` is not installed.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 import numpy as np

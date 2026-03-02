@@ -9,15 +9,13 @@ Tests:
 """
 
 import pytest
-import time
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch
 
 from common.errors import (
     ErrorCategory,
     TradingError,
     DataError,
     DataValidationError,
-    BrokerError,
     BrokerConnectionError,
     InsufficientBalanceError,
     StrategyError,
@@ -291,7 +289,6 @@ class TestDataLoadingErrorHandling:
         """✓ Partial data load logs warning but succeeds."""
         from main import _load_market_data_for_symbols
         import pandas as pd
-        from datetime import datetime
         
         mock_loader = Mock()
         

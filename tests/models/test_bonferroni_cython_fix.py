@@ -13,7 +13,6 @@ Run: pytest tests/test_bonferroni_cython_fix.py -v
 import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
 
 from models.cointegration import (
     engle_granger_test,
@@ -135,8 +134,8 @@ class TestBonferroniChangesDecision:
 
             if alpha_corrected < pval < 0.05:
                 # Found a marginal pair
-                assert r_no_bonf['is_cointegrated'] == True
-                assert r_bonf['is_cointegrated'] == False
+                assert r_no_bonf['is_cointegrated']
+                assert not r_bonf['is_cointegrated']
                 found = True
                 break
 
@@ -153,7 +152,7 @@ class TestBonferroniChangesDecision:
         )
         # Strong pair p-value should be << 0.0001
         assert result['adf_pvalue'] < 0.001
-        assert result['is_cointegrated'] == True
+        assert result['is_cointegrated']
 
 
 class TestFallbackForwardsBonferroni:

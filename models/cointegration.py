@@ -1,17 +1,16 @@
 import numpy as np
 import pandas as pd
-from scipy import stats
 from scipy.linalg import LinAlgError
-from statsmodels.tsa.stattools import adfuller, kpss, grangercausalitytests
+from statsmodels.tsa.stattools import adfuller, kpss
 from structlog import get_logger
-from typing import Tuple, Optional, Dict, Any
+from typing import Optional, Dict, Any
 
 logger = get_logger(__name__)
 
 # Try to load Cython acceleration for cointegration testing
 try:
     from models.cointegration_fast import engle_granger_fast as _engle_granger_fast
-    from models.cointegration_fast import half_life_fast as _half_life_fast
+    from models.cointegration_fast import half_life_fast as _half_life_fast  # noqa: F401
     CYTHON_COINTEGRATION_AVAILABLE = True
     logger.info("Cython cointegration engine loaded - hybrid acceleration enabled")
 except ImportError as e:
@@ -396,21 +395,22 @@ def engle_granger_test_robust(
     """
     import statsmodels.api as sm
 
-    _err = lambda msg: {
-        'beta': np.nan,
-        'intercept': np.nan,
-        'residuals': np.array([]),
-        'adf_statistic': np.nan,
-        'adf_pvalue': 1.0,
-        'is_cointegrated': False,
-        'critical_values': {},
-        'hac_bse': np.array([np.nan, np.nan]),
-        'hac_tvalues': np.array([np.nan, np.nan]),
-        'hac_pvalues': np.array([np.nan, np.nan]),
-        'beta_hac_pvalue': np.nan,
-        'alpha_threshold': 0.05,
-        'error': msg,
-    }
+    def _err(msg):
+        return {
+            'beta': np.nan,
+            'intercept': np.nan,
+            'residuals': np.array([]),
+            'adf_statistic': np.nan,
+            'adf_pvalue': 1.0,
+            'is_cointegrated': False,
+            'critical_values': {},
+            'hac_bse': np.array([np.nan, np.nan]),
+            'hac_tvalues': np.array([np.nan, np.nan]),
+            'hac_pvalues': np.array([np.nan, np.nan]),
+            'beta_hac_pvalue': np.nan,
+            'alpha_threshold': 0.05,
+            'error': msg,
+        }
 
     # ── input validation ──
     if len(y) < 30 or len(x) < 30:

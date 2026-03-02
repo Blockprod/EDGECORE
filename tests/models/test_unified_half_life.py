@@ -115,7 +115,7 @@ class TestAR1DimensionFix:
     def test_aligned_dimensions(self):
         """X and y in AR(1) must have equal length."""
         spread = _ou_process(half_life=30)
-        est = SpreadHalfLifeEstimator(lookback=252)
+        SpreadHalfLifeEstimator(lookback=252)
         data = spread.iloc[-252:].copy()
         dc = data - data.mean()
         lag = dc.shift(1)

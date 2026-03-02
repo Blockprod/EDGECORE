@@ -4,18 +4,14 @@ Type-annotated wrapper functions for production APIs.
 Provides fully typed interfaces to all public APIs.
 """
 
-from typing import Dict, List, Optional, Any, Tuple, Callable
-from datetime import datetime, timedelta
+from typing import Dict, Optional, Any, Tuple, Callable
 from common.types import (
-    OHLCVCandle, OrderRequest, OrderRecord, PositionRecord, 
-    AlertRecord, ValidationResult, RiskMetrics, RiskCheckResult,
-    TradeRecord, EquitySnapshot, Price, Quantity, Symbol, OrderID,
-    OrderSide, OrderType, OrderStatus, ExecutionMode
+    AlertRecord, ValidationResult, RiskCheckResult,
+    Price, Quantity, Symbol, OrderID,
+    OrderSide, OrderType
 )
 from dataclasses import dataclass
-from enum import Enum
 import pandas as pd
-import numpy as np
 
 
 # ============================================================================

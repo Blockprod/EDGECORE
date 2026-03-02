@@ -1,6 +1,5 @@
 """Tests for distributed tracing system."""
 
-import pytest
 import time
 from datetime import datetime
 
@@ -358,7 +357,7 @@ class TestTraceDecorator:
     def test_trace_decorator(self):
         """Test decorating a function."""
         initialize_global_tracer("test_service")
-        tracer = get_global_tracer()
+        get_global_tracer()
         
         @trace("decorated_function")
         def my_func(x):

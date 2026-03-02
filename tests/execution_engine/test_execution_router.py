@@ -3,7 +3,6 @@ Tests for ExecutionRouter — verifies order routing across modes.
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
 from execution_engine.router import (
     ExecutionRouter,
     ExecutionMode,

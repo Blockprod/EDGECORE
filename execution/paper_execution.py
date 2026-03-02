@@ -4,8 +4,7 @@ Fully decoupled from IBKRExecutionEngine — no live broker connection needed.
 Maintains an in-memory order book, positions, and balance for simulation.
 """
 
-from typing import Dict, Optional
-from uuid import uuid4
+from typing import Dict
 from datetime import datetime
 from structlog import get_logger
 from execution.backtest_execution import SlippageCalculator, CommissionCalculator

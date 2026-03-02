@@ -14,7 +14,6 @@ Run: pytest tests/test_stationarity_monitor.py -v
 import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
 
 from models.stationarity_monitor import (
     StationarityMonitor,

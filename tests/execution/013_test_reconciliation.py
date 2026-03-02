@@ -2,7 +2,7 @@
 
 import pytest
 import math
-from datetime import datetime, timedelta
+from datetime import datetime
 from execution.reconciler import (
     BrokerReconciler,
     ReconciliationStatus,

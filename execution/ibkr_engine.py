@@ -2,6 +2,7 @@
 import os
 import threading
 import time
+import pandas as pd
 from ibapi.client import EClient
 from ibapi.wrapper import EWrapper
 from ibapi.contract import Contract
@@ -81,7 +82,7 @@ class IBGatewaySync:
         with self._lock:
             if self.connected:
                 self.client.disconnect()
-                print(f"[IBGatewaySync] Déconnecté.")
+                print("[IBGatewaySync] Déconnecté.")
                 self.connected = False
 
     def is_connected(self):
@@ -152,10 +153,9 @@ Connects to TWS / IB Gateway for:
 """
 
 import asyncio
-import os
 from dotenv import load_dotenv
 from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
-from typing import Dict, Optional
+from typing import Dict
 from structlog import get_logger
 
 load_dotenv()

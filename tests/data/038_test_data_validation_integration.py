@@ -11,8 +11,7 @@ EDGECORE Remediation: Validates data integrity enforcement across data pipeline.
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 import structlog
 
 from data.loader import DataLoader
@@ -50,7 +49,7 @@ class TestDataLoaderValidation:
         ))
         
         with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_ticker = Mock()
+            Mock()
             mock_engine = mock_engine_cls.return_value
             dates = pd.date_range('2022-01-03', periods=2, freq='B')
             mock_df = pd.DataFrame({
@@ -73,7 +72,7 @@ class TestDataLoaderValidation:
         loader.validator.validate = Mock()
         
         with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_ticker = Mock()
+            Mock()
             mock_engine = mock_engine_cls.return_value
             dates = pd.date_range('2022-01-03', periods=1, freq='B')
             mock_df = pd.DataFrame({
@@ -82,7 +81,7 @@ class TestDataLoaderValidation:
             }, index=dates)
             mock_engine.get_historical_data.return_value = mock_df
             
-            df = loader.load_ibkr_data('AAPL', validate=False)
+            loader.load_ibkr_data('AAPL', validate=False)
             
             # Should NOT call validator
             loader.validator.validate.assert_not_called()
@@ -96,7 +95,7 @@ class TestDataLoaderValidation:
         ))
         
         with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_ticker = Mock()
+            Mock()
             mock_engine = mock_engine_cls.return_value
             dates = pd.date_range('2022-01-03', periods=1, freq='B')
             mock_df = pd.DataFrame({
@@ -127,7 +126,7 @@ class TestDataLoaderValidation:
         loader.validator.validate = Mock(return_value=validation_result)
         
         with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_ticker = Mock()
+            Mock()
             mock_engine = mock_engine_cls.return_value
             dates = pd.date_range('2022-01-03', periods=1, freq='B')
             mock_df = pd.DataFrame({
@@ -265,7 +264,7 @@ class TestBacktestRunnerValidation:
         
         # Run backtest with validation enabled
         try:
-            metrics = runner.run_unified(
+            runner.run_unified(
                 symbols=['AAPL'],
                 start_date='2025-01-01',
                 end_date='2025-01-02',
@@ -301,14 +300,14 @@ class TestBacktestRunnerValidation:
         
         # Run with two symbols (first will fail validation)
         try:
-            metrics = runner.run_unified(
+            runner.run_unified(
                 symbols=['BADTICKER', 'AAPL'],
                 start_date='2025-01-01',
                 end_date='2025-01-02',
                 validate_data=True
             )
             # Should complete with only valid symbol
-        except (ValueError, Exception) as e:
+        except (ValueError, Exception):
             # May fail if all symbols filtered out, that's ok
             pass
     
@@ -404,7 +403,7 @@ class TestCompleteDataPipeline:
         loader.validator = validator
         
         with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_ticker = Mock()
+            Mock()
             mock_engine = mock_engine_cls.return_value
             dates = pd.date_range('2022-01-03', periods=2, freq='B')
             mock_df = pd.DataFrame({
@@ -435,7 +434,7 @@ class TestCompleteDataPipeline:
         loader.validator = validator
         
         with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_ticker = Mock()
+            Mock()
             mock_engine = mock_engine_cls.return_value
             dates = pd.date_range('2022-01-03', periods=1, freq='B')
             mock_df = pd.DataFrame({

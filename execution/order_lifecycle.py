@@ -19,7 +19,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from structlog import get_logger
 from enum import Enum
-import math
 
 logger = get_logger(__name__)
 
@@ -247,7 +246,7 @@ class OrderLifecycleManager:
         lifecycle.add_event(OrderLifecycleEvent.UPDATED, message)
         
         if status == OrderStatus.FILLED:
-            lifecycle.add_event(OrderLifecycleEvent.FILLED, f"Order fully filled")
+            lifecycle.add_event(OrderLifecycleEvent.FILLED, "Order fully filled")
         elif status == OrderStatus.CANCELLED:
             lifecycle.add_event(OrderLifecycleEvent.CANCELLED, "Order cancelled")
         

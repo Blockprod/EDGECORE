@@ -9,7 +9,6 @@ Tests:
 5. Programmatic duplicate detector that can run in CI.
 """
 
-import os
 import re
 from collections import Counter
 from pathlib import Path

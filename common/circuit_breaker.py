@@ -8,9 +8,9 @@ Provides:
 - Per-endpoint circuit breakers
 """
 
-from typing import Callable, TypeVar, Any, Optional, Dict, List
+from typing import Callable, TypeVar, Any, Optional, Dict
 from enum import Enum
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from structlog import get_logger
 from dataclasses import dataclass, field
 import threading
@@ -133,7 +133,7 @@ class CircuitBreaker:
             self._on_success()
             return result
         
-        except Exception as e:
+        except Exception:
             self._on_failure()
             raise
     

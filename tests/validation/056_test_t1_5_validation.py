@@ -32,8 +32,8 @@ def test_t1_5():
     from config.settings import get_settings
     
     try:
-        settings = get_settings()
-        loader = DataLoader()
+        get_settings()
+        DataLoader()
         
         # This would normally hit the API; we just check it doesn't crash on init
         print("[OK] DataLoader and settings initialized")

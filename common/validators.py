@@ -11,7 +11,7 @@ Centralizes all validation logic for:
 
 import re
 import math
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from contextlib import contextmanager
 from structlog import get_logger
 

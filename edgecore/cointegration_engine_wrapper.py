@@ -4,7 +4,7 @@ Uses Cython-accelerated implementation with fallback to pure Python.
 """
 
 import logging
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import numpy as np
 
 logger = logging.getLogger(__name__)

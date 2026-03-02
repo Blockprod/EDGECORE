@@ -5,7 +5,6 @@ Validates that thresholds adapt appropriately to market regimes,
 half-life characteristics, and volatility conditions.
 """
 
-import pytest
 import pandas as pd
 import numpy as np
 from models.adaptive_thresholds import (

@@ -8,12 +8,9 @@ walk-forward periods, ensuring each period discovers pairs fresh from its data.
 import pytest
 import pandas as pd
 import numpy as np
-from pathlib import Path
-from datetime import datetime, timedelta
 
 from strategies.pair_trading import PairTradingStrategy
 from backtests.walk_forward import WalkForwardBacktester, split_walk_forward
-from backtests.runner import BacktestRunner
 
 
 class TestCacheIsolation:
@@ -82,7 +79,7 @@ class TestCacheIsolation:
         
         # Test with cache disabled
         strategy.use_cache = False
-        pairs1 = strategy.find_cointegrated_pairs(price_data, use_cache=False)
+        strategy.find_cointegrated_pairs(price_data, use_cache=False)
         
         # Verify cache file wasn't created (because use_cache=False)
         cache_file = strategy.cache_dir / "cointegrated_pairs.pkl"
@@ -101,7 +98,7 @@ class TestCacheIsolation:
         
         # Instance has cache enabled, but override with explicit False
         strategy.use_cache = True
-        pairs = strategy.find_cointegrated_pairs(price_data, use_cache=False)
+        strategy.find_cointegrated_pairs(price_data, use_cache=False)
         
         # Verify cache file wasn't created
         cache_file = strategy.cache_dir / "cointegrated_pairs.pkl"

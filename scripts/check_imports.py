@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Check for broken imports in test files."""
 
-import sys
 import re
 from pathlib import Path
 from importlib.util import find_spec

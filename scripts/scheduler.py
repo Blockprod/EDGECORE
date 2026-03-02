@@ -259,7 +259,7 @@ def run_standalone(args):
 def main():
     args = parse_args()
 
-    print(f"\nEDGECORE Scheduler")
+    print("\nEDGECORE Scheduler")
     print(f"  Mode:     {args.mode}")
     print(f"  Action:   {args.action}")
     print(f"  SEC Only: {args.sec_only}")

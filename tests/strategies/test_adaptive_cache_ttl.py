@@ -16,15 +16,11 @@ Tests:
 """
 
 import os
-import sys
-import time
 import json
-import pytest
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
-from pathlib import Path
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch
 
 from strategies.pair_trading import PairTradingStrategy
 from models.regime_detector import VolatilityRegime

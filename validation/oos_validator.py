@@ -20,7 +20,6 @@ Validation Metrics:
 from typing import List, Tuple, Optional, Dict, Any
 from dataclasses import dataclass
 import pandas as pd
-import numpy as np
 from structlog import get_logger
 from models.cointegration import engle_granger_test, half_life_mean_reversion
 
@@ -320,7 +319,7 @@ class OutOfSampleValidator:
             f"Total Pairs Tested:      {total}",
             f"Valid Pairs (OOS Pass):  {passed} ({passed_pct:.1f}%)",
             f"Invalid Pairs (OOS Fail): {total - passed} ({100-passed_pct:.1f}%)",
-            f"\nRobustness Assessment:   ",
+            "\nRobustness Assessment:   ",
             (
                 f"  ✓ ROBUST ({passed_pct:.1f}% >= {self.oos_acceptance_threshold:.0%} threshold)"
                 if passed_pct >= self.oos_acceptance_threshold * 100

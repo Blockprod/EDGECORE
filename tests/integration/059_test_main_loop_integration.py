@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 """Integration tests for main.py trading loop."""
 
-import pytest
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from main import _load_market_data_for_symbols, _close_all_positions
 from risk.engine import RiskEngine, Position
 from execution.ibkr_engine import IBGatewaySync
@@ -49,8 +48,8 @@ class TestLoadMarketData:
     
     def test_load_market_data_validates_staleness(self):
         """_load_market_data_for_symbols validates data staleness."""
-        settings = get_settings()
-        loader = DataLoader()
+        get_settings()
+        DataLoader()
         
         # The function should call OHLCVValidator with max_age_hours
         # We verify this by checking the code structure

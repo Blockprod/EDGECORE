@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock, call
-import os
+from unittest.mock import patch, MagicMock
 from main import run_paper_trading, run_live_trading
 from config.settings import get_settings
 
@@ -79,11 +78,11 @@ class TestPaperTradingMode:
 
     def test_paper_trading_with_no_signals(self):
         """Test paper trading handles no signals gracefully."""
-        settings = get_settings()
+        get_settings()
         
         with patch('main.DataLoader') as mock_loader, \
              patch('main.PairTradingStrategy') as mock_strategy, \
-             patch('main.RiskEngine') as mock_risk, \
+             patch('main.RiskEngine'), \
              patch('main.PaperExecutionEngine') as mock_execution, \
              patch('main.time.sleep'):
             
@@ -211,7 +210,6 @@ class TestMainModeSelection:
             mock_instance.run_unified.return_value = mock_metrics
             
             import sys
-            from io import StringIO
             from main import main
             
             # Capture output

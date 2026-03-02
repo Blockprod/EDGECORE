@@ -1,8 +1,6 @@
 """Tests for real-time latency monitoring system."""
 
-import pytest
 import time
-from datetime import datetime
 
 from monitoring.latency import (
     LatencyMonitor,
@@ -218,7 +216,7 @@ class TestLatencyContext:
         """Test context manager for successful operation."""
         initialize_global_latency_monitor("test_service")
         
-        with LatencyContext("test_op", "component_a", "component_b") as ctx:
+        with LatencyContext("test_op", "component_a", "component_b"):
             time.sleep(0.02)
         
         # Check that measurement was recorded
@@ -240,7 +238,7 @@ class TestLatencyContext:
             pass
         
         # Check that failed measurement was recorded
-        alerts = monitor.get_alerts("failing_op")
+        monitor.get_alerts("failing_op")
         # Note: alerts only recorded if SLA set, but measurement should exist
         status_ok = False
         for measurement in monitor.trackers["failing_op"].measurements:
@@ -319,9 +317,9 @@ class TestLatencyIntegration:
         # Simulate execution
         for op in operations:
             for trial in range(20):
-                tracker = monitor.start_operation(op)
+                monitor.start_operation(op)
                 time.sleep(0.01 + 0.001 * trial)
-                duration = monitor.end_operation(op)
+                monitor.end_operation(op)
         
         # Verify all operations were tracked
         summary = monitor.get_summary()

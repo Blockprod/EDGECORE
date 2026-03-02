@@ -8,13 +8,12 @@ Validates:
 4. Integration: PairTradingStrategy uses config values
 """
 
-import pytest
 import numpy as np
 from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 
 from models.hedge_ratio_tracker import HedgeRatioTracker
-from models.regime_detector import RegimeDetector, VolatilityRegime, RegimeState
+from models.regime_detector import RegimeDetector
 from config.settings import StrategyConfig
 
 
@@ -65,7 +64,7 @@ class TestEmergencyReestimate:
             spread_vol_mean=0.04,
             spread_vol_std=0.01  # z = (0.05 - 0.04) / 0.01 = 1.0 < 3.0
         )
-        assert triggered == False
+        assert not triggered
         assert beta is None  # No action taken
 
     def test_emergency_triggers_on_high_vol(self):
@@ -78,9 +77,9 @@ class TestEmergencyReestimate:
             spread_vol_mean=0.04,
             spread_vol_std=0.01  # z = (0.10 - 0.04) / 0.01 = 6.0 > 3.0
         )
-        assert triggered == True
+        assert triggered
         assert beta == 0.52
-        assert stable == True  # drift = 4% < 10%
+        assert stable  # drift = 4% < 10%
         assert self.tracker.emergency_reestimation_count == 1
 
     def test_emergency_with_drift_deprecates_pair(self):
@@ -93,8 +92,8 @@ class TestEmergencyReestimate:
             spread_vol_mean=0.04,
             spread_vol_std=0.01  # z = 6.0 > 3.0
         )
-        assert triggered == True
-        assert stable == False
+        assert triggered
+        assert not stable
         assert self.tracker.is_pair_deprecated("AAPL_MSFT")
 
     def test_emergency_on_new_pair_initializes(self):
@@ -106,9 +105,9 @@ class TestEmergencyReestimate:
             spread_vol_mean=0.04,
             spread_vol_std=0.01  # z = 6.0 > 3.0
         )
-        assert triggered == True
+        assert triggered
         assert beta == 1.0
-        assert stable == True
+        assert stable
 
     def test_emergency_with_zero_std_no_trigger(self):
         """Zero std should not trigger emergency (division by zero guard)."""
@@ -119,7 +118,7 @@ class TestEmergencyReestimate:
             spread_vol_mean=0.04,
             spread_vol_std=0.0  # Zero std
         )
-        assert triggered == False
+        assert not triggered
 
     def test_multiple_emergencies_increment_counter(self):
         """Multiple emergency reestimations increment the counter."""
@@ -200,7 +199,6 @@ class TestRegimeDetectorTransitions:
         for i in range(10):
             detector.update(spread=100 + i * 0.1)
         
-        initial_regime = detector.current_regime
         
         # Feed a large spike to force HIGH regime
         for i in range(3):
@@ -224,7 +222,6 @@ class TestRegimeDetectorTransitions:
         for i in range(20):
             detector.update(spread=100 + np.random.normal(0, 0.5))
         
-        initial_regime = detector.current_regime
         initial_transitions = len(detector.regime_transitions)
         
         # Now inject a massive spike
@@ -250,7 +247,7 @@ class TestRegimeDetectorTransitions:
         # Only 3 data points
         for i in range(3):
             detector.update(spread=100 + i)
-        assert detector._check_instant_transition() == False
+        assert not detector._check_instant_transition()
 
     def test_regime_state_has_duration(self):
         """RegimeState should track bars in current regime."""
@@ -358,7 +355,7 @@ class TestEdgeCases:
             spread_vol_mean=0.04,
             spread_vol_std=0.01  # z = 2.9, clearly < 3.0
         )
-        assert triggered == False
+        assert not triggered
 
     def test_regime_detector_single_bar_transition(self):
         """With min_regime_duration=1, transitions happen at earliest opportunity."""

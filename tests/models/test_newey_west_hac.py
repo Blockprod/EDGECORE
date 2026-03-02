@@ -9,7 +9,6 @@ Covers:
 
 import numpy as np
 import pandas as pd
-import pytest
 from unittest import mock
 
 from models.cointegration import (
@@ -166,8 +165,8 @@ class TestNeweyWestConsensus:
         y, x = _independent_pair()
         result = newey_west_consensus(y, x, apply_bonferroni=False)
         # consensus should be False (both reject, so both agree on "no")
-        assert result['consensus'] == False
-        assert result['divergent'] == False
+        assert not result['consensus']
+        assert not result['divergent']
 
     def test_divergent_flag_on_mismatch(self):
         """When one says yes and other no, divergent must be True."""
@@ -367,8 +366,8 @@ class TestHACvsStandard:
         y, x = _independent_pair(n=1000)
         r_std = engle_granger_test(y, x, apply_bonferroni=False, check_integration_order=False)
         r_hac = engle_granger_test_robust(y, x, apply_bonferroni=False)
-        assert r_std['is_cointegrated'] == False
-        assert r_hac['is_cointegrated'] == False
+        assert not r_std['is_cointegrated']
+        assert not r_hac['is_cointegrated']
 
 
 # ===================================================================

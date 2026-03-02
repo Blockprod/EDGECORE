@@ -1,7 +1,5 @@
-import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import patch, MagicMock
 from strategies.pair_trading import PairTradingStrategy
 from strategies.base import Signal
 
@@ -256,7 +254,7 @@ class TestZScoreControlledSignals:
         
         model = DynamicSpreadModel(y, x, half_life=20.0)
         spread = model.compute_spread(y, x)
-        z_score = model.compute_z_score(spread)
+        model.compute_z_score(spread)
         
         # Force the last spread value to be very negative (well below mean)
         forced_spread = spread.copy()
@@ -327,7 +325,7 @@ class TestZScoreControlledSignals:
         
         model = DynamicSpreadModel(y, x, half_life=20.0)
         spread = model.compute_spread(y, x)
-        z_score = model.compute_z_score(spread)
+        model.compute_z_score(spread)
         
         # Count long and short signals over the full series
         signals, _ = model.get_adaptive_signals(spread)

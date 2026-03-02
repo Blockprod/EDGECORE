@@ -148,7 +148,7 @@ class TestHedgeRatioTrackerIntegration:
         y = pd.Series(y_vals, name='Y')
         
         # Create dynamic spread model with tracker
-        model = DynamicSpreadModel(
+        DynamicSpreadModel(
             y, x,
             half_life=20.0,
             pair_key='X_Y',

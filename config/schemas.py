@@ -10,9 +10,8 @@ Schemas for:
 All configs validated on instantiation with clear error messages.
 """
 
-from typing import Dict, List, Optional, Any, Literal
+from typing import Dict, Optional, Any, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
-from datetime import timedelta
 from enum import Enum
 
 

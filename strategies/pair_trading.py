@@ -6,13 +6,10 @@ from pathlib import Path
 from structlog import get_logger
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import cpu_count
-import pickle
 
 from strategies.base import BaseStrategy, Signal
 from models.cointegration import engle_granger_test, half_life_mean_reversion, newey_west_consensus as _newey_west_consensus, verify_integration_order
 from models.spread import SpreadModel
-from models.adaptive_thresholds import DynamicSpreadModel
-from data.preprocessing import remove_outliers
 from config.settings import get_settings
 from statsmodels.tsa.stattools import adfuller
 
@@ -312,7 +309,6 @@ class PairTradingStrategy(BaseStrategy):
         else:
             sym1, sym2, series1, series2, min_corr, max_hl = args[:6]
             num_symbols = None
-            johansen_flag = False
             nw_consensus_flag = False
 
         # Determine Bonferroni flag: apply when num_symbols is provided
@@ -367,7 +363,6 @@ class PairTradingStrategy(BaseStrategy):
             sym1, sym2, series1, series2, min_corr, max_hl, num_symbols, johansen_flag, nw_consensus_flag = args[:9]
         else:
             sym1, sym2, series1, series2, min_corr, max_hl = args[:6]
-            johansen_flag = False
             nw_consensus_flag = False
 
         try:
@@ -823,7 +818,7 @@ class PairTradingStrategy(BaseStrategy):
                             symbol_pair=pair_key,
                             side="exit",
                             strength=1.0,
-                            reason=f"Hedge ratio drift — pair deprecated",
+                            reason="Hedge ratio drift — pair deprecated",
                         ))
                         del self.active_trades[pair_key]
                     continue
@@ -909,7 +904,7 @@ class PairTradingStrategy(BaseStrategy):
                 
                 # Exit signals (mean reversion)
                 if pair_key in self.active_trades:
-                    trade = self.active_trades[pair_key]
+                    self.active_trades[pair_key]
                     if abs(current_z) <= self.config.exit_z_score:
                         signals.append(Signal(
                             symbol_pair=pair_key,

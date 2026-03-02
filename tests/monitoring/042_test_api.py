@@ -1,12 +1,11 @@
 """Tests for Flask dashboard API endpoints."""
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 import json
 
 from monitoring.api import (
-    create_app, initialize_dashboard_api, get_dashboard_app, run_api_server
+    create_app, initialize_dashboard_api, get_dashboard_app
 )
 from monitoring.dashboard import DashboardGenerator
 
@@ -440,7 +439,7 @@ class TestResponseTimestamp:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard')
+        client.get('/api/dashboard')
         # Dashboard endpoint doesn't include timestamp in all responses
         # but individual components may
 

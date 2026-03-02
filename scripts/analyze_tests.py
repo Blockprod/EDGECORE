@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Analyze test files for obsolete/redundant files."""
 
-import os
 import re
 from pathlib import Path
 from collections import defaultdict
@@ -66,11 +65,11 @@ pycache_init = test_dir / "__pycache__" / "__init__.py"
 if pycache_init.exists():
     size = pycache_init.stat().st_size
     print(f"\n{'='*70}")
-    print(f"SPECIAL CASE: __pycache__/__init__.py")
+    print("SPECIAL CASE: __pycache__/__init__.py")
     print(f"  Path: {pycache_init}")
     print(f"  Size: {size} bytes")
     if size == 0:
-        print(f"  Status: EMPTY FILE - OBSOLETE")
+        print("  Status: EMPTY FILE - OBSOLETE")
     print(f"{'='*70}")
 
 print("\n\nDONE!")

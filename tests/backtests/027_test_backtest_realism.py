@@ -8,7 +8,6 @@ Covers:
 - End-to-end order execution workflows
 """
 
-import math
 from datetime import datetime
 
 import pytest
@@ -16,8 +15,6 @@ import pytest
 from common.types import (
     CommissionConfig,
     CommissionType,
-    ExecutionResult,
-    FillSimulation,
     FillType,
     SlippageConfig,
     SlippageModel,
@@ -540,7 +537,7 @@ class TestBacktestExecutor:
         )
 
         # Total cost
-        total_cost = -buy_result["net_proceeds"] + abs(sell_result["net_proceeds"])
+        -buy_result["net_proceeds"] + abs(sell_result["net_proceeds"])
         gross_profit = 100.0 * (101.0 - 100.0)
 
         # Actual profit reduced by slippage and commissions

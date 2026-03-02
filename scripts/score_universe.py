@@ -317,7 +317,7 @@ def main():
 
     # Save to CSV
     scores.to_csv("data/audit/symbol_scores.csv", index=False)
-    print(f"\nFull scores saved to data/audit/symbol_scores.csv")
+    print("\nFull scores saved to data/audit/symbol_scores.csv")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import ccxt
 import os
-from typing import Dict, Optional
+from typing import Dict
 from dotenv import load_dotenv
 from structlog import get_logger
 from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
@@ -171,7 +171,7 @@ class CCXTExecutionEngine(BaseExecutionEngine):
             logger.info("order_cancelled", order_id=order_id)
             return result
         
-        except CircuitBreakerOpen as e:
+        except CircuitBreakerOpen:
             logger.warning(
                 "circuit_breaker_open_cannot_cancel",
                 breaker=self.cancel_breaker.name,
@@ -245,7 +245,7 @@ class CCXTExecutionEngine(BaseExecutionEngine):
             logger.info("balance_retrieved", balance=balance_usdt)
             return balance_usdt
         
-        except CircuitBreakerOpen as e:
+        except CircuitBreakerOpen:
             logger.warning(
                 "circuit_breaker_open_cannot_fetch_balance",
                 breaker=self.balance_breaker.name

@@ -1,16 +1,13 @@
 """Tests for ML-based market impact prediction."""
 
-import pytest
 import numpy as np
 from pathlib import Path
-from datetime import datetime
 import tempfile
 
 from execution.ml_impact import (
     NeuralNetworkModel,
     MLImpactPredictor,
 )
-from common.types import ImpactFeatures
 
 
 class TestNeuralNetworkModel:
@@ -73,7 +70,7 @@ class TestMLImpactPredictor:
         
         assert predictor.model is None
         assert predictor.fallback_impact_bps == 2.0
-        assert predictor.is_trained == False
+        assert not predictor.is_trained
     
     def test_predictor_with_model(self):
         """Test creating predictor with model."""
@@ -225,7 +222,7 @@ class TestModelTraining:
         
         assert "mae" in metrics
         assert "r_squared" in metrics
-        assert predictor.is_trained == True
+        assert predictor.is_trained
     
     def test_model_save_after_training(self):
         """Test saving model after training."""

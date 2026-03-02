@@ -31,7 +31,7 @@ import json
 import signal
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -254,12 +254,12 @@ def main():
         dry_run=args.dry_run,
     )
 
-    print(f"\nEDGECORE Live Monitor")
+    print("\nEDGECORE Live Monitor")
     print(f"  Interval:   {args.interval}s")
     print(f"  DD Limit:   {args.max_drawdown_pct}%")
     print(f"  Dry Run:    {args.dry_run}")
     print(f"  Pairs File: {args.pairs_file}")
-    print(f"  Press Ctrl+C to stop\n")
+    print("  Press Ctrl+C to stop\n")
 
     monitor.run(args.pairs_file, args.log_dir)
 
