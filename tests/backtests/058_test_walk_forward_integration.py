@@ -16,8 +16,8 @@ class TestSplitWalkForward:
         # Create sample data
         dates = pd.date_range('2024-01-01', periods=252, freq='D')
         data = pd.DataFrame({
-            'BTC/USDT': np.random.randn(252).cumsum() + 100,
-            'ETH/USDT': np.random.randn(252).cumsum() + 50
+            'AAPL': np.random.randn(252).cumsum() + 100,
+            'MSFT': np.random.randn(252).cumsum() + 50
         }, index=dates)
         
         # Create 4 splits
@@ -30,7 +30,7 @@ class TestSplitWalkForward:
         """Each split has training set larger than test set."""
         dates = pd.date_range('2024-01-01', periods=252, freq='D')
         data = pd.DataFrame({
-            'BTC/USDT': np.random.randn(252).cumsum() + 100
+            'AAPL': np.random.randn(252).cumsum() + 100
         }, index=dates)
         
         splits = split_walk_forward(data, num_periods=4, oos_ratio=0.2)
@@ -87,7 +87,7 @@ class TestWalkForwardBacktest:
         backtester = WalkForwardBacktester()
         
         result = backtester.run_walk_forward(
-            symbols=['BTC/USDT', 'ETH/USDT'],
+            symbols=['AAPL', 'MSFT'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=3,
@@ -104,7 +104,7 @@ class TestWalkForwardBacktest:
         backtester = WalkForwardBacktester()
         
         result = backtester.run_walk_forward(
-            symbols=['BTC/USDT', 'ETH/USDT'],
+            symbols=['AAPL', 'MSFT'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=3,
@@ -130,13 +130,23 @@ class TestWalkForwardBacktest:
         
         for field in required_fields:
             assert field in agg, f"Missing field: {field}"
+        
+        # Sprint 3.4: Assert actual metric values, not just field existence
+        assert isinstance(agg['aggregate_return'], float), "aggregate_return must be float"
+        assert isinstance(agg['aggregate_sharpe_ratio'], float), "aggregate_sharpe_ratio must be float"
+        assert agg['num_periods_completed'] == 3, (
+            f"Expected 3 completed periods, got {agg['num_periods_completed']}"
+        )
+        assert agg['min_return'] <= agg['max_return'], (
+            f"min_return ({agg['min_return']}) should be <= max_return ({agg['max_return']})"
+        )
     
     def test_walk_forward_per_period_breakdown(self):
         """Per-period metrics include proper breakdown."""
         backtester = WalkForwardBacktester()
         
         result = backtester.run_walk_forward(
-            symbols=['BTC/USDT'],
+            symbols=['AAPL'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=2,
@@ -159,6 +169,17 @@ class TestWalkForwardBacktest:
             assert 'total_return' in metrics
             assert 'sharpe_ratio' in metrics
             assert 'max_drawdown' in metrics
+            
+            # Sprint 3.4: Assert actual metric values
+            assert isinstance(metrics['total_return'], (int, float)), (
+                f"total_return should be numeric, got {type(metrics['total_return'])}"
+            )
+            assert isinstance(metrics['sharpe_ratio'], (int, float)), (
+                f"sharpe_ratio should be numeric, got {type(metrics['sharpe_ratio'])}"
+            )
+            assert metrics['max_drawdown'] <= 0.0, (
+                f"max_drawdown should be <= 0, got {metrics['max_drawdown']}"
+            )
 
 
 class TestWalkForwardPrintSummary:
@@ -169,7 +190,7 @@ class TestWalkForwardPrintSummary:
         backtester = WalkForwardBacktester()
         
         result = backtester.run_walk_forward(
-            symbols=['BTC/USDT'],
+            symbols=['AAPL'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=2,
@@ -187,7 +208,7 @@ class TestWalkForwardPrintSummary:
         backtester = WalkForwardBacktester()
         
         result = backtester.run_walk_forward(
-            symbols=['BTC/USDT'],
+            symbols=['AAPL'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=2,
@@ -212,7 +233,7 @@ class TestWalkForwardErrorHandling:
         # Too many periods for too little data (should fail)
         with pytest.raises(ValueError):
             backtester.run_walk_forward(
-                symbols=['BTC/USDT'],
+                symbols=['AAPL'],
                 start_date='2023-01-01',
                 end_date='2023-01-02',  # Only 1 day of data
                 num_periods=100,  # Can't split 1 day into 100 periods
@@ -225,7 +246,7 @@ class TestWalkForwardErrorHandling:
         
         # With synthetic data and valid params, should complete
         result = backtester.run_walk_forward(
-            symbols=['BTC/USDT'],
+            symbols=['AAPL'],
             start_date='2023-01-01',
             end_date='2023-12-31',
             num_periods=2,
@@ -235,3 +256,67 @@ class TestWalkForwardErrorHandling:
         # Should have completed at least 1 period
         assert result['num_periods'] >= 1
         assert len(result['per_period_metrics']) >= 1
+
+
+class TestWalkForwardAntiDataLeakage:
+    """Sprint 3.4: Anti-data-leakage tests for walk-forward splits."""
+    
+    def test_train_test_no_temporal_overlap(self):
+        """Train set last date must be STRICTLY before test set first date.
+        
+        This is the formal anti-leakage test required by Sprint 3.4:
+        for every split, train.index.max() < test.index.min().
+        """
+        dates = pd.date_range('2024-01-01', periods=252, freq='D')
+        data = pd.DataFrame({
+            'AAPL': np.random.randn(252).cumsum() + 100,
+            'MSFT': np.random.randn(252).cumsum() + 50
+        }, index=dates)
+        
+        splits = split_walk_forward(data, num_periods=4, oos_ratio=0.2)
+        
+        assert len(splits) >= 2, "Should produce multiple splits"
+        
+        for i, (train, test) in enumerate(splits):
+            assert train.index.max() < test.index.min(), (
+                f"DATA LEAKAGE in split {i}: train ends {train.index.max()} "
+                f"but test starts {test.index.min()}"
+            )
+    
+    def test_test_sets_are_strictly_forward(self):
+        """Each test set should start after the previous one.
+        
+        Ensures walk-forward progression (no backward sliding).
+        """
+        np.random.seed(42)
+        dates = pd.date_range('2024-01-01', periods=365, freq='D')
+        data = pd.DataFrame({
+            'AAPL': np.random.randn(365).cumsum() + 100
+        }, index=dates)
+        
+        splits = split_walk_forward(data, num_periods=5, oos_ratio=0.2)
+        
+        for i in range(1, len(splits)):
+            prev_test_start = splits[i-1][1].index.min()
+            curr_test_start = splits[i][1].index.min()
+            assert curr_test_start > prev_test_start, (
+                f"Test sets not progressing forward: split {i-1} test starts "
+                f"{prev_test_start}, split {i} test starts {curr_test_start}"
+            )
+    
+    def test_no_future_data_in_training(self):
+        """No training window should contain data from any test window."""
+        np.random.seed(42)
+        dates = pd.date_range('2024-01-01', periods=252, freq='D')
+        data = pd.DataFrame({
+            'AAPL': np.random.randn(252).cumsum() + 100
+        }, index=dates)
+        
+        splits = split_walk_forward(data, num_periods=4, oos_ratio=0.2)
+        
+        for i, (train, test) in enumerate(splits):
+            # No overlap between train and test indices
+            overlap = train.index.intersection(test.index)
+            assert len(overlap) == 0, (
+                f"Split {i}: {len(overlap)} overlapping dates between train and test"
+            )

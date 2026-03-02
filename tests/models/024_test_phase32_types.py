@@ -93,7 +93,7 @@ class TestPhase32TypeSystem:
         test_qty: Quantity = 10.0
         assert isinstance(test_qty, float)
         
-        test_sym: Symbol = "BTC/USDT"
+        test_sym: Symbol = "AAPL"
         assert isinstance(test_sym, str)
         
         test_oid: OrderID = "order_123"
@@ -121,7 +121,7 @@ class TestPhase32TypeSystem:
         """Verify OrderRecord TypedDict structure."""
         order: OrderRecord = {
             'order_id': 'ord_001',
-            'symbol': 'ETH/USDT',
+            'symbol': 'MSFT',
             'side': OrderSide.BUY,
             'quantity': 1.5,
             'filled_quantity': 1.5,
@@ -130,21 +130,21 @@ class TestPhase32TypeSystem:
         }
         
         assert order['order_id'] == 'ord_001'
-        assert order['symbol'] == 'ETH/USDT'
+        assert order['symbol'] == 'MSFT'
         assert order['status'] == OrderStatus.FILLED
     
     def test_position_record_structure(self):
         """Verify PositionRecord TypedDict structure."""
         position: PositionRecord = {
             'position_id': 'pos_001',
-            'symbol': 'BTC/USDT',
+            'symbol': 'AAPL',
             'quantity': 0.5,
             'entry_price': 45000.0,
             'side': 'long',
             'unrealized_pnl': 2000.0
         }
         
-        assert position['symbol'] == 'BTC/USDT'
+        assert position['symbol'] == 'AAPL'
         assert position['quantity'] == 0.5
         assert position['side'] == 'long'
     
@@ -272,10 +272,10 @@ class TestPhase32TypeSystem:
         assert q3 == 50.0
         
         # Symbol operations
-        s1: Symbol = "BTC"
-        s2: Symbol = "USDT"
-        s3: Symbol = f"{s1}/{s2}"
-        assert s3 == "BTC/USDT"
+        s1: Symbol = "AAPL"
+        s2: Symbol = "MSFT"
+        s3: Symbol = s1 + "-" + s2
+        assert s3 == "AAPL-MSFT"
     
     def test_enum_comparison(self):
         """Verify enum comparison works correctly."""
@@ -340,14 +340,14 @@ class TestPhase32TypeSystem:
         
         # OrderRequest
         order_req: OrderRequest = {
-            'symbol': 'BTC/USDT', 'side': OrderSide.BUY,
+            'symbol': 'AAPL', 'side': OrderSide.BUY,
             'quantity': 1.0, 'order_type': OrderType.MARKET
         }
         assert order_req is not None
         
         # PositionRecord
         pos: PositionRecord = {
-            'position_id': 'p1', 'symbol': 'ETH/USDT',
+            'position_id': 'p1', 'symbol': 'MSFT',
             'quantity': 1.0, 'entry_price': 1000.0,
             'side': 'long', 'unrealized_pnl': 100.0
         }
@@ -384,7 +384,7 @@ class TestPhase32TypeSystem:
         
         # Validate the annotation is for literal string values
         pos: PositionRecord = {
-            'position_id': 'p1', 'symbol': 'BTC/USDT',
+            'position_id': 'p1', 'symbol': 'AAPL',
             'quantity': 1.0, 'entry_price': 50000.0,
             'side': 'long', 'unrealized_pnl': 500.0
         }

@@ -258,14 +258,14 @@ class TestJSONFormatter:
             args=(),
             exc_info=None
         )
-        record.extra_fields = {'symbol': 'BTC/USDT', 'price': 45000}
+        record.extra_fields = {'symbol': 'AAPL', 'price': 45000}
         record.duration_ms = 123.45
         record.cache_hit = True
 
         formatted = formatter.format(record)
         data = json.loads(formatted)
 
-        assert data['extra'] == {'symbol': 'BTC/USDT', 'price': 45000}
+        assert data['extra'] == {'symbol': 'AAPL', 'price': 45000}
         assert data['duration_ms'] == 123.45
         assert data['cache_hit'] is True
 
@@ -367,7 +367,7 @@ class TestLogPerformance:
     def test_log_performance(self):
         """Test logging performance metrics."""
         logger = get_logger('test')
-        log_performance(logger, duration_ms=123.45, symbol='BTC/USDT', qty=1.5)
+        log_performance(logger, duration_ms=123.45, symbol='AAPL', qty=1.5)
 
     def test_log_performance_with_metrics(self):
         """Test log_with_metrics decorator."""

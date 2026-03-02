@@ -40,15 +40,14 @@ def diagnose_backtest():
     # 2. Try loading data manually
     print("\n[2] Data Loading Check:")
     loader = DataLoader()
-    symbols = ["BTC/USDT", "ETH/USDT"]
+    symbols = ["AAPL", "MSFT"]
     price_data = {}
     failed = []
     
     for symbol in symbols:
         try:
             print(f"    Loading {symbol}...", end=" ")
-            df = loader.load_ccxt_data(
-                exchange_name='binance',
+            df = loader.load_ibkr_data(
                 symbol=symbol,
                 timeframe='1d',
                 validate=False  # Skip validation for now
@@ -61,7 +60,7 @@ def diagnose_backtest():
     
     if failed:
         print(f"\n    ⚠ {len(failed)} symbol(s) failed to load")
-        print("    This is expected if CCXT cannot reach the exchange")
+        print("    This is expected if IBKR TWS/Gateway is not running")
         print("    Continuing with synthetic test data...")
         
         # Create synthetic data for testing
@@ -73,7 +72,7 @@ def diagnose_backtest():
             # Generate correlated random walk
             np.random.seed(hash(symbol) % 2**32)
             returns = np.random.normal(0.0005, 0.02, len(dates))
-            prices = 50000 * np.exp(np.cumsum(returns)) if 'BTC' in symbol else 3000 * np.exp(np.cumsum(returns))
+            prices = 150 * np.exp(np.cumsum(returns)) if symbol == symbols[0] else 100 * np.exp(np.cumsum(returns))
             price_data[symbol] = pd.Series(prices, index=dates)
             print(f"    Generated {symbol}: {len(price_data[symbol])} points")
     

@@ -28,13 +28,13 @@ class ModeType(str, Enum):
 
 
 class OrderStatus(str, Enum):
-    """Order lifecycle states."""
-    PENDING = "pending"
-    SUBMITTED = "submitted"
-    FILLED = "filled"
-    PARTIALLY_FILLED = "partially_filled"
-    CANCELLED = "cancelled"
-    FAILED = "failed"
+    """Order lifecycle states — delegates to execution.base.OrderStatus values."""
+    PENDING = "PENDING"
+    SUBMITTED = "SUBMITTED"
+    FILLED = "FILLED"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
+    CANCELLED = "CANCELLED"
+    FAILED = "FAILED"
 
 
 @dataclass
@@ -210,7 +210,7 @@ class ExecutionMode(ABC):
         Submit order and return order ID.
         
         Args:
-            symbol: Trading pair (e.g., "BTC/USD")
+            symbol: Trading symbol (e.g., "AAPL")
             side: "buy" or "sell"
             quantity: Order size
             price: Limit price (None for market)
@@ -450,7 +450,7 @@ class LiveTradingMode(ExecutionMode):
         # Hard stop thresholds
         self.max_daily_loss_pct_absolute = 0.02  # 2% max daily loss
         self.max_equity_drawdown_pct_absolute = 0.15  # 15% max drawdown
-        self.emergency_close_price_threshold = 0.10  # 10% move → check sanity
+        self.emergency_close_price_threshold = 0.10  # 10% move -> check sanity
         
         # Tracking
         self.max_equity_reached = initial_equity

@@ -2,26 +2,113 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from scipy.linalg import LinAlgError
-from statsmodels.tsa.stattools import adfuller, grangercausalitytests
+from statsmodels.tsa.stattools import adfuller, kpss, grangercausalitytests
 from structlog import get_logger
 from typing import Tuple, Optional, Dict, Any
 
 logger = get_logger(__name__)
 
-# Try to load C++ acceleration for cointegration testing
+# Try to load Cython acceleration for cointegration testing
 try:
-    from edgecore import cointegration_cpp
-    CPP_COINTEGRATION_AVAILABLE = True
-    logger.info("C++ cointegration engine loaded - 10x+ speedup enabled")
+    from models.cointegration_fast import engle_granger_fast as _engle_granger_fast
+    from models.cointegration_fast import half_life_fast as _half_life_fast
+    CYTHON_COINTEGRATION_AVAILABLE = True
+    logger.info("Cython cointegration engine loaded - hybrid acceleration enabled")
 except ImportError as e:
-    CPP_COINTEGRATION_AVAILABLE = False
-    logger.debug(f"C++ cointegration engine not available: {e}")
+    CYTHON_COINTEGRATION_AVAILABLE = False
+    logger.debug(f"Cython cointegration engine not available: {e}")
+
+# Legacy alias kept for backward compatibility
+CPP_COINTEGRATION_AVAILABLE = CYTHON_COINTEGRATION_AVAILABLE
+
+def verify_integration_order(
+    series: pd.Series,
+    name: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Verify that a time series is integrated of order 1 (I(1)).
+
+    Uses ADF on levels (should fail to reject => non-stationary),
+    KPSS on levels (should reject => non-stationary),
+    and ADF on first differences (should reject => stationary after differencing).
+
+    Args:
+        series: The time series to test.
+        name: Optional label for the series.
+
+    Returns:
+        Dict with keys: series_name, is_I1, adf_level_pvalue,
+        kpss_level_pvalue, adf_diff_pvalue, error.
+    """
+    result: Dict[str, Any] = {
+        'series_name': name,
+        'is_I1': False,
+        'adf_level_pvalue': np.nan,
+        'kpss_level_pvalue': np.nan,
+        'adf_diff_pvalue': np.nan,
+        'error': None,
+    }
+
+    # Clean NaN — handle both pd.Series and np.ndarray
+    if hasattr(series, 'dropna'):
+        s = series.dropna()
+    else:
+        s = pd.Series(series).dropna()
+
+    if len(s) < 20:
+        result['error'] = 'Insufficient data for integration order test'
+        return result
+
+    # Constant / zero-variance guard
+    if s.std() < 1e-10:
+        result['error'] = None  # no crash, but clearly not I(1)
+        result['adf_level_pvalue'] = 0.0
+        result['kpss_level_pvalue'] = 1.0
+        result['adf_diff_pvalue'] = 0.0
+        return result
+
+    try:
+        import warnings as _w
+        arr = s.values.astype(np.float64)
+
+        # ADF on levels
+        adf_level = adfuller(arr, regression='c', autolag='AIC')
+        result['adf_level_pvalue'] = float(adf_level[1])
+
+        # KPSS on levels (suppress FutureWarning about nlags)
+        with _w.catch_warnings():
+            _w.simplefilter('ignore')
+            kpss_level = kpss(arr, regression='c', nlags='auto')
+        result['kpss_level_pvalue'] = float(kpss_level[1])
+
+        # ADF on first differences
+        diff = np.diff(arr)
+        adf_diff = adfuller(diff, regression='c', autolag='AIC')
+        result['adf_diff_pvalue'] = float(adf_diff[1])
+
+        # Decision logic:
+        #   I(1) <=> level is non-stationary AND differenced is stationary
+        #   ADF level p-value HIGH (fail to reject unit root)  => non-stationary
+        #   ADF diff  p-value LOW  (reject unit root)          => stationary after diff
+        level_nonstationary = result['adf_level_pvalue'] > 0.05
+        diff_stationary = result['adf_diff_pvalue'] < 0.05
+
+        result['is_I1'] = bool(level_nonstationary and diff_stationary)
+
+    except Exception as exc:
+        result['error'] = str(exc)[:120]
+
+    return result
+
 
 def engle_granger_test(
     y: pd.Series,
     x: pd.Series,
     max_lags: int = 12,
-    regression: str = "c"
+    regression: str = "c",
+    check_integration_order: bool = True,
+    apply_bonferroni: bool = False,
+    num_symbols: Optional[int] = None,
 ) -> dict:
     """
     Perform Engle-Granger two-step cointegration test.
@@ -35,6 +122,34 @@ def engle_granger_test(
     Returns:
         Dictionary with test results
     """
+    # ── I(1) pre-check gate ──
+    if check_integration_order:
+        io_y = verify_integration_order(y, name="y")
+        io_x = verify_integration_order(x, name="x")
+        if not io_y['is_I1'] or not io_x['is_I1']:
+            failed = []
+            if not io_y['is_I1']:
+                failed.append("y")
+            if not io_x['is_I1']:
+                failed.append("x")
+            return {
+                'beta': np.nan,
+                'intercept': np.nan,
+                'residuals': np.array([]),
+                'adf_statistic': np.nan,
+                'adf_pvalue': 1.0,
+                'is_cointegrated': False,
+                'critical_values': {},
+                'error': f'Series not I(1): {", ".join(failed)}',
+                'integration_order': {'y': io_y, 'x': io_x},
+            }
+
+    # Ensure pandas Series for consistent API
+    if not isinstance(y, pd.Series):
+        y = pd.Series(y)
+    if not isinstance(x, pd.Series):
+        x = pd.Series(x)
+
     # Input validation
     if len(y) < 20 or len(x) < 20:
         return {
@@ -75,6 +190,46 @@ def engle_granger_test(
         }
     
     try:
+        # ── Cython-accelerated path ──────────────────────────────────
+        if CYTHON_COINTEGRATION_AVAILABLE:
+            y_arr = y.values.astype(np.float64)
+            x_arr = x.values.astype(np.float64)
+            cy_result = _engle_granger_fast(y_arr, x_arr)
+
+            if cy_result.get('error'):
+                # Cython hit an edge case — fall through to pure Python
+                pass
+            else:
+                coint_pvalue = cy_result['adf_pvalue']
+
+                # Bonferroni correction
+                alpha = 0.05
+                n_pairs = 1
+                if apply_bonferroni and num_symbols and num_symbols > 1:
+                    n_pairs = num_symbols * (num_symbols - 1) // 2
+                    alpha = 0.05 / max(n_pairs, 1)
+                is_cointegrated = coint_pvalue < alpha
+
+                result = {
+                    'beta': cy_result['beta'],
+                    'intercept': cy_result['intercept'],
+                    'residuals': cy_result['residuals'],
+                    'adf_statistic': cy_result.get('adf_statistic', np.nan),
+                    'adf_pvalue': coint_pvalue,
+                    'is_cointegrated': is_cointegrated,
+                    'critical_values': cy_result.get('critical_values', {}),
+                    'alpha_threshold': alpha,
+                    'num_pairs': n_pairs,
+                }
+
+                logger.info(
+                    "eg_test_complete",
+                    coint_pvalue=coint_pvalue,
+                    is_cointegrated=is_cointegrated,
+                )
+                return result
+
+        # ── Pure-Python fallback ─────────────────────────────────────
         # Normalize data to improve numerical stability
         x_normalized = (x - x.mean()) / x.std()
         y_normalized = (y - y.mean()) / y.std()
@@ -99,6 +254,12 @@ def engle_granger_test(
         beta = np.linalg.lstsq(X, y_normalized.values, rcond=None)[0]
         residuals = y_normalized.values - X @ beta
         
+        # De-normalize to raw price scale
+        y_std, x_std = float(y.std()), float(x.std())
+        y_mean, x_mean = float(y.mean()), float(x.mean())
+        beta_raw = beta[1] * (y_std / x_std) if x_std > 1e-15 else beta[1]
+        alpha_raw = y_mean - beta_raw * x_mean
+        
         # Check for NaN in residuals
         if np.isnan(residuals).any() or np.isinf(residuals).any():
             return {
@@ -117,11 +278,11 @@ def engle_granger_test(
             adf_result = adfuller(residuals, regression=regression, autolag='AIC')
         except (LinAlgError, ValueError) as e:
             return {
-                'beta': beta[1],
-                'intercept': beta[0],
+                'beta': beta_raw,
+                'intercept': alpha_raw,
                 'residuals': residuals,
                 'adf_statistic': np.nan,
-                'adf_pvalue': 1.0,  # Not significant
+                'adf_pvalue': 1.0,
                 'is_cointegrated': False,
                 'critical_values': {},
                 'error': f'ADF test failed: {str(e)[:50]}'
@@ -129,16 +290,25 @@ def engle_granger_test(
         
         coint_score = adf_result[0]
         coint_pvalue = adf_result[1]
-        is_cointegrated = coint_pvalue < 0.05
+
+        # Bonferroni correction
+        alpha = 0.05
+        n_pairs = 1
+        if apply_bonferroni and num_symbols and num_symbols > 1:
+            n_pairs = num_symbols * (num_symbols - 1) // 2
+            alpha = 0.05 / max(n_pairs, 1)
+        is_cointegrated = coint_pvalue < alpha
         
         result = {
-            'beta': beta[1],
-            'intercept': beta[0],
+            'beta': beta_raw,
+            'intercept': alpha_raw,
             'residuals': residuals,
             'adf_statistic': coint_score,
             'adf_pvalue': coint_pvalue,
             'is_cointegrated': is_cointegrated,
-            'critical_values': adf_result[4]
+            'critical_values': adf_result[4],
+            'alpha_threshold': alpha,
+            'num_pairs': n_pairs,
         }
         
     except Exception as e:
@@ -166,133 +336,197 @@ def engle_granger_test_cpp_optimized(
     y: pd.Series,
     x: pd.Series,
     max_lags: int = 12,
-    regression: str = "c"
+    regression: str = "c",
+    check_integration_order: bool = True,
+    apply_bonferroni: bool = False,
+    num_symbols: Optional[int] = None,
 ) -> dict:
     """
-    Optimized Engle-Granger test using C++ acceleration if available.
-    Falls back to pure Python implementation if C++ is not available.
+    Optimized Engle-Granger test using Cython acceleration if available.
+    Falls back to pure Python implementation otherwise.
     
-    This function provides 10x+ speedup for cointegration testing when
-    the C++ cointegration engine is compiled and available.
+    The Cython path accelerates OLS regression in C and delegates
+    the ADF test to statsmodels for correctness — a true hybrid approach.
     
     Args:
         y: Dependent series
         x: Independent series
         max_lags: Max lags for error correction term
         regression: Regression type ("c", "ct", "ctt")
+        check_integration_order: If True, verify both series are I(1) first
     
     Returns:
         Dictionary with test results (same format as engle_granger_test)
     """
-    if not CPP_COINTEGRATION_AVAILABLE:
-        # Fallback to pure Python
-        return engle_granger_test(y, x, max_lags, regression)
-    
-    # Try C++ implementation
+    # engle_granger_test already uses Cython internally when available
+    return engle_granger_test(
+        y, x, max_lags, regression,
+        check_integration_order, apply_bonferroni, num_symbols,
+    )
+
+
+def engle_granger_test_robust(
+    y: pd.Series,
+    x: pd.Series,
+    max_lags: int = 12,
+    regression: str = "c",
+    apply_bonferroni: bool = False,
+    num_symbols: Optional[int] = None,
+    hac_maxlags: Optional[int] = None,
+) -> dict:
+    """
+    Engle-Granger cointegration test with Newey-West HAC robust standard errors.
+
+    Same two-step procedure as :func:`engle_granger_test` but uses
+    Newey-West HAC covariance estimator so that inference on the
+    cointegrating regression coefficients is robust to serial-correlation
+    and heteroskedasticity.
+
+    Args:
+        y: Dependent series.
+        x: Independent series.
+        max_lags: Max lags for ADF on residuals.
+        regression: ADF regression type ("c", "ct", "ctt").
+        apply_bonferroni: Adjust alpha for multiple comparisons.
+        num_symbols: Number of symbols (used for Bonferroni).
+        hac_maxlags: Override Newey-West bandwidth (default: auto).
+
+    Returns:
+        Dictionary with test results including HAC standard errors.
+    """
+    import statsmodels.api as sm
+
+    _err = lambda msg: {
+        'beta': np.nan,
+        'intercept': np.nan,
+        'residuals': np.array([]),
+        'adf_statistic': np.nan,
+        'adf_pvalue': 1.0,
+        'is_cointegrated': False,
+        'critical_values': {},
+        'hac_bse': np.array([np.nan, np.nan]),
+        'hac_tvalues': np.array([np.nan, np.nan]),
+        'hac_pvalues': np.array([np.nan, np.nan]),
+        'beta_hac_pvalue': np.nan,
+        'alpha_threshold': 0.05,
+        'error': msg,
+    }
+
+    # ── input validation ──
+    if len(y) < 30 or len(x) < 30:
+        return _err('Insufficient data (need >= 30 obs)')
+    if y.isna().any() or x.isna().any():
+        return _err('NaN values in data')
+    if x.std() < 1e-10 or y.std() < 1e-10:
+        return _err('Zero variance in data')
+
     try:
-        # Convert pandas series to numpy arrays
         y_arr = y.values.astype(np.float64)
         x_arr = x.values.astype(np.float64)
-        
-        # Call C++ cointegration test
-        result_dict = cointegration_cpp.engle_granger_test(
-            y_arr, 
-            x_arr, 
-            max_lags, 
-            regression
+        X = sm.add_constant(x_arr)
+
+        # HAC (Newey-West) OLS
+        ols = sm.OLS(y_arr, X).fit(
+            cov_type='HAC',
+            cov_kwds={'maxlags': hac_maxlags} if hac_maxlags else {'maxlags': None},
         )
-        
-        logger.debug(
-            "cpp_cointegration_test_success",
-            is_cointegrated=result_dict.get('is_cointegrated'),
-            pvalue=result_dict.get('adf_pvalue')
-        )
-        
-        return result_dict
-        
-    except Exception as e:
-        # Fallback to Python on any C++ error
-        logger.warning(
-            "cpp_cointegration_failed_fallback",
-            error=str(e)[:50],
-            using_python=True
-        )
-        return engle_granger_test(y, x, max_lags, regression)
+
+        residuals = ols.resid
+        beta_val = float(ols.params[1])
+        intercept_val = float(ols.params[0])
+
+        # ADF on residuals
+        try:
+            adf_res = adfuller(residuals, regression=regression, autolag='AIC')
+        except (LinAlgError, ValueError) as e:
+            return _err(f'ADF test failed: {str(e)[:50]}')
+
+        coint_pvalue = float(adf_res[1])
+        coint_stat = float(adf_res[0])
+
+        # Bonferroni
+        alpha = 0.05
+        if apply_bonferroni and num_symbols and num_symbols > 1:
+            n_pairs = num_symbols * (num_symbols - 1) // 2
+            alpha = 0.05 / max(n_pairs, 1)
+
+        return {
+            'beta': beta_val,
+            'intercept': intercept_val,
+            'residuals': residuals,
+            'adf_statistic': coint_stat,
+            'adf_pvalue': coint_pvalue,
+            'is_cointegrated': coint_pvalue < alpha,
+            'critical_values': adf_res[4],
+            'hac_bse': ols.bse,
+            'hac_tvalues': ols.tvalues,
+            'hac_pvalues': ols.pvalues,
+            'beta_hac_pvalue': float(ols.pvalues[1]),
+            'alpha_threshold': alpha,
+            'error': None,
+        }
+
+    except Exception as exc:
+        logger.error("eg_robust_exception", error=str(exc)[:100])
+        return _err(str(exc)[:80])
+
+
+def newey_west_consensus(
+    y: pd.Series,
+    x: pd.Series,
+    apply_bonferroni: bool = False,
+    num_symbols: Optional[int] = None,
+    hac_maxlags: Optional[int] = None,
+) -> dict:
     """
-    Compute rolling correlation matrix and identify pairs.
-    
-    Args:
-        prices: DataFrame with multiple price series (columns = symbols)
-    
+    Run both standard and HAC-robust Engle-Granger tests and report consensus.
+
     Returns:
-        Tuple of (correlation_matrix, list of symbol pairs)
+        Dict with consensus, standard_cointegrated, robust_cointegrated,
+        divergent flags, plus both sub-results.
     """
-    corr = prices.corr()
-    
-    # Extract upper triangle (avoid duplicates)
-    pairs = []
-    symbols = prices.columns.tolist()
-    for i in range(len(symbols)):
-        for j in range(i + 1, len(symbols)):
-            pairs.append((symbols[i], symbols[j], corr.iloc[i, j]))
-    
-    return corr.values, pairs
+    r_std = engle_granger_test(
+        y, x,
+        apply_bonferroni=apply_bonferroni,
+        num_symbols=num_symbols,
+        check_integration_order=False,
+    )
+    r_rob = engle_granger_test_robust(
+        y, x,
+        apply_bonferroni=apply_bonferroni,
+        num_symbols=num_symbols,
+        hac_maxlags=hac_maxlags,
+    )
+
+    std_coint = bool(r_std.get('is_cointegrated', False))
+    rob_coint = bool(r_rob.get('is_cointegrated', False))
+
+    return {
+        'consensus': std_coint and rob_coint,
+        'standard_cointegrated': std_coint,
+        'robust_cointegrated': rob_coint,
+        'divergent': std_coint != rob_coint,
+        'standard_result': r_std,
+        'robust_result': r_rob,
+    }
+
 
 def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> Optional[int]:
     """
-    Estimate half-life of mean reversion via AR(1) model.
-    
-    Uses OLS regression: spread_diff = beta_0 + beta_1 * spread_lag
-    Which gives: spread_t = beta_0 + (1 + beta_1) * spread_{t-1}
-    So AR(1) coefficient: rho = 1 + beta_1
-    
+    Estimate half-life of mean reversion.
+
+    Delegates to :class:`SpreadHalfLifeEstimator` as the single source of truth.
+
     Args:
-        spread: Spread time series
-        max_lag: Maximum lag to test
-    
+        spread: Spread time series.
+        max_lag: Unused (kept for backwards compatibility).
+
     Returns:
-        Half-life in periods, or None if AR coefficient >= 1 or invalid
+        Half-life in periods (int), or None if not mean-reverting.
     """
-    spread_diff = spread.diff().dropna()
-    spread_lag = spread.shift(1).dropna()
-    
-    # Align series
-    common_idx = spread_diff.index.intersection(spread_lag.index)
-    y = spread_diff.loc[common_idx]
-    X = np.column_stack([np.ones(len(spread_lag)), spread_lag.loc[common_idx]])
-    
-    try:
-        beta = np.linalg.lstsq(X, y.values, rcond=None)[0]
-        beta_1 = beta[1]  # Regression coefficient
-        
-        # The actual AR(1) coefficient is rho = 1 + beta_1
-        # This comes from: spread_t - spread_{t-1} = beta_0 + beta_1 * spread_{t-1}
-        # Rearranged: spread_t = beta_0 + (1 + beta_1) * spread_{t-1}
-        rho = 1.0 + beta_1
-        
-        # Validate rho: must be in (0, 1) for mean reversion
-        # Check for: >= 1.0 (non-stationary), <= 0 (invalid), NaN, or Inf
-        if rho >= 1.0 or rho <= 0.0 or np.isnan(rho) or np.isinf(rho):
-            return None
-        
-        # Compute half-life: -log(2) / log(rho)
-        # This is safe now because rho is in (0, 1)
-        log_rho = np.log(rho)
-        
-        # Extra safety check on the log result
-        if np.isnan(log_rho) or np.isinf(log_rho):
-            return None
-        
-        # Avoid division by zero (rho = 1.0 case, though already checked)
-        if abs(log_rho) < 1e-10:
-            return None
-        
-        half_life = -np.log(2) / log_rho
-        
-        # Verify the result is valid
-        if np.isnan(half_life) or np.isinf(half_life) or half_life <= 0:
-            return None
-        
-        return int(np.round(half_life))
-    except:
+    from models.half_life_estimator import SpreadHalfLifeEstimator
+    estimator = SpreadHalfLifeEstimator(lookback=min(252, len(spread)))
+    hl = estimator.estimate_half_life_from_spread(spread, validate=True)
+    if hl is None:
         return None
+    return int(np.round(hl))

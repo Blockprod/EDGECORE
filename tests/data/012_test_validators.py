@@ -32,10 +32,10 @@ class TestValidateSymbol:
     def test_valid_symbols(self):
         """Valid symbols should not raise."""
         valid_symbols = [
-            "BTC/USDT",
-            "ETH/USDC",
-            "XRP/EUR",
-            "BNB/BUSD",
+            "AAPL",
+            "MSFT",
+            "JPM",
+            "V",
         ]
         for symbol in valid_symbols:
             validate_symbol(symbol)  # Should not raise
@@ -56,23 +56,23 @@ class TestValidateSymbol:
             validate_symbol(123)
     
     def test_symbol_missing_slash(self):
-        """Symbol without slash should raise."""
+        """Non-alphanumeric symbol should raise."""
         with pytest.raises(SymbolError):
-            validate_symbol("BTCUSDT")
+            validate_symbol("$$INVALID$$")
     
     def test_symbol_multiple_slashes(self):
         """Symbol with multiple slashes should raise."""
         with pytest.raises(SymbolError):
-            validate_symbol("BTC/USD/T")
+            validate_symbol("AAPL/X")
     
     def test_symbol_invalid_characters(self):
         """Symbol with invalid characters should raise."""
         with pytest.raises(SymbolError):
-            validate_symbol("BTC-@/USDT")
+            validate_symbol("AAPL-@")
     
     def test_symbol_case_insensitive(self):
         """Lowercase symbols should be accepted."""
-        validate_symbol("btc/usdt")  # Should not raise
+        validate_symbol("AAPL")  # Should not raise
 
 
 class TestValidatePositionSize:
@@ -278,7 +278,7 @@ class TestValidateTradeEntry:
     def test_valid_trade_entry(self):
         """Valid trade entry should not raise."""
         validate_trade_entry(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             position_size=10.0,
             equity=100000.0,
             volatility=0.02
@@ -298,7 +298,7 @@ class TestValidateTradeEntry:
         """Invalid position size should raise."""
         with pytest.raises(ValidationError):
             validate_trade_entry(
-                symbol="BTC/USDT",
+                symbol="AAPL",
                 position_size=0.0,
                 equity=100000.0,
                 volatility=0.02
@@ -308,7 +308,7 @@ class TestValidateTradeEntry:
         """Invalid equity should raise."""
         with pytest.raises(EquityError):
             validate_trade_entry(
-                symbol="BTC/USDT",
+                symbol="AAPL",
                 position_size=10.0,
                 equity=0.0,
                 volatility=0.02
@@ -318,7 +318,7 @@ class TestValidateTradeEntry:
         """Invalid volatility should raise."""
         with pytest.raises(VolatilityError):
             validate_trade_entry(
-                symbol="BTC/USDT",
+                symbol="AAPL",
                 position_size=10.0,
                 equity=100000.0,
                 volatility=-0.02
@@ -370,7 +370,7 @@ class TestSanityCheckContext:
     def test_context_success(self):
         """Valid checks should succeed within context."""
         with SanityCheckContext("test_operation"):
-            validate_symbol("BTC/USDT")
+            validate_symbol("AAPL")
             validate_position_size(10.0)
     
     def test_context_failure(self):
@@ -383,7 +383,7 @@ class TestSanityCheckContext:
         """Should raise on first failure."""
         with pytest.raises(SymbolError):
             with SanityCheckContext("test_operation"):
-                validate_symbol("BTC/USDT")  # OK
+                validate_symbol("AAPL")  # OK
                 validate_symbol("INVALID")   # Fails here
                 validate_position_size(10.0)  # Never reached
 

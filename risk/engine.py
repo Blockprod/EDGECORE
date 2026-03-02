@@ -90,6 +90,7 @@ class RiskEngine:
         self.loss_streak = 0
         self.daily_trades = 0
         self.daily_loss = 0.0
+        self._daily_date = datetime.now().date()  # track date for auto-reset
         
         # Initialize persistent audit trail for crash recovery
         self.audit_trail = AuditTrail()
@@ -171,7 +172,8 @@ class RiskEngine:
         if self.loss_streak >= self.config.max_consecutive_losses:
             return False, f"Consecutive loss limit ({self.config.max_consecutive_losses}) exceeded"
         
-        # Check 4: Daily loss (requires positive equity for division)
+        # Check 4: Daily loss (auto-reset if new calendar day)
+        self._maybe_reset_daily()
         if current_equity <= 0:
             raise EquityError(
                 f"Cannot check daily loss: current_equity must be positive, got {current_equity}"
@@ -234,9 +236,9 @@ class RiskEngine:
             List of dicts with positions that should be closed:
             [
                 {
-                    'symbol': 'BTC/USDT',
-                    'entry_price': 45000.0,
-                    'current_price': 42750.0,
+                    'symbol': 'AAPL',
+                    'entry_price': 175.0,
+                    'current_price': 166.25,
                     'pnl_pct': -0.05,
                     'reason': 'Stop-loss: -5.00%',
                     'quantity': 1.0
@@ -439,6 +441,15 @@ class RiskEngine:
         """Reset daily counters (call at market open)."""
         self.daily_trades = 0
         self.daily_loss = 0.0
+        self._daily_date = datetime.now().date()
+
+    def _maybe_reset_daily(self) -> None:
+        """Auto-reset daily counters when the calendar date rolls over."""
+        today = datetime.now().date()
+        if self._daily_date != today:
+            self.daily_trades = 0
+            self.daily_loss = 0.0
+            self._daily_date = today
     
     def save_equity_snapshot(self) -> None:
         """

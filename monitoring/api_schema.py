@@ -312,7 +312,7 @@ OPENAPI_SPEC = {
             "Position": {
                 "type": "object",
                 "properties": {
-                    "symbol": {"type": "string", "example": "BTC/USDT"},
+                    "symbol": {"type": "string", "example": "AAPL"},
                     "side": {"type": "string", "enum": ["long", "short"]},
                     "quantity": {"type": "number"},
                     "entry_price": {"type": "number"},

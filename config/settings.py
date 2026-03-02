@@ -15,16 +15,70 @@ class StrategyConfig:
     """Pair trading strategy parameters."""
     lookback_window: int = 252  # Days for cointegration
     entry_z_score: float = 2.0  # Entry threshold
-    exit_z_score: float = 0.0   # Exit threshold
+    exit_z_score: float = 0.5   # Exit threshold (was 0.0 — unreachable in float)
     min_correlation: float = 0.7  # Min correlation for pairs
     max_half_life: int = 60  # Max half-life (days) for spread mean reversion
+    bonferroni_correction: bool = True  # NEW: Apply Bonferroni correction to handle multiple testing
+    significance_level: float = 0.05  # NEW: Nominal significance level (before Bonferroni)
+    use_kalman: bool = True  # Dynamic hedge ratio via Kalman filter
+    max_position_loss_pct: float = 0.10  # P&L stop per position (10% default)
+    hedge_ratio_reestimation_days: int = 7  # Sprint 2.2: Reestimate hedge ratio every 7 days (was 30)
+    regime_min_duration: int = 1  # Sprint 2.2: Min bars before regime transition (was 3)
+    emergency_vol_threshold_sigma: float = 3.0  # Sprint 2.2: Emergency reestimate if spread vol > Nσ
+    instant_transition_percentile: float = 99.0  # Sprint 2.2: Instant regime transition for extreme vol
+    # Sprint 3.5: Adaptive cache TTL by regime (hours)
+    cache_ttl_high_vol: int = 2    # HIGH regime -> frequent re-discovery
+    # Sprint 4.1: Johansen double-screening confirmation
+    johansen_confirmation: bool = True  # Confirm EG pairs with Johansen test
+    # Sprint 4.3: Newey-West HAC consensus
+    newey_west_consensus: bool = True  # Require OLS + HAC agreement for cointegration
+    cache_ttl_normal_vol: int = 12  # NORMAL regime -> moderate TTL
+    cache_ttl_low_vol: int = 24     # LOW regime -> stable, long TTL
+    # Sprint 4.4: Self-contained internal risk limits (defense in depth)
+    internal_max_positions: int = 50       # Let simulator's portfolio-heat / risk-engine control position count
+    internal_max_drawdown_pct: float = 0.20  # 20% strategy-internal DD breaker (Tier 3: after RiskConfig 10% and KillSwitch 15%)
+    internal_max_daily_trades: int = 200   # Generous limit — backtest runs all bars in one real-world day
+    # Sprint 4.6: Rolling leg correlation monitoring
+    leg_correlation_window: int = 30          # Rolling window (bars) for recent correlation
+    leg_correlation_decay_threshold: float = 0.3  # Sweet spot — proven by backtest optimization
+    # Multi-lookback discovery: additional lookback windows (union with primary)
+    additional_lookback_windows: List[int] = field(default_factory=list)
+    # Z-score based stop-loss (complements PnL stop — more natural for stat-arb)
+    z_score_stop: float = 3.5  # Close position if |z| > this threshold
+    # ── Multi-Timeframe configuration ────────────────────────────────
+    # Timeframes for cointegration analysis (default: daily + weekly)
+    timeframes: List[str] = field(default_factory=lambda: ["D", "W"])
+    # Require weekly cointegration confirmation for pair entry
+    weekly_confirmation: bool = True
+    # Weight of weekly cointegration in composite MTF score (0.0-1.0)
+    weekly_coint_weight: float = 0.40
+    # Maximum p-value for weekly cointegration confirmation
+    weekly_max_pvalue: float = 0.10
+    # Weekly lookback in weekly bars (~2 years)
+    weekly_lookback_bars: int = 104
+    # Minimum absolute weekly z-score to allow entry
+    weekly_zscore_entry_gate: float = 1.0
+
+@dataclass
+class ScannerConfig:
+    """Dynamic universe scanner configuration."""
+    min_market_cap_usd: float = 500_000_000     # $500M minimum
+    min_avg_volume_usd: float = 5_000_000       # $5M daily volume
+    min_price: float = 5.0                       # exclude penny stocks
+    exchanges: List[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
+    cache_ttl_hours: int = 24
+    ibkr_validation_workers: int = 5
+    ibkr_batch_size: int = 50
+    scan_enabled: bool = False                   # Enable dynamic scanning
+    scan_schedule_cron: str = "0 5 * * 1-5"      # Mon-Fri 5am UTC
 
 @dataclass
 class TradingUniverseConfig:
     """Trading universe configuration (which symbols to trade)."""
     symbols: list = field(default_factory=lambda: [
-        "BTC/USDT", "ETH/USDT",  # Default: just top 2 if config not available
+        "AAPL", "MSFT",  # Default: US equities if config not available
     ])
+    max_leverage: float = 2.0  # Max leverage for the universe
 
 @dataclass
 class RiskConfig:
@@ -35,30 +89,47 @@ class RiskConfig:
     max_consecutive_losses: int = 3
     volatility_percentile_threshold: float = 1.5  # Regime break detection
     position_sizing_method: str = "volatility"  # volatility or kelly
-    max_leverage: float = 3.0  # Maximum portfolio leverage (3x = 300% total exposure)
+    max_leverage: float = 2.0  # Maximum portfolio leverage (equity: 2x)
+    # Drawdown Tier 1 (of 3): halt new entries. Tier 2 = kill_switch 15%. Tier 3 = strategy 20%.
+    max_drawdown_pct: float = 0.10  # Portfolio drawdown hard stop (10% default)
+
+@dataclass
+class CostConfig:
+    """Centralised transaction cost model — single source of truth.
+    
+    All execution modules (backtest, paper, live) MUST read from this config
+    instead of maintaining their own hardcoded defaults.  Values calibrated
+    for US equities via IBKR.
+    """
+    slippage_bps: float = 3.0           # Base slippage (adaptive on top)
+    commission_pct: float = 0.00035     # IBKR US equity commission (0.035%)
+    maker_fee_bps: float = 1.5          # Exchange maker rebate/fee
+    taker_fee_bps: float = 2.0          # Exchange taker fee
+    borrowing_cost_annual: float = 0.005  # Short-borrow GC rate (0.5%)
+    max_slippage_bps: float = 50.0      # Hard cap on adaptive slippage
+    slippage_model: str = "adaptive"    # fixed_bps | adaptive | volume_based
 
 @dataclass
 class ExecutionConfig:
     """Execution layer parameters."""
-    engine: str = "ccxt"  # ccxt or ibkr
-    exchange: str = "binance"
+    engine: str = "ibkr"      # ibkr (Interactive Brokers)
     timeout_seconds: int = 30
     max_retries: int = 3
-    slippage_bps: float = 5.0  # Basis points
+    slippage_bps: float = 2.0  # Basis points
     use_sandbox: bool = True
     paper_trading_loop_interval_seconds: int = 10  # Loop sleep interval
     initial_capital: float = 100000.0  # Starting capital for paper/live trading
     paper_slippage_model: str = "fixed_bps"  # fixed_bps, adaptive, volume_based
-    paper_commission_pct: float = 0.1  # Commission percentage (0.1%)
+    paper_commission_pct: float = 0.005  # Commission percentage (0.005% ≈ $0.005/share IBKR)
 
 @dataclass
 class BacktestConfig:
     """Backtesting parameters."""
-    start_date: str = "2022-01-01"
-    end_date: str = "2024-01-01"
+    start_date: str = "2018-01-01"  # 8 years of US equity history
+    end_date: str = "2026-01-01"
     initial_capital: float = 100000.0
     commission_bps: float = 2.0
-    walk_forward_periods: int = 4  # Monthly rebalance
+    walk_forward_periods: int = 4
     out_of_sample_ratio: float = 0.2
 
 @dataclass
@@ -107,6 +178,8 @@ class Settings:
         self.execution = ExecutionConfig()
         self.backtest = BacktestConfig()
         self.secrets = SecretsConfig()
+        self.costs = CostConfig()
+        self.scanner = ScannerConfig()
         self.raw_config = {}
         
         if config_path.exists():
@@ -114,6 +187,9 @@ class Settings:
             self._load_yaml(config_path)
         else:
             logger.warning("config_not_found", env=self.env, path=str(config_path))
+        
+        # Validate configuration using Pydantic schemas
+        self._validate_config()
         
         # Safety check: prevent live trading unless explicitly enabled
         if self.execution.use_sandbox == False:
@@ -131,6 +207,28 @@ class Settings:
         
         self._initialized = True
     
+    def _validate_config(self) -> None:
+        """Validate loaded configuration using Pydantic schemas."""
+        try:
+            from config.schemas import RiskConfigSchema, StrategyConfigSchema
+            # Validate risk config
+            RiskConfigSchema(
+                max_drawdown_pct=self.risk.max_drawdown_pct * 100,  # schema expects 0-100
+                max_loss_per_trade=self.risk.max_risk_per_trade,
+            )
+            # Validate strategy config
+            StrategyConfigSchema(
+                entry_z_score=self.strategy.entry_z_score,
+                exit_z_score=self.strategy.exit_z_score,
+                lookback_window=self.strategy.lookback_window,
+            )
+            logger.debug("config_validation_passed")
+        except ImportError:
+            logger.debug("pydantic_schemas_not_available_skipping_validation")
+        except Exception as exc:
+            logger.error("config_validation_failed", error=str(exc)[:200])
+            raise ValueError(f"Configuration validation failed: {exc}") from exc
+
     def _load_yaml(self, path: Path) -> None:
         """Load configuration from YAML file."""
         with open(path, 'r') as f:
@@ -139,28 +237,49 @@ class Settings:
         self.raw_config = config
         
         if 'strategy' in config:
-            for key, value in config['strategy'].items():
-                setattr(self.strategy, key, value)
+            self._apply_section(self.strategy, config['strategy'], 'strategy')
         
         if 'trading_universe' in config:
-            if 'symbols' in config['trading_universe']:
-                self.trading_universe.symbols = config['trading_universe']['symbols']
+            tu = config['trading_universe']
+            if 'symbols' in tu:
+                self.trading_universe.symbols = tu['symbols']
+            if 'max_leverage' in tu:
+                self.trading_universe.max_leverage = tu['max_leverage']
         
         if 'risk' in config:
-            for key, value in config['risk'].items():
-                setattr(self.risk, key, value)
+            self._apply_section(self.risk, config['risk'], 'risk')
         
         if 'execution' in config:
-            for key, value in config['execution'].items():
-                setattr(self.execution, key, value)
+            self._apply_section(self.execution, config['execution'], 'execution')
         
         if 'backtest' in config:
-            for key, value in config['backtest'].items():
-                setattr(self.backtest, key, value)
+            self._apply_section(self.backtest, config['backtest'], 'backtest')
         
         if 'secrets' in config:
-            for key, value in config['secrets'].items():
-                setattr(self.secrets, key, value)
+            self._apply_section(self.secrets, config['secrets'], 'secrets')
+
+        if 'scanner' in config:
+            self._apply_section(self.scanner, config['scanner'], 'scanner')
+
+    @staticmethod
+    def _apply_section(target, mapping: dict, section_name: str) -> None:
+        """Apply YAML key-values to a dataclass, rejecting unknown keys."""
+        from dataclasses import fields as dc_fields
+        known = {f.name for f in dc_fields(target)}
+        for key, value in mapping.items():
+            if key in known:
+                setattr(target, key, value)
+            else:
+                logger.error(
+                    "unknown_config_key",
+                    section=section_name,
+                    key=key,
+                    hint=f"Valid keys: {sorted(known)}",
+                )
+                raise ValueError(
+                    f"Unknown config key '{key}' in section '{section_name}'. "
+                    f"Valid keys: {sorted(known)}"
+                )
     
     def reload_symbols(self, symbols: List[str] = None) -> None:
         """
@@ -174,7 +293,7 @@ class Settings:
             # Reload from YAML file
             settings.reload_symbols()
             # Or switch to specific symbols dynamically
-            settings.reload_symbols(["BTC/USDT", "ETH/USDT"])
+            settings.reload_symbols(["AAPL", "MSFT"])
         """
         if symbols is not None:
             # Use provided symbols

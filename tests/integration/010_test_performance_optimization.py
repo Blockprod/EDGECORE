@@ -89,8 +89,9 @@ class TestParallelPairDiscovery:
         series2 = pd.Series(series1 + np.random.randn(100) * 0.1)
         
         # This should work as a static method
+        # Note: _test_pair_cointegration expects 7 args: sym1, sym2, series1, series2, min_corr, max_hl, num_symbols
         result = PairTradingStrategy._test_pair_cointegration(
-            ('SYM1', 'SYM2', series1, series2, 0.5, 60)
+            ('SYM1', 'SYM2', series1, series2, 0.5, 60, 100)
         )
         
         # Result can be None (if not cointegrated) or a tuple
@@ -162,7 +163,7 @@ class TestCachingFunctionality:
         strategy.save_cached_pairs(test_pairs)
         
         # Verify cache file exists
-        cache_file = strategy.cache_dir / "cointegrated_pairs.pkl"
+        cache_file = strategy.cache_dir / "cointegrated_pairs.json"
         assert cache_file.exists()
         
         # Load pairs back
@@ -235,7 +236,7 @@ class TestCachingFunctionality:
         strategy = PairTradingStrategy()
         
         # Create corrupt cache file
-        cache_file = strategy.cache_dir / "cointegrated_pairs.pkl"
+        cache_file = strategy.cache_dir / "cointegrated_pairs.json"
         cache_file.write_text("corrupt data")
         
         # Should handle gracefully and return None
@@ -323,7 +324,7 @@ class TestPerformanceMetrics:
         result1 = strategy.find_cointegrated_pairs(data, use_cache=True)
         
         # Verify cache file was created
-        cache_file = strategy.cache_dir / "cointegrated_pairs.pkl"
+        cache_file = strategy.cache_dir / "cointegrated_pairs.json"
         assert cache_file.exists(), "Cache file should be created"
         
         # Second call (should use cache - but might not be faster due to overhead)
@@ -341,10 +342,10 @@ class TestIntegrationWithStrategy:
         np.random.seed(42)
         base = np.random.randn(100).cumsum()
         market_data = pd.DataFrame({
-            'BTC': base,
-            'ETH': base + np.random.randn(100) * 0.15,
-            'XRP': base + np.random.randn(100) * 0.10,
-            'ADA': np.random.randn(100).cumsum(),
+            'AAPL': base,
+            'GOOGL': base + np.random.randn(100) * 0.15,
+            'JPM': base + np.random.randn(100) * 0.10,
+            'V': np.random.randn(100).cumsum(),
         })
         
         strategy = PairTradingStrategy()

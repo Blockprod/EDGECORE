@@ -31,12 +31,12 @@ class OrderType(Enum):
 
 
 class OrderStatus(Enum):
-    """Order execution status."""
-    PENDING = "pending"
-    FILLED = "filled"
-    PARTIAL = "partial"
-    CANCELLED = "cancelled"
-    REJECTED = "rejected"
+    """Order execution status — aligned with execution.base.OrderStatus."""
+    PENDING = "PENDING"
+    FILLED = "FILLED"
+    PARTIAL = "PARTIAL"
+    CANCELLED = "CANCELLED"
+    REJECTED = "REJECTED"
 
 
 class ExecutionMode(Enum):
@@ -97,12 +97,10 @@ class DepthMode(Enum):
 
 class VenueType(Enum):
     """Trading venue type."""
-    CENTRALIZED_EXCHANGE = "cex"      # Binance, Kraken, etc.
-    DECENTRALIZED_EXCHANGE = "dex"    # Uniswap, SushiSwap
     CME_FUTURES = "cme"               # CME futures
-    NASDAQ_EQUITIES = "nasdaq"        # US stock market
-    NYSE_EQUITIES = "nyse"            # US stock market
-    CRYPTO_SPOT = "spot"              # Spot crypto
+    NASDAQ_EQUITIES = "nasdaq"        # US equities (Nasdaq)
+    NYSE_EQUITIES = "nyse"            # US equities (NYSE)
+    IBKR_SMART = "smart"             # IBKR Smart Routing (default)
 
 
 class TraceLevel(Enum):

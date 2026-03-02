@@ -1,6 +1,5 @@
-"""
-Tests for hybrid C++/Python architecture wrapper compatibility.
-These tests verify that both C++ and Python implementations work correctly.
+"""Tests for wrapper compatibility with Cython acceleration.
+These tests verify that Python/Cython hybrid implementation works correctly.
 """
 
 import pytest
@@ -19,13 +18,12 @@ class TestBacktestEngineWrapper:
         assert engine.initial_equity == 100000
         assert engine.get_equity() == 100000
     
-    def test_cpp_unavailable_fallback(self):
-        """Test fallback when C++ not available."""
+    def test_python_implementation(self):
+        """Test Python-only implementation (C++ deprecated)."""
         engine = BacktestEngineWrapper(50000)
-        if not engine.use_cpp:
-            # Python version - verify it works
-            assert engine._engine is None
-            assert engine.initial_equity == 50000
+        # Now uses Python-only implementation
+        assert engine.use_cpp is False  # No longer uses C++
+        assert engine.initial_equity == 50000
     
     def test_simple_backtest_run(self):
         """Test running a simple backtest."""
@@ -37,7 +35,7 @@ class TestBacktestEngineWrapper:
             [101.0, 51.0],   # Day 2
             [102.0, 52.0],   # Day 3
         ]
-        symbols = ['BTC/USDT', 'ETH/USDT']
+        symbols = ['AAPL', 'MSFT']
         
         # Mock callbacks
         def strategy_callback(price_vec, day):
@@ -67,12 +65,12 @@ class TestBacktestEngineWrapper:
             [100.0, 50.0],
             [101.0, 51.0],
         ]
-        symbols = ['BTC/USDT', 'ETH/USDT']
+        symbols = ['AAPL', 'MSFT']
         
         def strategy_callback(price_vec, day):
             if day == 0:
                 return [{
-                    'symbol': 'BTC/USDT',
+                    'symbol': 'AAPL',
                     'side': 1,  # BUY
                     'size': 10,
                     'price': 100.0
@@ -109,9 +107,9 @@ class TestCointegrationEngineWrapper:
     """Test CointegrationEngine wrapper with fallback mechanism."""
     
     def test_engine_creation(self):
-        """Test engine creates successfully."""
+        """Test engine creates successfully with Cython."""
         engine = CointegrationEngineWrapper()
-        assert engine._engine is not None or not engine.use_cpp
+        assert engine.use_cpp is False  # Python with Cython acceleration
     
     def test_find_cointegration_empty(self):
         """Test with empty data."""
@@ -129,7 +127,7 @@ class TestCointegrationEngineWrapper:
         
         prices = np.random.randn(100, 1)  # 100 days, 1 symbol
         results = engine.find_cointegration_parallel(
-            ['BTC/USDT'],
+            ['AAPL'],
             prices
         )
         assert results == []  # No pairs possible
@@ -148,7 +146,7 @@ class TestCointegrationEngineWrapper:
             np.random.randn(100) + 50,                   # Random
         ])
         
-        symbols = ['BTC/USDT', 'ETH/USDT', 'XRP/USDT']
+        symbols = ['AAPL', 'MSFT', 'JPM']
         
         results = engine.find_cointegration_parallel(
             symbols,
@@ -233,19 +231,22 @@ class TestHybridArchitectureIntegration:
         assert 'equity' in results
         assert len(results['daily_returns']) == len(prices_list)
     
-    def test_fallback_mechanism(self):
-        """Test that fallback works correctly."""
-        # Both engines should work regardless of C++ availability
+    def test_python_cython_integration(self):
+        """Test Python/Cython integration works correctly."""
+        # Both engines use Python with optional Cython acceleration
         backtest_engine = BacktestEngineWrapper(100000)
         coint_engine = CointegrationEngineWrapper()
         
-        # Verify fallback detection works
+        # Verify both use Python implementation
         assert hasattr(backtest_engine, 'use_cpp')
         assert hasattr(coint_engine, 'use_cpp')
         
+        # Both should have use_cpp=False (Python-only)
+        assert backtest_engine.use_cpp is False
+        assert coint_engine.use_cpp is False
+        
         # Verify engines still work
         assert backtest_engine.initial_equity == 100000
-        assert coint_engine._engine is not None or not coint_engine.use_cpp
     
     def test_performance_with_many_symbols(self):
         """Test performance with larger dataset."""
@@ -276,23 +277,23 @@ class TestHybridArchitectureIntegration:
             print(f"Average half-life: {avg_half_life:.2f}")
 
 
-class TestCPPModuleAvailability:
-    """Test detection and loading of C++ modules."""
+class TestVersionAvailability:
+    """Test detection and loading of Python/Cython implementation."""
     
-    def test_cpp_module_detection(self):
-        """Test if C++ modules are properly detected."""
+    def test_version_detection(self):
+        """Test if Python/Cython modules are properly available."""
         backtest_wrapper = BacktestEngineWrapper(100000)
         coint_wrapper = CointegrationEngineWrapper()
         
-        # Both should have CPP_AVAILABLE flag
+        # Both should have use_cpp flag
         assert hasattr(backtest_wrapper, 'use_cpp')
         assert hasattr(coint_wrapper, 'use_cpp')
     
-    def test_fallback_logs_correctly(self):
-        """Test that warnings are logged for missing C++ modules."""
+    def test_cython_loads_correctly(self):
+        """Test that Cython acceleration is available if compiled."""
         import logging
         
-        # Create engine (will log if C++ not available)
+        # Create engine (uses Python with optional Cython speedup)
         engine = BacktestEngineWrapper(100000)
         
         # Check engine functionality regardless of C++ availability

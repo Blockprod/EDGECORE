@@ -48,7 +48,7 @@ def validate_symbol(symbol: str) -> None:
     Validate trading symbol format.
     
     Args:
-        symbol: Trading pair (e.g., "BTC/USDT")
+        symbol: Trading symbol (e.g., "AAPL")
     
     Raises:
         SymbolError: If symbol is invalid
@@ -59,21 +59,25 @@ def validate_symbol(symbol: str) -> None:
     if not symbol.strip():
         raise SymbolError("Symbol cannot be empty")
     
-    if not re.match(r'^[A-Z0-9]+/[A-Z0-9]+$', symbol.upper()):
+    # Accept US equity tickers (1-5 uppercase letters, e.g. AAPL, MSFT)
+    # or pair identifiers (e.g. MSFT/AAPL)
+    sym_upper = symbol.upper()
+    is_equity_ticker = re.match(r'^[A-Z]{1,5}$', sym_upper) is not None
+    is_pair = re.match(r'^[A-Z0-9]+/[A-Z0-9]+$', sym_upper) is not None
+    if not is_equity_ticker and not is_pair:
         raise SymbolError(
-            f"Symbol '{symbol}' must be in format 'BASE/QUOTE' "
-            f"(e.g., 'BTC/USDT', not '{symbol}')"
+            f"Symbol '{symbol}' must be a US equity ticker (e.g. 'AAPL') "
+            f"or a trading pair in 'BASE/QUOTE' format (e.g. 'MSFT')"
         )
     
-    parts = symbol.split('/')
-    if len(parts) != 2:
-        raise SymbolError(f"Symbol must have exactly 2 parts, got {len(parts)}")
-    
-    if len(parts[0]) < 2 or len(parts[0]) > 10:
-        raise SymbolError(f"Base currency too short/long: {parts[0]}")
-    
-    if len(parts[1]) < 2 or len(parts[1]) > 10:
-        raise SymbolError(f"Quote currency too short/long: {parts[1]}")
+    if is_pair:
+        parts = symbol.split('/')
+        if len(parts) != 2:
+            raise SymbolError(f"Symbol must have exactly 2 parts, got {len(parts)}")
+        if len(parts[0]) < 2 or len(parts[0]) > 10:
+            raise SymbolError(f"Base currency too short/long: {parts[0]}")
+        if len(parts[1]) < 2 or len(parts[1]) > 10:
+            raise SymbolError(f"Quote currency too short/long: {parts[1]}")
     
     logger.debug("symbol_validated", symbol=symbol)
 

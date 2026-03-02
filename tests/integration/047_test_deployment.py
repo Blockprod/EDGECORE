@@ -78,9 +78,8 @@ class TestDockerCompose:
         assert compose_file.exists()
 
     def test_docker_compose_version(self, docker_compose_content):
-        """Test docker-compose version is specified."""
-        assert 'version:' in docker_compose_content
-        assert '3.' in docker_compose_content  # Version 3.x
+        """Test docker-compose has required structure."""
+        assert 'services:' in docker_compose_content
 
     def test_docker_compose_services(self, docker_compose_content):
         """Test required services are configured."""
@@ -155,7 +154,7 @@ class TestEnvironmentConfiguration:
             'Logging',
             'Caching',
             'API',
-            'Exchange',
+            'Broker',
             'Risk',
             'Security'
         ]
@@ -168,9 +167,6 @@ class TestEnvironmentConfiguration:
         required_vars = [
             'ENVIRONMENT',
             'LOG_LEVEL',
-            'CCXT_EXCHANGE',
-            'CCXT_API_KEY',
-            'CCXT_API_SECRET',
             'MAX_DAILY_LOSS_PERCENT',
             'MAX_POSITION_SIZE',
             'FLASK_ENV',
@@ -247,7 +243,6 @@ class TestDeploymentValidation:
         
         # Should be valid YAML
         content = compose_file.read_text(encoding='utf-8')
-        assert 'version:' in content
         assert 'services:' in content
 
     def test_dockerfile_validation(self):

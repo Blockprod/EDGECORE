@@ -20,13 +20,13 @@ def main():
     4. Output ranked list of trading candidates
     """
     
-    # Example symbols to analyze
+    # Example US equity symbols to analyze
     symbols = [
-        "BTC/USDC",
-        "ETH/USDC",
-        "BNB/USDT",
-        "SOL/USDT",
-        "ADA/USDT",
+        "AAPL",
+        "MSFT",
+        "JPM",
+        "GOOGL",
+        "BAC",
     ]
     
     print(f"\n[*] Loading OHLCV data for {len(symbols)} symbols...")
@@ -38,17 +38,16 @@ def main():
         # Load 2 years of daily data for each symbol
         prices = {}
         for symbol in symbols:
-            print(f"    → Loading {symbol}...")
+            print(f"    ↓ Loading {symbol}...")
             try:
-                df = loader.load_ccxt_data(
-                    exchange_name='binance',
+                df = loader.load_ibkr_data(
                     symbol=symbol,
                     timeframe='1d',
                     limit=730  # ~2 years
                 )
                 prices[symbol] = df['close']
             except Exception as e:
-                print(f"    ✗ Failed to load {symbol}: {e}")
+                print(f"    ✔ Failed to load {symbol}: {e}")
                 continue
         
         if not prices:
@@ -84,7 +83,7 @@ def main():
             beta = pair['beta']
             
             print(f"{sym1}_{sym2:<15} {corr:>10.3f}      {pval:>10.6f}       {hl:>10} days")
-            print(f"  └─ Spread model: {sym1} = {beta:.4f} × {sym2} + constant")
+            print(f"  -''Ⓚ Spread model: {sym1} = {beta:.4f} × {sym2} + constant")
         
         print(f"\n[*] Top candidate: {candidates[0]['sym1']}_{candidates[0]['sym2']}")
         print(f"    Ready for pair trading strategy deployment.")

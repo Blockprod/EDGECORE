@@ -51,7 +51,6 @@ def test_t0_3():
     print(f"[OK] Divergence tracking enabled ({len(reconciler.divergences)} recorded)")
     
     print("\n[PASS] T0.3 Validation Successful\n")
-    return True
 
 
 if __name__ == "__main__":

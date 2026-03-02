@@ -94,7 +94,7 @@ def check_modules():
         ('models.cointegration', 'engle_granger_test'),
         ('strategies.pair_trading', 'PairTradingStrategy'),
         ('risk.engine', 'RiskEngine'),
-        ('execution.ccxt_engine', 'CCXTExecutionEngine'),
+        ('execution.ibkr_engine', 'IBKRExecutionEngine'),
         ('backtests.runner', 'BacktestRunner'),
     ]
     

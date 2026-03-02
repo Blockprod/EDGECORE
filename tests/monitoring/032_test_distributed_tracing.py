@@ -439,7 +439,7 @@ class TestTraceIntegration:
         """Test tracing a complete order execution flow."""
         tracer = DistributedTracer("trading_system")
         
-        with tracer.trace_operation("execute_order", attributes={"symbol": "BTC/USD"}) as root:
+        with tracer.trace_operation("execute_order", attributes={"symbol": "AAPL"}) as root:
             root.set_attribute("order_id", "ord_123")
             root.set_attribute("size", 1.0)
             

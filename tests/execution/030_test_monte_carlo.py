@@ -25,7 +25,7 @@ class TestPricePath:
         returns = np.array([0.0, 0.01, 0.0148, -0.0068])
         
         path = PricePath(
-            symbol="BTC/USD",
+            symbol="AAPL",
             prices=prices,
             volumes=volumes,
             spreads=spreads,
@@ -43,7 +43,7 @@ class TestPricePath:
         returns = np.array([0.0, 0.1, -0.0454, -0.0952])
         
         path = PricePath(
-            symbol="BTC/USD",
+            symbol="AAPL",
             prices=prices,
             volumes=volumes,
             spreads=spreads,
@@ -63,7 +63,7 @@ class TestPricePath:
         returns = np.concatenate([[0.0], returns])
         
         path = PricePath(
-            symbol="BTC/USD",
+            symbol="AAPL",
             prices=prices,
             volumes=volumes,
             spreads=spreads,
@@ -97,7 +97,7 @@ class TestMonteCarloSimulation:
         
         paths = [
             PricePath(
-                symbol="BTC/USD",
+                symbol="AAPL",
                 prices=prices,
                 volumes=volumes,
                 spreads=spreads,
@@ -107,14 +107,14 @@ class TestMonteCarloSimulation:
         ]
         
         sim = MonteCarloSimulation(
-            symbol="BTC/USD",
+            symbol="AAPL",
             config=config,
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
         )
         
-        assert sim.symbol == "BTC/USD"
+        assert sim.symbol == "AAPL"
         assert len(sim.paths) == 10
         assert sim.initial_price == 100.0
     
@@ -137,7 +137,7 @@ class TestMonteCarloSimulation:
         
         paths = [
             PricePath(
-                symbol="BTC/USD",
+                symbol="AAPL",
                 prices=prices,
                 volumes=volumes,
                 spreads=spreads,
@@ -147,7 +147,7 @@ class TestMonteCarloSimulation:
         ]
         
         sim = MonteCarloSimulation(
-            symbol="BTC/USD",
+            symbol="AAPL",
             config=config,
             paths=paths,
             initial_price=100.0,
@@ -182,7 +182,7 @@ class TestMonteCarloSimulation:
             returns = np.concatenate([[0.0], np.diff(np.log(prices))])
             
             paths.append(PricePath(
-                symbol="BTC/USD",
+                symbol="AAPL",
                 prices=prices,
                 volumes=volumes,
                 spreads=spreads,
@@ -190,7 +190,7 @@ class TestMonteCarloSimulation:
             ))
         
         sim = MonteCarloSimulation(
-            symbol="BTC/USD",
+            symbol="AAPL",
             config=config,
             paths=paths,
             initial_price=100.0,
@@ -249,9 +249,9 @@ class TestMonteCarloOrderBookSimulator:
             seed=42,
         )
         
-        path = simulator.simulate_single_path("BTC/USD")
+        path = simulator.simulate_single_path("AAPL")
         
-        assert path.symbol == "BTC/USD"
+        assert path.symbol == "AAPL"
         assert len(path.prices) == config["time_steps"] + 1
         assert path.prices[0] == 100.0
         assert all(p > 0 for p in path.prices)  # No negative prices
@@ -274,9 +274,9 @@ class TestMonteCarloOrderBookSimulator:
             seed=42,
         )
         
-        path = simulator.simulate_single_path("BTC/USD")
+        path = simulator.simulate_single_path("AAPL")
         
-        assert path.symbol == "BTC/USD"
+        assert path.symbol == "AAPL"
         assert len(path.prices) == config["time_steps"] + 1
         assert all(p > 0 for p in path.prices)
     
@@ -322,9 +322,9 @@ class TestMonteCarloOrderBookSimulator:
             seed=42,
         )
         
-        sim = simulator.simulate("BTC/USD")
+        sim = simulator.simulate("AAPL")
         
-        assert sim.symbol == "BTC/USD"
+        assert sim.symbol == "AAPL"
         assert len(sim.paths) == 50
         assert sim.initial_price == 100.0
     
@@ -367,8 +367,8 @@ class TestCorrelatedSimulations:
             "volume_scaling": 1.0,
         }
         
-        symbols = ["BTC/USD", "ETH/USD"]
-        initial_prices = {"BTC/USD": 100.0, "ETH/USD": 50.0}
+        symbols = ["AAPL", "MSFT"]
+        initial_prices = {"AAPL": 100.0, "MSFT": 50.0}
         correlation_matrix = np.array([[1.0, 0.8], [0.8, 1.0]])
         
         results = create_correlated_simulations(
@@ -379,9 +379,9 @@ class TestCorrelatedSimulations:
             seed=42,
         )
         
-        assert "BTC/USD" in results
-        assert "ETH/USD" in results
-        assert len(results["BTC/USD"].paths) == 20
+        assert "AAPL" in results
+        assert "MSFT" in results
+        assert len(results["AAPL"].paths) == 20
 
 
 class TestRiskMetrics:
@@ -409,7 +409,7 @@ class TestRiskMetrics:
             returns = np.array([0.0, np.log(prices[1] / prices[0])])
             
             paths.append(PricePath(
-                symbol="BTC/USD",
+                symbol="AAPL",
                 prices=prices,
                 volumes=volumes,
                 spreads=spreads,
@@ -417,7 +417,7 @@ class TestRiskMetrics:
             ))
         
         sim = MonteCarloSimulation(
-            symbol="BTC/USD",
+            symbol="AAPL",
             config=config,
             paths=paths,
             initial_price=100.0,

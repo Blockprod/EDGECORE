@@ -14,6 +14,7 @@ from datetime import datetime
 from collections import defaultdict
 import logging
 import statistics
+import numpy as np
 
 from common.types import LatencyMeasurement, LatencyMetrics, LatencyBudget
 

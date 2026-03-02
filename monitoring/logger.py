@@ -26,7 +26,12 @@ def setup_logger(name: str, log_level: str = "INFO", log_dir: str = "logs") -> s
     )
     
     root_logger = logging.getLogger()
-    root_logger.addHandler(handler)
+    # Prevent handler accumulation on repeated calls
+    if not any(
+        isinstance(h, logging.FileHandler) and getattr(h, 'baseFilename', '').endswith('.log')
+        for h in root_logger.handlers
+    ):
+        root_logger.addHandler(handler)
     root_logger.setLevel(log_level)
     
     # Structlog config

@@ -26,13 +26,13 @@ class TestPositionStopBasics:
         """Verify position stop initializes correctly."""
         stop = PositionStop(
             position_id="pos_001",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long"
         )
         
         assert stop.position_id == "pos_001"
-        assert stop.symbol == "BTC/USDT"
+        assert stop.symbol == "AAPL"
         assert stop.entry_price == 50000.0
         assert stop.side == "long"
         assert stop.stop_loss_price is None
@@ -42,7 +42,7 @@ class TestPositionStopBasics:
         """Verify short position initialization."""
         stop = PositionStop(
             position_id="pos_002",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="short"
         )
@@ -56,7 +56,7 @@ class TestPositionStopBasics:
         with pytest.raises(ValueError):
             PositionStop(
                 position_id="pos_003",
-                symbol="BTC/USDT",
+                symbol="AAPL",
                 entry_price=50000.0,
                 side="invalid"
             )
@@ -70,7 +70,7 @@ class TestPositionStopBasics:
         
         stop = PositionStop(
             position_id="pos_004",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -88,7 +88,7 @@ class TestStopLossTrigger:
         """Verify stop loss triggers on long position."""
         stop = PositionStop(
             position_id="pos_101",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0
@@ -110,7 +110,7 @@ class TestStopLossTrigger:
         """Verify stop loss triggers on short position."""
         stop = PositionStop(
             position_id="pos_102",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="short",
             stop_loss_price=3500.0
@@ -132,7 +132,7 @@ class TestStopLossTrigger:
         """Verify position without stop loss never triggers."""
         stop = PositionStop(
             position_id="pos_103",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long"
         )
@@ -150,7 +150,7 @@ class TestTakeProfitTrigger:
         """Verify take profit triggers on long position."""
         stop = PositionStop(
             position_id="pos_201",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             take_profit_price=60000.0
@@ -172,7 +172,7 @@ class TestTakeProfitTrigger:
         """Verify take profit triggers on short position."""
         stop = PositionStop(
             position_id="pos_202",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="short",
             take_profit_price=2500.0
@@ -194,7 +194,7 @@ class TestTakeProfitTrigger:
         """Verify can trigger both stop and profit simultaneously."""
         stop = PositionStop(
             position_id="pos_203",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -208,7 +208,7 @@ class TestTakeProfitTrigger:
         # Create new position, test stop loss
         stop2 = PositionStop(
             position_id="pos_204",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -226,7 +226,7 @@ class TestTrailingStops:
         """Verify trailing stop percent on long position."""
         stop = PositionStop(
             position_id="pos_301",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             trailing_stop_percent=5.0  # 5% trailing stop
@@ -251,7 +251,7 @@ class TestTrailingStops:
         """Verify trailing stop percent on short position."""
         stop = PositionStop(
             position_id="pos_302",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="short",
             trailing_stop_percent=5.0
@@ -275,7 +275,7 @@ class TestTrailingStops:
         """Verify trailing stop distance on long position."""
         stop = PositionStop(
             position_id="pos_303",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             trailing_stop_distance=2000.0  # $2000 trailing distance
@@ -295,7 +295,7 @@ class TestTrailingStops:
         """Verify trailing stop can execute."""
         stop = PositionStop(
             position_id="pos_304",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             trailing_stop_percent=5.0
@@ -317,7 +317,7 @@ class TestHardExitTime:
         """Verify hard exit doesn't trigger before time limit."""
         stop = PositionStop(
             position_id="pos_401",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             hard_exit_time_minutes=60,
@@ -332,7 +332,7 @@ class TestHardExitTime:
         old_time = datetime.utcnow() - timedelta(minutes=65)
         stop = PositionStop(
             position_id="pos_402",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             hard_exit_time_minutes=60,
@@ -347,7 +347,7 @@ class TestHardExitTime:
         old_time = datetime.utcnow() - timedelta(minutes=60)
         stop = PositionStop(
             position_id="pos_403",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             hard_exit_time_minutes=60,
@@ -361,7 +361,7 @@ class TestHardExitTime:
         old_time = datetime.utcnow() - timedelta(days=100)
         stop = PositionStop(
             position_id="pos_404",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             entry_time=old_time
@@ -377,7 +377,7 @@ class TestBreakevenProtection:
         """Verify breakeven protection activates on long."""
         stop = PositionStop(
             position_id="pos_501",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -396,7 +396,7 @@ class TestBreakevenProtection:
         """Verify breakeven protection activates on short."""
         stop = PositionStop(
             position_id="pos_502",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="short",
             stop_loss_price=3500.0,
@@ -414,7 +414,7 @@ class TestBreakevenProtection:
         """Verify breakeven doesn't move stop if already higher."""
         stop = PositionStop(
             position_id="pos_503",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=49500.0,  # Already tight stop
@@ -434,21 +434,21 @@ class TestPositionStopStatus:
         """Verify status for position with no stops."""
         stop = PositionStop(
             position_id="pos_601",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long"
         )
         
         status = stop.get_status()
         assert status["position_id"] == "pos_601"
-        assert status["symbol"] == "BTC/USDT"
+        assert status["symbol"] == "AAPL"
         assert status["active_stops"] == []
     
     def test_status_with_stops(self):
         """Verify status with multiple active stops."""
         stop = PositionStop(
             position_id="pos_602",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -467,7 +467,7 @@ class TestPositionStopStatus:
         """Verify status includes time to hard exit."""
         stop = PositionStop(
             position_id="pos_603",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             hard_exit_time_minutes=60,
@@ -494,7 +494,7 @@ class TestPositionStopManager:
         
         pos_stop = manager.add_position(
             position_id="pos_501",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long"
         )
@@ -513,7 +513,7 @@ class TestPositionStopManager:
         
         pos_stop = manager.add_position(
             position_id="pos_502",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config=config
@@ -528,7 +528,7 @@ class TestPositionStopManager:
         
         manager.add_position(
             position_id="pos_503",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -543,7 +543,7 @@ class TestPositionStopManager:
         
         manager.add_position(
             position_id="pos_504",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0, "take_profit_price": 60000.0}
@@ -558,7 +558,7 @@ class TestPositionStopManager:
         
         manager.add_position(
             position_id="pos_505",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -574,7 +574,7 @@ class TestPositionStopManager:
         
         manager.add_position(
             position_id="pos_506",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long"
         )
@@ -589,7 +589,7 @@ class TestPositionStopManager:
         
         manager.add_position(
             position_id="pos_507",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -606,7 +606,7 @@ class TestPositionStopManager:
         for i in range(3):
             manager.add_position(
                 position_id=f"pos_{i}",
-                symbol="BTC/USDT",
+                symbol="AAPL",
                 entry_price=50000.0,
                 side="long"
             )
@@ -621,7 +621,7 @@ class TestPositionStopManager:
         # Add two positions with different stops
         manager.add_position(
             position_id="pos_101",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -629,7 +629,7 @@ class TestPositionStopManager:
         
         manager.add_position(
             position_id="pos_102",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="short",
             stop_config={"stop_loss_price": 3500.0}
@@ -639,8 +639,8 @@ class TestPositionStopManager:
         should_exit_1, _ = manager.check_exits("pos_101", 44000.0)
         should_exit_2, _ = manager.check_exits("pos_102", 2900.0)
         
-        assert should_exit_1 is True  # BTC stop triggered
-        assert should_exit_2 is False  # ETH stops not triggered
+        assert should_exit_1 is True  # AAPL stop triggered
+        assert should_exit_2 is False  # MSFT stops not triggered
 
 
 class TestPositionStopIntegration:
@@ -650,7 +650,7 @@ class TestPositionStopIntegration:
         """Verify complete workflow triggering stop loss."""
         stop = PositionStop(
             position_id="pos_w001",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -670,7 +670,7 @@ class TestPositionStopIntegration:
         """Verify complete workflow triggering take profit."""
         stop = PositionStop(
             position_id="pos_w002",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_loss_price=45000.0,
@@ -690,7 +690,7 @@ class TestPositionStopIntegration:
         """Verify workflow with both trailing stop and profit target."""
         stop = PositionStop(
             position_id="pos_w003",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             trailing_stop_percent=5.0,

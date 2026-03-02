@@ -9,7 +9,7 @@ def test_risk_engine_position_limit():
     engine.config.max_concurrent_positions = 3
     
     can_enter, reason = engine.can_enter_trade(
-        "BTC/ETH", 10.0, 100000, 0.05
+        "AAPL_MSFT", 10.0, 100000, 0.05
     )
     assert can_enter
     
@@ -113,7 +113,7 @@ class TestRiskEngineEquityInjection:
         # Negative position size should raise validation error
         with pytest.raises(Exception):
             engine.can_enter_trade(
-                "BTC/ETH", -10.0, 100000, 0.05
+                "AAPL_MSFT", -10.0, 100000, 0.05
             )
 
     def test_can_enter_trade_validates_volatility(self):
@@ -123,7 +123,7 @@ class TestRiskEngineEquityInjection:
         # Negative volatility should raise validation error
         with pytest.raises(Exception):
             engine.can_enter_trade(
-                "BTC/ETH", 10.0, 100000, -0.05
+                "AAPL_MSFT", 10.0, 100000, -0.05
             )
 
     def test_initialization_stores_equity_values(self):

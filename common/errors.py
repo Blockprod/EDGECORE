@@ -10,7 +10,6 @@ Provides:
 
 from enum import Enum
 from typing import Optional
-import ccxt
 
 
 class ErrorCategory(Enum):
@@ -119,29 +118,13 @@ def classify_exception(exc: Exception) -> ErrorCategory:
     
     Examples:
         - TimeoutError → TRANSIENT (retry immediately)
-        - ccxt.InsufficientBalance → NON_RETRYABLE (alert operator)
+        - ConnectionError → TRANSIENT (network issue)
         - KeyError (missing field in data) → FATAL (logic error)
     """
     
     # Network/temporary errors
     if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
         return ErrorCategory.TRANSIENT
-    
-    # CCXT-specific errors
-    if isinstance(exc, ccxt.NetworkError):
-        return ErrorCategory.TRANSIENT
-    
-    if isinstance(exc, ccxt.ExchangeNotAvailable):
-        return ErrorCategory.TRANSIENT  # Exchange temporarily down
-    
-    if isinstance(exc, ccxt.DDoSProtection):
-        return ErrorCategory.RETRYABLE  # Exchange rate-limiting, retry with backoff
-    
-    if isinstance(exc, (ccxt.InsufficientFunds, ccxt.InsufficientBalance if hasattr(ccxt, 'InsufficientBalance') else type(None))):
-        return ErrorCategory.NON_RETRYABLE  # Account lacks funds, operator action needed
-    
-    if isinstance(exc, (ccxt.InvalidOrder, ccxt.OrderNotFound)):
-        return ErrorCategory.NON_RETRYABLE  # Order validation or matching issue
     
     # Data errors (logic)
     if isinstance(exc, (KeyError, ValueError, TypeError)):

@@ -43,7 +43,7 @@ This guide provides comprehensive instructions for deploying the Trading Engine 
 │  │  │  - Data Loading & Preprocessing                   │  │   │
 │  │  │  - Strategy (Pair Trading)                        │  │   │
 │  │  │  - Risk Management                                │  │   │
-│  │  │  - Order Execution (CCXT)                         │  │   │
+│  │  │  - Order Execution (IBKR)                         │  │   │
 │  │  │  - Monitoring & Dashboard (Flask)                 │  │   │
 │  │  │  - JSON Logging                                   │  │   │
 │  │  │  - Dashboard Caching                              │  │   │
@@ -101,7 +101,7 @@ This guide provides comprehensive instructions for deploying the Trading Engine 
 ### API Credentials
 
 You'll need:
-- **Exchange API Key** (Binance, Coinbase, etc.)
+- ****Broker API Key** (IBKR TWS/Gateway)
 - **Exchange API Secret**
 - **Optional**: Webhook URLs for notifications
 
@@ -149,8 +149,8 @@ kubectl create configmap trading-config --from-file=config/ \
 
 # 3. Create Secrets (sensitive data)
 kubectl create secret generic trading-secrets \
-  --from-literal=ccxt-api-key=$CCXT_API_KEY \
-  --from-literal=ccxt-api-secret=$CCXT_API_SECRET \
+  --from-literal=ibkr-host=$IBKR_HOST \
+  --from-literal=ibkr-port=$IBKR_PORT \
   -n trading-engine
 
 # 4. Deploy using Helm (optional)
@@ -218,10 +218,10 @@ MAX_POSITION_SIZE=100000
 MAX_LEVERAGE=2.0
 
 # Exchange
-CCXT_EXCHANGE=binance
-CCXT_API_KEY=your-key
-CCXT_API_SECRET=your-secret
-CCXT_SANDBOX=false                # Set to true for testing
+IBKR_HOST=127.0.0.1
+IBKR_PORT=7497
+IBKR_CLIENT_ID=1
+IBKR_PAPER=true                 # Set to false for live
 ```
 
 ### Configuration Files
@@ -463,7 +463,7 @@ docker logs trading-engine
 # Common causes:
 # - Port 5000 in use: change port in docker-compose.yml
 # - Missing .env file: cp config/.env.example .env
-# - API credentials invalid: verify CCXT_API_KEY and CCXT_API_SECRET
+# - API credentials invalid: verify IBKR_HOST, IBKR_PORT, and IBKR_CLIENT_ID
 ```
 
 #### 2. High Memory Usage
@@ -603,7 +603,7 @@ tar -xzf logs_20260208.tar.gz -C /backup/
 ### Launch Week
 - [ ] Gradual traffic increase (10% → 100%)
 - [ ] Monitor all metrics closely
-- [ ] Team on-call 24/7
+- [ ] Team on-call market hours
 - [ ] Daily stand-ups
 - [ ] Weekly review meeting
 

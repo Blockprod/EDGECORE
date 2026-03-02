@@ -2,7 +2,7 @@
 Comprehensive end-to-end integration tests.
 
 Tests complete trading flows:
-- Data load → Signal generation → Risk check → Order submission → Position management
+- Data load ↓ Signal generation ↓ Risk check ↓ Order submission ↓ Position management
 - Error recovery at each step
 - State consistency (local vs broker)
 - Monitoring and alerting
@@ -81,7 +81,7 @@ def cointegrated_pair_data():
         'volume': 1000
     }, index=dates)
     
-    return {"BTC/USDT": df_x, "ETH/USDT": df_y}
+    return {"AAPL": df_x, "MSFT": df_y}
 
 
 @pytest.fixture
@@ -110,7 +110,7 @@ class TestEndToEndDataLoadingFlow:
     
     def test_load_ohlcv_and_validate(self, sample_ohlcv_data):
         """Test loading and validating OHLCV data."""
-        validator = OHLCVValidator(symbol="BTC/USDT")
+        validator = OHLCVValidator(symbol="AAPL")
         
         result = validator.validate(sample_ohlcv_data)
         
@@ -130,7 +130,7 @@ class TestEndToEndDataLoadingFlow:
             'volume': [1000] * 10
         }, index=dates)
         
-        validator = OHLCVValidator(symbol="BTC/USDT")
+        validator = OHLCVValidator(symbol="AAPL")
         result = validator.validate(df)
         
         assert not result.is_valid
@@ -138,9 +138,9 @@ class TestEndToEndDataLoadingFlow:
     
     def test_multiple_symbols_all_valid(self, sample_ohlcv_data):
         """Test loading multiple symbols."""
-        validator = OHLCVValidator(symbol="BTC/USDT")
+        validator = OHLCVValidator(symbol="AAPL")
         
-        symbols = ["BTC/USDT", "ETH/USDT", "XRP/USDT"]
+        symbols = ["AAPL", "MSFT", "JPM"]
         for symbol in symbols:
             result = validator.validate(sample_ohlcv_data)
             assert result.is_valid
@@ -151,8 +151,8 @@ class TestSignalGenerationFlow:
     
     def test_cointegration_detection(self, cointegrated_pair_data):
         """Test detecting cointegrated pairs."""
-        x_data = cointegrated_pair_data["BTC/USDT"]['close']
-        y_data = cointegrated_pair_data["ETH/USDT"]['close']
+        x_data = cointegrated_pair_data["AAPL"]['close']
+        y_data = cointegrated_pair_data["MSFT"]['close']
         
         # Should detect cointegration (since data is cointegrated)
         result = engle_granger_test(y_data, x_data)
@@ -164,8 +164,8 @@ class TestSignalGenerationFlow:
     
     def test_spread_analysis(self, cointegrated_pair_data):
         """Test spread analysis on cointegrated pair."""
-        x_data = cointegrated_pair_data["BTC/USDT"]['close']
-        y_data = cointegrated_pair_data["ETH/USDT"]['close']
+        x_data = cointegrated_pair_data["AAPL"]['close']
+        y_data = cointegrated_pair_data["MSFT"]['close']
         
         # Create spread model
         model = SpreadModel(y_data, x_data)
@@ -177,8 +177,8 @@ class TestSignalGenerationFlow:
     
     def test_z_score_signal_generation(self, cointegrated_pair_data):
         """Test Z-score based signal generation."""
-        x_data = cointegrated_pair_data["BTC/USDT"]['close']
-        y_data = cointegrated_pair_data["ETH/USDT"]['close']
+        x_data = cointegrated_pair_data["AAPL"]['close']
+        y_data = cointegrated_pair_data["MSFT"]['close']
         
         # Create spread model
         model = SpreadModel(y_data, x_data)
@@ -213,7 +213,7 @@ class TestRiskGatingFlow:
         
         # Now try to enter another trade (should be rejected)
         can_enter, reason = risk_engine.can_enter_trade(
-            symbol_pair="BTC/USDT",
+            symbol_pair="AAPL",
             position_size=1.0,
             current_equity=100000.0,
             volatility=0.5
@@ -229,7 +229,7 @@ class TestRiskGatingFlow:
         
         # Try reasonable position with low volatility
         can_enter, reason = risk_engine.can_enter_trade(
-            symbol_pair="BTC/USDT",
+            symbol_pair="AAPL",
             position_size=1.0,
             current_equity=100000.0,
             volatility=0.5  # Low volatility (in %)
@@ -242,16 +242,16 @@ class TestRiskGatingFlow:
         """Test risk engine blocks after consecutive losses."""
         risk_engine = RiskEngine(initial_equity=100000.0)
         
-        # Simulate 3 consecutive losses (should be max)
-        risk_engine.loss_streak = 3
-        
+        # Simulate losses at the configured maximum (equity dev: max_consecutive_losses=5)
+        risk_engine.loss_streak = risk_engine.config.max_consecutive_losses
+
         can_enter, reason = risk_engine.can_enter_trade(
-            symbol_pair="BTC/USDT",
+            symbol_pair="AAPL",
             position_size=1.0,
             current_equity=95000.0,
             volatility=0.5
         )
-        
+
         # Should be blocked due to consecutive loss limit
         assert can_enter is False
 
@@ -262,11 +262,11 @@ class TestOrderExecutionFlow:
     def test_complete_order_lifecycle(self, execution_engine):
         """Test complete order lifecycle."""
         # Setup market price
-        execution_engine.context.market_prices["BTC/USDT"] = 50000.0
+        execution_engine.context.market_prices["AAPL"] = 50000.0
         
         # 1. Submit order
         order_id = execution_engine.submit_order(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             order_type="market"
@@ -276,16 +276,16 @@ class TestOrderExecutionFlow:
         
         # 2. Check order filled
         order = execution_engine.context.get_order(order_id)
-        assert order.status.value == "filled"
+        assert order.status.value == "FILLED"
         assert order.filled_quantity == 1.0
     
     def test_position_opened_after_order(self, execution_engine):
         """Test position opened after successful order."""
-        execution_engine.context.market_prices["BTC/USDT"] = 50000.0
+        execution_engine.context.market_prices["AAPL"] = 50000.0
         
         # Submit and fill order
         order_id = execution_engine.submit_order(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             side="buy",
             quantity=2.0,
             order_type="market"
@@ -293,7 +293,7 @@ class TestOrderExecutionFlow:
         
         # Open position
         success = execution_engine.open_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             quantity=2.0,
             entry_price=50000.0
         )
@@ -301,18 +301,18 @@ class TestOrderExecutionFlow:
         assert success is True
         
         # Verify position exists
-        position = execution_engine.context.get_position("BTC/USDT")
+        position = execution_engine.context.get_position("AAPL")
         assert position is not None
         assert position.quantity == 2.0
     
     def test_position_closed_with_pnl(self, execution_engine):
         """Test position closure and P&L calculation."""
-        execution_engine.context.market_prices["BTC/USDT"] = 50000.0
+        execution_engine.context.market_prices["AAPL"] = 50000.0
         execution_engine.context.cash = 100000.0
         
         # Open position
         execution_engine.open_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0
         )
@@ -322,7 +322,7 @@ class TestOrderExecutionFlow:
         
         # Close position
         success, pnl = execution_engine.close_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             exit_price=exit_price
         )
         
@@ -342,13 +342,13 @@ class TestMonitoringAndAlerting:
         alert = alerter.create_alert(
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
-            title="BTC/USDT position opened",
-            message="Opened position of 1.0 BTC/USDT at 50000.0"
+            title="AAPL position opened",
+            message="Opened position of 1.0 AAPL at 50000.0"
         )
         
         # Should generate alert
         assert alert is not None
-        assert alert.title == "BTC/USDT position opened"
+        assert alert.title == "AAPL position opened"
     
     def test_alert_on_position_closed(self, alerter):
         """Test alert generated when position closed."""
@@ -357,7 +357,7 @@ class TestMonitoringAndAlerting:
         alert = alerter.create_alert(
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
-            title="BTC/USDT position closed",
+            title="AAPL position closed",
             message="Closed position with P&L: +1000.0"
         )
         
@@ -389,21 +389,21 @@ class TestStateConsistencyFlow:
     def test_reconciliation_detects_mismatch(self, execution_engine):
         """Test that reconciliation catches state mismatch."""
         # Setup local position
-        execution_engine.context.market_prices["BTC/USDT"] = 50000.0
+        execution_engine.context.market_prices["AAPL"] = 50000.0
         execution_engine.open_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0
         )
         
         # Simulate broker has different position
         mock_broker_positions = {
-            "BTC/USDT": {"quantity": 2.0, "entry_price": 50000.0}  # Different!
+            "AAPL": {"quantity": 2.0, "entry_price": 50000.0}  # Different!
         }
         
         # Check for mismatch
-        local_pos = execution_engine.context.get_position("BTC/USDT")
-        assert local_pos.quantity != mock_broker_positions["BTC/USDT"]["quantity"]
+        local_pos = execution_engine.context.get_position("AAPL")
+        assert local_pos.quantity != mock_broker_positions["AAPL"]["quantity"]
     
     def test_equity_tracking_consistency(self, execution_engine):
         """Test equity tracking consistency."""
@@ -412,15 +412,15 @@ class TestStateConsistencyFlow:
         execution_engine.context.cash = initial_equity
         
         # Open position (cost: 50000)
-        execution_engine.context.market_prices["BTC/USDT"] = 50000.0
+        execution_engine.context.market_prices["AAPL"] = 50000.0
         execution_engine.open_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0
         )
         
         # Position value + cash should equal equity
-        position = execution_engine.context.get_position("BTC/USDT")
+        position = execution_engine.context.get_position("AAPL")
         position_value = position.quantity * position.current_price
         total = execution_engine.context.cash + position_value
         
@@ -481,27 +481,27 @@ class TestBacktestIntegration:
         # Setup initial prices
         prices = sample_ohlcv_data['close'].iloc[:5]
         for i, price in enumerate(prices):
-            engine.context.update_market_price("BTC/USDT", float(price))
+            engine.context.update_market_price("AAPL", float(price))
         
         # Open position at first price
         entry_price = float(prices.iloc[0])
-        success = engine.open_position("BTC/USDT", 1.0, entry_price)
+        success = engine.open_position("AAPL", 1.0, entry_price)
         assert success is True
         
         # Close at last price
         exit_price = float(prices.iloc[-1])
-        success, pnl = engine.close_position("BTC/USDT", exit_price)
+        success, pnl = engine.close_position("AAPL", exit_price)
         assert success is True
         assert pnl is not None
     
     def test_backtest_with_slippage(self, test_config):
         """Test backtest slippage calculation."""
         engine = ExecutionEngine(mode=ModeType.BACKTEST)
-        engine.context.market_prices["BTC/USDT"] = 50000.0
+        engine.context.market_prices["AAPL"] = 50000.0
         
         # Submit buy order at market
         order_id = engine.submit_order(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             side="buy",
             quantity=1.0,
             order_type="market"
@@ -527,22 +527,22 @@ class TestCompleteStrategyFlow:
         """Test complete trading cycle."""
         
         # Step 1: Validate data
-        validator = OHLCVValidator(symbol="BTC/USDT")
-        btc_data = cointegrated_pair_data["BTC/USDT"]
+        validator = OHLCVValidator(symbol="AAPL")
+        btc_data = cointegrated_pair_data["AAPL"]
         validation = validator.validate(btc_data)
         assert validation.is_valid
         
         # Step 2: Analyze cointegration
         btc_prices = btc_data['close']
-        eth_prices = cointegrated_pair_data["ETH/USDT"]['close']
+        eth_prices = cointegrated_pair_data["MSFT"]['close']
         coint_result = engle_granger_test(eth_prices, btc_prices)
         
         # Step 3: Check risk
         current_price = float(btc_prices.iloc[-1])
-        execution_engine.context.update_market_price("BTC/USDT", current_price)
+        execution_engine.context.update_market_price("AAPL", current_price)
         
         can_trade, reason = risk_engine.can_enter_trade(
-            symbol_pair="BTC/USDT",
+            symbol_pair="AAPL",
             position_size=0.5,
             current_equity=100000.0,
             volatility=1.0  # 1% volatility
@@ -551,7 +551,7 @@ class TestCompleteStrategyFlow:
         
         # Step 4: Enter trade
         order_id = execution_engine.submit_order(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             side="buy",
             quantity=0.5,
             order_type="market"
@@ -560,7 +560,7 @@ class TestCompleteStrategyFlow:
         
         # Step 5: Open position
         success = execution_engine.open_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             quantity=0.5,
             entry_price=current_price
         )
@@ -572,8 +572,8 @@ class TestCompleteStrategyFlow:
         alert = alerter.create_alert(
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
-            title=f"Position opened: BTC/USDT",
-            message=f"Opened 0.5 BTC/USDT long at {current_price}"
+            title=f"Position opened: AAPL",
+            message=f"Opened 0.5 AAPL long at {current_price}"
         )
         
         assert alert is not None
@@ -581,7 +581,7 @@ class TestCompleteStrategyFlow:
         # Step 7: Close position
         exit_price = current_price * 1.02  # 2% profit
         success, pnl = execution_engine.close_position(
-            symbol="BTC/USDT",
+            symbol="AAPL",
             exit_price=exit_price
         )
         assert success is True

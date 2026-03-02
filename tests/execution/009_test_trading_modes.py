@@ -21,24 +21,24 @@ class TestPaperTradingMode:
             
             # Should raise error
             with pytest.raises(ValueError, match="sandbox mode"):
-                run_paper_trading(["BTC/USDT"], settings)
+                run_paper_trading(["AAPL"], settings)
         finally:
             settings.execution.use_sandbox = original_sandbox
 
-    def test_paper_trading_requires_ccxt_engine(self):
-        """Test that paper trading requires CCXT engine."""
+    def test_paper_trading_rejects_unknown_engine(self):
+        """Test that paper trading rejects unknown/unsupported engines."""
         settings = get_settings()
-        
+
         # Backup original value
         original_engine = settings.execution.engine
-        
+
         try:
-            # Set invalid engine
-            settings.execution.engine = "ibkr"
-            
-            # Should raise error
-            with pytest.raises(ValueError, match="CCXT engine"):
-                run_paper_trading(["BTC/USDT"], settings)
+            # Set unsupported engine
+            settings.execution.engine = "unknown_exchange"
+
+            # Should raise error for unsupported engine
+            with pytest.raises(ValueError, match="ibkr engine"):
+                run_paper_trading(["AAPL"], settings)
         finally:
             settings.execution.engine = original_engine
 
@@ -66,10 +66,10 @@ class TestPaperTradingMode:
             # Mock data loader to raise KeyboardInterrupt after init
             mock_loader_instance = MagicMock()
             mock_loader.return_value = mock_loader_instance
-            mock_loader_instance.load_ccxt_data.side_effect = KeyboardInterrupt()
+            mock_loader_instance.load_ibkr_data.side_effect = KeyboardInterrupt()
             
             # Should handle KeyboardInterrupt gracefully
-            run_paper_trading(["BTC/USDT"], settings)
+            run_paper_trading(["AAPL"], settings)
             
             # Verify components were initialized
             mock_loader.assert_called_once()
@@ -84,8 +84,8 @@ class TestPaperTradingMode:
         with patch('main.DataLoader') as mock_loader, \
              patch('main.PairTradingStrategy') as mock_strategy, \
              patch('main.RiskEngine') as mock_risk, \
-             patch('main.CCXTExecutionEngine') as mock_execution, \
-             patch('main.time.sleep'):  # Skip sleep
+             patch('main.PaperExecutionEngine') as mock_execution, \
+             patch('main.time.sleep'):
             
             import pandas as pd
             
@@ -93,7 +93,7 @@ class TestPaperTradingMode:
             mock_loader_instance = MagicMock()
             mock_loader.return_value = mock_loader_instance
             df = pd.DataFrame({'close': [100, 101, 102, 103]})
-            mock_loader_instance.load_ccxt_data.return_value = df
+            mock_loader_instance.load_ibkr_data.return_value = df
             
             # Mock strategy with no signals
             mock_strat_instance = MagicMock()
@@ -113,25 +113,25 @@ class TestPaperTradingMode:
 class TestLiveTradingMode:
     """Test live trading mode functionality."""
     
-    def test_live_trading_requires_ccxt_engine(self):
-        """Test that live trading requires CCXT engine."""
+    def test_live_trading_rejects_unknown_engine(self):
+        """Test that live trading rejects unknown/unsupported engines."""
         settings = get_settings()
-        
-        # Backup original value
+
+        # Backup original values
         original_engine = settings.execution.engine
         original_sandbox = settings.execution.use_sandbox
-        
+
         try:
-            # Set invalid engine and disable sandbox for error check
-            settings.execution.engine = "ibkr"
+            # Set unsupported engine and disable sandbox for error check
+            settings.execution.engine = "unknown_exchange"
             settings.execution.use_sandbox = False
-            
+
             # Mock ENABLE_LIVE_TRADING to bypass that check
             with patch.dict('os.environ', {'ENABLE_LIVE_TRADING': 'true'}), \
                  patch('builtins.input', return_value="no"):
-                # Should raise error before prompting  
-                with pytest.raises(ValueError, match="CCXT engine"):
-                    run_live_trading(["BTC/USDT"], settings)
+                # Should raise error before prompting
+                with pytest.raises(ValueError, match="ibkr engine"):
+                    run_live_trading(["AAPL"], settings)
         finally:
             settings.execution.engine = original_engine
             settings.execution.use_sandbox = original_sandbox
@@ -152,7 +152,7 @@ class TestLiveTradingMode:
                  patch('builtins.input', return_value="no"):
                 # Should raise error
                 with pytest.raises(ValueError, match="sandbox"):
-                    run_live_trading(["BTC/USDT"], settings)
+                    run_live_trading(["AAPL"], settings)
         finally:
             settings.execution.use_sandbox = original_sandbox
 
@@ -169,7 +169,7 @@ class TestLiveTradingMode:
             with patch.dict('os.environ', {'ENABLE_LIVE_TRADING': 'true'}), \
                  patch('builtins.input', return_value="no"):
                 # Should return without error (user declined)
-                run_live_trading(["BTC/USDT"], settings)
+                run_live_trading(["AAPL"], settings)
             
         finally:
             settings.execution.use_sandbox = original_sandbox
@@ -188,7 +188,7 @@ class TestLiveTradingMode:
                  patch('builtins.input', return_value="no"), \
                  patch('builtins.print') as mock_print:
                 
-                run_live_trading(["BTC/USDT"], settings)
+                run_live_trading(["AAPL"], settings)
                 
                 # Verify warning was printed
                 print_calls = [str(call) for call in mock_print.call_args_list]
@@ -208,7 +208,7 @@ class TestMainModeSelection:
             mock_instance = MagicMock()
             mock_runner.return_value = mock_instance
             mock_metrics = MagicMock()
-            mock_instance.run.return_value = mock_metrics
+            mock_instance.run_unified.return_value = mock_metrics
             
             import sys
             from io import StringIO
@@ -217,14 +217,14 @@ class TestMainModeSelection:
             # Capture output
             original_argv = sys.argv
             try:
-                sys.argv = ['main.py', '--mode', 'backtest', '--symbols', 'BTC/USDT']
+                sys.argv = ['main.py', '--mode', 'backtest', '--symbols', 'AAPL', 'MSFT']
                 
                 # Should not raise error
                 main()
                 
                 # Verify runner was called
                 mock_runner.assert_called_once()
-                mock_instance.run.assert_called_once()
+                mock_instance.run_unified.assert_called_once()
             finally:
                 sys.argv = original_argv
 
@@ -236,7 +236,7 @@ class TestMainModeSelection:
             
             original_argv = sys.argv
             try:
-                sys.argv = ['main.py', '--mode', 'paper', '--symbols', 'BTC/USDT']
+                sys.argv = ['main.py', '--mode', 'paper', '--symbols', 'AAPL', 'MSFT']
                 
                 # Should not raise error
                 main()
@@ -254,7 +254,7 @@ class TestMainModeSelection:
             
             original_argv = sys.argv
             try:
-                sys.argv = ['main.py', '--mode', 'live', '--symbols', 'BTC/USDT']
+                sys.argv = ['main.py', '--mode', 'live', '--symbols', 'AAPL', 'MSFT']
                 
                 # Should not raise error
                 main()

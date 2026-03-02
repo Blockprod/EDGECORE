@@ -73,8 +73,8 @@ class TestOHLCVValidatorBasic:
     
     def test_validator_initialization(self):
         """Test OHLCVValidator creation."""
-        validator = OHLCVValidator(symbol="BTC/USD")
-        assert validator.symbol == "BTC/USD"
+        validator = OHLCVValidator(symbol="AAPL")
+        assert validator.symbol == "AAPL"
     
     def test_empty_dataframe(self):
         """Test validation of empty dataframe."""
@@ -88,7 +88,7 @@ class TestOHLCVValidatorBasic:
     
     def test_valid_ohlcv_data(self):
         """Test validation of valid OHLCV data."""
-        validator = OHLCVValidator(symbol="BTC/USD")
+        validator = OHLCVValidator(symbol="AAPL")
         
         # Create valid data
         dates = pd.date_range('2024-01-01', periods=10, freq='1h')
@@ -419,7 +419,7 @@ class TestPositionValidator:
     def test_valid_position(self):
         """Test validation of valid position."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=50000.0,
             current_price=51000.0,
@@ -444,7 +444,7 @@ class TestPositionValidator:
     def test_zero_quantity(self):
         """Test detection of zero quantity."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=0.0,
             entry_price=50000.0,
             current_price=51000.0
@@ -456,7 +456,7 @@ class TestPositionValidator:
     def test_negative_quantity(self):
         """Test detection of negative quantity."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=-1.0,
             entry_price=50000.0,
             current_price=51000.0
@@ -468,7 +468,7 @@ class TestPositionValidator:
     def test_nan_quantity(self):
         """Test detection of NaN quantity."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=np.nan,
             entry_price=50000.0,
             current_price=51000.0
@@ -480,7 +480,7 @@ class TestPositionValidator:
     def test_invalid_side(self):
         """Test detection of invalid side."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=50000.0,
             current_price=51000.0,
@@ -493,7 +493,7 @@ class TestPositionValidator:
     def test_zero_entry_price(self):
         """Test detection of zero entry price."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=0.0,
             current_price=51000.0
@@ -505,7 +505,7 @@ class TestPositionValidator:
     def test_zero_current_price(self):
         """Test detection of zero current price."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=50000.0,
             current_price=0.0
@@ -517,7 +517,7 @@ class TestPositionValidator:
     def test_infinite_entry_price(self):
         """Test detection of infinite entry price."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=np.inf,
             current_price=51000.0
@@ -530,7 +530,7 @@ class TestPositionValidator:
         """Test warning for position opened in future."""
         future_time = datetime.utcnow() + timedelta(hours=1)
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=50000.0,
             current_price=51000.0,
@@ -544,7 +544,7 @@ class TestPositionValidator:
         """Test warning for very old position."""
         old_time = datetime.utcnow() - timedelta(days=400)
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=50000.0,
             current_price=51000.0,
@@ -557,7 +557,7 @@ class TestPositionValidator:
     def test_short_position(self):
         """Test validation of short position."""
         result = PositionValidator.validate_position(
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.5,
             entry_price=50000.0,
             current_price=49000.0,

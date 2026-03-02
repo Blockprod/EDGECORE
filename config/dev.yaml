@@ -1,87 +1,112 @@
+# EDGECORE — Equity Development Configuration
+# Market: US Equities via Interactive Brokers
+# Annualisation: 252 trading days
+# audit 2026-02-22 — equity migration (Option A: 100% US equities via IBKR)
+#
+# Pair selection rationale:
+#   Sector-matched pairs with genuine economic cointegration drivers
+#   (same industry, common factor exposure, regulatory overlap).
+
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
 strategy:
-  lookback_window: 252
-  entry_z_score: 2.0
-  exit_z_score: 0.0
+  lookback_window: 120
+  entry_z_score: 1.0
+  exit_z_score: 0.5
   min_correlation: 0.7
   max_half_life: 60
+  use_kalman: true                # Dynamic hedge ratio (Kalman filter ON)
+  max_position_loss_pct: 0.10     # 10% P&L stop per position
 
 trading_universe:
-  # 50+ major cryptocurrencies for Statistical Arbitrage
-  # Wider universe = better cointegration discovery
+  # US large-cap equity pairs grouped by sector.
+  # Each group contains economically related companies
+  # where cointegration has a genuine fundamental basis.
   symbols:
-    # Top tier (mega cap)
-    - "BTC/USDT"
-    - "ETH/USDT"
-    # Large cap
-    - "BNB/USDT"
-    - "XRP/USDT"
-    - "ADA/USDT"
-    - "SOL/USDT"
-    - "DOGE/USDT"
-    - "AVAX/USDT"
-    - "LINK/USDT"
-    - "DOT/USDT"
-    # Mid cap
-    - "MATIC/USDT"
-    - "LTC/USDT"
-    - "TRX/USDT"
-    - "NEAR/USDT"
-    - "ATOM/USDT"
-    - "HBAR/USDT"
-    - "FTT/USDT"
-    - "ARB/USDT"
-    - "OP/USDT"
-    - "AAVE/USDT"
-    # Exchange tokens
-    - "UNI/USDT"
-    - "CAKE/USDT"
-    - "SUSHI/USDT"
-    # Gaming/Metaverse
-    - "SAND/USDT"
-    - "MANA/USDT"
-    - "ENJ/USDT"
-    - "GALA/USDT"
-    # Layer 2 / Cross-chain
-    - "FLOW/USDT"
-    - "VET/USDT"
-    # Classic alts
-    - "ETC/USDT"
-    - "LTC/USDT"
-    - "ZEC/USDT"
-    - "XLM/USDT"
-    - "XMR/USDT"
-    # DeFi tokens
-    - "MKR/USDT"
-    - "SNX/USDT"
-    - "YFI/USDT"
-    - "COMP/USDT"
-    - "CRV/USDT"
-    - "LDO/USDT"
-    - "GMX/USDT"
-    # Layer 2 new
-    - "IMX/USDT"
-    - "LUNC/USDT"
-    - "ONE/USDT"
-    - "FIL/USDT"
-    - "ICP/USDT"
+    # --- Technology (Mega Cap) ---
+    - "AAPL"     # Apple
+    - "MSFT"     # Microsoft
+    - "GOOGL"    # Alphabet
+    - "META"     # Meta Platforms
+    - "NVDA"     # NVIDIA
+    - "AMD"      # Advanced Micro Devices
+    - "INTC"     # Intel
+    - "AVGO"     # Broadcom
+    - "CRM"      # Salesforce
+    - "ADBE"     # Adobe
+    # --- Financials ---
+    - "JPM"      # JPMorgan Chase
+    - "BAC"      # Bank of America
+    - "GS"       # Goldman Sachs
+    - "MS"       # Morgan Stanley
+    - "WFC"      # Wells Fargo
+    - "C"        # Citigroup
+    - "BLK"      # BlackRock
+    - "SCHW"     # Charles Schwab
+    # --- Healthcare / Pharma ---
+    - "JNJ"      # Johnson & Johnson
+    - "PFE"      # Pfizer
+    - "UNH"      # UnitedHealth
+    - "MRK"      # Merck
+    - "ABBV"     # AbbVie
+    - "LLY"      # Eli Lilly
+    - "TMO"      # Thermo Fisher
+    - "ABT"      # Abbott Labs
+    # --- Consumer Staples ---
+    - "KO"       # Coca-Cola
+    - "PEP"      # PepsiCo
+    - "PG"       # Procter & Gamble
+    - "CL"       # Colgate-Palmolive
+    - "WMT"      # Walmart
+    - "COST"     # Costco
+    # --- Energy ---
+    - "XOM"      # ExxonMobil
+    - "CVX"      # Chevron
+    - "COP"      # ConocoPhillips
+    - "SLB"      # Schlumberger
+    - "EOG"      # EOG Resources
+    # --- Industrials ---
+    - "CAT"      # Caterpillar
+    - "DE"       # Deere & Company
+    - "HON"      # Honeywell
+    - "GE"       # GE Aerospace
+    - "RTX"      # RTX (Raytheon)
+    - "LMT"      # Lockheed Martin
+    # --- Utilities ---
+    - "NEE"      # NextEra Energy
+    - "DUK"      # Duke Energy
+    - "SO"       # Southern Company
+    - "D"        # Dominion Energy
+    # --- REITs ---
+    - "PLD"      # Prologis
+    - "AMT"      # American Tower
+    - "SPG"      # Simon Property
 
-  max_leverage: 3.0
+  max_leverage: 2.0              # Conservative for equities
 
 execution:
-  engine: "ccxt"
-  exchange: "binance"
+  engine: "ibkr"
   timeout_seconds: 30
   max_retries: 3
-  slippage_bps: 5.0
-  use_sandbox: true
-  paper_trading_loop_interval_seconds: 10
+  slippage_bps: 2.0
+  use_sandbox: true               # IB paper trading gateway
   initial_capital: 100000.0
-  paper_slippage_model: "fixed_bps"
-  paper_commission_pct: 0.1
+
 backtest:
-  start_date: "2023-01-01"
-  end_date: "2024-01-01"
+  start_date: "2018-01-01"       # 8 years of history (includes COVID crash)
+  end_date: "2026-01-01"
   initial_capital: 100000.0
   commission_bps: 2.0
-  walk_forward_periods: 4
+  walk_forward_periods: 6
   out_of_sample_ratio: 0.2
+
+risk:
+  max_concurrent_positions: 10
+  max_risk_per_trade: 0.005       # 0.5% of equity per trade
+  max_consecutive_losses: 5
+  max_daily_loss_pct: 0.02        # 2% daily drawdown circuit breaker
+  max_leverage: 2.0
+  max_drawdown_pct: 0.10          # 10% portfolio drawdown hard stop

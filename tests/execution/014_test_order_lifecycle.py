@@ -22,7 +22,7 @@ class TestOrderLifecycle:
         
         lifecycle = OrderLifecycle(
             order_id="order_1",
-            symbol="BTC/USD",
+            symbol="AAPL",
             status=OrderStatus.PENDING,
             created_at=now,
             timeout_at=timeout,
@@ -32,7 +32,7 @@ class TestOrderLifecycle:
         )
         
         assert lifecycle.order_id == "order_1"
-        assert lifecycle.symbol == "BTC/USD"
+        assert lifecycle.symbol == "AAPL"
         assert not lifecycle.is_expired()
     
     def test_order_lifecycle_is_expired(self):
@@ -42,7 +42,7 @@ class TestOrderLifecycle:
         
         lifecycle = OrderLifecycle(
             order_id="order_1",
-            symbol="BTC/USD",
+            symbol="AAPL",
             status=OrderStatus.PENDING,
             created_at=now,
             timeout_at=past,  # Already expired
@@ -55,7 +55,7 @@ class TestOrderLifecycle:
         """Test adding events to lifecycle."""
         lifecycle = OrderLifecycle(
             order_id="order_1",
-            symbol="BTC/USD",
+            symbol="AAPL",
             status=OrderStatus.PENDING,
             created_at=datetime.utcnow(),
             timeout_at=datetime.utcnow() + timedelta(seconds=300),
@@ -75,7 +75,7 @@ class TestOrderLifecycle:
         
         lifecycle = OrderLifecycle(
             order_id="order_1",
-            symbol="BTC/USD",
+            symbol="AAPL",
             status=OrderStatus.PENDING,
             created_at=now,
             timeout_at=timeout,
@@ -133,13 +133,13 @@ class TestOrderCreation:
         
         lifecycle = manager.create_order(
             order_id="order_1",
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             price=50000.0
         )
         
         assert lifecycle.order_id == "order_1"
-        assert lifecycle.symbol == "BTC/USD"
+        assert lifecycle.symbol == "AAPL"
         assert lifecycle.initial_quantity == 1.0
         assert lifecycle.status == OrderStatus.PENDING
         assert lifecycle.order_id in manager.orders
@@ -150,7 +150,7 @@ class TestOrderCreation:
         
         lifecycle = manager.create_order(
             order_id="order_1",
-            symbol="BTC/USD",
+            symbol="AAPL",
             quantity=1.0,
             price=50000.0,
             timeout_seconds=600.0
@@ -166,19 +166,15 @@ class TestOrderCreation:
         with pytest.raises(ValueError):
             manager.create_order(
                 order_id="order_1",
-                symbol="BTCUSD",  # Missing slash
+                symbol="$$INVALID$$",  # Non-alphanumeric symbol
                 quantity=1.0,
                 price=50000.0
             )
-    
-    def test_create_order_invalid_quantity(self):
-        """Test that invalid quantity raises error."""
-        manager = OrderLifecycleManager()
         
         with pytest.raises(ValueError):
             manager.create_order(
                 order_id="order_1",
-                symbol="BTC/USD",
+                symbol="AAPL",
                 quantity=-1.0,
                 price=50000.0
             )
@@ -190,7 +186,7 @@ class TestOrderCreation:
         with pytest.raises(ValueError):
             manager.create_order(
                 order_id="order_1",
-                symbol="BTC/USD",
+                symbol="AAPL",
                 quantity=1.0,
                 price=0.0
             )
@@ -199,10 +195,10 @@ class TestOrderCreation:
         """Test that duplicate order ID raises error."""
         manager = OrderLifecycleManager()
         
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         with pytest.raises(RuntimeError):
-            manager.create_order("order_1", "ETH/USD", 1.0, 2000.0)
+            manager.create_order("order_1", "MSFT", 1.0, 2000.0)
 
 
 class TestOrderUpdate:
@@ -211,7 +207,7 @@ class TestOrderUpdate:
     def test_update_order_basic(self):
         """Test updating order status."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         lifecycle = manager.update_order(
             order_id="order_1",
@@ -227,7 +223,7 @@ class TestOrderUpdate:
     def test_update_order_to_filled(self):
         """Test updating order to filled status."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         lifecycle = manager.update_order(
             order_id="order_1",
@@ -241,7 +237,7 @@ class TestOrderUpdate:
     def test_update_order_filled_exceeds_quantity(self):
         """Test that filled > initial raises error."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         with pytest.raises(ValueError):
             manager.update_order(
@@ -253,7 +249,7 @@ class TestOrderUpdate:
     def test_update_order_negative_filled(self):
         """Test that negative filled raises error."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         with pytest.raises(ValueError):
             manager.update_order(
@@ -277,7 +273,7 @@ class TestTimeoutDetection:
         """Test timeout check when no orders expired."""
         manager = OrderLifecycleManager(default_timeout_seconds=300.0)
         
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         expired, actions = manager.check_for_timeouts()
         
@@ -291,7 +287,7 @@ class TestTimeoutDetection:
             check_interval_seconds=0.05
         )
         
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         # Wait for timeout
         sleep(0.2)
@@ -309,7 +305,7 @@ class TestTimeoutDetection:
             check_interval_seconds=0.05
         )
         
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         sleep(0.2)
         
         expired, actions = manager.check_for_timeouts()
@@ -317,7 +313,7 @@ class TestTimeoutDetection:
         assert len(actions) > 0
         action = actions[0]
         assert action["action"] == "force_close"
-        assert action["symbol"] == "BTC/USD"
+        assert action["symbol"] == "AAPL"
 
 
 class TestForceClose:
@@ -326,7 +322,7 @@ class TestForceClose:
     def test_force_close_order(self):
         """Test force-closing an order."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         success, message = manager.force_close_order(
             order_id="order_1",
@@ -349,7 +345,7 @@ class TestForceClose:
     def test_force_close_invalid_price(self):
         """Test that invalid close price raises error."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         with pytest.raises(ValueError):
             manager.force_close_order("order_1", 0.0, 1.0)
@@ -357,7 +353,7 @@ class TestForceClose:
     def test_force_close_invalid_quantity(self):
         """Test that invalid close quantity raises error."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         with pytest.raises(ValueError):
             manager.force_close_order("order_1", 49900.0, -1.0)
@@ -365,7 +361,7 @@ class TestForceClose:
     def test_force_close_max_retries_exceeded(self):
         """Test that exceeding max retries fails."""
         manager = OrderLifecycleManager(max_retries=2)
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         # Try 3 force closes (max is 2)
         manager.force_close_order("order_1", 49900.0, 0.3)
@@ -383,7 +379,7 @@ class TestStaleOrders:
     def test_get_stale_orders_none_stale(self):
         """Test stale detection when no orders stale."""
         manager = OrderLifecycleManager()
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         stale = manager.get_stale_orders(stale_threshold_seconds=60.0)
         
@@ -392,7 +388,7 @@ class TestStaleOrders:
     def test_get_stale_orders_upcoming_timeout(self):
         """Test stale detection for orders close to timeout."""
         manager = OrderLifecycleManager(default_timeout_seconds=50.0)
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         # This order will timeout in ~50s, within 60s threshold
         stale = manager.get_stale_orders(stale_threshold_seconds=60.0)
@@ -424,16 +420,16 @@ class TestOrderStatistics:
         """Test statistics with various order statuses."""
         manager = OrderLifecycleManager()
         
-        order1 = manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
-        order2 = manager.create_order("order_2", "ETH/USD", 10.0, 2000.0)
+        order1 = manager.create_order("order_1", "AAPL", 1.0, 50000.0)
+        order2 = manager.create_order("order_2", "MSFT", 10.0, 2000.0)
         
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
         
         stats = manager.get_order_statistics()
         
         assert stats["total_orders"] == 2
-        assert stats["by_status"]["filled"] >= 1
-        assert stats["by_status"]["pending"] >= 1
+        assert stats["by_status"]["FILLED"] >= 1
+        assert stats["by_status"]["PENDING"] >= 1
 
 
 class TestOrderCleanup:
@@ -444,7 +440,7 @@ class TestOrderCleanup:
         manager = OrderLifecycleManager()
         
         # Create and immediately mark as filled
-        lifecycle = manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        lifecycle = manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
         
         # Manually set last_update to old time
@@ -459,7 +455,7 @@ class TestOrderCleanup:
         """Test that recent orders are not cleaned up."""
         manager = OrderLifecycleManager()
         
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
         
         removed = manager.cleanup_resolved_orders(older_than_seconds=3600.0)
@@ -483,7 +479,7 @@ class TestOrderLifecycleIntegration:
         manager = OrderLifecycleManager()
         
         # Create order
-        lifecycle = manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        lifecycle = manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         assert lifecycle.status == OrderStatus.PENDING
         
         # Partial fill
@@ -502,7 +498,7 @@ class TestOrderLifecycleIntegration:
         )
         
         # Create order
-        manager.create_order("order_1", "BTC/USD", 1.0, 50000.0)
+        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         
         # Wait for timeout
         sleep(0.2)

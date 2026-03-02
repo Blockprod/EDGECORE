@@ -11,7 +11,7 @@ def test_t1_4():
     
     # Create a test position
     pos = Position(
-        symbol_pair="BTC/USDT",
+        symbol_pair="AAPL",
         entry_time=datetime.now(),
         entry_price=50000.0,
         quantity=1.0,
@@ -69,7 +69,7 @@ def test_t1_4():
     # Step 4: Test short position P&L
     print("\n[TEST] Testing short position P&L...")
     short_pos = Position(
-        symbol_pair="ETH/USDT",
+        symbol_pair="MSFT",
         entry_time=datetime.now(),
         entry_price=3000.0,
         quantity=10.0,
@@ -103,7 +103,7 @@ def test_t1_4():
     
     # Add some positions
     pos1 = Position(
-        symbol_pair="BTC/USDT",
+        symbol_pair="AAPL",
         entry_time=datetime.now(),
         entry_price=50000.0,
         quantity=1.0,
@@ -113,7 +113,7 @@ def test_t1_4():
     )
     
     pos2 = Position(
-        symbol_pair="ETH/USDT",
+        symbol_pair="MSFT",
         entry_time=datetime.now(),
         entry_price=3000.0,
         quantity=10.0,
@@ -123,7 +123,7 @@ def test_t1_4():
     )
     
     pos3 = Position(
-        symbol_pair="ADA/USDT",
+        symbol_pair="BAC",
         entry_time=datetime.now(),
         entry_price=1.0,
         quantity=10000.0,
@@ -133,22 +133,22 @@ def test_t1_4():
     )
     
     risk_engine.positions = {
-        "BTC/USDT": pos1,
-        "ETH/USDT": pos2,
-        "ADA/USDT": pos3
+        "AAPL": pos1,
+        "MSFT": pos2,
+        "BAC": pos3
     }
     
     # Check for stops
     stopped = risk_engine.check_position_stops()
     
-    assert len(stopped) == 2, f"Expected 2 stops (BTC & ADA), got {len(stopped)}"
+    assert len(stopped) == 2, f"Expected 2 stops (AAPL & WFC), got {len(stopped)}"
     print(f"[OK] check_position_stops() returned {len(stopped)} positions to close")
     
     # Verify stopped positions
     stopped_symbols = [s['symbol'] for s in stopped]
-    assert "BTC/USDT" in stopped_symbols, "BTC/USDT should be flagged (5% loss)"
-    assert "ADA/USDT" in stopped_symbols, "ADA/USDT should be flagged (2.5% loss > 2% stop)"
-    assert "ETH/USDT" not in stopped_symbols, "ETH/USDT should NOT be flagged (3% gain)"
+    assert "AAPL" in stopped_symbols, "AAPL should be flagged (5% loss)"
+    assert "BAC" in stopped_symbols, "BAC should be flagged (2.5% loss > 2% stop)"
+    assert "MSFT" not in stopped_symbols, "MSFT should NOT be flagged (3% gain)"
     
     for stopped_pos in stopped:
         print(f"[OK] {stopped_pos['symbol']}: {stopped_pos['reason']}")

@@ -239,7 +239,7 @@ class MonteCarloOrderBookSimulator:
         
         return spreads
     
-    def simulate_single_path(self, symbol: Symbol = "BTC/USD") -> PricePath:
+    def simulate_single_path(self, symbol: Symbol = "AAPL") -> PricePath:
         """Generate a single Monte Carlo price path."""
         # Convert annual drift from BPS to decimal
         drift = self.config["price_drift_bps"] / 10000.0
@@ -278,7 +278,7 @@ class MonteCarloOrderBookSimulator:
             returns=np.concatenate([[0.0], returns]),
         )
     
-    def simulate(self, symbol: Symbol = "BTC/USD") -> MonteCarloSimulation:
+    def simulate(self, symbol: Symbol = "AAPL") -> MonteCarloSimulation:
         """
         Generate complete Monte Carlo simulation.
         

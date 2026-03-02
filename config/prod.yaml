@@ -1,167 +1,152 @@
+# EDGECORE — Equity Production Configuration
+# Market: US Equities via Interactive Brokers (LIVE)
+# Annualisation: 252 trading days
+# audit 2026-02-22 — equity migration (Option A: 100% US equities via IBKR)
+#
+# Production config is more conservative than dev:
+#   - Tighter risk limits
+#   - More symbols for diversification
+#   - Lower allocation per pair
+
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
   exit_z_score: 0.0
   min_correlation: 0.7
   max_half_life: 60
+  use_kalman: true
+  max_position_loss_pct: 0.025    # 2.5% P&L stop (tighter in prod)
 
 trading_universe:
-  # 100+ major cryptocurrencies for production
-  # Optimized for liquidity and cointegration discovery
   symbols:
-    # Tier 1: Mega cap (BTC, ETH)
-    - "BTC/USDT"
-    - "ETH/USDT"
-    
-    # Tier 2: Large cap (market cap > $50B)
-    - "BNB/USDT"
-    - "XRP/USDT"
-    - "ADA/USDT"
-    - "SOL/USDT"
-    - "DOGE/USDT"
-    - "AVAX/USDT"
-    - "LINK/USDT"
-    - "DOT/USDT"
-    - "TRX/USDT"
-    - "NEAR/USDT"
-    - "UNI/USDT"
-    - "LTC/USDT"
-    - "ATOM/USDT"
-    - "MATIC/USDT"
-    - "ICP/USDT"
-    - "HBAR/USDT"
-    - "FIL/USDT"
-    - "XLM/USDT"
-    - "VET/USDT"
-    - "ETC/USDT"
-    - "BCH/USDT"
-    - "BSV/USDT"
-    - "XMR/USDT"
-    - "ZEC/USDT"
-    - "AAVE/USDT"
-    - "MKR/USDT"
-    - "CRV/USDT"
-    
-    # Tier 3: Mid cap (market cap $5B - $50B)
-    - "FTT/USDT"
-    - "ARB/USDT"
-    - "OP/USDT"
-    - "LIDO/USDT"
-    - "LDO/USDT"
-    - "APE/USDT"
-    - "CHZ/USDT"
-    - "BLUR/USDT"
-    - "SUSHI/USDT"
-    - "CAKE/USDT"
-    - "YFI/USDT"
-    - "COMP/USDT"
-    - "SNX/USDT"
-    - "GMX/USDT"
-    - "FLOW/USDT"
-    - "IMX/USDT"
-    - "SAND/USDT"
-    - "MANA/USDT"
-    - "ENJ/USDT"
-    - "GALA/USDT"
-    - "AXS/USDT"
-    - "WAXP/USDT"
-    - "AGLD/USDT"
-    - "MAGIC/USDT"
-    - "DYDX/USDT"
-    - "JUP/USDT"
-    - "PENDLE/USDT"
-    - "RAF/USDT"
-    - "MNT/USDT"
-    - "STRK/USDT"
-    - "SEI/USDT"
-    - "PYTH/USDT"
-    - "INJ/USDT"
-    - "TIA/USDT"
-    - "DYM/USDT"
-    
-    # Tier 4: Emerging/Alt coins
-    - "PEPE/USDT"
-    - "SHIB/USDT"
-    - "FLOKI/USDT"
-    - "BONK/USDT"
-    - "WIF/USDT"
-    - "MOG/USDT"
-    - "POPCAT/USDT"
-    - "GOAT/USDT"
-    - "TURBO/USDT"
-    - "PNUT/USDT"
-    
-    # Tier 5: DeFi protocols
-    - "AURA/USDT"
-    - "BAL/USDT"
-    - "CURVE/USDT"
-    - "CONVEX/USDT"
-    - "CURVE/USDT"
-    - "DPI/USDT"
-    - "REN/USDT"
-    - "RSR/USDT"
-    - "BADGER/USDT"
-    - "LOOKSRARE/USDT"
-    - "LOOKS/USDT"
-    - "X2Y2/USDT"
-    - "WBTC/USDT"
-    - "USDC/USDT"
-    - "USDE/USDT"
-    - "FDUSD/USDT"
-    - "TUSD/USDT"
-    - "DAI/USDT"
-    
-    # Tier 6: Layer 1 alternatives
-    - "ALGO/USDT"
-    - "COSMOS/USDT"
-    - "KAVA/USDT"
-    - "BAND/USDT"
-    - "ONG/USDT"
-    - "GRT/USDT"
-    - "ANKR/USDT"
-    - "RAMP/USDT"
-    - "ONE/USDT"
-    - "MINA/USDT"
-    - "FET/USDT"
-    - "RENDER/USDT"
-    - "AI/USDT"
-    
-    # Tier 7: Oracle & Infrastructure
-    - "ORACLE/USDT"
-    - "THETA/USDT"
-    - "LAR/USDT"
-    - "STORJ/USDT"
-    - "AR/USDT"
-    - "GRAPH/USDT"
-    - "API3/USDT"
-    - "BAND/USDT"
-    
-    # Tier 8: Exchange tokens
-    - "OKB/USDT"
-    - "HT/USDT"
-    - "LEO/USDT"
-    - "CRO/USDT"
-    - "KCS/USDT"
-    - "MEXC/USDT"
+    # === TIER 1: Mega-cap sector leaders (highest liquidity) ===
+    # Technology
+    - "AAPL"
+    - "MSFT"
+    - "GOOGL"
+    - "META"
+    - "NVDA"
+    - "AMD"
+    - "INTC"
+    - "AVGO"
+    - "CRM"
+    - "ADBE"
+    - "ORCL"
+    - "CSCO"
+    - "TXN"
+    - "QCOM"
+    # Financials
+    - "JPM"
+    - "BAC"
+    - "GS"
+    - "MS"
+    - "WFC"
+    - "C"
+    - "BLK"
+    - "SCHW"
+    - "AXP"
+    - "USB"
+    # Healthcare / Pharma / Biotech
+    - "JNJ"
+    - "PFE"
+    - "UNH"
+    - "MRK"
+    - "ABBV"
+    - "LLY"
+    - "TMO"
+    - "ABT"
+    - "BMY"
+    - "AMGN"
+    - "GILD"
+    - "ISRG"
+    # Consumer Staples
+    - "KO"
+    - "PEP"
+    - "PG"
+    - "CL"
+    - "WMT"
+    - "COST"
+    - "MO"
+    - "PM"
+    - "MDLZ"
+    - "KHC"
+    # Consumer Discretionary
+    - "HD"
+    - "LOW"
+    - "MCD"
+    - "SBUX"
+    - "NKE"
+    - "TJX"
+    # Energy
+    - "XOM"
+    - "CVX"
+    - "COP"
+    - "SLB"
+    - "EOG"
+    - "PSX"
+    - "MPC"
+    - "VLO"
+    # Industrials
+    - "CAT"
+    - "DE"
+    - "HON"
+    - "GE"
+    - "RTX"
+    - "LMT"
+    - "UPS"
+    - "FDX"
+    - "BA"
+    - "MMM"
+    # Materials
+    - "LIN"
+    - "APD"
+    - "FCX"
+    - "NEM"
+    # Utilities
+    - "NEE"
+    - "DUK"
+    - "SO"
+    - "D"
+    - "AEP"
+    # REITs
+    - "PLD"
+    - "AMT"
+    - "SPG"
+    - "O"
+    # Communication Services
+    - "DIS"
+    - "NFLX"
+    - "CMCSA"
+    - "T"
+    - "VZ"
 
-  max_leverage: 2.0
+  max_leverage: 1.5              # Conservative in production
 
 execution:
-  engine: "ccxt"
-  exchange: "binance"
-  timeout_seconds: 15
+  engine: "ibkr"
+  timeout_seconds: 30
   max_retries: 5
-  slippage_bps: 3.0
-  use_sandbox: false
-  paper_trading_loop_interval_seconds: 5
-  initial_capital: 1000000.0
-  paper_slippage_model: "adaptive"
-  paper_commission_pct: 0.08
+  slippage_bps: 2.0
+  use_sandbox: false             # LIVE trading
+  initial_capital: 100000.0
 
 backtest:
-  start_date: "2022-01-01"
-  end_date: "2024-01-01"
-  initial_capital: 5000000.0
-  commission_bps: 1.0
-  walk_forward_periods: 12
+  start_date: "2016-01-01"      # 10 years history for robustness
+  end_date: "2026-01-01"
+  initial_capital: 100000.0
+  commission_bps: 2.0
+  walk_forward_periods: 8
   out_of_sample_ratio: 0.2
+
+risk:
+  max_concurrent_positions: 12
+  max_risk_per_trade: 0.004       # 0.4% of equity per trade
+  max_consecutive_losses: 4
+  max_daily_loss_pct: 0.015       # 1.5% daily drawdown circuit breaker
+  max_leverage: 1.5
+  max_drawdown_pct: 0.08          # 8% portfolio drawdown hard stop

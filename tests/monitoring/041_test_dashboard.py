@@ -116,7 +116,7 @@ class TestDashboardRiskMetrics:
         risk_engine.daily_loss = -50
         risk_engine.loss_streak = 2
         risk_engine.daily_trades = 5
-        risk_engine.positions = {'BTC/USDT': Mock()}
+        risk_engine.positions = {'AAPL': Mock()}
         risk_engine.config = Mock()
         risk_engine.config.max_daily_loss_pct = 0.05
         risk_engine.config.max_concurrent_positions = 5
@@ -192,7 +192,7 @@ class TestDashboardPositions:
     def test_positions_with_engine_has_positions(self):
         """Test positions with open positions."""
         position = Position(
-            symbol_pair='BTC/USDT',
+            symbol_pair='AAPL',
             entry_time=datetime.now() - timedelta(hours=2),
             entry_price=45000,
             quantity=0.5,
@@ -202,13 +202,13 @@ class TestDashboardPositions:
         )
 
         risk_engine = Mock()
-        risk_engine.positions = {'BTC/USDT': position}
+        risk_engine.positions = {'AAPL': position}
 
         dashboard = DashboardGenerator(risk_engine=risk_engine)
         positions = dashboard._positions()
 
         assert len(positions) == 1
-        assert positions[0]['symbol'] == 'BTC/USDT'
+        assert positions[0]['symbol'] == 'AAPL'
         assert positions[0]['side'] == 'long'
         assert positions[0]['quantity'] == 0.5
         assert positions[0]['entry_price'] == 45000
@@ -218,7 +218,7 @@ class TestDashboardPositions:
     def test_positions_age_calculation(self):
         """Test position age calculation."""
         position = Position(
-            symbol_pair='ETH/USDT',
+            symbol_pair='MSFT',
             entry_time=datetime.now() - timedelta(hours=3),
             entry_price=2500,
             quantity=1,
@@ -228,7 +228,7 @@ class TestDashboardPositions:
         )
 
         risk_engine = Mock()
-        risk_engine.positions = {'ETH/USDT': position}
+        risk_engine.positions = {'MSFT': position}
 
         dashboard = DashboardGenerator(risk_engine=risk_engine)
         positions = dashboard._positions()
@@ -262,7 +262,7 @@ class TestDashboardOrders:
         """Test orders with open orders."""
         mock_order_1 = {
             'id': 'order_123',
-            'symbol': 'BTC/USDT',
+            'symbol': 'AAPL',
             'side': 'buy',
             'amount': 0.5,
             'price': 45000,
@@ -271,7 +271,7 @@ class TestDashboardOrders:
         }
         mock_order_2 = {
             'id': 'order_124',
-            'symbol': 'ETH/USDT',
+            'symbol': 'MSFT',
             'side': 'sell',
             'amount': 1,
             'price': 2500,
@@ -308,7 +308,7 @@ class TestDashboardOrders:
         mock_orders = [
             {
                 'id': f'order_{i}',
-                'symbol': 'BTC/USDT',
+                'symbol': 'AAPL',
                 'side': 'buy',
                 'amount': 0.1,
                 'price': 45000,
@@ -386,7 +386,7 @@ class TestDashboardIntegration:
         """Test full dashboard with all components."""
         # Setup risk engine
         position = Position(
-            symbol_pair='BTC/USDT',
+            symbol_pair='AAPL',
             entry_time=datetime.now() - timedelta(hours=1),
             entry_price=45000,
             quantity=0.5,
@@ -400,7 +400,7 @@ class TestDashboardIntegration:
         risk_engine.daily_loss = 0
         risk_engine.loss_streak = 0
         risk_engine.daily_trades = 2
-        risk_engine.positions = {'BTC/USDT': position}
+        risk_engine.positions = {'AAPL': position}
         risk_engine.config = Mock()
         risk_engine.config.max_daily_loss_pct = 0.05
         risk_engine.config.max_concurrent_positions = 5
@@ -480,7 +480,7 @@ class TestDashboardErrorHandling:
     def test_dashboard_handles_positions_error(self):
         """Test dashboard handles errors in positions."""
         risk_engine = Mock()
-        risk_engine.positions = {'BTC/USDT': None}  # Invalid position
+        risk_engine.positions = {'AAPL': None}  # Invalid position
 
         dashboard = DashboardGenerator(risk_engine=risk_engine)
         positions = dashboard._positions()
@@ -492,7 +492,7 @@ class TestDashboardErrorHandling:
         """Test dashboard handles malformed order data."""
         execution_engine = Mock()
         execution_engine.get_open_orders.return_value = [
-            {'id': 'order_1', 'symbol': 'BTC/USDT'},  # Missing required fields
+            {'id': 'order_1', 'symbol': 'AAPL'},  # Missing required fields
             {'id': None, 'invalid': 'order'},  # Completely invalid
         ]
 

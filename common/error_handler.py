@@ -34,7 +34,7 @@ def handle_error(
     
     Args:
         error: Exception to handle
-        context: Human-readable context (e.g., "loading data for BTC/USDT")
+        context: Human-readable context (e.g., "loading data for AAPL")
         alerter: Optional AlertManager or SlackAlerter for critical errors
     
     Behavior:

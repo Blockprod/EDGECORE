@@ -15,6 +15,7 @@ import pandas as pd
 from datetime import datetime
 from typing import Dict, List
 from structlog import get_logger
+from monitoring.logging_config import setup_logging as setup_production_logging
 from monitoring.logger import setup_logger
 from config.settings import get_settings
 from backtests.runner import BacktestRunner
@@ -22,7 +23,7 @@ from data.loader import DataLoader
 from data.validators import OHLCVValidator
 from strategies.pair_trading import PairTradingStrategy
 from risk.engine import RiskEngine
-from execution.ccxt_engine import CCXTExecutionEngine
+from execution.ibkr_engine import IBKRExecutionEngine
 from execution.paper_execution import PaperExecutionEngine
 from execution.base import Order, OrderSide
 from execution.reconciler import BrokerReconciler
@@ -34,9 +35,16 @@ from monitoring.slack_alerter import SlackAlerter
 from monitoring.email_alerter import EmailAlerter
 from monitoring.dashboard import DashboardGenerator
 from monitoring.api import initialize_dashboard_api
+from data.delisting_guard import DelistingGuard
+from data.liquidity_filter import LiquidityFilter
 import threading
 
-logger = setup_logger("main")
+# Use production-grade structured logging with rotation and JSON output
+try:
+    setup_production_logging(log_dir="logs", json_format=True)
+except Exception:
+    pass  # fallback: structlog works without explicit setup
+logger = get_logger("main")
 
 
 def _load_market_data_for_symbols(
@@ -51,7 +59,7 @@ def _load_market_data_for_symbols(
     for transient errors and exponential backoff for API throttling.
     
     Args:
-        symbols: List of trading pairs (e.g., ['BTC/USDT', 'ETH/USDT'])
+        symbols: List of trading symbols (e.g., ['AAPL', 'MSFT'])
         loader: DataLoader instance
         settings: Settings configuration
     
@@ -66,8 +74,7 @@ def _load_market_data_for_symbols(
     
     for symbol in symbols:
         try:
-            df = loader.load_ccxt_data(
-                settings.execution.exchange,
+            df = loader.load_ibkr_data(
                 symbol,
                 timeframe='1h',
                 limit=100
@@ -115,7 +122,7 @@ def _load_market_data_for_symbols(
 
 def _close_all_positions(
     risk_engine: RiskEngine,
-    execution_engine: CCXTExecutionEngine,
+    execution_engine: IBKRExecutionEngine,
     positions_to_close: dict
 ) -> None:
     """
@@ -181,14 +188,30 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
     """
     logger.info("paper_trading_mode_starting", symbols=symbols)
     
+    # Filter symbols through DelistingGuard and LiquidityFilter
+    delist_guard = DelistingGuard()
+    liq_filter = LiquidityFilter()
+    safe_symbols = []
+    for sym in symbols:
+        if not delist_guard.is_safe(sym):
+            logger.warning("symbol_delisting_risk", symbol=sym)
+            continue
+        safe_symbols.append(sym)
+    # Apply liquidity filter (non-strict: accept if no volume data available)
+    if safe_symbols:
+        safe_symbols = liq_filter.filter_symbols(safe_symbols)
+    if safe_symbols:
+        logger.info("symbols_after_filtering", original=len(symbols), filtered=len(safe_symbols))
+        symbols = safe_symbols
+    
     # Validate sandbox mode
     if not settings.execution.use_sandbox:
         logger.error("sandbox_not_enabled")
         raise ValueError("Paper trading requires sandbox mode. Set use_sandbox=True in config")
     
-    if settings.execution.engine != "ccxt":
+    if settings.execution.engine != "ibkr":
         logger.error("invalid_engine_for_paper_trading", engine=settings.execution.engine)
-        raise ValueError("Paper trading requires CCXT engine")
+        raise ValueError("Paper trading requires ibkr engine")
     
     # Initialize trading components
     try:
@@ -196,20 +219,19 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
         strategy = PairTradingStrategy()
         risk_engine = RiskEngine(initial_equity=settings.execution.initial_capital)
         
-        # Use PaperExecutionEngine for realistic paper trading, CCXTExecutionEngine for live
+        # Use PaperExecutionEngine for realistic paper trading, IBKRExecutionEngine for live
         if mode == "paper":
             execution_engine = PaperExecutionEngine(
-                slippage_model=settings.execution.paper_slippage_model,
-                fixed_bps=settings.execution.slippage_bps,
-                commission_pct=settings.execution.paper_commission_pct
+                slippage_model=settings.costs.slippage_model,
+                fixed_bps=settings.costs.slippage_bps,
+                commission_pct=settings.costs.commission_pct * 100  # CostConfig stores as fraction, PaperEngine expects %
             )
         else:
-            execution_engine = CCXTExecutionEngine()
+            execution_engine = IBKRExecutionEngine()
         
         logger.info("paper_trading_initialized",
                     sandbox=settings.execution.use_sandbox,
-                    engine=settings.execution.engine,
-                    exchange=settings.execution.exchange)
+                    engine=settings.execution.engine)
         
         # HOTFIX 1.1: Crash recovery - restore persisted state
         logger.info("attempting_state_recovery_from_audit_trail")
@@ -613,9 +635,9 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
         logger.error("live_mode_with_sandbox_enabled")
         raise ValueError("Live trading cannot run with sandbox mode enabled")
     
-    if settings.execution.engine != "ccxt":
+    if settings.execution.engine != "ibkr":
         logger.error("invalid_engine_for_live_trading", engine=settings.execution.engine)
-        raise ValueError("Live trading requires CCXT engine")
+        raise ValueError("Live trading requires ibkr engine")
     
     # Display warning and require explicit confirmation
     print("\n" + "="*70)
@@ -623,7 +645,7 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
     print("="*70)
     print(f"You are about to start LIVE TRADING with REAL MONEY")
     print(f"Trading Pairs: {', '.join(symbols)}")
-    print(f"Exchange: {settings.execution.exchange}")
+    print(f"Engine: {settings.execution.engine}")
     print(f"Risk per trade: {settings.risk.max_risk_per_trade*100:.2f}% of equity")
     print(f"Daily loss limit: {settings.risk.max_daily_loss_pct*100:.2f}%")
     print(f"Max concurrent positions: {settings.risk.max_concurrent_positions}")
@@ -650,7 +672,7 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
     # Log critical event
     logger.critical("live_trading_starting",
                    symbols=symbols,
-                   exchange=settings.execution.exchange,
+                   engine=settings.execution.engine,
                    user_email=confirm2)
     
     print("\n" + "!"*70)
@@ -709,11 +731,37 @@ def main():
                 slack_enabled=slack_alerter is not None and slack_alerter.enabled,
                 email_enabled=email_alerter is not None and email_alerter.enabled)
     
+    # Start a minimal health-check HTTP server so Docker HEALTHCHECK
+    # passes regardless of operating mode (backtest / paper / live).
+    # In paper/live mode this is later superseded by the full dashboard API.
+    if os.getenv("ENABLE_MONITORING", "").lower() in ("true", "1", "yes"):
+        try:
+            from flask import Flask as _Flask
+            _health_app = _Flask("healthcheck")
+
+            @_health_app.route("/health")
+            def _hc():
+                return {"status": "healthy", "mode": args.mode}, 200
+
+            _hc_host = os.getenv("DASHBOARD_API_HOST", "0.0.0.0")
+            _hc_port = int(os.getenv("DASHBOARD_API_PORT", "5000"))
+            _hc_thread = threading.Thread(
+                target=lambda: _health_app.run(
+                    host=_hc_host, port=_hc_port, debug=False, use_reloader=False
+                ),
+                daemon=True,
+            )
+            _hc_thread.start()
+            logger.info("health_endpoint_started", host=_hc_host, port=_hc_port)
+        except Exception as e:
+            logger.warning("health_endpoint_failed", error=str(e))
+
     try:
         if args.mode == "backtest":
             logger.info("backtest_mode_starting")
             runner = BacktestRunner()
-            metrics = runner.run(
+            # Use run_unified() to avoid look-ahead bias present in legacy run()
+            metrics = runner.run_unified(
                 args.symbols,
                 start_date=args.start_date,
                 end_date=args.end_date

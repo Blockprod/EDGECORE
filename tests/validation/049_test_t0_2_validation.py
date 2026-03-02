@@ -35,7 +35,6 @@ def test_t0_2():
     print("[OK] Webhook URL stored correctly")
     
     print("\n[PASS] T0.2 Validation Successful\n")
-    return True
 
 
 if __name__ == "__main__":

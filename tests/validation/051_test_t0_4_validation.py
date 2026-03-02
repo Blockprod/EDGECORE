@@ -12,13 +12,13 @@ def test_t0_4():
     settings = get_settings()
     print(f"[TEST] Loading max_leverage from settings...")
     assert hasattr(settings.risk, 'max_leverage')
-    assert settings.risk.max_leverage == 3.0
+    assert settings.risk.max_leverage == 2.0  # Equity default (reduced from 3.0 for safety)
     print(f"[OK] max_leverage loaded: {settings.risk.max_leverage}x")
-    
+
     # Step 2: Initialize RiskEngine
     print(f"\n[TEST] Initialize RiskEngine...")
     risk_engine = RiskEngine(initial_equity=100000.0)
-    assert risk_engine.config.max_leverage == 3.0
+    assert risk_engine.config.max_leverage == 2.0  # Equity default
     print(f"[OK] RiskEngine has max_leverage: {risk_engine.config.max_leverage}x")
     
     # Step 3: Test get_total_exposure() method exists
@@ -31,14 +31,14 @@ def test_t0_4():
     # Step 4: Add a test position to verify exposure calculation
     print(f"\n[TEST] Adding test position to calculate exposure...")
     pos = Position(
-        symbol_pair="BTC/USDT",
+        symbol_pair="AAPL",
         entry_time=datetime.utcnow(),
         entry_price=45000.0,
         quantity=1.0,
         side="long",
         marked_price=45000.0
     )
-    risk_engine.positions["BTC/USDT"] = pos
+    risk_engine.positions["AAPL"] = pos
     
     total_exposure = risk_engine.get_total_exposure()
     expected_exposure = abs(1.0 * 45000.0)
@@ -50,7 +50,7 @@ def test_t0_4():
     
     # Try to enter a small trade (should pass)
     can_enter, reason = risk_engine.can_enter_trade(
-        symbol_pair="ETH/USDT",
+        symbol_pair="MSFT",
         position_size=10.0,
         current_equity=100000.0,
         volatility=0.02
@@ -63,12 +63,12 @@ def test_t0_4():
     risk_engine.positions.clear()
     
     # Pre-populate with exposure equal to 2x equity
-    for i in range(3):
+    for i in range(2):
         risk_engine.positions[f"PRE{i}"] = Position(
             symbol_pair=f"PRE{i}",
             entry_time=datetime.utcnow(),
             entry_price=1000.0,
-            quantity=66666.67,  # ~2x equity spread across 3 positions
+            quantity=100000.0,  # ~1x equity per position
             side="long",
             marked_price=1000.0
         )
@@ -97,11 +97,10 @@ def test_t0_4():
     with open(prod_yaml_path, 'r') as f:
         prod_content = f.read()
     
-    assert "max_leverage: 2.0" in prod_content
-    print(f"[OK] prod.yaml has max_leverage: 2.0 (more conservative)")
+    assert "max_leverage: 1.5" in prod_content
+    print(f"[OK] prod.yaml has max_leverage: 1.5 (conservative for production)")
     
     print("\n[PASS] T0.4 Validation Successful\n")
-    return True
 
 
 if __name__ == "__main__":

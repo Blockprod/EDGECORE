@@ -31,7 +31,7 @@ class TestExecutionIntegrationWithStops:
         # Add positions as if from execution engine
         pos1 = manager.add_position(
             position_id="exec_pos_001",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={
@@ -49,7 +49,7 @@ class TestExecutionIntegrationWithStops:
         
         manager.add_position(
             position_id="exec_pos_002",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="long",
             stop_config={"stop_loss_price": 2700.0}
@@ -70,8 +70,8 @@ class TestExecutionIntegrationWithStops:
         
         # Add positions for different symbols
         manager.add_position(
-            position_id="btc_long",
-            symbol="BTC/USDT",
+            position_id="aapl_long",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -79,17 +79,17 @@ class TestExecutionIntegrationWithStops:
         
         manager.add_position(
             position_id="eth_long",
-            symbol="ETH/USDT",
+            symbol="MSFT",
             entry_price=3000.0,
             side="long",
             stop_config={"stop_loss_price": 2700.0}
         )
         
-        # Only BTC stop triggered
-        should_exit_btc, _ = manager.check_exits("btc_long", 44000.0)
+        # Only AAPL stop triggered
+        should_exit_aapl, _ = manager.check_exits("aapl_long", 44000.0)
         should_exit_eth, _ = manager.check_exits("eth_long", 2900.0)
         
-        assert should_exit_btc is True
+        assert should_exit_aapl is True
         assert should_exit_eth is False
     
     def test_trailing_stop_in_execution_flow(self):
@@ -98,7 +98,7 @@ class TestExecutionIntegrationWithStops:
         
         manager.add_position(
             position_id="trail_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"trailing_stop_percent": 5.0}
@@ -123,7 +123,7 @@ class TestExecutionIntegrationWithStops:
         
         manager.add_position(
             position_id="exit_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -153,7 +153,7 @@ class TestExecutionIntegrationWithStops:
         
         manager.add_position(
             position_id="persist_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config=config
@@ -174,7 +174,7 @@ class TestExecutionIntegrationWithStops:
         # Long position
         manager.add_position(
             position_id="long_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 45000.0}
@@ -183,7 +183,7 @@ class TestExecutionIntegrationWithStops:
         # Short position
         manager.add_position(
             position_id="short_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="short",
             stop_config={"stop_loss_price": 55000.0}
@@ -204,7 +204,7 @@ class TestExecutionIntegrationWithStops:
         # Create position with 1 minute hard exit
         manager.add_position(
             position_id="time_exit_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"hard_exit_time_minutes": 1}
@@ -229,7 +229,7 @@ class TestExecutionIntegrationWithStops:
         
         manager.add_position(
             position_id="breakeven_pos",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={
@@ -255,7 +255,7 @@ class TestExecutionIntegrationWithStops:
         for i in range(3):
             manager.add_position(
                 position_id=f"concurrent_pos_{i}",
-                symbol="BTC/USDT",
+                symbol="AAPL",
                 entry_price=50000.0,
                 side="long",
                 stop_config={"stop_loss_price": 45000.0}
@@ -277,7 +277,7 @@ class TestExecutionIntegrationWithStops:
         # Position 1: tight stop
         manager.add_position(
             position_id="tight_stop",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 48000.0}
@@ -286,7 +286,7 @@ class TestExecutionIntegrationWithStops:
         # Position 2: wide stop
         manager.add_position(
             position_id="wide_stop",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=50000.0,
             side="long",
             stop_config={"stop_loss_price": 40000.0}
@@ -318,7 +318,7 @@ class TestStopExecutionWorkflow:
         entry_price = 50000.0
         pos = manager.add_position(
             position_id="workflow_pos_1",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=entry_price,
             side="long",
             stop_config={
@@ -356,7 +356,7 @@ class TestStopExecutionWorkflow:
         entry_price = 50000.0
         manager.add_position(
             position_id="workflow_pos_2",
-            symbol="BTC/USDT",
+            symbol="AAPL",
             entry_price=entry_price,
             side="short",
             stop_config={
