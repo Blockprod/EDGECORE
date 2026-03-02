@@ -7,7 +7,7 @@ name = "edgecore"
 version = "1.0.0"
 description = "Production-grade statistical arbitrage trading system"
 authors = [{name = "Quant Dev", email = "dev@edgecore.local"}]
-requires-python = "==3.11.9"
+requires-python = ">=3.11"
 dependencies = [
     "numpy==1.24.3",
     "pandas==2.0.3",
