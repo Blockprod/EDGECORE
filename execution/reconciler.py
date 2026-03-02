@@ -11,7 +11,7 @@ Ensures broker state matches internal tracking:
 
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from structlog import get_logger
 from enum import Enum
 import math
@@ -378,12 +378,12 @@ class BrokerReconciler:
             
             elif divergence.type == "position":
                 if divergence.severity == "high":
-                    actions.append(f"CLOSE: Liquidate missing position immediately")
+                    actions.append("CLOSE: Liquidate missing position immediately")
                 else:
-                    actions.append(f"SYNC: Recheck position sizes")
+                    actions.append("SYNC: Recheck position sizes")
             
             elif divergence.type == "order":
                 if divergence.severity == "high":
-                    actions.append(f"CANCEL: Stale order found on broker")
+                    actions.append("CANCEL: Stale order found on broker")
         
         return actions

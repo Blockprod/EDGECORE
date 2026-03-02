@@ -9,7 +9,7 @@ Provides:
 
 import time
 from functools import wraps
-from typing import Callable, Optional, TypeVar, Any, Union
+from typing import Callable, Optional, TypeVar, Any
 from structlog import get_logger
 
 from common.errors import (

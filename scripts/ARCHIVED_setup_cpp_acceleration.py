@@ -127,7 +127,7 @@ def compile_cpp_modules():
                               text=True)
         
         if result.returncode != 0:
-            print(f"✔ CMake configuration failed:")
+            print("✔ CMake configuration failed:")
             print(result.stderr)
             return False
         
@@ -141,7 +141,7 @@ def compile_cpp_modules():
                               text=True)
         
         if result.returncode != 0:
-            print(f"✔ Build failed:")
+            print("✔ Build failed:")
             print(result.stderr)
             return False
         

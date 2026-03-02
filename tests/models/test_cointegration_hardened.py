@@ -15,8 +15,6 @@ Expected: 30+ tests, >90% pass rate
 import pytest
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-from typing import Tuple
 
 from models.cointegration import engle_granger_test_cpp_optimized as engle_granger_test
 from models.spread import SpreadModel
@@ -357,7 +355,7 @@ class TestCointegratedPairsEdgeCases:
         
         # Identical series may not pass statistical tests (trivial case)
         # Just verify no error occurs
-        p_value = result.get('p_value', 1.0)
+        result.get('p_value', 1.0)
         # Don't assert on p-value for trivial case - may be 1.0 (undefined)
     
     def test_constant_series_handling(self):
@@ -367,7 +365,7 @@ class TestCointegratedPairsEdgeCases:
         
         # Should not error
         try:
-            result = engle_granger_test(y, x)
+            engle_granger_test(y, x)
             # May have NaN or be rejected
         except:
             # Exception acceptable for degenerate case
@@ -380,7 +378,7 @@ class TestCointegratedPairsEdgeCases:
         
         # Should not error gracefully
         try:
-            result = engle_granger_test(y, x)
+            engle_granger_test(y, x)
         except:
             pass  # Expected for very short series
     
@@ -391,7 +389,7 @@ class TestCointegratedPairsEdgeCases:
         
         # Should handle gracefully (drop NaNs or error)
         try:
-            result = engle_granger_test(y, x)
+            engle_granger_test(y, x)
         except:
             pass  # Expected
     
@@ -400,7 +398,7 @@ class TestCointegratedPairsEdgeCases:
         x = np.random.randn(100).cumsum()
         
         # Pair with itself would be trivial
-        result = engle_granger_test(x, x)
+        engle_granger_test(x, x)
         
         # Would be perfectly cointegrated (hedge ratio = 1)
         # Should be caught at strategy level (no self-pairing)
@@ -473,7 +471,7 @@ class TestCointegressionPerformance:
         
         # Should complete in < 500ms (increased for CI environment)
         start = time.time()
-        result = engle_granger_test(y, x)
+        engle_granger_test(y, x)
         elapsed = time.time() - start
         
         assert elapsed < 0.5  # 500ms

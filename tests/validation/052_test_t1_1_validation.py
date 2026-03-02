@@ -22,7 +22,7 @@ def test_t1_1():
     
     validator = OHLCVValidator("AAPL")
     result = validator.validate(df_fresh, raise_on_error=False, max_age_hours=2.0)
-    assert result.is_valid == True, f"Fresh data should be valid, got: {result.errors}"
+    assert result.is_valid, f"Fresh data should be valid, got: {result.errors}"
     print(f"[OK] Fresh data validation passed ({len(result.errors)} errors, {result.checks_passed} checks passed)")
     
     # Step 2: Test stale data (should fail)
@@ -37,9 +37,9 @@ def test_t1_1():
     }, index=dates_stale)
     
     result_stale = validator.validate(df_stale, raise_on_error=False, max_age_hours=2.0)
-    assert result_stale.is_valid == False, "Stale data should be invalid"
+    assert not result_stale.is_valid, "Stale data should be invalid"
     assert any("old" in err.lower() for err in result_stale.errors), f"Should mention staleness, got: {result_stale.errors}"
-    print(f"[OK] Stale data correctly rejected:")
+    print("[OK] Stale data correctly rejected:")
     for err in result_stale.errors:
         if "old" in err.lower():
             print(f"     {err}")
@@ -57,9 +57,9 @@ def test_t1_1():
     }, index=dates_future)
     
     result_future = validator.validate(df_future, raise_on_error=False, max_age_hours=2.0)
-    assert result_future.is_valid == False, "Future data should be invalid"
+    assert not result_future.is_valid, "Future data should be invalid"
     assert any("future" in err.lower() for err in result_future.errors), f"Should mention future, got: {result_future.errors}"
-    print(f"[OK] Future timestamps correctly rejected:")
+    print("[OK] Future timestamps correctly rejected:")
     for err in result_future.errors:
         if "future" in err.lower():
             print(f"     {err}")
@@ -77,13 +77,13 @@ def test_t1_1():
     
     # Should fail with 2h limit
     result_2h = validator.validate(df_3h, raise_on_error=False, max_age_hours=2.0)
-    assert result_2h.is_valid == False, "3h old data should fail with 2h limit"
-    print(f"[OK] 3h old data rejected with 2h limit")
+    assert not result_2h.is_valid, "3h old data should fail with 2h limit"
+    print("[OK] 3h old data rejected with 2h limit")
     
     # Should pass with 4h limit
     result_4h = validator.validate(df_3h, raise_on_error=False, max_age_hours=4.0)
-    assert result_4h.is_valid == True, "3h old data should pass with 4h limit"
-    print(f"[OK] 3h old data accepted with 4h limit")
+    assert result_4h.is_valid, "3h old data should pass with 4h limit"
+    print("[OK] 3h old data accepted with 4h limit")
     
     print("\n[PASS] T1.1 Validation Successful\n")
 

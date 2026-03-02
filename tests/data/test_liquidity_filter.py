@@ -145,7 +145,7 @@ class TestDelistingGuard:
         guard = DelistingGuard()
         prices = pd.Series([100, 101, 99, 102, 100], index=pd.date_range("2025-01-01", periods=5))
         is_safe, reason = guard.is_safe("AAPL", price_series=prices)
-        assert is_safe == True
+        assert is_safe
         assert reason == ""
 
     def test_penny_price_detected(self):
@@ -153,7 +153,7 @@ class TestDelistingGuard:
         guard = DelistingGuard()
         prices = pd.Series([0.0001, 0.00005, 0.00003])
         is_safe, reason = guard.is_safe("DEAD", price_series=prices)
-        assert is_safe == False
+        assert not is_safe
         assert "Penny price" in reason
 
     def test_stale_data_detected(self):
@@ -161,7 +161,7 @@ class TestDelistingGuard:
         guard = DelistingGuard()
         prices = pd.Series([100, 101, 99, np.nan, np.nan, np.nan, np.nan])
         is_safe, reason = guard.is_safe("STALE", price_series=prices)
-        assert is_safe == False
+        assert not is_safe
         assert "Stale" in reason
 
     def test_stale_with_zeros(self):
@@ -169,7 +169,7 @@ class TestDelistingGuard:
         guard = DelistingGuard()
         prices = pd.Series([100, 101, 0, 0, 0, 0])
         is_safe, reason = guard.is_safe("ZERO", price_series=prices)
-        assert is_safe == False
+        assert not is_safe
 
     def test_volume_crash_detected(self):
         """Volume drop > 80% ? unsafe."""
@@ -179,7 +179,7 @@ class TestDelistingGuard:
             [1_000_000] * 20 + [50_000] * 7
         )
         is_safe, reason = guard.is_safe("ENRN", volume_series=volumes)
-        assert is_safe == False
+        assert not is_safe
         assert "Volume crash" in reason
 
     def test_volume_no_crash(self):
@@ -187,13 +187,13 @@ class TestDelistingGuard:
         guard = DelistingGuard()
         volumes = pd.Series([1_000_000] * 30)
         is_safe, reason = guard.is_safe("STABLE", volume_series=volumes)
-        assert is_safe == True
+        assert is_safe
 
     def test_no_data_is_safe(self):
         """No data provided ? safe (can't evaluate)."""
         guard = DelistingGuard()
         is_safe, reason = guard.is_safe("UNKNOWN")
-        assert is_safe == True
+        assert is_safe
 
     def test_custom_config(self):
         """Custom thresholds work."""
@@ -201,7 +201,7 @@ class TestDelistingGuard:
         guard = DelistingGuard(cfg)
         prices = pd.Series([0.5, 0.4, 0.3])
         is_safe, reason = guard.is_safe("CHEAP", price_series=prices)
-        assert is_safe == False
+        assert not is_safe
         assert "Penny price" in reason
 
     def test_batch_check(self):
@@ -215,8 +215,8 @@ class TestDelistingGuard:
             symbols=["AAPL", "DEAD"],
             price_data=prices_df,
         )
-        assert results["AAPL"][0] == True
-        assert results["DEAD"][0] == False
+        assert results["AAPL"][0]
+        assert not results["DEAD"][0]
 
 
 # ===========================================================================

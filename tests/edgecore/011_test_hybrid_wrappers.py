@@ -4,7 +4,6 @@ These tests verify that Python/Cython hybrid implementation works correctly.
 
 import pytest
 import numpy as np
-from unittest.mock import Mock, patch
 from edgecore.backtest_engine_wrapper import BacktestEngineWrapper
 from edgecore.cointegration_engine_wrapper import CointegrationEngineWrapper
 
@@ -207,7 +206,7 @@ class TestHybridArchitectureIntegration:
         symbols = ['A', 'B', 'C']
         
         # Find cointegrated pairs
-        pairs = coint_engine.find_cointegration_parallel(
+        coint_engine.find_cointegration_parallel(
             symbols,
             prices
         )
@@ -291,7 +290,6 @@ class TestVersionAvailability:
     
     def test_cython_loads_correctly(self):
         """Test that Cython acceleration is available if compiled."""
-        import logging
         
         # Create engine (uses Python with optional Cython speedup)
         engine = BacktestEngineWrapper(100000)

@@ -5,18 +5,16 @@ Phase 4: Final Validation & Launch Checklist
 Validates all production-readiness requirements before going live.
 """
 
-import os
 import sys
 import json
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from structlog import get_logger
-from config.settings import get_settings
 
 logger = get_logger(__name__)
 
@@ -460,11 +458,11 @@ def main():
     validator = Phase4Validator()
     
     # Run all validations
-    code_quality_ok = validator.validate_code_quality()
-    security_ok = validator.validate_security()
-    reliability_ok = validator.validate_reliability()
-    documentation_ok = validator.validate_documentation()
-    performance_ok = validator.validate_performance()
+    validator.validate_code_quality()
+    validator.validate_security()
+    validator.validate_reliability()
+    validator.validate_documentation()
+    validator.validate_performance()
     
     # Generate report
     report = validator.generate_report()

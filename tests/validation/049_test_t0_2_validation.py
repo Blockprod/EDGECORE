@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Validation test for T0.2: Slack Webhook Configuration"""
 
-import os
 from monitoring.slack_alerter import SlackAlerter
 
 def test_t0_2():
@@ -21,13 +20,13 @@ def test_t0_2():
     # Step 2: Test SlackAlerter logs warning when webhook not configured
     print("\n[TEST] Creating SlackAlerter with webhook_url=None...")
     alerter_disabled = SlackAlerter(webhook_url=None)
-    assert alerter_disabled.enabled == False
+    assert not alerter_disabled.enabled
     print("[OK] SlackAlerter correctly disabled when url is None")
     
     # Step 3: Test SlackAlerter enabled when webhook provided
     test_webhook = "https://hooks.slack.com/services/TEST/TEST/TEST"
     alerter_enabled = SlackAlerter(webhook_url=test_webhook)
-    assert alerter_enabled.enabled == True
+    assert alerter_enabled.enabled
     print("[OK] SlackAlerter enabled when webhook_url provided")
     
     # Step 4: Verify webhook URL stored correctly

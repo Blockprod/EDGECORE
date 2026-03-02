@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """Validation test for T0.3: Broker Reconciliation Integration"""
 
-import os
 from execution.reconciler import BrokerReconciler
 
 def test_t0_3():
@@ -28,21 +27,21 @@ def test_t0_3():
     # Step 3: Test startup reconciliation with matching equity
     print("\n[TEST] Testing startup reconciliation (matching equity)...")
     matches, diff_pct = reconciler.reconcile_equity(broker_equity=100000.0)
-    assert matches == True
+    assert matches
     assert diff_pct == 0.0
     print(f"[OK] Reconciliation passed (diff: {diff_pct:.6f}%)")
     
     # Step 4: Test reconciliation with small divergence (within tolerance)
     print("\n[TEST] Testing small divergence (within 0.01% tolerance)...")
     matches, diff_pct = reconciler.reconcile_equity(broker_equity=99999.5)
-    assert matches == True, f"Expected match within tolerance, got diff: {diff_pct}"
+    assert matches, f"Expected match within tolerance, got diff: {diff_pct}"
     assert diff_pct < 0.01
     print(f"[OK] Small divergence within tolerance (diff: {diff_pct:.6f}%)")
     
     # Step 5: Test reconciliation with large divergence (outside tolerance)
     print("\n[TEST] Testing large divergence (outside tolerance)...")
     matches, diff_pct = reconciler.reconcile_equity(broker_equity=99000.0)  # 1% diff
-    assert matches == False, f"Expected mismatch for 1% divergence"
+    assert not matches, "Expected mismatch for 1% divergence"
     assert diff_pct > 0.01
     print(f"[OK] Large divergence detected (diff: {diff_pct:.4f}%)")
     

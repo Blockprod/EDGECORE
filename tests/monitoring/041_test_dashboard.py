@@ -1,7 +1,7 @@
 """Comprehensive tests for Dashboard generator."""
 
 import pytest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
 from monitoring.dashboard import DashboardGenerator
 from risk.engine import Position

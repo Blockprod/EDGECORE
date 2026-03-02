@@ -9,7 +9,7 @@ Provides neural network models for predicting market impact based on:
 
 import numpy as np
 from typing import Dict, Optional, List, Tuple, Literal
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 import logging
 import pickle
@@ -218,7 +218,7 @@ class MLImpactPredictor:
         
         Simplified version: assume trained model if available.
         """
-        base_features = self._encode_features(features)
+        self._encode_features(features)
         
         # Without actual SHAP, use simple sensitivity analysis
         importance = {
@@ -336,7 +336,6 @@ class MLImpactPredictor:
         self.model.output_std = y.std() + 1e-8
         
         # Simple SGD training (simplified for demo)
-        learning_rate = 0.01
         batch_size = 32
         
         for epoch in range(epochs):
@@ -354,7 +353,7 @@ class MLImpactPredictor:
                 predictions, _ = self.model.forward(X_batch)
                 
                 # MSE loss (simplified backward pass omitted for brevity)
-                loss = np.mean((predictions - y_batch) ** 2)
+                np.mean((predictions - y_batch) ** 2)
         
         # Evaluate
         predictions, _ = self.model.forward(X)

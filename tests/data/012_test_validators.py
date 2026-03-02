@@ -8,7 +8,6 @@ Tests all edge cases:
 """
 
 import pytest
-import math
 from common.validators import (
     validate_symbol,
     validate_position_size,

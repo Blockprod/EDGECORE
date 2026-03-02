@@ -12,8 +12,6 @@ Covers:
 
 import numpy as np
 import pandas as pd
-import pytest
-from unittest import mock
 
 from backtests.event_driven import (
     EventDrivenBacktester,
@@ -21,7 +19,7 @@ from backtests.event_driven import (
     MarketState,
     Fill,
 )
-from backtests.cost_model import CostModel, CostModelConfig
+from backtests.cost_model import CostModel
 
 
 # ===================================================================

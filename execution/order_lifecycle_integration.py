@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from structlog import get_logger
 
-from execution.order_lifecycle import OrderLifecycleManager, OrderStatus, OrderLifecycleEvent
+from execution.order_lifecycle import OrderLifecycleManager, OrderStatus
 from execution.base import BaseExecutionEngine
 
 logger = get_logger(__name__)

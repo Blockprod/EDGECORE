@@ -18,8 +18,8 @@ Expected Impact: +12 Sharpe points from reducing tail losses
 import pytest
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-from execution.trailing_stop import TrailingStopManager, TrailingStopPosition
+from datetime import datetime
+from execution.trailing_stop import TrailingStopManager
 from strategies.pair_trading import PairTradingStrategy
 
 
@@ -31,7 +31,7 @@ class TestTrailingStopBasics:
         mgr = TrailingStopManager(widening_threshold=1.0, track_max_profit=True)
         
         assert mgr.widening_threshold == 1.0
-        assert mgr.track_max_profit == True
+        assert mgr.track_max_profit
         assert len(mgr.positions) == 0
         
     def test_add_position_to_trailing_stop(self):
@@ -98,7 +98,7 @@ class TestTrailingStopLogic:
             current_z=2.8
         )
         
-        assert should_exit == False
+        assert not should_exit
         assert reason is None
         assert "PAIR_1" in mgr.positions  # Position still tracked
         
@@ -121,7 +121,7 @@ class TestTrailingStopLogic:
             current_z=3.8
         )
         
-        assert should_exit == True
+        assert should_exit
         assert reason is not None
         assert "3.8" in reason
         assert "2.2" in reason
@@ -146,7 +146,7 @@ class TestTrailingStopLogic:
             current_z=-3.5
         )
         
-        assert should_exit == True
+        assert should_exit
         assert reason is not None
         
     def test_custom_widening_threshold(self):
@@ -167,7 +167,7 @@ class TestTrailingStopLogic:
             symbol_pair="TIGHT_STOP",
             current_z=2.6
         )
-        assert should_exit == True
+        assert should_exit
         
     def test_nonexistent_pair_returns_false(self):
         """Checking nonexistent pair should return False."""
@@ -178,7 +178,7 @@ class TestTrailingStopLogic:
             current_z=2.5
         )
         
-        assert should_exit == False
+        assert not should_exit
         assert reason is None
 
 
@@ -253,7 +253,7 @@ class TestTrailingStopTightStop:
             profit_threshold=0.5
         )
         
-        assert should_exit == False
+        assert not should_exit
         
     def test_tight_stop_triggered_for_profitable_position(self):
         """Tight stop should trigger if profit trade widens."""
@@ -279,7 +279,7 @@ class TestTrailingStopTightStop:
             profit_threshold=0.5
         )
         
-        assert should_exit == True
+        assert should_exit
 
 
 class TestTrailingStopPositionManagement:
@@ -383,7 +383,7 @@ class TestTrailingStopIntegration:
         }, index=dates)
         
         # Generate signals (may or may not have entries but setup should work)
-        signals = strategy.generate_signals(market_data)
+        strategy.generate_signals(market_data)
         
         # Verify trailing stop manager is ready
         trailing_stops = strategy.trailing_stop_manager
@@ -403,11 +403,11 @@ class TestTrailingStopRealisticScenarios:
         
         # Revert to Z=1.0 (good!)
         should_exit1, _ = mgr.should_exit_on_trailing_stop("SCENARIO_1", 1.0)
-        assert should_exit1 == False  # No stop hit yet
+        assert not should_exit1  # No stop hit yet
         
         # Widen to Z=3.5 (bad!)
         should_exit2, reason = mgr.should_exit_on_trailing_stop("SCENARIO_1", 3.5)
-        assert should_exit2 == True  # Stop triggered
+        assert should_exit2  # Stop triggered
         assert "widened" in reason.lower()
         
     def test_scenario_immediate_widening(self):
@@ -424,7 +424,7 @@ class TestTrailingStopRealisticScenarios:
             current_z=-3.0
         )
         
-        assert should_exit == True
+        assert should_exit
         assert "-3.0" in reason
         
     def test_scenario_multiple_positions_with_different_stops(self):
@@ -439,15 +439,15 @@ class TestTrailingStopRealisticScenarios:
         
         # PAIR_A widens beyond threshold
         exit_a, _ = mgr.should_exit_on_trailing_stop("PAIR_A", 3.2)
-        assert exit_a == True
+        assert exit_a
         
         # PAIR_B within threshold
         exit_b, _ = mgr.should_exit_on_trailing_stop("PAIR_B", -3.2)
-        assert exit_b == False
+        assert not exit_b
         
         # PAIR_C way beyond threshold
         exit_c, _ = mgr.should_exit_on_trailing_stop("PAIR_C", 4.0)
-        assert exit_c == True
+        assert exit_c
 
 
 class TestTrailingStopEdgeCases:
@@ -461,7 +461,7 @@ class TestTrailingStopEdgeCases:
         mgr.add_position("SAME_Z", "long", 2.5, 0.5, now)
         
         should_exit, _ = mgr.should_exit_on_trailing_stop("SAME_Z", 2.5)
-        assert should_exit == False
+        assert not should_exit
         
     def test_movement_toward_zero_no_exit(self):
         """Movement toward zero (good direction) shouldn't trigger stop."""
@@ -473,7 +473,7 @@ class TestTrailingStopEdgeCases:
         # Move toward 0
         for z in [2.0, 1.5, 1.0, 0.5, 0.0]:
             should_exit, _ = mgr.should_exit_on_trailing_stop("GOOD_DIR", z)
-            assert should_exit == False
+            assert not should_exit
             
     def test_very_tight_threshold(self):
         """Test with very tight trailing stop threshold."""
@@ -484,7 +484,7 @@ class TestTrailingStopEdgeCases:
         
         # Small widening: 0.3σ > 0.2σ -> should exit
         should_exit, _ = mgr.should_exit_on_trailing_stop("TIGHT", 2.3)
-        assert should_exit == True
+        assert should_exit
 
 
 if __name__ == '__main__':

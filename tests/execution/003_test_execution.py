@@ -1,8 +1,6 @@
 import pytest
 import os
-from unittest.mock import patch, MagicMock, Mock
 from execution.ibkr_engine import IBGatewaySync
-from execution.base import Order, OrderSide, OrderStatus
 
 
 def test_ibkr_engine_connection_params():

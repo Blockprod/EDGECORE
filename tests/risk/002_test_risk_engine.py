@@ -1,6 +1,5 @@
 import pytest
-from risk.engine import RiskEngine, Position
-from datetime import datetime
+from risk.engine import RiskEngine
 from common.validators import EquityError
 
 def test_risk_engine_position_limit():

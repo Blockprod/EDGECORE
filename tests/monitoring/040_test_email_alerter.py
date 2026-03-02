@@ -1,7 +1,6 @@
 """Comprehensive tests for Email alerter integration."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
 from monitoring.email_alerter import EmailAlerter
 import smtplib
 import os
@@ -215,7 +214,7 @@ class TestEmailAlerterContent:
         )
 
         call_args = mock_server.sendmail.call_args
-        email_body = call_args[0][2]
+        call_args[0][2]
 
         # Verify SMTP was called (email was built correctly)
         assert mock_server.sendmail.called

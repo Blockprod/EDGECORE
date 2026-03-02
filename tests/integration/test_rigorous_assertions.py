@@ -12,7 +12,6 @@ DoD: Every assertion checks exact values; no `isinstance`-only or `is not None`
 guards without follow-up value checks.
 """
 
-import pytest
 import numpy as np
 import pandas as pd
 
@@ -23,7 +22,6 @@ from backtests.walk_forward import split_walk_forward
 from models.regime_detector import RegimeDetector, VolatilityRegime
 from models.adaptive_thresholds import DynamicSpreadModel
 from strategies.pair_trading import PairTradingStrategy
-from strategies.base import Signal
 
 
 class TestFullPipelineNoLeakage:

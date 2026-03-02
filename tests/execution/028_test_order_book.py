@@ -9,18 +9,11 @@ Covers:
 - Microstructure effects
 """
 
-import math
-from datetime import datetime
 
 import pytest
 
 from common.types import (
     BookSimulationConfig,
-    DepthMode,
-    LiquidityMetrics,
-    OrderBook,
-    OrderBookLevel,
-    OrderBookUpdate,
 )
 from execution.order_book import (
     OrderBookSimulator,

@@ -18,13 +18,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-import numpy as np
-import pandas as pd
 from structlog import get_logger
 
 from backtests.runner import BacktestRunner
 from backtests.metrics import BacktestMetrics
-from backtests.cost_model import CostModel
 
 logger = get_logger(__name__)
 

@@ -16,7 +16,7 @@ import logging
 import statistics
 import numpy as np
 
-from common.types import LatencyMeasurement, LatencyMetrics, LatencyBudget
+from common.types import LatencyMetrics, LatencyBudget
 
 logger = logging.getLogger(__name__)
 
@@ -137,8 +137,8 @@ class LatencyTracker:
         if not latencies:
             return None
         
-        all_measurements = self.measurements if not success_only else [m for m in self.measurements if m.success]
-        failures = sum(1 for m in self.measurements if not m.success)
+        self.measurements if not success_only else [m for m in self.measurements if m.success]
+        sum(1 for m in self.measurements if not m.success)
         
         return {
             "operation": self.operation,

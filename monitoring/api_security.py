@@ -16,7 +16,6 @@ from typing import Dict, Optional, Callable, Any
 from flask import request, jsonify, Response
 import hashlib
 import hmac
-import struct
 from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 
@@ -219,7 +218,7 @@ def require_rate_limit(func: Callable) -> Callable:
         # Add rate limit headers to response
         response = func(*args, **kwargs)
         if isinstance(response, tuple):
-            resp_data, status_code = response[0], response[1] if len(response) > 1 else 200
+            _resp_data, _status_code = response[0], response[1] if len(response) > 1 else 200
             remaining = _rate_limiter.get_remaining(client_ip)
             # Headers will be added by Flask
         
@@ -317,7 +316,7 @@ def require_https(func: Callable) -> Callable:
 def generate_api_key(name: str = 'default') -> str:
     """Generate a new API key."""
     import secrets
-    random_bytes = secrets.token_bytes(32)
+    secrets.token_bytes(32)
     key = secrets.token_urlsafe(32)
     return f"edgecore_{name}_{key}"
 
@@ -400,7 +399,7 @@ def log_api_call(func: Callable) -> Callable:
             )
             
             return result
-        except Exception as e:
+        except Exception:
             elapsed_ms = (time.time() - start_time) * 1000
             _request_logger.log_request(
                 request.method,

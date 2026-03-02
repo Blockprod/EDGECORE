@@ -19,9 +19,8 @@ Expected wins:
 import pytest
 import pandas as pd
 import numpy as np
-from typing import Tuple
 from models.spread import SpreadModel
-from models.adaptive_thresholds import DynamicSpreadModel, ThresholdConfig
+from models.adaptive_thresholds import DynamicSpreadModel
 from strategies.pair_trading import PairTradingStrategy
 
 

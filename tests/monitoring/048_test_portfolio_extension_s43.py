@@ -4,10 +4,7 @@ Test Suite for S4.3: Portfolio Extension Module
 Comprehensive tests for portfolio management, clustering, and concentration analysis.
 """
 
-import pytest
 import numpy as np
-import pandas as pd
-from typing import List, Tuple, Dict
 
 from monitoring.portfolio_extension_s43 import (
     PairExposure,
@@ -218,7 +215,7 @@ class TestPortfolioConcentrationAnalyzer:
         # AAPL should violate the 25% limit if portfolio is designed this way
         violations = result['concentration_violations']
         # Check if AAPL is in violations
-        btc_weights = [v['symbol'] for v in violations]
+        [v['symbol'] for v in violations]
         # Depending on exact weights, AAPL might be violated
     
     def test_rebalancing_adjustments(self):
@@ -426,7 +423,7 @@ class TestPortfolioIntegration:
         
         # Should have lower cluster density
         assert stats['num_clusters'] >= 1
-        avg_size = stats['avg_cluster_size']
+        stats['avg_cluster_size']
         # Less clustering than commodity pairs
     
     def test_adaptive_position_sizing(self):

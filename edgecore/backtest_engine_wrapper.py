@@ -4,7 +4,7 @@ Now using Python-only implementation (C++ approach deprecated).
 """
 
 import logging
-from typing import Dict, List, Callable, Tuple, Any, Optional
+from typing import Dict, List, Callable, Any
 
 logger = logging.getLogger(__name__)
 

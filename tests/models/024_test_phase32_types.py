@@ -11,9 +11,6 @@ Tests:
 """
 
 import pytest
-from typing import Dict, List, Any, Optional, get_type_hints
-import inspect
-import sys
 from datetime import datetime
 
 # Import all type definitions
@@ -21,18 +18,10 @@ from common.types import (
     # Enums
     OrderSide, OrderType, OrderStatus, ExecutionMode, AlertSeverity, CircuitBreakerState,
     # Type aliases
-    Price, Quantity, PnL, Volatility, Correlation, Equity, Symbol, OrderID, PositionID,
+    Price, Quantity, Symbol, OrderID, PositionID,
     # Data structures
     OHLCVCandle, OrderRequest, OrderRecord, PositionRecord, AlertRecord, 
-    TradeRecord, EquitySnapshot, SignalData,
-    # Config
-    RiskConfig, StrategyConfig, ExecutionConfig,
-    # Validation results
-    ValidationResult, RiskCheckResult, CointegrationResult,
-    # Circuit breaker
-    CircuitBreakerConfig, CircuitBreakerMetrics,
-    # Other
-    RetryStats, APIResponse, HealthCheckResponse
+    RiskConfig, ValidationResult, APIResponse, HealthCheckResponse
 )
 
 # Import typed API
@@ -163,7 +152,7 @@ class TestPhase32TypeSystem:
         }
         
         assert alert['severity'] == AlertSeverity.WARNING
-        assert alert['acknowledged'] == False
+        assert not alert['acknowledged']
         assert 'volatility' in alert['data']
     
     def test_risk_config_structure(self):
@@ -179,7 +168,7 @@ class TestPhase32TypeSystem:
         }
         
         assert config['max_position_size_pct'] == 5.0
-        assert config['require_cointegration'] == True
+        assert config['require_cointegration']
     
     def test_circuit_breaker_config_structure(self):
         """Verify CircuitBreakerConfig TypedDict."""
@@ -205,7 +194,7 @@ class TestPhase32TypeSystem:
             'warnings': ['Low volume observed']
         }
         
-        assert result['is_valid'] == True
+        assert result['is_valid']
         assert 'format' in result['checks_passed']
         assert len(result['errors']) == 0
     
@@ -218,7 +207,7 @@ class TestPhase32TypeSystem:
             'reason': 'Position size within limits'
         }
         
-        assert result['allowed'] == True
+        assert result['allowed']
         assert 'limits' in result['reason']
     
     def test_typed_api_functions_exist(self):
@@ -312,7 +301,7 @@ class TestPhase32TypeSystem:
             'timestamp': datetime.utcnow()
         }
         
-        assert response['success'] == True
+        assert response['success']
         assert 'order_id' in response['data']
     
     def test_health_check_response_structure(self):

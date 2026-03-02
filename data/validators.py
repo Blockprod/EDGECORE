@@ -9,7 +9,7 @@ Ensures:
 - Sequence continuity (no gaps, monotonic timestamps)
 """
 
-from typing import Dict, List, Optional, Any, Tuple
+from typing import List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from structlog import get_logger
@@ -365,7 +365,7 @@ class PositionValidator:
                 opened_at = opened_at.replace(tzinfo=timezone.utc)
             age = datetime.now(timezone.utc) - opened_at
             if age < timedelta(0):
-                errors.append(f"Position opened in the future")
+                errors.append("Position opened in the future")
                 checks_failed += 1
             elif age > timedelta(days=365):
                 warnings.append(f"Position age exceeds 1 year ({age})")

@@ -81,7 +81,7 @@ if __name__ == '__main__':
         
         # Benchmark Python version
         python_result = benchmark_cointegration(prices, symbols, use_cpp=False)
-        print(f"\n  Pure Python Implementation:")
+        print("\n  Pure Python Implementation:")
         print(f"    Total time:        {python_result['elapsed']:.3f} seconds")
         print(f"    Tests completed:   {python_result['num_tests']}")
         print(f"    Cointegrated:      {python_result['num_cointegrated']}")
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         
         # Benchmark C++ version
         cpp_result = benchmark_cointegration(prices, symbols, use_cpp=True)
-        print(f"\n  C++ Optimized Implementation:")
+        print("\n  C++ Optimized Implementation:")
         print(f"    Total time:        {cpp_result['elapsed']:.3f} seconds")
         print(f"    Tests completed:   {cpp_result['num_tests']}")
         print(f"    Cointegrated:      {cpp_result['num_cointegrated']}")

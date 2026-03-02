@@ -210,7 +210,7 @@ class TestMeanReversionValidation:
         is_mr = estimator.validate_mean_reversion(pd.Series(rw), threshold_rho=0.95)
         
         # With a tight threshold and long series, RW should fail
-        assert is_mr == False, "Pure random walk should not validate as mean-reverting (rho<0.95)"
+        assert not is_mr, "Pure random walk should not validate as mean-reverting (rho<0.95)"
 
 
 class TestEdgeCases:

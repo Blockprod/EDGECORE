@@ -243,7 +243,7 @@ class PCASpreadMonitor:
             return None, []
 
         # Align on common index
-        valid_keys = sorted(ret_frames.keys())
+        sorted(ret_frames.keys())
         df = pd.DataFrame(ret_frames)
         df = df.dropna()
 

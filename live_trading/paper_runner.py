@@ -15,7 +15,7 @@ from typing import Optional
 
 from structlog import get_logger
 
-from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
+from live_trading.runner import LiveTradingRunner, TradingLoopConfig
 
 logger = get_logger(__name__)
 

@@ -9,17 +9,15 @@ Tests complete trading flows:
 """
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch
+from datetime import datetime
 import pandas as pd
 import numpy as np
 
 from models.cointegration import engle_granger_test
 from models.spread import SpreadModel
 from risk.engine import RiskEngine
-from execution.modes import ExecutionEngine, ModeType, Position
-from data.loader import DataLoader
-from data.validators import OHLCVValidator, PositionValidator, EquityValidator
+from execution.modes import ExecutionEngine, ModeType
+from data.validators import OHLCVValidator
 from monitoring.alerter import AlertManager
 from config.schemas import FullConfigSchema
 
@@ -284,7 +282,7 @@ class TestOrderExecutionFlow:
         execution_engine.context.market_prices["AAPL"] = 50000.0
         
         # Submit and fill order
-        order_id = execution_engine.submit_order(
+        execution_engine.submit_order(
             symbol="AAPL",
             side="buy",
             quantity=2.0,
@@ -535,7 +533,7 @@ class TestCompleteStrategyFlow:
         # Step 2: Analyze cointegration
         btc_prices = btc_data['close']
         eth_prices = cointegrated_pair_data["MSFT"]['close']
-        coint_result = engle_granger_test(eth_prices, btc_prices)
+        engle_granger_test(eth_prices, btc_prices)
         
         # Step 3: Check risk
         current_price = float(btc_prices.iloc[-1])
@@ -572,7 +570,7 @@ class TestCompleteStrategyFlow:
         alert = alerter.create_alert(
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
-            title=f"Position opened: AAPL",
+            title="Position opened: AAPL",
             message=f"Opened 0.5 AAPL long at {current_price}"
         )
         

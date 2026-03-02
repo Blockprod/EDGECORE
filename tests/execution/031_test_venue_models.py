@@ -1,6 +1,5 @@
 """Tests for venue-specific market models (US equities via IBKR)."""
 
-import pytest
 
 from execution.venue_models import (
     IBKRSmartVenueModel,
@@ -22,7 +21,7 @@ class TestIBKRSmartVenueModel:
         
         assert model.venue == VenueType.IBKR_SMART
         assert model.characteristics["base_spread_bps"] == 1.0
-        assert model.characteristics["is_24_7"] == False
+        assert not model.characteristics["is_24_7"]
     
     def test_ibkr_smart_market_impact(self):
         """Test IBKR Smart market impact calculation."""

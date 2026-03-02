@@ -189,7 +189,7 @@ class TestWalkForwardPrintSummary:
         """print_summary() returns formatted string."""
         backtester = WalkForwardBacktester()
         
-        result = backtester.run_walk_forward(
+        backtester.run_walk_forward(
             symbols=['AAPL'],
             start_date='2023-01-01',
             end_date='2023-12-31',
@@ -207,7 +207,7 @@ class TestWalkForwardPrintSummary:
         """Summary includes per-period breakdown."""
         backtester = WalkForwardBacktester()
         
-        result = backtester.run_walk_forward(
+        backtester.run_walk_forward(
             symbols=['AAPL'],
             start_date='2023-01-01',
             end_date='2023-12-31',

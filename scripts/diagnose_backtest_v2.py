@@ -6,7 +6,6 @@ Tests each component independently.
 import pandas as pd
 import numpy as np
 import sys
-from datetime import datetime
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -24,7 +23,7 @@ try:
     
     # Try to load AAPL data
     print("   Loading AAPL data via IBKR (2023-06-01 to 2024-06-01)...")
-    df_aapl = loader.load_ibkr_data(symbol=sym, timeframe='1d', since='2023-06-01', limit=500, validate=False)
+    df_aapl = loader.load_ibkr_data(symbol='AAPL', timeframe='1d', since='2023-06-01', limit=500, validate=False)
     
     if df_aapl is not None and len(df_aapl) > 0:
         print(f"✅ AAPL data loaded: {len(df_aapl)} rows")
@@ -87,7 +86,7 @@ try:
             if is_cointegrated:
                 cointegrated_pairs.append((sym1, sym2, pvalue))
     
-    print(f"✅ Cointegration test completed")
+    print("✅ Cointegration test completed")
     print(f"   Found {len(cointegrated_pairs)} cointegrated pairs: {cointegrated_pairs}")
     
 except Exception as e:
@@ -141,7 +140,7 @@ try:
     spread = model.compute_spread(y, x)
     z_scores = model.compute_z_score(spread, lookback=20)
     
-    print(f"✅ Spread/Z-score calculated:")
+    print("✅ Spread/Z-score calculated:")
     print(f"   Spread - min: {spread.min():.2f}, max: {spread.max():.2f}")
     print(f"   Z-scores - min: {z_scores.min():.2f}, max: {z_scores.max():.2f}")
     print(f"   Current Z-score: {z_scores.iloc[-1]:.2f}")
@@ -166,7 +165,7 @@ try:
         use_synthetic=True  # Force synthetic data
     )
     
-    print(f"✅ Synthetic backtest completed:")
+    print("✅ Synthetic backtest completed:")
     print(metrics.summary())
     
 except Exception as e:

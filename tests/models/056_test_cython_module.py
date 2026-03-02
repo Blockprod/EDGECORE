@@ -8,8 +8,6 @@ Verifies that:
 """
 
 import pytest
-import os
-import sys
 import time
 import numpy as np
 import pandas as pd
@@ -178,19 +176,19 @@ class TestCythonPerformance:
         
         start = time.perf_counter()
         for _ in range(10):
-            python_result = python_version(y_series, x_series)
+            python_version(y_series, x_series)
         python_time = time.perf_counter() - start
         
         # Time Cython version (uses numpy arrays directly)
         start = time.perf_counter()
         for _ in range(10):
-            cython_result = cointegration_fast.engle_granger_fast(y, x)
+            cointegration_fast.engle_granger_fast(y, x)
         cython_time = time.perf_counter() - start
         
         # Cython should be faster or comparable (allow some overhead)
         speedup = python_time / max(cython_time, 0.001)  # Avoid division by zero
         
-        print(f"\nPerformance comparison (10 iterations):")
+        print("\nPerformance comparison (10 iterations):")
         print(f"  Python: {python_time:.4f}s")
         print(f"  Cython: {cython_time:.4f}s")
         print(f"  Speedup: {speedup:.2f}x")

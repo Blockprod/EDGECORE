@@ -12,7 +12,6 @@ Strategy:
     remain unchanged – proving no future data leaked into the past.
 """
 
-import pytest
 import numpy as np
 import pandas as pd
 
@@ -116,7 +115,6 @@ class TestNoLookAheadBias:
 
         observed_lengths = []
 
-        original_generate = None
 
         def _recording_generate(self_strategy, market_data, discovered_pairs=None, **kwargs):
             """Record the length of market_data passed to generate_signals."""

@@ -16,7 +16,6 @@ import pandas as pd
 
 from execution.time_stop import TimeStopManager, TimeStopConfig
 from backtests.strategy_simulator import StrategyBacktestSimulator
-from backtests.cost_model import CostModel
 
 
 # ========================================================================

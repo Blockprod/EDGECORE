@@ -5,18 +5,16 @@ Provides crash-safe persistent state reconstruction.
 """
 
 import csv
-import os
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 from structlog import get_logger
-from dataclasses import asdict
 
 from monitoring.events import TradingEvent, EventType
 from common.validators import EquityError
 
 if TYPE_CHECKING:
-    from risk.engine import Position
+    pass
 
 logger = get_logger(__name__)
 

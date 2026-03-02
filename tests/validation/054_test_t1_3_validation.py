@@ -59,7 +59,7 @@ def test_t1_3():
         assert 'aggregate_metrics' in result, "Result missing 'aggregate_metrics'"
         assert 'per_period_metrics' in result, "Result missing 'per_period_metrics'"
         
-        print(f"[OK] Walk-forward backtest completed")
+        print("[OK] Walk-forward backtest completed")
         print(f"[OK] Periods completed: {result['num_periods']}")
         
         # Check aggregate metrics
@@ -83,7 +83,7 @@ def test_t1_3():
             print(f"[OK] Period {period_meta['period']}: return={metrics['total_return']:.2%}, sharpe={metrics['sharpe_ratio']:.2f}")
         
     except Exception as e:
-        print(f"[WARN] Walk-forward backtest raised exception (may be due to data loading)")
+        print("[WARN] Walk-forward backtest raised exception (may be due to data loading)")
         print(f"       Error: {type(e).__name__}: {str(e)[:100]}")
         # This is acceptable - real data loading may fail
     

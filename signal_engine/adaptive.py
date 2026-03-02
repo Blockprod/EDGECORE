@@ -12,7 +12,7 @@ pair characteristics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 import pandas as pd
 from structlog import get_logger
@@ -21,7 +21,7 @@ from models.adaptive_thresholds import (
     AdaptiveThresholdCalculator,
     ThresholdConfig,
 )
-from models.regime_detector import RegimeDetector, VolatilityRegime
+from models.regime_detector import VolatilityRegime
 
 logger = get_logger(__name__)
 

@@ -10,14 +10,12 @@ Covers:
 """
 
 import time
-from typing import List
 
 import pytest
 
 from monitoring.profiler import (
     PerformanceProfiler,
     PerformanceMetric,
-    PerformanceStats,
     TimingContext,
     time_block,
     get_global_profiler,

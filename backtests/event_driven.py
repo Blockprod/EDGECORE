@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 from structlog import get_logger
 

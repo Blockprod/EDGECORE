@@ -36,7 +36,9 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
+
+import pandas as pd
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -96,7 +98,6 @@ def run_daily_scan(args) -> Dict:
     """
     from universe.scanner import IBKRUniverseScanner, ScannerConfig
     from universe.rate_limiter import IBKRRateLimiter
-    from universe.correlation_prefilter import CorrelationPreFilter
     from data.loader import DataLoader
     from data.multi_timeframe import MultiTimeframeEngine
     from strategies.pair_trading import PairTradingStrategy
@@ -267,7 +268,6 @@ def _sector_pair_distribution(
 
 
 def main():
-    import pandas as pd  # noqa: delayed import for speed
     args = parse_args()
 
     logger.info(
@@ -281,7 +281,7 @@ def main():
     try:
         result = run_daily_scan(args)
         print(f"\n{'='*60}")
-        print(f"  EDGECORE Daily Scan Complete")
+        print("  EDGECORE Daily Scan Complete")
         print(f"{'='*60}")
         print(f"  Universe:   {result['universe_size']} scanned → {result['symbols_with_data']} with data")
         print(f"  Pairs:      {result['pairs_discovered']} cointegrated pairs found")

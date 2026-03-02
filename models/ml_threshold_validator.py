@@ -14,7 +14,7 @@ Key rules:
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Any
 import logging
 
 from sklearn.metrics import r2_score, mean_squared_error

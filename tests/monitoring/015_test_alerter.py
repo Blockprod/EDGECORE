@@ -237,7 +237,7 @@ class TestAlertHandlers:
         
         manager.register_category_handler(AlertCategory.ORDER, handler)
         
-        alert = manager.create_alert(
+        manager.create_alert(
             severity=AlertSeverity.WARNING,
             category=AlertCategory.ORDER,
             title="Order Alert",

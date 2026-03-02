@@ -13,8 +13,7 @@ Ensures:
 import warnings
 import numpy as np
 import pandas as pd
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from backtests.runner import BacktestRunner, _generate_cointegrated_pair
 from backtests.metrics import BacktestMetrics
@@ -125,7 +124,6 @@ class TestSyntheticDataLoading:
 
     def test_generate_cointegrated_pair_still_exists(self):
         """The top-level helper should still be importable."""
-        from backtests.runner import _generate_cointegrated_pair
         df = _generate_cointegrated_pair("2023-01-01", "2023-06-01")
         assert "Symbol1" in df.columns
         assert "Symbol2" in df.columns

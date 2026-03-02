@@ -9,7 +9,6 @@ Tests:
 """
 
 import pytest
-from typing import get_type_hints, Any
 from common.types import (
     OHLCVCandle, OrderRecord, PositionRecord, EquitySnapshot,
     ValidationResult, RiskMetrics, AlertRecord, TradeRecord,
@@ -17,7 +16,6 @@ from common.types import (
     CircuitBreakerState, Price, Quantity, Symbol, OrderID,
 )
 from datetime import datetime
-import inspect
 
 
 class TestTypedDictStructures:

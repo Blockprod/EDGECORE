@@ -5,7 +5,6 @@ Validates that pair trading discovery generalizes to future data,
 preventing overfitting and illusory correlations.
 """
 
-import pytest
 import pandas as pd
 import numpy as np
 from validation.oos_validator import OutOfSampleValidator, OOSValidationResult

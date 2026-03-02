@@ -15,7 +15,7 @@ def test_t1_2():
     assert hasattr(settings.execution, 'paper_commission_pct')
     assert settings.execution.paper_slippage_model == 'fixed_bps'
     assert settings.execution.paper_commission_pct == 0.005  # IBKR equity rate (standard IBKR equity rate)
-    print(f"[OK] Slippage config loaded:")
+    print("[OK] Slippage config loaded:")
     print(f"     - paper_slippage_model: {settings.execution.paper_slippage_model}")
     print(f"     - paper_commission_pct: {settings.execution.paper_commission_pct}")
     
@@ -27,16 +27,16 @@ def test_t1_2():
             fixed_bps=5.0,
             commission_pct=0.1
         )
-        print(f"[OK] PaperExecutionEngine initialized")
+        print("[OK] PaperExecutionEngine initialized")
         assert engine.slippage_config['model'] == SlippageModel.FIXED_BPS
         assert engine.slippage_config['fixed_bps'] == 5.0
-        print(f"[OK] Slippage config set correctly")
+        print("[OK] Slippage config set correctly")
         
         assert engine.commission_config['type'] == CommissionType.PERCENT
         assert engine.commission_config['percent'] == 0.1
-        print(f"[OK] Commission config set correctly")
+        print("[OK] Commission config set correctly")
     except Exception as e:
-        print(f"[OK] PaperExecutionEngine initialization deferred (API credentials needed)")
+        print("[OK] PaperExecutionEngine initialization deferred (API credentials needed)")
         print(f"     Error: {type(e).__name__}: {str(e)[:80]}")
     
     # Step 3: Test slippage calculator
@@ -90,9 +90,9 @@ def test_t1_2():
     print("\n[TEST] Verifying main.py imports PaperExecutionEngine...")
     try:
         from main import PaperExecutionEngine as MainPaperEngine
-        print(f"[OK] main.py correctly imports PaperExecutionEngine")
+        print("[OK] main.py correctly imports PaperExecutionEngine")
     except ImportError:
-        print(f"[OK] Import check skipped (main.py loads on execution)")
+        print("[OK] Import check skipped (main.py loads on execution)")
     
     print("\n[PASS] T1.2 Validation Successful\n")
 

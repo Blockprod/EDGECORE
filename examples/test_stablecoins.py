@@ -31,7 +31,7 @@ try:
     )
     
     print(metrics.summary())
-    print(f"\nDetailed Results:")
+    print("\nDetailed Results:")
     print(f"  Total Trades: {metrics.total_trades}")
     print(f"  Total Return: {metrics.total_return:+.2%}")
     print(f"  Sharpe Ratio: {metrics.sharpe_ratio:.2f}")

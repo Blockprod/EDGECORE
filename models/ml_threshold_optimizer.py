@@ -39,12 +39,10 @@ import pandas as pd
 from typing import Dict, Tuple, List, Optional, Any
 from dataclasses import dataclass
 import logging
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import pickle
-import json
 from pathlib import Path
 from datetime import datetime
 
@@ -689,7 +687,7 @@ class AdaptiveThresholdManager:
         y_exit: pd.Series,
         n_folds: int = 5,
         max_degradation_pct: float = 20.0,
-    ) -> 'ValidationResult':
+    ) -> Any:
         """
         Validate ML model OOS before enabling it.
         

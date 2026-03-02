@@ -8,12 +8,10 @@ Provides market models tailored to different trading venues:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Literal
-from datetime import datetime, time
-import math
+from typing import Optional, Literal
 import logging
 
-from common.types import Symbol, VenueType, VenueCharacteristics, VenueModel
+from common.types import Symbol, VenueType, VenueCharacteristics
 
 logger = logging.getLogger(__name__)
 
@@ -251,7 +249,6 @@ class CMEVenueModel(VenueModelBase):
     
     def is_market_open(self) -> bool:
         """Check if market open (17:00-16:00 CST)."""
-        from datetime import datetime, time, timezone
         
         # Simplified: assume open (would check actual time in production)
         return True

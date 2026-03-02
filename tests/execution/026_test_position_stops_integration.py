@@ -316,7 +316,7 @@ class TestStopExecutionWorkflow:
         
         # Entry: Open position with stops
         entry_price = 50000.0
-        pos = manager.add_position(
+        manager.add_position(
             position_id="workflow_pos_1",
             symbol="AAPL",
             entry_price=entry_price,

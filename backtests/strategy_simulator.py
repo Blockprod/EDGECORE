@@ -19,14 +19,13 @@ from typing import Dict, List, Tuple, Optional
 from structlog import get_logger
 
 from strategies.pair_trading import PairTradingStrategy
-from backtests.cost_model import CostModel, CostModelConfig
-from backtests.metrics import BacktestMetrics, set_trading_days, TRADING_DAYS_PER_YEAR
+from backtests.cost_model import CostModel
+from backtests.metrics import BacktestMetrics, set_trading_days
 from execution.time_stop import TimeStopManager
 from risk.spread_correlation import SpreadCorrelationGuard
 from risk.pca_spread_monitor import PCASpreadMonitor
 from risk.engine import RiskEngine
 from execution.partial_profit import PartialProfitManager
-from models.cointegration import half_life_mean_reversion
 
 logger = get_logger(__name__)
 
@@ -201,7 +200,6 @@ class StrategyBacktestSimulator:
                 for pk in list(positions.keys()):
                     pc = positions.pop(pk)
                     cpnl, tpnl = self._close_position(pc, prices_df, bar_idx)
-                    realized_pnl_pre = cpnl  # will be accumulated below
                     trades_pnl.append(tpnl)
                     self.spread_corr_guard.remove_spread(pk)
                     self.pca_monitor.remove_spread(pk)
@@ -378,7 +376,6 @@ class StrategyBacktestSimulator:
                     # Use regime detector output (not signal.strength which
                     # represents z-score magnitude, NOT regime state).
                     # Only scale down in confirmed HIGH-volatility regimes.
-                    regime_mult = 1.0  # default: full allocation
 
                     # Enforce a combined multiplier floor so stacked dampeners
                     # never reduce allocation below 50% of the base.
@@ -684,7 +681,7 @@ class StrategyBacktestSimulator:
                         r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
                         r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
                     unrealised = not_per_leg * r1 + not_per_leg * r2
-                    profit_pct = unrealised / pos["notional"] if pos["notional"] > 0 else 0
+                    unrealised / pos["notional"] if pos["notional"] > 0 else 0
                     # Update peak unrealized
                     if unrealised > pos.get("peak_unrealized", 0.0):
                         pos["peak_unrealized"] = unrealised

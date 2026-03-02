@@ -1,9 +1,7 @@
 """Flask API endpoints for EDGECORE dashboard."""
 
-import json
-import os
 from typing import Optional, Dict, Any, Tuple
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from datetime import datetime
 import structlog
 
@@ -13,8 +11,7 @@ from monitoring.api_security import (
     require_api_key,
     add_security_headers,
     log_api_call,
-    get_request_stats,
-    _auth
+    get_request_stats
 )
 
 logger = structlog.get_logger(__name__)

@@ -16,9 +16,6 @@ Expected Impact: +18 Sharpe points from reduced concentration risk
 """
 
 import pytest
-import pandas as pd
-import numpy as np
-from datetime import datetime
 from execution.concentration_limits import ConcentrationLimitManager, SymbolExposure
 
 
@@ -70,7 +67,7 @@ class TestConcentrationLimitBasics:
         )
         
         assert mgr.max_concentration == 30.0
-        assert mgr.allow_rebalancing == True
+        assert mgr.allow_rebalancing
         assert len(mgr.symbol_exposures) == 0
         assert len(mgr.positions) == 0
     
@@ -95,7 +92,7 @@ class TestConcentrationLimitLogic:
             notional=1.0
         )
         
-        assert allowed == True
+        assert allowed
         assert reason is None
         assert "AAPL_MSFT" in mgr.positions
         assert "AAPL" in mgr.symbol_exposures
@@ -132,7 +129,7 @@ class TestConcentrationLimitLogic:
             notional=1.0
         )
         
-        assert allowed == False
+        assert not allowed
         assert "concentration" in reason.lower() or "limit" in reason.lower()
         assert "PAIR_2" not in mgr.positions
     
@@ -156,7 +153,7 @@ class TestConcentrationLimitLogic:
         
         # After both: AAPL long=1.0, short=1.0, gross=2.0
         # concentration = 2.0 / 2.0 * 100 = 100%
-        assert allowed == True
+        assert allowed
         
         aapl_conc, _ = mgr.get_symbol_concentration("AAPL")
         assert aapl_conc == 100.0  # Gross-based: hedging adds to concentration
@@ -171,12 +168,12 @@ class TestConcentrationLimitDiversification:
         
         # PAIR_1: long AAPL/GOOGL
         success1, _ = mgr.add_position("PAIR_1", "AAPL", "GOOGL", "long", 1.0)
-        assert success1 == True
+        assert success1
         aapl_conc_1, _ = mgr.get_symbol_concentration("AAPL")
         
         # PAIR_2: long AAPL/JPM (adds to AAPL)
         success2, _ = mgr.add_position("PAIR_2", "AAPL", "JPM", "long", 1.0)
-        assert success2 == True  # Within 200% limit
+        assert success2  # Within 200% limit
         aapl_conc_2, _ = mgr.get_symbol_concentration("AAPL")
         
         # Verify AAPL concentration increased
@@ -192,7 +189,7 @@ class TestConcentrationLimitDiversification:
         # PAIR_2: short AAPL/JPM (AAPL short 1.0, JPM long 1.0)
         # After this: AAPL net = 0, concentration reduced
         success, _ = mgr.add_position("PAIR_2", "AAPL", "JPM", "short", 1.0)
-        assert success == True
+        assert success
     
     def test_diversified_portfolio(self):
         """Diversified positions across symbols stay within limits."""
@@ -200,11 +197,11 @@ class TestConcentrationLimitDiversification:
         
         # First pair
         success1, _ = mgr.add_position("PAIR_1", "AAPL", "GOOGL", "long")
-        assert success1 == True
+        assert success1
         
         # Second pair with different main symbol
         success2, _ = mgr.add_position("PAIR_2", "WFC", "BAC", "short")
-        assert success2 == True
+        assert success2
 
 
 class TestConcentrationManagement:
@@ -356,7 +353,7 @@ class TestConcentrationIntegration:
         strategy = PairTradingStrategy()
         
         assert strategy.concentration_limits.max_concentration == 30.0
-        assert strategy.concentration_limits.allow_rebalancing == True
+        assert strategy.concentration_limits.allow_rebalancing
 
 
 class TestConcentrationEdgeCases:
@@ -413,12 +410,12 @@ class TestConcentrationRealisticScenarios:
         
         # Year starts: add AAPL/GOOGL long
         s1, _ = mgr.add_position("YEAR_START", "AAPL", "GOOGL", "long", 1.0)
-        assert s1 == True
+        assert s1
         
         # Later: add XYZ/AAPL short (short AAPL offsets)
         s2, _ = mgr.add_position("LATER", "XYZ", "AAPL", "short", 1.0)
         # This should now succeed because AAPL short reduces concentration
-        assert s2 == True
+        assert s2
     
     def test_scenario_rebalance_on_exit(self):
         """Exiting position frees capacity for new trade."""
@@ -426,7 +423,7 @@ class TestConcentrationRealisticScenarios:
         
         # Add position
         success1, _ = mgr.add_position("TRADE_1", "AAPL", "GOOGL", "long", 1.0)
-        assert success1 == True
+        assert success1
         
         # Try to add another
         success2, reason = mgr.add_position("TRADE_2", "AAPL", "JPM", "long", 1.0)
@@ -437,7 +434,7 @@ class TestConcentrationRealisticScenarios:
             
             # Now should succeed
             success3, _ = mgr.add_position("TRADE_2", "AAPL", "JPM", "long", 1.0)
-            assert success3 == True
+            assert success3
 
 
 if __name__ == '__main__':

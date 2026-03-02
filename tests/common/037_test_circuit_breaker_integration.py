@@ -6,8 +6,7 @@ for the IBKR-based trading system.
 """
 
 import pytest
-import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 from datetime import datetime, timedelta, timezone
 
 from common.circuit_breaker import (
@@ -16,9 +15,7 @@ from common.circuit_breaker import (
     CircuitBreakerState,
     CircuitBreakerOpen,
 )
-from common.errors import BrokerError, BrokerConnectionError, InsufficientBalanceError, ErrorCategory
-from execution.base import Order, OrderStatus, OrderSide
-from execution.ibkr_engine import IBKRExecutionEngine
+from common.errors import BrokerConnectionError
 
 
 @pytest.fixture

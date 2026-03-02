@@ -1,8 +1,7 @@
 """Comprehensive tests for Slack alerter integration."""
 
-import pytest
 import time
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 from monitoring.slack_alerter import SlackAlerter
 import requests
 

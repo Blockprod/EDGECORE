@@ -1,5 +1,6 @@
 """Comprehensive backtest diagnostic — find all trade blockers."""
-import re, collections
+import re
+import collections
 
 # Read log from a pre-existing backtest run
 with open('backtest_final.log', 'r', encoding='utf-16') as f:
@@ -18,7 +19,7 @@ for thresh in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]:
 side_long = len(re.findall(r"side='long'", data)) + len(re.findall(r'side=long', data))
 side_short = len(re.findall(r"side='short'", data)) + len(re.findall(r'side=short', data))
 side_exit = len(re.findall(r"side='exit'", data)) + len(re.findall(r'side=exit', data))
-print(f'\nStrategy signal sides:')
+print('\nStrategy signal sides:')
 print(f'  Long:  {side_long}')
 print(f'  Short: {side_short}')
 print(f'  Exit:  {side_exit}')
@@ -48,7 +49,7 @@ for pat, label in patterns.items():
 # === ACTIVE TRADES DISTRIBUTION ===
 at = re.findall(r'active_trades=(\d+)', data)
 dist = collections.Counter(at)
-print(f'\n=== ACTIVE TRADES DISTRIBUTION ===')
+print('\n=== ACTIVE TRADES DISTRIBUTION ===')
 for k in sorted(dist.keys(), key=int):
     print(f'  active={k}: {dist[k]} bars')
 
@@ -56,7 +57,7 @@ for k in sorted(dist.keys(), key=int):
 disc = re.findall(r'pairs_found=(\d+)', data)
 disc_ints = [int(d) for d in disc]
 if disc_ints:
-    print(f'\n=== PAIR DISCOVERY ===')
+    print('\n=== PAIR DISCOVERY ===')
     print(f'  Windows: {len(disc_ints)}')
     print(f'  Mean pairs/window: {sum(disc_ints)/len(disc_ints):.1f}')
     print(f'  Max: {max(disc_ints)}, Min: {min(disc_ints)}')
@@ -70,7 +71,7 @@ if pnls:
     losses = [float(p) for p in pnls if float(p) <= 0]
     for i, p in enumerate(pnls):
         print(f'  Trade {i+1:>2d}: {float(p):>+8.2f} EUR')
-    print(f'  ---')
+    print('  ---')
     print(f'  Total PnL: {sum(float(p) for p in pnls):>+8.2f} EUR')
     print(f'  Avg win:   {sum(wins)/len(wins):>+8.2f} EUR ({len(wins)} trades)' if wins else '  No wins')
     print(f'  Avg loss:  {sum(losses)/len(losses):>+8.2f} EUR ({len(losses)} trades)' if losses else '  No losses')
@@ -81,7 +82,7 @@ if m:
     print(f'\nFinal: portfolio={m.group(1)}, return={m.group(2)}, trades={m.group(3)}')
 
 # === KEY INSIGHT ===
-print(f'\n=== KEY INSIGHT ===')
+print('\n=== KEY INSIGHT ===')
 total_qualifying = sum(1 for z in zvals if z >= 1.0)
 print(f'  Qualifying z-scores (|z|>=1.0): {total_qualifying}')
 print(f'  Actual strategy entries (long+short): {side_long + side_short}')

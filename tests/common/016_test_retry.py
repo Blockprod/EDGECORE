@@ -1,8 +1,7 @@
 """Tests for retry logic and exponential backoff."""
 
 import pytest
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from common.retry import (
     RetryPolicy,
     retry_with_backoff,

@@ -21,11 +21,11 @@ def test_t0_1():
     
     # Step 4: Verify config matches
     assert risk_engine.initial_equity == settings.execution.initial_capital
-    print(f"[OK] Config consistency check passed")
+    print("[OK] Config consistency check passed")
     
     # Step 5: Verify positions tracking
     assert risk_engine.positions == {}
-    print(f"[OK] Positions tracking initialized (empty)")
+    print("[OK] Positions tracking initialized (empty)")
     
     print("\n[PASS] T0.1 Validation Successful\n")
 

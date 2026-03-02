@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 """Integration tests for reconciliation functionality."""
 
-import pytest
-from datetime import datetime
 from execution.reconciler import BrokerReconciler
 from risk.engine import RiskEngine
 
@@ -113,7 +111,7 @@ class TestRiskEngineEquityTracking:
         risk_engine = RiskEngine(initial_equity=initial_equity)
         
         # Simulate trade: lost $1000
-        new_equity = initial_equity - 1000.0
+        initial_equity - 1000.0
         
         # In production, this would be updated by order execution
         # Here we verify the structure exists

@@ -18,7 +18,6 @@ Expected Impact: +18 Sharpe points from reduced concentration risk
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Set
 import pandas as pd
-import numpy as np
 from structlog import get_logger
 
 logger = get_logger(__name__)

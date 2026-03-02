@@ -9,7 +9,6 @@ Also verifies the runtime `set_trading_days` helper.
 import numpy as np
 import pandas as pd
 import pytest
-from unittest.mock import patch, MagicMock
 
 # ---------------------------------------------------------------------------
 # Constant definition & export

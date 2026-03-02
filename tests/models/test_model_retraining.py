@@ -473,7 +473,7 @@ class TestPairValidation:
             hedge_ratio_drift=0.0
         )
         
-        results = manager.validate_all_pairs()
+        manager.validate_all_pairs()
         
         assert manager.tracked_pairs["OLD-PAIR"].is_valid is False
 
@@ -504,8 +504,8 @@ class TestRetrainingScheduling:
         assert manager.schedule_retraining_check() is True
 
 
-class TestRetrainingReport:
-    """Test report generation."""
+class TestRetrainingReport2:
+    """Test report generation (extended)."""
     
     def test_generate_report_basic(self):
         """Test basic report generation."""

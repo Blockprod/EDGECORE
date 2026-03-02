@@ -13,7 +13,7 @@ Tests:
 import pytest
 import time
 import os
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from flask import Flask
 from monitoring.api_security import (
     RateLimiter,
@@ -26,12 +26,8 @@ from monitoring.api_security import (
     validate_hmac_signature,
     RequestLogger,
     log_api_call,
-    _rate_limiter,
-    _auth,
-    _request_logger,
     JWTAuth,
     require_jwt_token,
-    generate_jwt_token,
 )
 
 

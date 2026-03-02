@@ -479,7 +479,7 @@ def inject_secrets(logging_handler=None) -> None:
     Args:
         logging_handler: Optional specific handler to inject
     """
-    vault = get_vault()
+    get_vault()
     
     class MaskingFilter(logging.Filter):
         """Logging filter that masks secrets."""

@@ -13,9 +13,7 @@ Tests cover:
 import pytest
 import time
 import tempfile
-import json
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 from monitoring.cache_advanced_s42 import (
     LFUEvictionPolicy,
@@ -126,7 +124,6 @@ class TestARCEvictionPolicy:
         """ARC should adapt target size p based on eviction patterns."""
         policy = ARCEvictionPolicy(max_size=10)
         
-        initial_p = policy.p
         
         # Simulate eviction from B2 (should increase p)
         policy.on_set('key_a')

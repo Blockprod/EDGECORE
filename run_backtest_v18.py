@@ -87,8 +87,8 @@ if __name__ == "__main__":
                   for s2 in symbols[i+1:]
                   if sector_map.get(s1) == sector_map.get(s2))
     print(f"  Pairs:    {n_intra} intra-sector (BH-FDR per-sector q=0.10)")
-    print(f"  Period:   2020-01-01 -> 2026-01-01  (6 years)")
-    print(f"  Capital:  100 000 EUR")
+    print("  Period:   2020-01-01 -> 2026-01-01  (6 years)")
+    print("  Capital:  100 000 EUR")
     print(f"  Alloc:    {ALLOC_PCT}% per pair (2x leverage)")
     print(f"  Stop:     {STOP_PCT*100}%  |  Heat limit: {HEAT_LIMIT*100}%")
     print(f"  Lookback: {settings.strategy.lookback_window} + {settings.strategy.additional_lookback_windows}")

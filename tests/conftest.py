@@ -10,15 +10,14 @@ Provides:
 """
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock
+from datetime import datetime
+from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
-from pathlib import Path
 
 from execution.modes import ExecutionEngine, ModeType, ExecutionContext
 from data.loader import DataLoader
-from data.validators import OHLCVValidator, PositionValidator, EquityValidator
+from data.validators import OHLCVValidator, EquityValidator
 from monitoring.alerter import AlertManager
 from risk.engine import RiskEngine
 from config.schemas import FullConfigSchema
@@ -383,7 +382,6 @@ def assert_dataframe_valid(df, symbol="TEST"):
 def reset_singletons():
     """Reset singleton instances between tests."""
     from common.circuit_breaker import reset_all_circuit_breakers
-    from common.secrets import get_vault
     
     reset_all_circuit_breakers()
     

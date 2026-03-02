@@ -6,14 +6,13 @@ try:
     import vectorbt as vbt
 except ImportError:
     vbt = None  # vectorbt is optional; not used in the main pipeline
-from datetime import datetime, timedelta
 from structlog import get_logger
 from config.settings import get_settings
 from data.loader import DataLoader
 from data.validators import DataValidationError
 from strategies.pair_trading import PairTradingStrategy
 from backtests.metrics import BacktestMetrics
-from models.cointegration import engle_granger_test, engle_granger_test_cpp_optimized, half_life_mean_reversion
+from models.cointegration import engle_granger_test_cpp_optimized
 from models.spread import SpreadModel
 
 logger = get_logger(__name__)
@@ -205,7 +204,7 @@ class BacktestRunner:
         price_data = {}
         failed_symbols = []
         start_buffer = pd.Timestamp(start_date) - pd.Timedelta(days=60)
-        since_date = start_buffer.isoformat().split("T")[0]
+        start_buffer.isoformat().split("T")[0]
 
         from tqdm import tqdm
         import logging
@@ -236,8 +235,6 @@ class BacktestRunner:
         symbols = _sanitize_symbols(symbols)
         # Use DataLoader.bulk_load for parallel validation
         max_workers = 16  # High parallelism for speed
-        batch_size = 100  # Large batch size
-        rate_limiter = None  # Optionally pass IBKRRateLimiter if needed
 
         # tqdm progress bar for bulk loading
         with tqdm(total=len(symbols), desc="Validation IBKR", ncols=80) as pbar:
@@ -246,7 +243,6 @@ class BacktestRunner:
                 pbar.refresh()
 
             # Patch DataLoader.bulk_load to call progress_callback
-            orig_bulk_load = self.loader.bulk_load
             def bulk_load_with_progress(*args, **kwargs):
                 results = {}
                 to_fetch = args[0]
@@ -499,7 +495,7 @@ class BacktestRunner:
         
         lookback_min = 60  # Need at least 60 days for Z-score calculation
         for date_idx in range(lookback_min, len(prices_df)):
-            date = prices_df.index[date_idx]
+            prices_df.index[date_idx]
             daily_pnl = 0.0
             
             # Get historical data up to current date

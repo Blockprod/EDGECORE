@@ -19,7 +19,6 @@ import pytest
 from models.ml_threshold_validator import (
     MLThresholdValidator,
     ValidationResult,
-    ValidationFoldResult,
 )
 from models.ml_threshold_optimizer import (
     AdaptiveThresholdManager,
@@ -92,7 +91,7 @@ class TestMLThresholdValidator:
         v = MLThresholdValidator(n_folds=5, max_degradation_pct=20.0)
         result = v.validate_oos_performance(X, y_entry, y_exit)
 
-        assert result.ml_approved == True
+        assert result.ml_approved
         assert result.rejection_reason == ""
         assert result.n_folds >= 3  # Should produce at least 3 valid folds
         assert len(result.fold_results) >= 3
@@ -109,7 +108,7 @@ class TestMLThresholdValidator:
         result = v.validate_oos_performance(X, y_entry, y_exit)
 
         # ML should be rejected – OOS degradation should exceed 20%
-        assert result.ml_approved == False
+        assert not result.ml_approved
         assert "ML thresholds disabled" in result.rejection_reason
         assert result.n_folds >= 3
 
@@ -146,7 +145,7 @@ class TestMLThresholdValidator:
         v = MLThresholdValidator(n_folds=5)
         result = v.validate_oos_performance(X, y_entry, y_exit)
 
-        assert result.ml_approved == False
+        assert not result.ml_approved
         assert "Insufficient data" in result.rejection_reason
         assert result.n_folds == 0
 
@@ -195,32 +194,32 @@ class TestShouldUseML:
         v = MLThresholdValidator()
         v.is_score = 0.8
         v.oos_score = 0.75  # 93.75% of IS ↓ ok
-        assert v.should_use_ml_thresholds() == True
+        assert v.should_use_ml_thresholds()
 
     def test_bad_model_returns_false(self):
         v = MLThresholdValidator()
         v.is_score = 0.8
         v.oos_score = 0.5  # 62.5% of IS ↓ too low
-        assert v.should_use_ml_thresholds() == False
+        assert not v.should_use_ml_thresholds()
 
     def test_exact_boundary(self):
         v = MLThresholdValidator()
         v.is_score = 1.0
         v.oos_score = 0.8  # Exactly 80% ↓ should pass
-        assert v.should_use_ml_thresholds() == True
+        assert v.should_use_ml_thresholds()
 
     def test_zero_is_score_returns_false(self):
         v = MLThresholdValidator()
         v.is_score = 0.0
         v.oos_score = 0.5
-        assert v.should_use_ml_thresholds() == False
+        assert not v.should_use_ml_thresholds()
 
     def test_after_structured_validation(self):
         """After running structured validation, should_use should be True."""
         X, y_entry, y_exit = _make_structured_data(n=300)
         v = MLThresholdValidator(n_folds=5)
         v.validate_oos_performance(X, y_entry, y_exit)
-        assert v.should_use_ml_thresholds() == True
+        assert v.should_use_ml_thresholds()
 
 
 # ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
@@ -245,12 +244,12 @@ class TestValidationResult:
         d = result.to_dict()
         assert d["n_folds"] == 3
         assert d["avg_is_r2_entry"] == 0.9123
-        assert d["ml_approved"] == True
+        assert d["ml_approved"]
         assert d["rejection_reason"] == ""
 
     def test_default_values(self):
         result = ValidationResult(n_folds=0)
-        assert result.ml_approved == False
+        assert not result.ml_approved
         assert result.rejection_reason == ""
         assert result.fold_results == []
 
@@ -271,7 +270,7 @@ class TestMinOosR2:
             min_oos_r2=0.5,             # Strict absolute floor
         )
         result = v.validate_oos_performance(X, y_entry, y_exit)
-        assert result.ml_approved == False
+        assert not result.ml_approved
         assert "OOS R² too low" in result.rejection_reason
 
 
@@ -284,7 +283,7 @@ class TestAdaptiveThresholdManagerIntegration:
 
     def test_ml_enabled_by_default(self):
         mgr = AdaptiveThresholdManager()
-        assert mgr.ml_enabled == True
+        assert mgr.ml_enabled
         assert mgr._oos_rejection_reason == ""
 
     def test_get_thresholds_returns_defaults_when_ml_disabled(self):
@@ -328,8 +327,8 @@ class TestAdaptiveThresholdManagerIntegration:
             n_folds=5, max_degradation_pct=20.0,
         )
         
-        assert result.ml_approved == True
-        assert mgr.ml_enabled == True
+        assert result.ml_approved
+        assert mgr.ml_enabled
         assert mgr._oos_rejection_reason == ""
         assert mgr.optimizer is optimizer
         assert mgr.feature_engineer is feature_engineer
@@ -351,8 +350,8 @@ class TestAdaptiveThresholdManagerIntegration:
             n_folds=5, max_degradation_pct=20.0,
         )
         
-        assert result.ml_approved == False
-        assert mgr.ml_enabled == False
+        assert not result.ml_approved
+        assert not mgr.ml_enabled
         assert "ML thresholds disabled" in mgr._oos_rejection_reason
         
         # Verify fallback to defaults
@@ -385,7 +384,7 @@ class TestAdaptiveThresholdManagerIntegration:
             optimizer, feature_engineer,
             X_noise, y_entry_noise, y_exit_noise,
         )
-        assert mgr.ml_enabled == False
+        assert not mgr.ml_enabled
         
         # Second: re-validate with structured data ↓ should re-enable
         X_good, y_entry_good, y_exit_good = _make_structured_data(n=300)
@@ -393,8 +392,8 @@ class TestAdaptiveThresholdManagerIntegration:
             optimizer, feature_engineer,
             X_good, y_entry_good, y_exit_good,
         )
-        assert result2.ml_approved == True
-        assert mgr.ml_enabled == True
+        assert result2.ml_approved
+        assert mgr.ml_enabled
         assert mgr._oos_rejection_reason == ""
 
 
@@ -416,5 +415,5 @@ class TestCustomModelFactory:
             model_factory=lambda: LinearRegression(),
         )
         # Linear model on linear data ↓ should pass easily
-        assert result.ml_approved == True
+        assert result.ml_approved
         assert result.entry_degradation_pct < 10.0

@@ -223,7 +223,7 @@ class TestVectorizedSignalGenerator:
         # Vectorized version
         start_vec = time.time()
         signals_vec = gen.generate_signals_batch(z_scores_dict, active_positions)
-        time_vec = time.time() - start_vec
+        time.time() - start_vec
         
         # Loop version (for comparison)
         start_loop = time.time()
@@ -242,7 +242,7 @@ class TestVectorizedSignalGenerator:
             else:
                 signals_loop[pair] = 'hold'
         
-        time_loop = time.time() - start_loop
+        time.time() - start_loop
         
         # Vectorized should be comparable or faster
         # (Note: with this overhead, loop might be similar, but scales better)

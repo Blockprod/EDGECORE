@@ -13,7 +13,6 @@ Tests:
 
 import pytest
 import time
-from unittest.mock import patch, Mock
 from monitoring.cache import (
     CacheEntry,
     CacheManager,

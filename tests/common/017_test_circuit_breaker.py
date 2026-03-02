@@ -1,7 +1,6 @@
 """Tests for circuit breaker pattern."""
 
 import pytest
-from datetime import datetime, timedelta
 import time
 from common.circuit_breaker import (
     CircuitBreaker,

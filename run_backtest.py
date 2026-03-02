@@ -37,7 +37,6 @@ if __name__ == "__main__":
 
     # --- Dynamic universe: scan 100% IBKR symbols (with filters) ---
     from universe import IBKRUniverseScanner
-    import sys
     import argparse
 
     def main():
@@ -57,7 +56,6 @@ if __name__ == "__main__":
         runner = BacktestRunner()
 
         # --- Dynamic universe: scan 100% IBKR symbols (with filters) ---
-        from universe import IBKRUniverseScanner
         scanner = IBKRUniverseScanner()
         scanner.batch_size = args.batch_size
         scanner.async_mode = args.async_scan

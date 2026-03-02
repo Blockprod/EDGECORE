@@ -1,6 +1,5 @@
 """Tests for Monte Carlo order book simulation."""
 
-import pytest
 import numpy as np
 from datetime import datetime
 
@@ -11,7 +10,6 @@ from execution.monte_carlo import (
     create_correlated_simulations,
     analyze_risk_metrics,
 )
-from common.types import MonteCarloConfig, Symbol
 
 
 class TestPricePath:

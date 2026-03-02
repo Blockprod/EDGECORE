@@ -11,7 +11,6 @@ Key rules:
 """
 
 import pandas as pd
-import numpy as np
 from dataclasses import dataclass
 from typing import List, Dict, Optional
 from structlog import get_logger

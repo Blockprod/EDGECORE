@@ -10,8 +10,6 @@ Tests:
 - Deployment scenarios
 """
 
-import os
-import json
 import pytest
 from pathlib import Path
 
@@ -325,7 +323,7 @@ class TestSecurityConfiguration:
     def test_docker_compose_resource_limits(self):
         """Test resource limits in docker-compose."""
         compose_file = Path('docker-compose.yml')
-        content = compose_file.read_text(encoding='utf-8')
+        compose_file.read_text(encoding='utf-8')
         
         # Should mention resource limits (optional but good practice)
         # This is a best practice check

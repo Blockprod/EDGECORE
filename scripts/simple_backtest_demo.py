@@ -77,10 +77,10 @@ def simple_backtest_demo():
         end_date=end_date
     )
     
-    print(f"\nBacktest Results:")
+    print("\nBacktest Results:")
     print(metrics.summary())
     
-    print(f"\nAnalysis:")
+    print("\nAnalysis:")
     print(f"  Portfolio Value: ${portfolio_values[-1]:,.2f}")
     print(f"  Total P&L: ${portfolio_values[-1] - initial_capital:,.2f}")
     print(f"  Total Return: {metrics.total_return:.2%}")

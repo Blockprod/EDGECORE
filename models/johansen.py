@@ -13,7 +13,6 @@ Usage:
         print(f"Rank: {result['rank']}")
 """
 
-import numpy as np
 import pandas as pd
 from typing import Optional
 from structlog import get_logger

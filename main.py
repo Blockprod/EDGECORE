@@ -16,7 +16,6 @@ from datetime import datetime
 from typing import Dict, List
 from structlog import get_logger
 from monitoring.logging_config import setup_logging as setup_production_logging
-from monitoring.logger import setup_logger
 from config.settings import get_settings
 from backtests.runner import BacktestRunner
 from data.loader import DataLoader
@@ -30,7 +29,6 @@ from execution.reconciler import BrokerReconciler
 from execution.shutdown_manager import ShutdownManager
 from execution.order_lifecycle_integration import OrderLifecycleIntegration
 from common.errors import DataError, ErrorCategory
-from common.error_handler import with_error_handling, handle_error
 from monitoring.slack_alerter import SlackAlerter
 from monitoring.email_alerter import EmailAlerter
 from monitoring.dashboard import DashboardGenerator
@@ -643,7 +641,7 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
     print("\n" + "="*70)
     print("[!] LIVE TRADING ALERT - REAL MONEY AT RISK [!]")
     print("="*70)
-    print(f"You are about to start LIVE TRADING with REAL MONEY")
+    print("You are about to start LIVE TRADING with REAL MONEY")
     print(f"Trading Pairs: {', '.join(symbols)}")
     print(f"Engine: {settings.execution.engine}")
     print(f"Risk per trade: {settings.risk.max_risk_per_trade*100:.2f}% of equity")
