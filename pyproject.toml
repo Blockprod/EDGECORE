@@ -9,21 +9,21 @@ description = "Production-grade statistical arbitrage trading system"
 authors = [{name = "Quant Dev", email = "dev@edgecore.local"}]
 requires-python = ">=3.11"
 dependencies = [
-    "numpy==1.24.3",
-    "pandas==2.0.3",
-    "scipy==1.11.1",
-    "scikit-learn==1.3.0",
-    "statsmodels==0.14.0",
-    "vectorbt==0.25.0",
-    "ib-insync==0.9.17",
-    "pyyaml==6.0",
-    "python-dotenv==1.0.0",
-    "structlog==23.1.0",
-    "prometheus-client==0.17.1",
+    "numpy>=1.24.3,<2.0.0",
+    "pandas>=2.0.3,<3.0.0",
+    "scipy>=1.11.1,<2.0.0",
+    "scikit-learn>=1.3.0,<2.0.0",
+    "statsmodels>=0.14.0",
+    "vectorbt>=0.25.0",
+    "ib-insync>=0.9.17",
+    "pyyaml>=6.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=23.1.0",
+    "prometheus-client>=0.17.1",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest==7.4.0", "pytest-cov==4.1.0", "mypy==1.8.0"]
+dev = ["pytest>=7.4.0", "pytest-cov>=4.1.0", "mypy>=1.8.0"]
 
 [tool.mypy]
 python_version = "3.11"
