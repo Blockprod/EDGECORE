@@ -1,14 +1,19 @@
+from typing import Any, Dict, Optional
+
 import numpy as np
 import pandas as pd
 from scipy.linalg import LinAlgError
 from statsmodels.tsa.stattools import adfuller, kpss
 from structlog import get_logger
-from typing import Optional, Dict, Any
 
 logger = get_logger(__name__)
 
 # Try to load Cython acceleration for cointegration testing
 try:
+    from models.cointegration_fast import (
+        brownian_bridge_batch_fast,  # noqa: F401
+        compute_zscore_last_fast,  # noqa: F401
+    )
     from models.cointegration_fast import engle_granger_fast as _engle_granger_fast
     from models.cointegration_fast import half_life_fast as _half_life_fast  # noqa: F401
     CYTHON_COINTEGRATION_AVAILABLE = True
@@ -251,13 +256,17 @@ def engle_granger_test(
             }
         
         beta = np.linalg.lstsq(X, y_normalized.values, rcond=None)[0]
-        residuals = y_normalized.values - X @ beta
         
         # De-normalize to raw price scale
         y_std, x_std = float(y.std()), float(x.std())
         y_mean, x_mean = float(y.mean()), float(x.mean())
         beta_raw = beta[1] * (y_std / x_std) if x_std > 1e-15 else beta[1]
         alpha_raw = y_mean - beta_raw * x_mean
+        
+        # STAT-3: Recalculate residuals on RAW data using de-normalized
+        # coefficients so that the ADF test operates in the same space
+        # as the Cython path and downstream SpreadModel consumers.
+        residuals = y.values - (alpha_raw + beta_raw * x.values)
         
         # Check for NaN in residuals
         if np.isnan(residuals).any() or np.isinf(residuals).any():
@@ -515,7 +524,8 @@ def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> Optional[i
     """
     Estimate half-life of mean reversion.
 
-    Delegates to :class:`SpreadHalfLifeEstimator` as the single source of truth.
+    Uses the Cython ``half_life_fast`` kernel when available, falling back to
+    :class:`SpreadHalfLifeEstimator` otherwise.
 
     Args:
         spread: Spread time series.
@@ -524,6 +534,16 @@ def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> Optional[i
     Returns:
         Half-life in periods (int), or None if not mean-reverting.
     """
+    # ── Cython fast path ──────────────────────────────────────────────────
+    if CYTHON_COINTEGRATION_AVAILABLE:
+        try:
+            hl = _half_life_fast(spread.values.astype(np.float64))
+            if 5 <= hl <= 200:
+                return hl
+        except Exception:
+            pass
+
+    # ── Pure-Python fallback ─────────────────────────────────────────────
     from models.half_life_estimator import SpreadHalfLifeEstimator
     estimator = SpreadHalfLifeEstimator(lookback=min(252, len(spread)))
     hl = estimator.estimate_half_life_from_spread(spread, validate=True)

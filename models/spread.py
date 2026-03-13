@@ -1,8 +1,17 @@
-import pandas as pd
-import numpy as np
 from typing import Optional
+
+import numpy as np
+import pandas as pd
 from structlog import get_logger
+
 from models.half_life_estimator import SpreadHalfLifeEstimator
+
+# Module-level Cython import — avoids per-call dict lookup in hot path
+try:
+    from models.cointegration_fast import half_life_fast as _half_life_fast_cython
+    _HALF_LIFE_CYTHON = True
+except ImportError:
+    _HALF_LIFE_CYTHON = False
 
 logger = get_logger(__name__)
 
@@ -64,26 +73,35 @@ class SpreadModel:
     def _estimate_half_life(self, y: pd.Series, x: pd.Series) -> Optional[float]:
         """
         Estimate half-life of the spread using AR(1) model.
-        
+
+        Uses the Cython ``half_life_fast`` kernel when available (pure C AR(1),
+        ~10× faster), falling back to ``SpreadHalfLifeEstimator`` when not.
+
         Args:
             y: Dependent series
             x: Independent series
-            
+
         Returns:
             Half-life in days, or None if not mean-reverting
         """
         try:
-            spread = self.compute_spread(y, x)
+            # self.residuals IS the spread (y - intercept - beta*x), already
+            # computed in __init__ — no need to call compute_spread() again.
+            res = self.residuals.astype(np.float64)
+
+            # ── Cython fast path ──────────────────────────────────────────
+            if _HALF_LIFE_CYTHON:
+                hl_int = _half_life_fast_cython(res)
+                if 5 <= hl_int <= 200:
+                    logger.debug("half_life_estimated", pair=self.pair_key, half_life=hl_int)
+                    return float(hl_int)
+
+            # ── Pure-Python fallback ─────────────────────────────────────
+            spread = pd.Series(res, index=y.index)
             estimator = SpreadHalfLifeEstimator(lookback=min(252, len(spread)))
             hl = estimator.estimate_half_life_from_spread(spread, validate=True)
-            
             if hl is not None:
-                logger.debug(
-                    "half_life_estimated",
-                    pair=self.pair_key,
-                    half_life=hl
-                )
-            
+                logger.debug("half_life_estimated", pair=self.pair_key, half_life=hl)
             return hl
         except Exception as e:
             logger.debug(

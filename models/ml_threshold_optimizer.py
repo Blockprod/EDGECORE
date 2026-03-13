@@ -225,6 +225,8 @@ class ThresholdDataGenerator:
         exit_prices = []
         trades = []
         false_signals = 0
+        entry_direction = None   # track long vs short
+        entry_index = None       # track entry bar for duration
         
         for i in range(lookback, len(z_scores)):
             z = z_scores.iloc[i]
@@ -232,18 +234,28 @@ class ThresholdDataGenerator:
             # Entry signal
             if not in_position and abs(z) > entry_threshold:
                 entry_prices.append(spread.iloc[i])
+                entry_direction = 'short' if z > 0 else 'long'
+                entry_index = i
                 in_position = True
             
             # Exit signal
             elif in_position and abs(z) <= exit_threshold:
                 exit_prices.append(spread.iloc[i])
+                # P&L depends on direction: long = exit - entry, short = entry - exit
+                if entry_direction == 'long':
+                    pnl = exit_prices[-1] - entry_prices[-1]
+                else:
+                    pnl = entry_prices[-1] - exit_prices[-1]
                 trades.append({
                     'entry': entry_prices[-1],
                     'exit': exit_prices[-1],
-                    'pnl': exit_prices[-1] - entry_prices[-1],
-                    'duration': len(spread) - i  # Approximate
+                    'pnl': pnl,
+                    'duration': i - entry_index,
+                    'direction': entry_direction,
                 })
                 in_position = False
+                entry_direction = None
+                entry_index = None
             
             # False signal if we're not in position and threshold is breached again
             if not in_position and len(entry_prices) > len(exit_prices):

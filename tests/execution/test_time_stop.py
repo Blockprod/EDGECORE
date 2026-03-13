@@ -26,12 +26,12 @@ class TestTimeStopManagerHoldingBars:
     """Verify max_holding_bars computation."""
 
     def test_basic_half_life(self):
-        """3 x 15 = 45 bars."""
+        """2 x 15 = 30 bars (post-v27: multiplier=2.0)."""
         tsm = TimeStopManager()
-        assert tsm.max_holding_bars(half_life=15) == 45
+        assert tsm.max_holding_bars(half_life=15) == 30
 
     def test_cap_enforced(self):
-        """2 × 40 = 80, but cap=60 ↓ 60."""
+        """2 × 40 = 80, but cap=60 ↓ 60 (post-v27: multiplier=2.0)."""
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=40) == 60
 
@@ -51,19 +51,19 @@ class TestTimeStopManagerHoldingBars:
         assert tsm.max_holding_bars(half_life=-5) == 60
 
     def test_custom_multiplier(self):
-        """3 × 10 = 30."""
+        """Custom 3 × 10 = 30 (explicit override)."""
         cfg = TimeStopConfig(half_life_multiplier=3.0, max_days_cap=100)
         tsm = TimeStopManager(config=cfg)
         assert tsm.max_holding_bars(half_life=10) == 30
 
     def test_custom_cap(self):
-        """2 × 50 = 100, cap=45 ↓ 45."""
+        """2 × 50 = 100, cap=45 ↓ 45 (post-v27: multiplier=2.0)."""
         cfg = TimeStopConfig(max_days_cap=45)
         tsm = TimeStopManager(config=cfg)
         assert tsm.max_holding_bars(half_life=50) == 45
 
     def test_exact_cap_boundary(self):
-        """2 × 30 = 60, cap=60 ↓ 60 (edge case: exactly at cap)."""
+        """2 × 30 = 60, cap=60 ↓ 60 (edge case: exactly at cap, post-v27)."""
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=30) == 60
 
@@ -75,11 +75,11 @@ class TestTimeStopShouldExit:
         tsm = TimeStopManager()
         should, reason = tsm.should_exit(holding_bars=29, half_life=15)
         assert should is False
-        assert reason is None
+        assert reason is None  # 29 < 30 (2×15)
 
     def test_exit_at_limit(self):
         tsm = TimeStopManager()
-        should, reason = tsm.should_exit(holding_bars=45, half_life=15)
+        should, reason = tsm.should_exit(holding_bars=30, half_life=15)
         assert should is True
         assert "TIME_STOP" in reason
 
@@ -91,7 +91,7 @@ class TestTimeStopShouldExit:
     def test_no_exit_at_limit_minus_one(self):
         tsm = TimeStopManager()
         should, _ = tsm.should_exit(holding_bars=59, half_life=40)
-        assert should is False
+        assert should is False  # limit = min(2×40,60) = 60; 59 < 60
 
     def test_exit_at_cap(self):
         """half_life=40 ↓ limit=60 (capped). holding_bars=60 ↓ exit."""
@@ -101,8 +101,8 @@ class TestTimeStopShouldExit:
 
     def test_exit_reason_contains_details(self):
         tsm = TimeStopManager()
-        _, reason = tsm.should_exit(holding_bars=45, half_life=15)
-        assert "45" in reason  # holding_bars
+        _, reason = tsm.should_exit(holding_bars=30, half_life=15)
+        assert "30" in reason  # holding_bars
         assert "hl=15" in reason
 
 
@@ -159,11 +159,11 @@ class TestSimulatorTimeStopIntegration:
         # The real proof is in the integration test below.
         # Here we just confirm the TimeStopManager computes correctly.
         tsm = TimeStopManager()
-        # half_life=20 -> limit=60 (3*20=60, at cap)
-        assert tsm.max_holding_bars(20) == 60
-        should, _ = tsm.should_exit(60, 20)
+        # half_life=20 -> limit=40 (2*20=40, post-v27)
+        assert tsm.max_holding_bars(20) == 40
+        should, _ = tsm.should_exit(40, 20)
         assert should is True
-        should, _ = tsm.should_exit(59, 20)
+        should, _ = tsm.should_exit(39, 20)
         assert should is False
 
 

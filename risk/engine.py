@@ -89,6 +89,8 @@ class RiskEngine:
         self.loss_streak = 0
         self.daily_trades = 0
         self.daily_loss = 0.0
+        # Sector map: symbol -> sector string (e.g. {"AAPL": "Technology"})
+        self.sector_map: Dict[str, str] = {}
         self._daily_date = datetime.now().date()  # track date for auto-reset
         
         # Initialize persistent audit trail for crash recovery
@@ -194,7 +196,25 @@ class RiskEngine:
             logger.warning("trade_rejected", reason=reason)
             return False, reason
         
-        # Check 5: Leverage constraint
+        # Check 5: Sector concentration
+        if self.sector_map:
+            sector = self._get_sector_for_pair(symbol_pair)
+            if sector is not None:
+                sector_count = sum(
+                    1 for sp in self.positions
+                    if self._get_sector_for_pair(sp) == sector
+                )
+                total_positions = len(self.positions) + 1  # including the new one
+                sector_weight = (sector_count + 1) / max(total_positions, 1)
+                if sector_weight > self.config.max_sector_weight:
+                    reason = (
+                        f"Sector concentration ({sector}: {sector_weight:.0%}) "
+                        f"exceeds limit ({self.config.max_sector_weight:.0%})"
+                    )
+                    logger.warning("trade_rejected_sector", reason=reason, pair=symbol_pair, sector=sector)
+                    return False, reason
+
+        # Check 6: Leverage constraint
         current_exposure = self.get_total_exposure()
         new_position_exposure = position_size * (1.0 + volatility)  # Conservative estimate
         total_with_new = current_exposure + new_position_exposure
@@ -213,6 +233,19 @@ class RiskEngine:
         )
         return True, None
     
+    def _get_sector_for_pair(self, symbol_pair: str) -> Optional[str]:
+        """Return the sector for a symbol pair, or None if unknown.
+
+        Pair keys use ``SYM1_SYM2`` convention.  If both symbols are in
+        ``self.sector_map`` and share a sector, that sector is returned.
+        If only one matches, its sector is used. Otherwise ``None``.
+        """
+        parts = symbol_pair.split("_")
+        sectors = [self.sector_map.get(p) for p in parts if self.sector_map.get(p)]
+        if not sectors:
+            return None
+        return sectors[0]
+
     def get_total_exposure(self) -> float:
         """
         Calculate total notional exposure across all positions.

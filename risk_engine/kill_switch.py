@@ -287,7 +287,12 @@ class KillSwitch:
     # ------------------------------------------------------------------
 
     def _save_state(self) -> None:
-        """Persist current activation state to disk."""
+        """Persist current activation state to disk.
+
+        RISK-4: If persistence fails the kill-switch enters a
+        fail-safe *active* state to prevent trading without an
+        accurate on-disk record.
+        """
         state = {
             "is_active": self._is_active,
             "reason": self._reason.value,
@@ -295,12 +300,27 @@ class KillSwitch:
             "activated_at": self._activated_at.isoformat() if self._activated_at else None,
         }
         try:
-            self._state_path.write_text(json.dumps(state, indent=2))
+            # Atomic write: .tmp → rename
+            tmp_path = self._state_path.with_suffix('.tmp')
+            tmp_path.write_text(json.dumps(state, indent=2))
+            tmp_path.replace(self._state_path)
         except Exception as exc:
-            logger.error("kill_switch_state_save_failed", error=str(exc)[:120])
+            logger.critical(
+                "kill_switch_state_save_failed_activating_fail_safe",
+                error=str(exc)[:120],
+            )
+            # Fail-safe: force active so we never trade without persisted state
+            self._is_active = True
+            self._message = f"FAIL-SAFE: state save failed ({exc})"
+            raise
 
     def _load_state(self) -> None:
-        """Restore activation state from disk (if file exists)."""
+        """Restore activation state from disk (if file exists).
+
+        RISK-4: If the state file is corrupted the kill-switch
+        activates in fail-safe mode — refusing to trade until
+        an operator manually clears the state.
+        """
         if not self._state_path.exists():
             return
         try:
@@ -317,7 +337,13 @@ class KillSwitch:
                     message=self._message,
                 )
         except Exception as exc:
-            logger.error("kill_switch_state_load_failed", error=str(exc)[:120])
+            logger.critical(
+                "kill_switch_state_load_failed_activating_fail_safe",
+                error=str(exc)[:120],
+            )
+            # Fail-safe: activate kill-switch if state is unreadable
+            self._is_active = True
+            self._message = f"FAIL-SAFE: corrupt state file ({exc})"
 
     # ------------------------------------------------------------------
     # State

@@ -168,11 +168,12 @@ class TestPairDiscovery:
         manager = ModelRetrainingManager()
         price_data = self.create_test_price_data()
         
-        # Should not error
-        results = manager.discover_cointegrated_pairs(
-            price_data=price_data,
-symbols=['AAPL', 'GOOGL', 'JPM']
-        )
+        # Should not error — deprecated_call asserts the DeprecationWarning is emitted
+        with pytest.deprecated_call():
+            results = manager.discover_cointegrated_pairs(
+                price_data=price_data,
+                symbols=['AAPL', 'GOOGL', 'JPM']
+            )
         
         assert isinstance(results, list)
     
@@ -181,10 +182,11 @@ symbols=['AAPL', 'GOOGL', 'JPM']
         manager = ModelRetrainingManager()
         price_data = self.create_test_price_data(coint_pairs=[('GOOGL', 'AAPL')])
         
-        results = manager.discover_cointegrated_pairs(
-            price_data=price_data,
-            symbols=['AAPL', 'GOOGL', 'JPM']
-        )
+        with pytest.deprecated_call():
+            results = manager.discover_cointegrated_pairs(
+                price_data=price_data,
+                symbols=['AAPL', 'GOOGL', 'JPM']
+            )
         
         # Should return tuples with correct structure
         for pair_key, p_value, hedge_ratio in results:
@@ -203,11 +205,12 @@ symbols=['AAPL', 'GOOGL', 'JPM']
         manager.register_pair("AAPL-MSFT", "AAPL", "GOOGL", 0.02, 1.5)
         
         # Discover with exclusion
-        results = manager.discover_cointegrated_pairs(
-            price_data=price_data,
-            symbols=['AAPL', 'GOOGL', 'JPM'],
-            exclude_existing=True
-        )
+        with pytest.deprecated_call():
+            results = manager.discover_cointegrated_pairs(
+                price_data=price_data,
+                symbols=['AAPL', 'GOOGL', 'JPM'],
+                exclude_existing=True
+            )
         
         # Should not include AAPL-MSFT
         pair_keys = [r[0] for r in results]
@@ -222,11 +225,12 @@ symbols=['AAPL', 'GOOGL', 'JPM']
         manager.register_pair("AAPL-MSFT", "AAPL", "GOOGL", 0.02, 1.5)
         
         # Discover without exclusion
-        results = manager.discover_cointegrated_pairs(
-            price_data=price_data,
-            symbols=['AAPL', 'GOOGL', 'JPM'],
-            exclude_existing=False
-        )
+        with pytest.deprecated_call():
+            results = manager.discover_cointegrated_pairs(
+                price_data=price_data,
+                symbols=['AAPL', 'GOOGL', 'JPM'],
+                exclude_existing=False
+            )
         
         # Could include AAPL-MSFT (if still cointegrated)
         assert isinstance(results, list)
@@ -237,10 +241,11 @@ symbols=['AAPL', 'GOOGL', 'JPM']
         price_data = self.create_test_price_data()
         
         # Try to discover pairs including missing symbol
-        results = manager.discover_cointegrated_pairs(
-            price_data=price_data,
-            symbols=['AAPL', 'GOOGL', 'NONEXISTENT']
-        )
+        with pytest.deprecated_call():
+            results = manager.discover_cointegrated_pairs(
+                price_data=price_data,
+                symbols=['AAPL', 'GOOGL', 'NONEXISTENT']
+            )
         
         # Should not error, just skip missing
         assert isinstance(results, list)
@@ -599,10 +604,11 @@ class TestEdgeCases:
         manager = ModelRetrainingManager()
         price_data = pd.DataFrame({'AAPL': [100, 101, 102]})
         
-        results = manager.discover_cointegrated_pairs(
-            price_data=price_data,
-            symbols=['AAPL']
-        )
+        with pytest.deprecated_call():
+            results = manager.discover_cointegrated_pairs(
+                price_data=price_data,
+                symbols=['AAPL']
+            )
         
         assert isinstance(results, list)
     

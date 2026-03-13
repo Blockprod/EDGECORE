@@ -194,6 +194,11 @@ class ModelRetrainingManager:
         """
         Discover cointegrated pairs from price data.
         
+        .. deprecated:: 2026.03
+            Use ``PairTradingStrategy.find_cointegrated_pairs()`` as the
+            single canonical pair discovery path.  This method will be
+            removed in a future release.
+        
         Uses Engle-Granger cointegration test to find statistically significant spreads.
         Tests all symbol pairs and returns those passing cointegration test.
         
@@ -205,6 +210,13 @@ class ModelRetrainingManager:
         Returns:
             List of (pair_key, p_value, hedge_ratio) for discovered pairs
         """
+        import warnings
+        warnings.warn(
+            "ModelRetrainingManager.discover_cointegrated_pairs() is deprecated. "
+            "Use PairTradingStrategy.find_cointegrated_pairs() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         discovered = []
         tested_count = 0
         cointegrated_count = 0

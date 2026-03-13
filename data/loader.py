@@ -4,8 +4,72 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from structlog import get_logger
 from data.validators import OHLCVValidator, DataValidationError
+import threading
 
 logger = get_logger(__name__)
+
+
+def load_price_data(
+    symbols: List[str],
+    timeframe: str = "1d",
+    limit: int = 252,
+) -> pd.DataFrame:
+    """Convenience function for live/paper trading: load latest prices.
+
+    Returns a DataFrame with columns = symbols, values = close prices.
+    Uses IBGatewaySync (port 4002) with a single sequential connection.
+    """
+    from execution.ibkr_engine import IBGatewaySync
+    import time as _time
+
+    bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours"}
+    bar_size = bar_size_map.get(timeframe, "1 day")
+    duration = f"{max(1, limit // 252)} Y" if timeframe == "1d" else f"{limit} D"
+
+    engine = IBGatewaySync(
+        host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30
+    )
+    engine.connect()
+
+    frames: Dict[str, pd.Series] = {}
+    try:
+        for sym in symbols:
+            try:
+                bars = engine.get_historical_data(
+                    symbol=sym, duration=duration,
+                    bar_size=bar_size, what_to_show="ADJUSTED_LAST",
+                )
+                if bars:
+                    s = pd.Series(
+                        [b.close for b in bars],
+                        index=pd.DatetimeIndex([b.date for b in bars]),
+                        name=sym,
+                    )
+                    frames[sym] = s
+                    logger.debug("load_price_data_ok", symbol=sym, bars=len(bars))
+                else:
+                    logger.warning("load_price_data_empty", symbol=sym)
+                _time.sleep(0.5)  # IBKR rate limiting
+            except Exception as exc:
+                logger.error("load_price_data_failed", symbol=sym, error=str(exc)[:120])
+    finally:
+        engine.disconnect()
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.DataFrame(frames).dropna(how="all")
+
+# Fixed pool of IBKR client IDs for data workers (cycles, never grows unbounded)
+_IBKR_CLIENT_ID_POOL = list(range(2001, 2009))  # 2001–2008
+_ibkr_client_id_index = 0
+_ibkr_client_id_lock = threading.Lock()
+
+def _next_client_id() -> int:
+    global _ibkr_client_id_index
+    with _ibkr_client_id_lock:
+        client_id = _IBKR_CLIENT_ID_POOL[_ibkr_client_id_index % len(_IBKR_CLIENT_ID_POOL)]
+        _ibkr_client_id_index += 1
+        return client_id
 
 class DataLoader:
     """Load and cache OHLCV data from multiple sources with validation."""
@@ -68,7 +132,7 @@ class DataLoader:
             else:
                 duration = f"{max(1, limit * 60)} S"
 
-            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=1001)
+            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id())
             engine.connect()
             try:
                 bars = engine.get_historical_data(

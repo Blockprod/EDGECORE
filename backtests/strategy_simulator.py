@@ -13,21 +13,47 @@ Key properties
   regime detection, adaptive thresholds, hedge-ratio tracking.
 """
 
-import pandas as pd
+from typing import Dict, List, Optional, Tuple
+
 import numpy as np
-from typing import Dict, List, Tuple, Optional
+import pandas as pd
 from structlog import get_logger
 
-from strategies.pair_trading import PairTradingStrategy
 from backtests.cost_model import CostModel
 from backtests.metrics import BacktestMetrics, set_trading_days
-from execution.time_stop import TimeStopManager
-from risk.spread_correlation import SpreadCorrelationGuard
-from risk.pca_spread_monitor import PCASpreadMonitor
-from risk.engine import RiskEngine
+from data.event_filter import EventFilter
+from execution.algo_executor import AlgoConfig, AlgoType, TWAPExecutor, VWAPExecutor
+from execution.borrow_check import BorrowChecker
 from execution.partial_profit import PartialProfitManager
+from execution.time_stop import TimeStopManager
+from execution.trailing_stop import TrailingStopManager
+from pair_selection.blacklist import PairBlacklist
+from risk.drawdown_manager import DrawdownManager
+from risk.engine import RiskEngine
+from risk.factor_model import FactorModel
+from risk.kelly_sizing import KellySizer
+from risk.pca_spread_monitor import PCASpreadMonitor
+from risk.sector_exposure import SectorExposureMonitor
+from risk.spread_correlation import SpreadCorrelationGuard
+from risk.var_monitor import VaRMonitor
+from signal_engine.earnings_signal import EarningsSurpriseSignal
+from signal_engine.intraday_signals import IntradaySignalEngine
+from signal_engine.market_regime import MarketRegime, MarketRegimeFilter
+from signal_engine.ml_combiner import MLSignalCombiner
+from signal_engine.options_flow import OptionsFlowSignal
+from signal_engine.sentiment import SentimentSignal
+from strategies.pair_trading import PairTradingStrategy
 
 logger = get_logger(__name__)
+
+# Cython fast path for z-score computation in the simulator hot loop.
+# Loaded once at module import; falls back to None if Cython not compiled.
+try:
+    from models.cointegration_fast import compute_zscore_last_fast as _compute_zscore_last_fast  # noqa: E402
+    _HALF_LIFE_CYTHON_SIM = True
+except ImportError:
+    _compute_zscore_last_fast = None
+    _HALF_LIFE_CYTHON_SIM = False
 
 
 class StrategyBacktestSimulator:
@@ -45,19 +71,30 @@ class StrategyBacktestSimulator:
         initial_capital: float = 100_000.0,
         allocation_per_pair_pct: float = 30.0,
         pair_rediscovery_interval: int = 5,
+        pair_validation_interval: int = 1,
         time_stop: Optional[TimeStopManager] = None,
         spread_corr_guard: Optional[SpreadCorrelationGuard] = None,
         risk_engine: Optional[RiskEngine] = None,
         max_position_loss_pct: float = 0.10,
         max_portfolio_heat: float = 0.95,
+        kelly_sizer: Optional[KellySizer] = None,
+        sector_map: Optional[Dict[str, str]] = None,
+        event_filter: Optional[EventFilter] = None,
+        borrow_checker: Optional[BorrowChecker] = None,
+        leverage_multiplier: float = 1.0,
+        bars_per_day: int = 1,
+        momentum_filter=None,
     ):
         """
         Args:
             cost_model: Trading cost model (default: CostModel with standard config).
             initial_capital: Starting portfolio value in USD.
             allocation_per_pair_pct: Percentage of portfolio allocated per pair.
-            pair_rediscovery_interval: Bars between pair re-discoveries
-                (set to 0 to discover every bar – slow but most accurate).
+            pair_rediscovery_interval: Bars between full EG pair re-discoveries
+                (expensive: OLS + ADF + Newey-West on all candidate pairs).
+            pair_validation_interval: Bars between lightweight validity checks
+                on *existing* pairs (cheap: rolling z-score via Cython only).
+                Set equal to pair_rediscovery_interval to disable.
             time_stop: Time-based stop manager (Sprint 1.5).  When provided,
                 positions held longer than ``min(2 × half_life, cap)`` bars
                 are force-closed.  Default: enabled with standard config.
@@ -72,10 +109,17 @@ class StrategyBacktestSimulator:
                 notional (e.g. 0.03 = 3%).  Positions hitting this are
                 force-closed.  Set to 0 to disable.
         """
+        from execution.slippage import SlippageConfig, SlippageModel
+        self.slippage_model = SlippageModel(SlippageConfig())
         self.cost_model = cost_model or CostModel()
         self.initial_capital = initial_capital
         self.allocation_pct = allocation_per_pair_pct
         self.pair_rediscovery_interval = pair_rediscovery_interval
+        self.pair_validation_interval = max(1, pair_validation_interval)
+        # Phase 5.3: Leverage multiplier (1.0 = no leverage, 1.5 = 150% gross exposure)
+        self.leverage_multiplier = max(1.0, float(leverage_multiplier))
+        # Phase 3: Intraday support — bars per trading day (1=daily, 7=1h, 78=5min)
+        self.bars_per_day: int = max(1, int(bars_per_day))
         self.time_stop = time_stop if time_stop is not None else TimeStopManager()
         self.spread_corr_guard = (
             spread_corr_guard if spread_corr_guard is not None
@@ -83,19 +127,99 @@ class StrategyBacktestSimulator:
         )
         self.risk_engine = risk_engine
         self.max_position_loss_pct = max_position_loss_pct
+        # Phase 0.2: Kelly position sizer (institutional sizing)
+        self.kelly_sizer = kelly_sizer
+        self._sector_map = sector_map or {}
+        # Phase 0.3: Earnings/event blackout filter
+        self.event_filter = event_filter or EventFilter()
+        # Phase 0.4: Short borrow availability checker
+        self.borrow_checker = borrow_checker or BorrowChecker()
         # Phase 3: PCA factor monitor (complements pairwise corr guard)
         self.pca_monitor = PCASpreadMonitor()
         # Phase 3: Partial profit-taking (audit §4.4 – staged exits)
         self.partial_profit = PartialProfitManager()
-        # Phase 4: Portfolio-level drawdown circuit breaker
-        self.portfolio_dd_limit = 0.15          # halt all trading if DD > 15%
-        self.portfolio_dd_cooldown_bars = 10    # bars to wait after breaker trips
+        # Phase 2.1: Factor model for beta-neutral pair weights
+        self.factor_model = FactorModel()
+        # Phase 2.2: Sector exposure monitor
+        # Scale max_sector_weight proportionally with leverage so the same
+        # number of concurrent same-sector positions are allowed regardless
+        # of leverage (1× leverage: 2 tech pairs = 100% weight; 1.5× leverage:
+        # 2 tech pairs = 150% weight → limit scales to 1.5 to preserve parity).
+        from risk.sector_exposure import SectorExposureConfig as _SecCfg
+        self.sector_monitor = SectorExposureMonitor(
+            sector_map=self._sector_map,
+            config=_SecCfg(max_sector_weight=1.0 * self.leverage_multiplier),
+        )
+        # Phase 2.3: VaR/CVaR rolling monitor
+        # Scale var_limit_pct proportionally with leverage so the same effective
+        # number of entries are blocked (a 1.5× leveraged portfolio naturally has
+        # 1.5× larger daily returns, so the 2% raw limit should scale to 3%).
+        from risk.var_monitor import VaRConfig as _VaRConfig
+        self.var_monitor = VaRMonitor(config=_VaRConfig(
+            var_limit_pct=0.02 * self.leverage_multiplier,
+        ))
+        # Phase 2.4: Multi-tier drawdown manager (replaces simple DD breaker)
+        self.drawdown_manager = DrawdownManager()
+        # Phase 3.2: Intraday signal engine (fast MR + gap + volume)
+        self.intraday_signal_engine = IntradaySignalEngine()
+        # Phase 3.3: Algo execution (TWAP/VWAP) for realistic backtest fills
+        self._algo_executor = TWAPExecutor(config=AlgoConfig(
+            algo_type=AlgoType.TWAP,
+            num_slices=10,
+            impact_bps=2.0,
+            max_participation=0.05,
+        ))
+        # Phase 4.1: Earnings surprise (PEAD) signal
+        self.earnings_signal = EarningsSurpriseSignal()
+        # Phase 4.2: Options flow signal (backtest proxy)
+        self.options_flow_signal = OptionsFlowSignal()
+        # Phase 4.3: Sentiment signal (backtest proxy)
+        self.sentiment_signal = SentimentSignal()
+        # Phase 4.4: ML signal combiner (walk-forward GBM)
+        self.ml_combiner = MLSignalCombiner(
+            entry_threshold=0.30,
+            exit_threshold=0.12,
+            min_samples=15,
+            retrain_interval=63,
+        )
+        # Legacy Phase 4 DD breaker kept for backward compat (tier 3 now replaces)
+        self.portfolio_dd_limit = 0.15
+        self.portfolio_dd_cooldown_bars = 10
         self._dd_cooldown_remaining = 0
         # Phase 4: Portfolio heat limit (aggregate risk budget)
         self.max_portfolio_heat = max_portfolio_heat
         # Phase 5: Trailing stop – protect profits once in the money
         self.trailing_stop_activation_pct = 0.015  # activate at 1.5% profit
         self.trailing_stop_trail_pct = 0.01       # trail 1.0% from peak unrealized
+        # Post-v27: Market-level regime filter (SPY MA + realized vol)
+        from config.settings import get_settings
+        _regime_cfg = get_settings().regime
+        self.market_regime_filter = MarketRegimeFilter(
+            ma_fast=_regime_cfg.ma_fast,
+            ma_slow=_regime_cfg.ma_slow,
+            vol_threshold=_regime_cfg.vol_threshold,
+            vol_window=_regime_cfg.vol_window,
+            neutral_band_pct=_regime_cfg.neutral_band_pct,
+            enabled=_regime_cfg.enabled,
+            trend_favorable_sizing=_regime_cfg.trend_favorable_sizing,
+            neutral_sizing=_regime_cfg.neutral_sizing,
+        )
+        # Post-v27 Étape 3: Dynamic pair blacklist
+        _bl_cfg = get_settings().pair_blacklist
+        self.pair_blacklist = PairBlacklist(
+            max_consecutive_losses=_bl_cfg.max_consecutive_losses,
+            cooldown_days=_bl_cfg.cooldown_days,
+            enabled=_bl_cfg.enabled,
+        )
+        # Post-v27 Étape 4: Directional bias — reduce/block shorts in bull trend
+        _strat_cfg = get_settings().strategy
+        self._short_sizing_multiplier = _strat_cfg.short_sizing_multiplier
+        self._disable_shorts_in_bull_trend = _strat_cfg.disable_shorts_in_bull_trend
+        # Post-v28: Directional regime filter — allow longs in TRENDING
+        self._regime_directional_filter = _strat_cfg.regime_directional_filter
+        self._trend_long_sizing = _strat_cfg.trend_long_sizing
+        # v46: Cross-sectional momentum divergence filter (rejects trending pairs)
+        self.momentum_filter = momentum_filter
 
     # ==================================================================
     # Public API
@@ -107,6 +231,7 @@ class StrategyBacktestSimulator:
         fixed_pairs: Optional[List[Tuple[str, str, float, float]]] = None,
         sector_map: Optional[Dict[str, str]] = None,
         weekly_prices: Optional[pd.DataFrame] = None,
+        oos_start_date: Optional[str] = None,
     ) -> BacktestMetrics:
         """
         Run a bar-by-bar backtest using the live strategy code.
@@ -143,9 +268,10 @@ class StrategyBacktestSimulator:
         strategy.peak_equity = self.initial_capital
         strategy.current_equity = self.initial_capital
 
-        # ---- US Equity annualisation: always 252 trading days ----
-        set_trading_days(252)
-        logger.info("annualisation_set", trading_days=252, market="us_equity")
+        # ---- Annualisation: 252 trading days × bars per day ----
+        _ann_bars = 252 * self.bars_per_day
+        set_trading_days(_ann_bars)
+        logger.info("annualisation_set", trading_days=_ann_bars, bars_per_day=self.bars_per_day)
 
         # Portfolio tracking
         positions: Dict[str, dict] = {}
@@ -162,6 +288,9 @@ class StrategyBacktestSimulator:
                 required=lookback_min,
             )
             return self._empty_metrics(prices_df)
+
+        # Phase 0.3: Pre-compute earnings blackout dates from price gaps
+        self.event_filter.build_blackout_from_prices(prices_df)
 
         current_pairs: Optional[List[Tuple]] = fixed_pairs
         # Force discovery on the very first bar when not using fixed_pairs
@@ -181,52 +310,56 @@ class StrategyBacktestSimulator:
         # Circuit breaker high-water mark — resets after cooldown so the
         # breaker doesn't permanently disable trading.
         _dd_hw_mark = float(self.initial_capital)
+        _dd_sizing_mult = 1.0   # Phase 2.4: updated each bar by DrawdownManager
+
+        # ---- Walk-forward OOS tracking --------------------------------
+        # When oos_start_date is provided the simulation warms up on the
+        # training window (bars before oos_start_date) but only collects
+        # performance metrics for the OOS period.  This gives proper
+        # walk-forward statistics without look-ahead bias.
+        _oos_start_bar_idx = None
+        _oos_trade_start_idx = None   # set once we enter the OOS window
+        oos_daily_returns: list = []
+        if oos_start_date is not None:
+            _oos_ts = pd.Timestamp(oos_start_date)
+            _oos_candidates = [
+                i for i, ts in enumerate(prices_df.index)
+                if pd.Timestamp(ts) >= _oos_ts
+            ]
+            if _oos_candidates:
+                _oos_start_bar_idx = max(lookback_min, _oos_candidates[0])
 
         from tqdm import tqdm
         print("[BACKTEST] Démarrage du backtest principal...")
         for bar_idx in tqdm(range(lookback_min, len(prices_df)), desc="Backtest", ncols=80):
             hist_prices = prices_df.iloc[: bar_idx + 1]
 
+            # ---- Inject bar timestamp into strategy clock (backtest determinism)
+            _bar_ts = prices_df.index[bar_idx]
+            strategy._clock = lambda _ts=_bar_ts: _ts  # type: ignore[assignment]
+
             # ---- Phase 4: Wire strategy equity tracker (activates DD guard) --
             strategy.update_equity(portfolio_values[-1])
 
-            # ---- Phase 4: Portfolio-level drawdown circuit breaker ----
+            # Initialize bar-level P&L accumulator
+            realized_pnl = 0.0
+
+            # ---- Phase 2.4: Multi-tier drawdown manager ----
             if portfolio_values[-1] > _dd_hw_mark:
                 _dd_hw_mark = portfolio_values[-1]
-            current_dd = (_dd_hw_mark - portfolio_values[-1]) / _dd_hw_mark if _dd_hw_mark > 0 else 0.0
-            if self._dd_cooldown_remaining > 0:
-                self._dd_cooldown_remaining -= 1
-                # Force-close everything during cooldown
-                for pk in list(positions.keys()):
-                    pc = positions.pop(pk)
-                    cpnl, tpnl = self._close_position(pc, prices_df, bar_idx)
-                    trades_pnl.append(tpnl)
-                    self.spread_corr_guard.remove_spread(pk)
-                    self.pca_monitor.remove_spread(pk)
-                    self.partial_profit.remove(pk)
-                # Skip straight to portfolio update
-                new_val = portfolio_values[-1] + sum([])
-                daily_returns.append(0.0)
-                portfolio_values.append(portfolio_values[-1])
-                prev_unrealised_total = 0.0
-                # Reset high-water mark on last cooldown bar so that
-                # the DD check restarts fresh from post-drawdown equity.
-                if self._dd_cooldown_remaining == 0:
-                    _dd_hw_mark = portfolio_values[-1]
-                    logger.info(
-                        "circuit_breaker_cooldown_expired",
-                        hwm_reset_to=round(_dd_hw_mark, 2),
-                    )
-                continue
-            if current_dd >= self.portfolio_dd_limit:
-                self._dd_cooldown_remaining = self.portfolio_dd_cooldown_bars
-                logger.warning(
-                    "portfolio_circuit_breaker_tripped",
-                    drawdown=f"{current_dd:.2%}",
-                    limit=f"{self.portfolio_dd_limit:.2%}",
-                    cooldown_bars=self.portfolio_dd_cooldown_bars,
-                )
-                # Force-close all positions
+            _dd_action = self.drawdown_manager.evaluate(
+                current_equity=portfolio_values[-1],
+                peak_equity=_dd_hw_mark,
+            )
+            # Bug fix: when tier-3 cooldown expires the manager resets its
+            # internal peak, but the simulator's _dd_hw_mark still points to
+            # the pre-DD all-time high. Without resetting here, the next
+            # evaluate() call recomputes the same 8%+ DD and re-triggers
+            # tier-3 immediately → infinite halt loop blocking all OOS trades.
+            if _dd_action.reset_peak:
+                _dd_hw_mark = portfolio_values[-1]
+            if _dd_action.is_halted:
+                # Tier 3/4: force-close all + skip bar
                 fc_pnl = 0.0
                 for pk in list(positions.keys()):
                     pc = positions.pop(pk)
@@ -240,16 +373,43 @@ class StrategyBacktestSimulator:
                 dr = fc_pnl / portfolio_values[-1] if portfolio_values[-1] > 0 else 0.0
                 daily_returns.append(dr)
                 portfolio_values.append(new_val)
+                if _oos_start_bar_idx is not None and bar_idx >= _oos_start_bar_idx:
+                    if _oos_trade_start_idx is None:
+                        _oos_trade_start_idx = len(trades_pnl)
+                    oos_daily_returns.append(dr)
                 prev_unrealised_total = 0.0
+                # Feed VaR monitor even during halt
+                self.var_monitor.update(dr)
                 continue
+            elif _dd_action.close_fraction > 0:
+                # Tier 2: close a fraction of positions (weakest first by P&L)
+                _n_to_close = max(1, int(len(positions) * _dd_action.close_fraction))
+                _sorted_positions = sorted(
+                    positions.keys(),
+                    key=lambda pk: self._unrealized_pnl(positions[pk], prices_df, bar_idx),
+                )
+                for pk in _sorted_positions[:_n_to_close]:
+                    pc = positions.pop(pk)
+                    cpnl, tpnl = self._close_position(pc, prices_df, bar_idx)
+                    realized_pnl += cpnl
+                    trades_pnl.append(tpnl)
+                    self.spread_corr_guard.remove_spread(pk)
+                    self.pca_monitor.remove_spread(pk)
+                    self.partial_profit.remove(pk)
+                    strategy.active_trades.pop(pk, None)
+            # Store sizing multiplier for tier 1 dampening (used at entry below)
+            _dd_sizing_mult = _dd_action.sizing_multiplier
 
-            # ---- Pair discovery (strictly in-sample) ----------------
+            # ---- Pair discovery — 2-speed architecture ─────────────────
+            # FAST path (every pair_validation_interval bars): use Cython
+            # rolling z-score to drop existing pairs whose spread has become
+            # non-stationary (ADF-equivalent: rolling std drift > 2σ baseline).
+            # SLOW path (every pair_rediscovery_interval bars): full EG + NW
+            # discovery to find new pairs.
             if fixed_pairs is None:
+                # ── Slow path: full EG re-discovery ──────────────────────
                 if bars_since_discovery >= self.pair_rediscovery_interval:
-                    # Clear stale correlation exclusions so pairs get a
-                    # fresh chance each discovery window.
                     strategy.reset_all_correlation_exclusions()
-
                     current_pairs = strategy.find_cointegrated_pairs(
                         hist_prices, use_cache=False,
                         weekly_prices=weekly_prices,
@@ -264,10 +424,49 @@ class StrategyBacktestSimulator:
                 else:
                     bars_since_discovery += 1
 
+                # ── Fast path: lightweight spread stationarity check ──────
+                # Runs every pair_validation_interval bars between EG cycles.
+                # Drops pairs whose rolling spread std has expanded >2.5× the
+                # baseline std (sign of cointegration breakdown) — O(n) in C.
+                if (
+                    _HALF_LIFE_CYTHON_SIM
+                    and current_pairs
+                    and (bar_idx % self.pair_validation_interval) == 0
+                    and bars_since_discovery > 0  # skip when EG just ran
+                ):
+                    _valid_pairs = []
+                    for _p in current_pairs:
+                        _s1, _s2 = _p[0], _p[1]
+                        if _s1 not in hist_prices.columns or _s2 not in hist_prices.columns:
+                            continue
+                        _y_v = hist_prices[_s1].values.astype(np.float64)
+                        _x_v = hist_prices[_s2].values.astype(np.float64)
+                        _xm_v = _x_v.mean()
+                        _ym_v = _y_v.mean()
+                        _xc_v = _x_v - _xm_v
+                        _xx_v = float(np.dot(_xc_v, _xc_v))
+                        _b_v = float(np.dot(_xc_v, _y_v - _ym_v)) / (_xx_v if _xx_v > 1e-10 else 1e-10)
+                        _i_v = _ym_v - _b_v * _xm_v
+                        _sp_v = np.ascontiguousarray(_y_v - (_i_v + _b_v * _x_v), dtype=np.float64)
+                        # Compute z-score on full window; if |z| > 4 the spread
+                        # has structurally broken — drop the pair until next EG.
+                        _z_v = _compute_zscore_last_fast(_sp_v, min(60, len(_sp_v)))
+                        if abs(_z_v) <= 4.0:
+                            _valid_pairs.append(_p)
+                    if len(_valid_pairs) < len(current_pairs):
+                        logger.debug(
+                            "pairs_invalidated_fast_check",
+                            bar=bar_idx,
+                            dropped=len(current_pairs) - len(_valid_pairs),
+                        )
+                    current_pairs = _valid_pairs
+
             # ---- PRE-SIGNAL P&L stop: cut losers before signal processing ----
-            # This ensures large losses are stopped out regardless of
-            # z-score reversion through shifted rolling stats.
-            realized_pnl = 0.0
+            # Phase 4: Update advanced signal generators each bar
+            self.earnings_signal.update(hist_prices)
+            self.options_flow_signal.update(hist_prices)
+            self.sentiment_signal.update(hist_prices, sector_map=sector_map)
+            # realized_pnl already initialised to 0.0 above (before DD section)
             if self.max_position_loss_pct > 0:
                 for pair_key in list(positions.keys()):
                     pos = positions[pair_key]
@@ -275,16 +474,19 @@ class StrategyBacktestSimulator:
                     cur_p1 = prices_df[sym1].iloc[bar_idx]
                     cur_p2 = prices_df[sym2].iloc[bar_idx]
                     ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
-                    not_per_leg = pos["notional"] / 2.0
+                    _n1 = pos.get("notional_1", pos["notional"] / 2.0)
+                    _n2 = pos.get("notional_2", pos["notional"] / 2.0)
                     if pos["side"] == "long":
                         r1 = (cur_p1 - ep1) / ep1 if ep1 else 0
                         r2 = (ep2 - cur_p2) / ep2 if ep2 else 0
                     else:
                         r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
                         r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
-                    unrealised = not_per_leg * r1 + not_per_leg * r2
+                    unrealised = _n1 * r1 + _n2 * r2
                     loss_pct = -unrealised / pos["notional"] if pos["notional"] > 0 else 0
-                    if loss_pct >= self.max_position_loss_pct:
+                    # Phase 0.2: Use per-position NAV-based stop if available
+                    _stop_limit = pos.get("nav_stop_pct", self.max_position_loss_pct)
+                    if loss_pct >= _stop_limit:
                         pos_closed = positions.pop(pair_key)
                         close_pnl, trade_pnl = self._close_position(
                             pos_closed, prices_df, bar_idx
@@ -299,7 +501,7 @@ class StrategyBacktestSimulator:
                             "pre_signal_pnl_stop",
                             pair=pair_key,
                             loss_pct=f"{loss_pct:.2%}",
-                            limit=f"{self.max_position_loss_pct:.2%}",
+                            limit=f"{_stop_limit:.2%}",
                             trade_pnl=round(trade_pnl, 2),
                         )
 
@@ -308,6 +510,36 @@ class StrategyBacktestSimulator:
                 hist_prices, discovered_pairs=current_pairs,
                 weekly_prices=weekly_prices,
             )
+
+            # ---- Post-v27: Market regime filter (SPY-based) ---------
+            # Classify the current market regime using SPY data.
+            # In TRENDING regime: block all new entry signals.
+            # In NEUTRAL regime: sizing_multiplier = 0.5 (applied below).
+            _spy_col = None
+            for _c in ("SPY", "spy"):
+                if _c in hist_prices.columns:
+                    _spy_col = _c
+                    break
+            if _spy_col is not None:
+                _regime_state = self.market_regime_filter.classify(
+                    hist_prices[_spy_col]
+                )
+                _regime_sizing = _regime_state.sizing_multiplier
+            else:
+                # No SPY data available — skip regime filter
+                _regime_state = None
+                _regime_sizing = 1.0
+
+            # v47: Market-level cross-sectional dispersion gate (smooth-bull blocker).
+            # Computed once per bar; blocks ALL new entries when universe return
+            # dispersion < min_dispersion (stocks co-trending, no genuine relative value).
+            _dispersion_ok = True
+            if self.momentum_filter is not None:
+                _dispersion_ok, _disp_reason = self.momentum_filter.check_market_dispersion(
+                    hist_prices
+                )
+                if not _dispersion_ok:
+                    logger.debug("entries_blocked_low_dispersion", reason=_disp_reason)
 
             # ---- Process signals (entries & exits) ------------------
             # realized_pnl is already initialized above (before pre-signal P&L stop)
@@ -327,6 +559,76 @@ class StrategyBacktestSimulator:
 
                 # --- ENTRY -------------------------------------------
                 if signal.side in ("long", "short") and pair_key not in positions:
+                    # v30: Adaptive bidirectional regime gate
+                    # Uses per-side sizing from MarketRegimeState.
+                    # BULL_TRENDING: longs allowed, shorts blocked
+                    # BEAR_TRENDING: shorts allowed, longs blocked
+                    # MEAN_REVERTING: both at 100%
+                    # NEUTRAL: both at neutral_sizing
+                    if _regime_state is not None:
+                        _side_sizing = (
+                            _regime_state.long_sizing if signal.side == "long"
+                            else _regime_state.short_sizing
+                        )
+                    else:
+                        _side_sizing = 1.0
+
+                    if _side_sizing <= 0.0:
+                        logger.debug(
+                            "entry_blocked_regime_adaptive",
+                            pair=pair_key,
+                            side=signal.side,
+                            regime=_regime_state.regime.value if _regime_state else "unknown",
+                            ma_spread_pct=f"{_regime_state.ma_spread_pct:.4f}" if _regime_state else "N/A",
+                            realized_vol=f"{_regime_state.realized_vol:.4f}" if _regime_state else "N/A",
+                        )
+                        continue
+
+                    _signal_regime_mult = _side_sizing
+
+                    # v47: Cross-sectional dispersion gate (bar-level, computed above).
+                    # Block when universe returns are too synchronized (smooth bull).
+                    if not _dispersion_ok:
+                        logger.debug(
+                            "entry_blocked_low_dispersion",
+                            pair=pair_key,
+                            reason=_disp_reason,
+                        )
+                        continue
+
+                    # Post-v27 Étape 3: Dynamic pair blacklist gate
+                    _bar_date = pd.Timestamp(prices_df.index[bar_idx]).date()
+                    if self.pair_blacklist.is_blocked(pair_key, _bar_date):
+                        logger.debug(
+                            "entry_blocked_pair_blacklist",
+                            pair=pair_key,
+                            date=str(_bar_date),
+                        )
+                        continue
+
+                    # Phase 0.3 – Earnings/event blackout gate
+                    if self.event_filter.is_pair_blackout(sym1, sym2, _bar_date):
+                        logger.debug(
+                            "entry_blocked_event_blackout",
+                            pair=pair_key,
+                            date=str(_bar_date),
+                        )
+                        continue
+
+                    # Phase 0.4 – Short borrow availability gate
+                    _short_sym = sym2 if signal.side == "long" else sym1
+                    _borrow_ok, _borrow_fee = self.borrow_checker.check_shortable(
+                        _short_sym, side="short"
+                    )
+                    if not _borrow_ok:
+                        logger.debug(
+                            "entry_rejected_borrow_check",
+                            pair=pair_key,
+                            short_sym=_short_sym,
+                            borrow_fee=_borrow_fee,
+                        )
+                        continue
+
                     # Sprint 1.6 – Spread correlation guard (C-06 fix)
                     candidate_spread = self._compute_spread(
                         hist_prices, sym1, sym2
@@ -342,8 +644,6 @@ class StrategyBacktestSimulator:
                                 reason=reject_reason,
                             )
                             continue
-
-                        # Phase 3 – PCA factor concentration guard
                         pca_ok, pca_reason = self.pca_monitor.check_entry(
                             pair_key, candidate_spread
                         )
@@ -352,6 +652,21 @@ class StrategyBacktestSimulator:
                                 "entry_rejected_pca_factor",
                                 pair=pair_key,
                                 reason=pca_reason,
+                            )
+                            continue
+
+                    # v46 – Cross-sectional momentum divergence guard
+                    # Reject entries where one leg is a universe momentum outlier
+                    # (prevents entering cointegrated pairs that currently trend).
+                    if self.momentum_filter is not None:
+                        _mom_ok, _mom_reason = self.momentum_filter.check_entry_allowed(
+                            sym1, sym2, hist_prices
+                        )
+                        if not _mom_ok:
+                            logger.debug(
+                                "entry_rejected_momentum_divergence",
+                                pair=pair_key,
+                                reason=_mom_reason,
                             )
                             continue
 
@@ -372,10 +687,33 @@ class StrategyBacktestSimulator:
                     )
                     adjusted_alloc *= vol_mult
 
+                    # Phase 1 – Signal strength sizing (disabled until
+                    # universe expansion provides enough trades for the
+                    # combiner quality filter to differentiate).
+                    # _sig_strength = getattr(signal, 'strength', 1.0)
+                    # if 0.0 < _sig_strength < 1.0:
+                    #     _str_mult = 0.85 + 0.15 * _sig_strength
+                    #     adjusted_alloc *= _str_mult
+
                     # Phase 4 – Regime-adaptive allocation
                     # Use regime detector output (not signal.strength which
                     # represents z-score magnitude, NOT regime state).
                     # Only scale down in confirmed HIGH-volatility regimes.
+
+                    # Post-v27: Apply market regime sizing multiplier
+                    # Uses per-signal regime mult (directional filter aware)
+                    if _signal_regime_mult < 1.0 and _signal_regime_mult > 0.0:
+                        adjusted_alloc *= _signal_regime_mult
+                        logger.debug(
+                            "regime_sizing_applied",
+                            pair=pair_key,
+                            regime=_regime_state.regime.value if _regime_state else "neutral",
+                            multiplier=_regime_sizing,
+                        )
+
+                    # (v30: Short/long directional bias is now handled by the
+                    # adaptive regime filter above via per-side sizing.
+                    # The old Etape 4 block is no longer needed.)
 
                     # Enforce a combined multiplier floor so stacked dampeners
                     # never reduce allocation below 50% of the base.
@@ -383,9 +721,50 @@ class StrategyBacktestSimulator:
                     if effective_mult < 0.5:
                         adjusted_alloc = self.allocation_pct * 0.5
 
+                    # Phase 0.2: Kelly-based allocation override
+                    if self.kelly_sizer is not None:
+                        # Compute sector exposure for concentration limit
+                        _sym1_sector = self._sector_map.get(sym1)
+                        _sym2_sector = self._sector_map.get(sym2)
+                        _pair_sector = _sym1_sector or _sym2_sector
+                        _sector_exp = self._compute_sector_exposure(
+                            positions, portfolio_values[-1]
+                        )
+                        _gross_exp = sum(
+                            p["notional"] for p in positions.values()
+                        )
+
+                        kelly_alloc = self.kelly_sizer.compute_allocation(
+                            current_equity=portfolio_values[-1],
+                            sector=_pair_sector,
+                            sector_exposure=_sector_exp,
+                            current_gross_exposure=_gross_exp,
+                        )
+
+                        if kelly_alloc <= 0:
+                            logger.debug(
+                                "entry_rejected_kelly",
+                                pair=pair_key,
+                                reason="kelly_alloc_zero",
+                            )
+                            continue
+
+                        # Kelly caps the allocation; quality/vol/regime
+                        # multipliers still apply as dampeners within kelly cap
+                        adjusted_alloc = min(adjusted_alloc, kelly_alloc)
+
                     notional = (
                         portfolio_values[-1] * adjusted_alloc / 100.0
+                        * self.leverage_multiplier
                     )
+
+                    # Phase 2.4 – Drawdown tier 1 sizing dampener
+                    if _dd_sizing_mult < 1.0:
+                        adjusted_alloc *= _dd_sizing_mult
+                        notional = (
+                            portfolio_values[-1] * adjusted_alloc / 100.0
+                            * self.leverage_multiplier
+                        )
 
                     # Phase 4 – Portfolio heat enforcement
                     current_heat = self._compute_portfolio_heat(
@@ -400,7 +779,48 @@ class StrategyBacktestSimulator:
                         )
                         continue
 
+                    # Phase 2.2 – Sector exposure gate
+                    _sec_ok, _sec_reason = self.sector_monitor.can_enter(
+                        pair_key, notional, portfolio_values[-1], positions
+                    )
+                    if not _sec_ok:
+                        logger.debug(
+                            "entry_rejected_sector_exposure",
+                            pair=pair_key,
+                            reason=_sec_reason,
+                        )
+                        continue
+
+                    # Phase 2.3 – VaR limit gate
+                    _var_ok, _var_breach = self.var_monitor.check_limit(
+                        portfolio_values[-1]
+                    )
+                    if not _var_ok:
+                        logger.debug(
+                            "entry_rejected_var_limit",
+                            pair=pair_key,
+                            reason=_var_breach,
+                        )
+                        continue
+
                     notional_per_leg = notional / 2.0
+
+                    # Phase 2.1 – Beta-neutral leg weighting
+                    if signal.side == "long":
+                        _sym_long, _sym_short = sym1, sym2
+                    else:
+                        _sym_long, _sym_short = sym2, sym1
+                    _beta_ratio = self.factor_model.compute_beta_neutral_ratio(
+                        prices_df, _sym_long, _sym_short, bar_idx
+                    )
+                    # Redistribute total notional between legs for beta neutrality
+                    _n_long_leg = notional / (1.0 + _beta_ratio)
+                    _n_short_leg = notional * _beta_ratio / (1.0 + _beta_ratio)
+                    # Map back to sym1 / sym2 ordering
+                    if signal.side == "long":
+                        _notional_1, _notional_2 = _n_long_leg, _n_short_leg
+                    else:
+                        _notional_1, _notional_2 = _n_short_leg, _n_long_leg
 
                     # --- RiskEngine gate (same limits as live) -------
                     if self.risk_engine is not None:
@@ -430,10 +850,66 @@ class StrategyBacktestSimulator:
                             )
                             continue
 
-                    e_cost = self.cost_model.entry_cost(notional_per_leg)
+                    # Compute per-symbol daily volatility for Almgren-Chriss slippage
+                    _sigma1 = self._estimate_sigma(hist_prices, sym1)
+                    _sigma2 = self._estimate_sigma(hist_prices, sym2)
+                    _adv1 = self._estimate_adv(sym1, hist_prices, notional_per_leg)
+                    _adv2 = self._estimate_adv(sym2, hist_prices, notional_per_leg)
+
+                    # Phase 3.3: Use algo executor for realistic entry cost
+                    _entry_px1 = prices_df[sym1].iloc[bar_idx]
+                    _entry_px2 = prices_df[sym2].iloc[bar_idx]
+                    _qty1 = _notional_1 / _entry_px1 if _entry_px1 > 0 else 0
+                    _qty2 = _notional_2 / _entry_px2 if _entry_px2 > 0 else 0
+                    _algo_res1 = self._algo_executor.simulate(
+                        symbol=sym1,
+                        side="BUY" if signal.side == "long" else "SELL",
+                        total_qty=_qty1,
+                        current_price=_entry_px1,
+                        adv=_adv1 / _entry_px1 if _entry_px1 > 0 else 1e6,
+                    )
+                    _algo_res2 = self._algo_executor.simulate(
+                        symbol=sym2,
+                        side="SELL" if signal.side == "long" else "BUY",
+                        total_qty=_qty2,
+                        current_price=_entry_px2,
+                        adv=_adv2 / _entry_px2 if _entry_px2 > 0 else 1e6,
+                    )
+                    # Entry cost = sum of algo impact (in USD)
+                    _algo_impact1 = abs(_algo_res1.avg_fill_price - _entry_px1) * _qty1
+                    _algo_impact2 = abs(_algo_res2.avg_fill_price - _entry_px2) * _qty2
+                    e_cost = _algo_impact1 + _algo_impact2
+                    # Also add base commission from cost model
+                    # Ajout institutionnel : coût de slippage 3 composantes
+                    slippage_cost_leg1 = self.slippage_model.compute(
+                        notional=_notional_1,
+                        adv=_adv1,
+                        sigma=_sigma1,
+                    )
+                    slippage_cost_leg2 = self.slippage_model.compute(
+                        notional=_notional_2,
+                        adv=_adv2,
+                        sigma=_sigma2,
+                    )
+                    e_cost += slippage_cost_leg1 + slippage_cost_leg2
+                    # Commission-only portion (impact déjà inclus)
+                    e_cost += self.cost_model.entry_cost(
+                        notional_per_leg,
+                        volume_24h_sym1=_adv1,
+                        volume_24h_sym2=_adv2,
+                        sigma_sym1=_sigma1,
+                        sigma_sym2=_sigma2,
+                    ) * 0.3
 
                     # Resolve half-life for this pair (for time stop)
                     pair_hl = pair_hl_alloc  # already resolved above
+
+                    # Phase 0.2: Compute NAV-based stop-loss
+                    _nav_stop_pct = self.max_position_loss_pct
+                    if self.kelly_sizer is not None:
+                        _nav_stop_pct = self.kelly_sizer.compute_nav_stop_price_distance(
+                            notional, portfolio_values[-1]
+                        )
 
                     positions[pair_key] = {
                         "side": signal.side,
@@ -443,9 +919,22 @@ class StrategyBacktestSimulator:
                         "entry_price_2": prices_df[sym2].iloc[bar_idx],
                         "entry_bar": bar_idx,
                         "notional": notional,
+                        "notional_1": _notional_1,
+                        "notional_2": _notional_2,
+                        "beta_ratio": _beta_ratio,
                         "entry_cost": e_cost,
                         "half_life": pair_hl,
                         "peak_unrealized": 0.0,
+                        "sigma1": _sigma1,
+                        "sigma2": _sigma2,
+                        "nav_stop_pct": _nav_stop_pct,
+                        "borrow_fee_pct": _borrow_fee,
+                        # Phase 4.4: Store signal features at entry for ML training
+                        "ml_features": {
+                            "earnings": self.earnings_signal.compute_score(sym1, sym2),
+                            "options_flow": self.options_flow_signal.compute_score(sym1, sym2),
+                            "sentiment": self.sentiment_signal.compute_score(sym1, sym2),
+                        },
                     }
                     realized_pnl -= e_cost
 
@@ -498,13 +987,30 @@ class StrategyBacktestSimulator:
                 pos = positions[pair_key]
                 sym1, sym2 = pos["sym1"], pos["sym2"]
                 try:
-                    from models.spread import SpreadModel
-                    y = hist_prices[sym1]
-                    x = hist_prices[sym2]
-                    model = SpreadModel(y, x)
-                    spread = model.compute_spread(y, x)
-                    z_score_series = model.compute_z_score(spread)
-                    current_z = z_score_series.iloc[-1]
+                    if _compute_zscore_last_fast is not None:
+                        # Cython fast path: inline OLS + last rolling z-score.
+                        # Avoids SpreadModel construction (lstsq + HalfLifeEstimator)
+                        # and pandas rolling overhead — ~10-20x faster per call.
+                        _y = hist_prices[sym1].values
+                        _x = hist_prices[sym2].values
+                        _xm = _x.mean()
+                        _ym = _y.mean()
+                        _xc = _x - _xm
+                        _xx = float(np.dot(_xc, _xc))
+                        _beta = float(np.dot(_xc, _y - _ym)) / (_xx if _xx > 1e-10 else 1e-10)
+                        _icpt = _ym - _beta * _xm
+                        _spread = np.ascontiguousarray(
+                            _y - (_icpt + _beta * _x), dtype=np.float64
+                        )
+                        current_z = _compute_zscore_last_fast(_spread, 60)
+                    else:
+                        from models.spread import SpreadModel
+                        y = hist_prices[sym1]
+                        x = hist_prices[sym2]
+                        model = SpreadModel(y, x)
+                        spread = model.compute_spread(y, x)
+                        z_score_series = model.compute_z_score(spread)
+                        current_z = float(z_score_series.iloc[-1])
 
                     # Mean-reversion exit: z reverted to near zero
                     if abs(current_z) <= strategy.config.exit_z_score:
@@ -558,14 +1064,15 @@ class StrategyBacktestSimulator:
                 cur_p1 = prices_df[sym1].iloc[bar_idx]
                 cur_p2 = prices_df[sym2].iloc[bar_idx]
                 ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
-                not_per_leg = pos["notional"] / 2.0
+                _n1 = pos.get("notional_1", pos["notional"] / 2.0)
+                _n2 = pos.get("notional_2", pos["notional"] / 2.0)
                 if pos["side"] == "long":
                     r1 = (cur_p1 - ep1) / ep1 if ep1 else 0
                     r2 = (ep2 - cur_p2) / ep2 if ep2 else 0
                 else:
                     r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
                     r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
-                unrealised = not_per_leg * r1 + not_per_leg * r2
+                unrealised = _n1 * r1 + _n2 * r2
                 frac, force_all = self.partial_profit.check(
                     pair_key, unrealised, pos["notional"]
                 )
@@ -590,7 +1097,14 @@ class StrategyBacktestSimulator:
                     # Partial close: reduce position notional
                     close_notional = pos["notional"] * frac
                     partial_pnl = unrealised * frac
-                    x_cost = self.cost_model.exit_cost(close_notional / 2.0)
+                    _pp_leg = close_notional / 2.0
+                    x_cost = self.cost_model.exit_cost(
+                        _pp_leg,
+                        volume_24h_sym1=self._estimate_adv(pos["sym1"], prices_df, _pp_leg),
+                        volume_24h_sym2=self._estimate_adv(pos["sym2"], prices_df, _pp_leg),
+                        sigma_sym1=pos.get("sigma1", 0.02),
+                        sigma_sym2=pos.get("sigma2", 0.02),
+                    )
                     realized_pnl += partial_pnl - x_cost
                     trades_pnl.append(partial_pnl - x_cost)
                     pos["notional"] *= (1 - frac)
@@ -637,16 +1151,19 @@ class StrategyBacktestSimulator:
                     cur_p1 = prices_df[sym1].iloc[bar_idx]
                     cur_p2 = prices_df[sym2].iloc[bar_idx]
                     ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
-                    not_per_leg = pos["notional"] / 2.0
+                    _n1 = pos.get("notional_1", pos["notional"] / 2.0)
+                    _n2 = pos.get("notional_2", pos["notional"] / 2.0)
                     if pos["side"] == "long":
                         r1 = (cur_p1 - ep1) / ep1 if ep1 else 0
                         r2 = (ep2 - cur_p2) / ep2 if ep2 else 0
                     else:
                         r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
                         r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
-                    unrealised = not_per_leg * r1 + not_per_leg * r2
+                    unrealised = _n1 * r1 + _n2 * r2
                     loss_pct = -unrealised / pos["notional"] if pos["notional"] > 0 else 0
-                    if loss_pct >= self.max_position_loss_pct:
+                    # Phase 0.2: Use per-position NAV-based stop if available
+                    _stop_limit = pos.get("nav_stop_pct", self.max_position_loss_pct)
+                    if loss_pct >= _stop_limit:
                         pos_closed = positions.pop(pair_key)
                         close_pnl, trade_pnl = self._close_position(
                             pos_closed, prices_df, bar_idx
@@ -661,7 +1178,7 @@ class StrategyBacktestSimulator:
                             "pnl_stop_exit",
                             pair=pair_key,
                             loss_pct=f"{loss_pct:.2%}",
-                            limit=f"{self.max_position_loss_pct:.2%}",
+                            limit=f"{_stop_limit:.2%}",
                             trade_pnl=round(trade_pnl, 2),
                         )
 
@@ -673,14 +1190,15 @@ class StrategyBacktestSimulator:
                     cur_p1 = prices_df[sym1].iloc[bar_idx]
                     cur_p2 = prices_df[sym2].iloc[bar_idx]
                     ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
-                    not_per_leg = pos["notional"] / 2.0
+                    _n1 = pos.get("notional_1", pos["notional"] / 2.0)
+                    _n2 = pos.get("notional_2", pos["notional"] / 2.0)
                     if pos["side"] == "long":
                         r1 = (cur_p1 - ep1) / ep1 if ep1 else 0
                         r2 = (ep2 - cur_p2) / ep2 if ep2 else 0
                     else:
                         r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
                         r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
-                    unrealised = not_per_leg * r1 + not_per_leg * r2
+                    unrealised = _n1 * r1 + _n2 * r2
                     unrealised / pos["notional"] if pos["notional"] > 0 else 0
                     # Update peak unrealized
                     if unrealised > pos.get("peak_unrealized", 0.0):
@@ -738,6 +1256,15 @@ class StrategyBacktestSimulator:
             daily_returns.append(daily_ret)
             portfolio_values.append(new_value)
 
+            # ---- OOS tracking for walk-forward -------------------------
+            if _oos_start_bar_idx is not None and bar_idx >= _oos_start_bar_idx:
+                if _oos_trade_start_idx is None:
+                    _oos_trade_start_idx = len(trades_pnl)
+                oos_daily_returns.append(daily_ret)
+
+            # ---- Phase 2.3: Feed VaR monitor with daily return ----
+            self.var_monitor.update(daily_ret)
+
         # ---- Force-close remaining positions at final bar -----------
         if positions:
             final_bar = len(prices_df) - 1
@@ -766,17 +1293,35 @@ class StrategyBacktestSimulator:
                 )
                 daily_returns.append(daily_ret)
                 portfolio_values.append(portfolio_values[-1] + fc_realized)
+                # Force-close bar is always in OOS (it's the last bar)
+                if _oos_start_bar_idx is not None:
+                    oos_daily_returns.append(daily_ret)
 
         # ---- Build metrics ------------------------------------------
-        returns_series = (
-            pd.Series(daily_returns) if daily_returns else pd.Series([0.0])
-        )
+        # When oos_start_date was supplied, compute metrics on OOS window only.
+        if _oos_start_bar_idx is not None and oos_daily_returns:
+            _oos_trades = (
+                trades_pnl[_oos_trade_start_idx:]
+                if _oos_trade_start_idx is not None
+                else []
+            )
+            _metrics_returns = pd.Series(oos_daily_returns)
+            _metrics_trades = _oos_trades
+            _period_start = str(prices_df.index[_oos_start_bar_idx])[:10]
+            _period_end   = str(prices_df.index[-1])[:10]
+        else:
+            _metrics_returns = (
+                pd.Series(daily_returns) if daily_returns else pd.Series([0.0])
+            )
+            _metrics_trades = trades_pnl if trades_pnl else []
+            _period_start = str(prices_df.index[0])[:10]
+            _period_end   = str(prices_df.index[-1])[:10]
 
         metrics = BacktestMetrics.from_returns(
-            returns=returns_series,
-            trades=trades_pnl if trades_pnl else [],
-            start_date=str(prices_df.index[0])[:10],
-            end_date=str(prices_df.index[-1])[:10],
+            returns=_metrics_returns if len(_metrics_returns) > 0 else pd.Series([0.0]),
+            trades=_metrics_trades,
+            start_date=_period_start,
+            end_date=_period_end,
         )
         metrics.initial_capital = self.initial_capital
         metrics.final_capital = round(portfolio_values[-1], 2)
@@ -792,6 +1337,7 @@ class StrategyBacktestSimulator:
             max_dd=f"{metrics.max_drawdown:.2%}",
         )
 
+
         return metrics
 
     # ==================================================================
@@ -800,7 +1346,10 @@ class StrategyBacktestSimulator:
 
     @staticmethod
     def _create_fresh_strategy() -> PairTradingStrategy:
-        """Create a clean strategy instance with cache disabled."""
+        """Create a clean strategy instance with cache disabled and
+        a bar-timestamp clock injected for backtest reproducibility."""
+        # Use default clock (datetime.now) — callers can override via
+        # strategy._clock = lambda: bar_timestamp  if needed.
         strategy = PairTradingStrategy()
         strategy.disable_cache()
         return strategy
@@ -886,6 +1435,24 @@ class StrategyBacktestSimulator:
 
         return 0.5 + score  # Range [0.5, 1.5]
 
+    def _unrealized_pnl(
+        self, pos: dict, prices_df: pd.DataFrame, bar_idx: int
+    ) -> float:
+        """Compute unrealized P&L for a position at bar_idx."""
+        sym1, sym2 = pos["sym1"], pos["sym2"]
+        cur_p1 = prices_df[sym1].iloc[bar_idx]
+        cur_p2 = prices_df[sym2].iloc[bar_idx]
+        ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
+        _n1 = pos.get("notional_1", pos["notional"] / 2.0)
+        _n2 = pos.get("notional_2", pos["notional"] / 2.0)
+        if pos["side"] == "long":
+            r1 = (cur_p1 - ep1) / ep1 if ep1 else 0
+            r2 = (ep2 - cur_p2) / ep2 if ep2 else 0
+        else:
+            r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
+            r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
+        return _n1 * r1 + _n2 * r2
+
     def _close_position(
         self,
         pos: dict,
@@ -907,10 +1474,12 @@ class StrategyBacktestSimulator:
         entry_price_1 = pos["entry_price_1"]
         entry_price_2 = pos["entry_price_2"]
         notional = pos["notional"]
-        notional_per_leg = notional / 2.0
+        not_1 = pos.get("notional_1", notional / 2.0)
+        not_2 = pos.get("notional_2", notional / 2.0)
+        notional_per_leg = notional / 2.0   # average (for cost estimation)
         holding_days = max(bar_idx - pos["entry_bar"], 0)
 
-        # P&L per leg (% return × notional per leg)
+        # P&L per leg (% return × beta-neutral per-leg notional)
         if pos["side"] == "long":
             # Long sym1, short sym2
             ret_1 = (
@@ -936,11 +1505,25 @@ class StrategyBacktestSimulator:
                 else 0.0
             )
 
-        pnl_gross = notional_per_leg * ret_1 + notional_per_leg * ret_2
+        pnl_gross = not_1 * ret_1 + not_2 * ret_2
 
-        # Exit-day costs
-        x_cost = self.cost_model.exit_cost(notional_per_leg)
+        # Exit-day costs (Almgren-Chriss: use stored vol + estimated ADV)
+        _sig1 = pos.get("sigma1", 0.02)
+        _sig2 = pos.get("sigma2", 0.02)
+        _adv1 = self._estimate_adv(sym1, prices_df, notional_per_leg)
+        _adv2 = self._estimate_adv(sym2, prices_df, notional_per_leg)
+        x_cost = self.cost_model.exit_cost(
+            notional_per_leg,
+            volume_24h_sym1=_adv1,
+            volume_24h_sym2=_adv2,
+            sigma_sym1=_sig1,
+            sigma_sym2=_sig2,
+        )
         borrow = self.cost_model.holding_cost(notional_per_leg, holding_days)
+        # Phase 0.4: Use per-position borrow fee when available
+        _pos_borrow_fee = pos.get("borrow_fee_pct")
+        if _pos_borrow_fee is not None and _pos_borrow_fee != self.cost_model.config.borrowing_cost_annual_pct:
+            borrow = notional_per_leg * (_pos_borrow_fee / 100.0 / 365.0) * holding_days
         funding = self.cost_model.funding_cost(notional_per_leg, holding_days)
 
         daily_realized = pnl_gross - x_cost - borrow - funding
@@ -956,6 +1539,28 @@ class StrategyBacktestSimulator:
             borrow_cost=round(borrow, 2),
             trade_pnl=round(full_trade, 2),
         )
+
+        # Post-v27 Étape 3: Record outcome for dynamic pair blacklist
+        try:
+            _exit_date = pd.Timestamp(prices_df.index[bar_idx]).date()
+            self.pair_blacklist.record_outcome(
+                f"{sym1}_{sym2}", pnl=full_trade, trade_date=_exit_date,
+            )
+        except Exception:
+            pass  # Non-critical — don't break the backtest
+
+        # Phase 0.2: Record trade for adaptive Kelly computation
+        if self.kelly_sizer is not None:
+            self.kelly_sizer.record_trade(full_trade)
+
+        # Phase 4.4: Record trade outcome for ML combiner training
+        _ml_feats = pos.get("ml_features")
+        if _ml_feats is not None:
+            self.ml_combiner.record_trade(
+                bar_idx=pos["entry_bar"],
+                features=_ml_feats,
+                outcome=full_trade / notional if notional > 0 else 0.0,
+            )
 
         return daily_realized, full_trade
 
@@ -1028,6 +1633,72 @@ class StrategyBacktestSimulator:
             return 1.0
 
     @staticmethod
+    def _estimate_sigma(
+        prices_df: pd.DataFrame,
+        symbol: str,
+        lookback: int = 60,
+    ) -> float:
+        """Estimate daily return volatility for a symbol from recent prices.
+
+        Returns a decimal (e.g. 0.02 for 2% daily vol).
+        """
+        try:
+            series = prices_df[symbol].iloc[-lookback:]
+            if len(series) < 10:
+                return 0.02
+            vol = series.pct_change().dropna().std()
+            return max(vol, 0.005)  # floor at 0.5%
+        except Exception:
+            return 0.02
+
+    # ADV estimates by market-cap tier (USD notional/day).
+    # v31h universe is all mega/large-cap US equities.
+    _ADV_MEGA_CAP = 500_000_000    # $500M/day — AAPL, MSFT, NVDA, etc.
+    _ADV_LARGE_CAP = 150_000_000   # $150M/day — CL, SO, DUK, etc.
+    _ADV_MID_CAP = 30_000_000      # $30M/day — fallback
+
+    # Symbols known to be mega-cap (top-20 ADV in v31h universe)
+    _MEGA_CAP_SYMBOLS = frozenset({
+        "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
+        "JPM", "BAC", "SPY", "XOM", "WMT", "UNH", "JNJ", "PFE",
+        "GS", "WFC", "C", "MRK", "ABBV",
+    })
+
+    @classmethod
+    def _estimate_adv(
+        cls,
+        symbol: str,
+        prices_df: pd.DataFrame,
+        notional_per_leg: float,
+    ) -> float:
+        """Estimate Average Daily Volume in USD for slippage calculation.
+
+        Since backtest data has close prices only (no volume), we use
+        market-cap tier estimates.  Conservative for cost estimation.
+        """
+        if symbol in cls._MEGA_CAP_SYMBOLS:
+            return cls._ADV_MEGA_CAP
+        # All v31h symbols are large-cap at minimum
+        return cls._ADV_LARGE_CAP
+
+    @staticmethod
+    def _unrealized_pnl(pos: dict, prices_df: pd.DataFrame, bar_idx: int) -> float:
+        """Return mark-to-market unrealised P&L for a single position."""
+        sym1, sym2 = pos["sym1"], pos["sym2"]
+        cur_p1 = prices_df[sym1].iloc[bar_idx]
+        cur_p2 = prices_df[sym2].iloc[bar_idx]
+        ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
+        n1 = pos.get("notional_1", pos["notional"] / 2.0)
+        n2 = pos.get("notional_2", pos["notional"] / 2.0)
+        if pos["side"] == "long":
+            r1 = (cur_p1 - ep1) / ep1 if ep1 else 0.0
+            r2 = (ep2 - cur_p2) / ep2 if ep2 else 0.0
+        else:
+            r1 = (ep1 - cur_p1) / ep1 if ep1 else 0.0
+            r2 = (cur_p2 - ep2) / ep2 if ep2 else 0.0
+        return n1 * r1 + n2 * r2
+
+    @staticmethod
     def _compute_portfolio_heat(
         positions: Dict[str, dict],
         portfolio_value: float,
@@ -1040,3 +1711,25 @@ class StrategyBacktestSimulator:
             return 0.0
         total_notional = sum(p["notional"] for p in positions.values())
         return total_notional / portfolio_value
+
+    def _compute_sector_exposure(
+        self,
+        positions: Dict[str, dict],
+        portfolio_value: float,
+    ) -> Dict[str, float]:
+        """Compute sector exposure as % of portfolio value.
+
+        Returns dict mapping sector → exposure percentage.
+        """
+        if portfolio_value <= 0 or not positions:
+            return {}
+        sector_notional: Dict[str, float] = {}
+        for pos in positions.values():
+            s1 = self._sector_map.get(pos["sym1"], "unknown")
+            s2 = self._sector_map.get(pos["sym2"], "unknown")
+            sector = s1 if s1 != "unknown" else s2
+            sector_notional[sector] = sector_notional.get(sector, 0.0) + pos["notional"]
+        return {
+            s: (n / portfolio_value) * 100.0
+            for s, n in sector_notional.items()
+        }

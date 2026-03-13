@@ -108,7 +108,15 @@ class TestRoundTripRealistic:
         assert bps >= 14
 
     def test_round_trip_execution_only_is_30bps(self):
-        """Pure execution (no holding) = ~8 bps for large-cap equities via IBKR."""
+        """Pure execution (no holding) with Almgren-Chriss 3-component model.
+
+        Components per leg (calibrated v32j defaults: η=0.05, delay=0.01):
+          - Fee: 2 bps
+          - Spread (bid-ask): 2 bps
+          - Market impact: η×σ×√(Q/ADV) ≈ negligible at $5K/$1B
+          - Timing cost: σ×√(T/252) ≈ 1.3 bps (σ=2%, T=0.01 day)
+        Round trip = 4 legs × ~5.3 bps ≈ 11 bps
+        """
         cfg = CostModelConfig(include_borrowing=False, include_funding=False)
         model = CostModel(cfg)
         bps = model.round_trip_cost_bps(
@@ -117,8 +125,8 @@ class TestRoundTripRealistic:
             volume_24h_sym1=1e9,
             volume_24h_sym2=1e9,
         )
-        # 4 legs × (2 bps fee + ~2 bps slippage) ≈ 8 bps
-        assert 6 <= bps <= 10, f"Expected ~8 bps, got {bps:.1f}"
+        # Almgren-Chriss with calibrated v32j defaults (η=0.05, delay=0.01)
+        assert 8 <= bps <= 18, f"Expected ~11 bps (Almgren-Chriss v32j), got {bps:.1f}"
 
     def test_round_trip_cost_bps_helper(self):
         """Verify round_trip_cost_bps matches manual calculation."""
@@ -186,12 +194,18 @@ class TestBackwardCompatibility:
     """Ensure existing callers (strategy_simulator, runner) are not broken."""
 
     def test_default_config_unchanged_for_execution(self):
-        """Default CostModel returns IBKR equity execution costs."""
+        """Default CostModel (Almgren-Chriss) returns realistic equity execution costs.
+
+        With calibrated v32j defaults (σ_default=2%, T_exec=0.01d, η=0.05):
+          Per leg: $5000 × (fee 2bps + spread 2bps + timing ~1.3bps + impact ~0bps)
+          = $5000 × ~0.00053 ≈ $2.64 per leg
+          2 legs ≈ $5.3
+        """
         model = CostModel()
-        # entry_cost for $5000 per leg, high volume (negligible slippage)
+        # entry_cost for $5000 per leg, high volume (negligible market impact)
         e = model.entry_cost(5000, 1e9, 1e9)
-        # 2 legs × 5000 × (2/10000 + ~2/10000) ≈ 2 × 5000 × 0.0004 = 4.0
-        assert 3 < e < 5
+        # Almgren-Chriss with calibrated v32j params → ~$5.3
+        assert 3 < e < 9
 
     def test_exit_equals_entry_cost(self):
         """Exit cost = entry cost (same fee structure)."""

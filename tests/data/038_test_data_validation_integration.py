@@ -11,7 +11,7 @@ EDGECORE Remediation: Validates data integrity enforcement across data pipeline.
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 import structlog
 
 from data.loader import DataLoader
@@ -19,6 +19,23 @@ from data.validators import OHLCVValidator, ValidationResult, DataValidationErro
 from backtests.runner import BacktestRunner
 
 logger = structlog.get_logger()
+
+
+def _make_bars(opens, highs, lows, closes, volumes, dates=None):
+    """Build list of mock bar objects matching ibapi BarData interface."""
+    if dates is None:
+        dates = pd.date_range('2022-01-03', periods=len(opens), freq='B')
+    bars = []
+    for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes):
+        bar = MagicMock()
+        bar.date = d.strftime('%Y%m%d') if hasattr(d, 'strftime') else str(d)
+        bar.open = o
+        bar.high = h
+        bar.low = l
+        bar.close = c
+        bar.volume = v
+        bars.append(bar)
+    return bars
 
 
 class TestDataLoaderValidation:
@@ -48,15 +65,14 @@ class TestDataLoaderValidation:
             warnings=[]
         ))
         
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            Mock()
-            mock_engine = mock_engine_cls.return_value
-            dates = pd.date_range('2022-01-03', periods=2, freq='B')
-            mock_df = pd.DataFrame({
-                'Open': [100.0, 105.0], 'High': [110.0, 115.0],
-                'Low': [90.0, 95.0], 'Close': [105.0, 110.0], 'Volume': [50000000, 55000000]
-            }, index=dates)
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            bars = _make_bars(
+                [100.0, 105.0], [110.0, 115.0], [90.0, 95.0],
+                [105.0, 110.0], [50000000, 55000000],
+            )
+            mock_gw.get_historical_data.return_value = bars
             
             df = loader.load_ibkr_data('AAPL')
             
@@ -71,15 +87,11 @@ class TestDataLoaderValidation:
         loader.validator = Mock(spec=OHLCVValidator)
         loader.validator.validate = Mock()
         
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            Mock()
-            mock_engine = mock_engine_cls.return_value
-            dates = pd.date_range('2022-01-03', periods=1, freq='B')
-            mock_df = pd.DataFrame({
-                'Open': [100.0], 'High': [110.0], 'Low': [90.0],
-                'Close': [105.0], 'Volume': [50000000]
-            }, index=dates)
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            bars = _make_bars([100.0], [110.0], [90.0], [105.0], [50000000])
+            mock_gw.get_historical_data.return_value = bars
             
             loader.load_ibkr_data('AAPL', validate=False)
             
@@ -94,15 +106,11 @@ class TestDataLoaderValidation:
             "Found 5 NaN values in OHLCV data"
         ))
         
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            Mock()
-            mock_engine = mock_engine_cls.return_value
-            dates = pd.date_range('2022-01-03', periods=1, freq='B')
-            mock_df = pd.DataFrame({
-                'Open': [100.0], 'High': [110.0], 'Low': [90.0],
-                'Close': [105.0], 'Volume': [50000000]
-            }, index=dates)
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            bars = _make_bars([100.0], [110.0], [90.0], [105.0], [50000000])
+            mock_gw.get_historical_data.return_value = bars
             
             with pytest.raises(DataValidationError) as exc_info:
                 loader.load_ibkr_data('AAPL', validate=True)
@@ -125,15 +133,11 @@ class TestDataLoaderValidation:
         loader.validator = Mock(spec=OHLCVValidator)
         loader.validator.validate = Mock(return_value=validation_result)
         
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            Mock()
-            mock_engine = mock_engine_cls.return_value
-            dates = pd.date_range('2022-01-03', periods=1, freq='B')
-            mock_df = pd.DataFrame({
-                'Open': [100.0], 'High': [110.0], 'Low': [90.0],
-                'Close': [105.0], 'Volume': [50000000]
-            }, index=dates)
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            bars = _make_bars([100.0], [110.0], [90.0], [105.0], [50000000])
+            mock_gw.get_historical_data.return_value = bars
             
             df = loader.load_ibkr_data('AAPL')
             assert len(df) == 1
@@ -402,16 +406,14 @@ class TestCompleteDataPipeline:
         ))
         loader.validator = validator
         
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            Mock()
-            mock_engine = mock_engine_cls.return_value
-            dates = pd.date_range('2022-01-03', periods=2, freq='B')
-            mock_df = pd.DataFrame({
-                'Open': [175.0, 176.0], 'High': [178.0, 179.0],
-                'Low': [174.0, 175.0], 'Close': [176.5, 177.5],
-                'Volume': [50000000, 55000000]
-            }, index=dates)
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            bars = _make_bars(
+                [175.0, 176.0], [178.0, 179.0], [174.0, 175.0],
+                [176.5, 177.5], [50000000, 55000000],
+            )
+            mock_gw.get_historical_data.return_value = bars
             
             # Load and verify
             df = loader.load_ibkr_data('AAPL', validate=True)
@@ -433,15 +435,11 @@ class TestCompleteDataPipeline:
         ))
         loader.validator = validator
         
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            Mock()
-            mock_engine = mock_engine_cls.return_value
-            dates = pd.date_range('2022-01-03', periods=1, freq='B')
-            mock_df = pd.DataFrame({
-                'Open': [175.0], 'High': [178.0], 'Low': [174.0],
-                'Close': [176.5], 'Volume': [50000000]
-            }, index=dates)
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            bars = _make_bars([175.0], [178.0], [174.0], [176.5], [50000000])
+            mock_gw.get_historical_data.return_value = bars
             
             # Should raise error immediately
             with pytest.raises(DataValidationError) as exc_info:

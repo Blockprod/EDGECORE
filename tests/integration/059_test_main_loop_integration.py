@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch
 from main import _load_market_data_for_symbols, _close_all_positions
 from risk.engine import RiskEngine, Position
 from execution.ibkr_engine import IBGatewaySync
-from execution.base import Order, OrderSide
+from execution.base import Order, OrderSide, BaseExecutionEngine
 from data.loader import DataLoader
 from config.settings import get_settings
 
@@ -67,7 +67,7 @@ class TestCloseAllPositions:
     def test_close_all_positions_with_empty_dict(self):
         """Closing no positions succeeds silently."""
         risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = Mock(spec=IBGatewaySync)
+        execution_engine = Mock(spec=BaseExecutionEngine)
         
         # Should not raise
         _close_all_positions(risk_engine, execution_engine, {})
@@ -78,7 +78,7 @@ class TestCloseAllPositions:
     def test_close_all_positions_long(self):
         """Long position closes with SELL order."""
         risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = Mock(spec=IBGatewaySync)
+        execution_engine = Mock(spec=BaseExecutionEngine)
         execution_engine.submit_order.return_value = "order_123"
         
         # Create long position
@@ -109,7 +109,7 @@ class TestCloseAllPositions:
     def test_close_all_positions_short(self):
         """Short position closes with BUY order."""
         risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = Mock(spec=IBGatewaySync)
+        execution_engine = Mock(spec=BaseExecutionEngine)
         execution_engine.submit_order.return_value = "order_456"
         
         # Create short position
@@ -140,7 +140,7 @@ class TestCloseAllPositions:
     def test_close_all_positions_multiple(self):
         """Multiple positions all close."""
         risk_engine = RiskEngine(initial_equity=100000.0)
-        execution_engine = Mock(spec=IBGatewaySync)
+        execution_engine = Mock(spec=BaseExecutionEngine)
         execution_engine.submit_order.return_value = "order_123"
         
         # Create multiple positions

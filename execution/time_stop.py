@@ -12,9 +12,13 @@ Solution
 --------
 For each pair with estimated half-life *h*, the maximum holding period is::
 
-    max_bars = min(2 * h, MAX_DAYS_CAP)
+    max_bars = min(half_life_multiplier * h, MAX_DAYS_CAP)
 
 After ``max_bars`` the position is **force-closed regardless of P&L**.
+
+Post-v27 fix (Étape 5): multiplier reduced from 3.0 → 2.0.  The 5 time
+stops in v27 (avg 22-day holding) cost -$17,912.  Cutting earlier at 2× HL
+limits exposure to divergent spreads.
 
    ============  ====  ========================
    half_life (h)  cap   max_holding_bars
@@ -39,8 +43,8 @@ logger = get_logger(__name__)
 class TimeStopConfig:
     """Configuration for time-based stop."""
 
-    half_life_multiplier: float = 3.0
-    """Close after ``multiplier × half_life`` bars."""
+    half_life_multiplier: float = 2.0
+    """Close after ``multiplier × half_life`` bars.  Post-v27: 2.0 (was 3.0)."""
 
     max_days_cap: int = 60
     """Absolute ceiling regardless of half-life."""

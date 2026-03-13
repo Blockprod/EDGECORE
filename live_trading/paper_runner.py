@@ -11,7 +11,7 @@ Use this to validate the live pipeline before deploying real capital.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from structlog import get_logger
 
@@ -39,10 +39,15 @@ class PaperTradingRunner(LiveTradingRunner):
         runner.start()
     """
 
-    def __init__(self, config: Optional[TradingLoopConfig] = None):
+    def __init__(
+        self,
+        config: Optional[TradingLoopConfig] = None,
+        email_alerter: Optional[Any] = None,
+        slack_alerter: Optional[Any] = None,
+    ):
         cfg = config or TradingLoopConfig()
         cfg.mode = "paper"  # force paper mode
-        super().__init__(config=cfg)
+        super().__init__(config=cfg, email_alerter=email_alerter, slack_alerter=slack_alerter)
         logger.info("paper_trading_runner_initialized")
 
     def _initialize(self) -> None:

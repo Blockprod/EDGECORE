@@ -10,6 +10,7 @@ Filters:
     3. Variance filter (non-constant series)
     4. Sector matching (optional intra-sector only)
     5. Spread half-life pre-screen (quick AR(1) check)
+    6. Momentum divergence (cross-sectional momentum outlier — v46)
 """
 
 from __future__ import annotations
@@ -156,3 +157,132 @@ class PairFilters:
             return 0 < hl <= max_half_life
         except Exception:
             return True  # degrade gracefully
+
+
+
+class MomentumDivergenceFilter:
+    """
+    Rejects pair entries where one leg is a cross-sectional momentum outlier,
+    and blocks ALL entries when cross-sectional return dispersion is too low.
+
+    Two complementary gates:
+
+    1. Per-pair momentum divergence (v46):
+       Compute trailing lookback_days cross-sectional z-scores; reject if
+       |z(sym1) - z(sym2)| > threshold (one leg is a momentum leader).
+
+    2. Market-level dispersion gate (v47):
+       Compute std of trailing returns across ALL universe symbols.
+       If std < min_dispersion: block ALL new entries for that bar.
+       Rationale: in smooth bull markets, stocks move synchronously and pair
+       spreads drift rather than mean-revert.
+
+    Calibration (v45b/v46 analysis):
+        2019H2 smooth bull: cs-dispersion ~5-8%  -> block (P1 was -1.67 with 4t)
+        2020H2 COVID recov: cs-dispersion ~15-25% -> allow (P2 was +2.27 with 3t)
+        2022H2 rate-hike:   cs-dispersion ~12-18% -> allow (P3 was +2.24 with 5t)
+        2023H2 AI bull:     cs-dispersion ~12-18% -> allow (P4 was +0.46 with 12t)
+        2024H2 smooth bull: cs-dispersion ~6-9%   -> block (P5 was -1.14 with 3t)
+        Recommended min_dispersion=0.08 (8%).
+
+    Fail-open: returns (True, "") on any data error.
+    """
+
+    def __init__(
+        self,
+        lookback_days: int = 60,
+        threshold: float = 1.5,
+        min_universe_size: int = 20,
+        min_dispersion: float = 0.0,
+    ):
+        self.lookback_days = lookback_days
+        self.threshold = threshold
+        self.min_universe_size = min_universe_size
+        self.min_dispersion = min_dispersion
+
+    def _compute_returns(self, price_data: pd.DataFrame):
+        """Compute cross-sectional trailing returns. Returns None on error."""
+        try:
+            n_bars = len(price_data)
+            lb = min(self.lookback_days, n_bars - 1)
+            if lb < 10:
+                return None
+            recent = price_data.iloc[-(lb + 1):]
+            returns = (recent.iloc[-1] / recent.iloc[0]) - 1.0
+            returns = returns.dropna()
+            if len(returns) < self.min_universe_size:
+                return None
+            return returns
+        except Exception:
+            return None
+
+    def check_market_dispersion(
+        self,
+        price_data: pd.DataFrame,
+    ) -> Tuple[bool, str]:
+        """
+        Market-level gate: block ALL new entries when cross-sectional return
+        dispersion is below min_dispersion.
+
+        Returns:
+            (allowed, reason) -- allowed=False means skip all entries this bar.
+        """
+        if self.min_dispersion <= 0.0:
+            return True, ""
+        try:
+            returns = self._compute_returns(price_data)
+            if returns is None:
+                return True, ""  # fail open
+            dispersion = float(returns.std())
+            if dispersion < self.min_dispersion:
+                return False, (
+                    "low_cs_dispersion=%.3f<%.3f (smooth_bull_gate)"
+                    % (dispersion, self.min_dispersion)
+                )
+            return True, ""
+        except Exception:
+            return True, ""
+
+    def check_entry_allowed(
+        self,
+        sym1: str,
+        sym2: str,
+        price_data: pd.DataFrame,
+    ) -> Tuple[bool, str]:
+        """
+        Per-pair gate: reject entry when one leg is a cross-sectional momentum
+        outlier.
+
+        Returns:
+            (allowed, reason) -- allowed=False means reject the entry.
+        """
+        try:
+            if sym1 not in price_data.columns or sym2 not in price_data.columns:
+                return True, ""
+
+            returns = self._compute_returns(price_data)
+            if returns is None:
+                return True, ""
+
+            mu = float(returns.mean())
+            std = float(returns.std())
+            if std < 1e-8:
+                return True, ""
+
+            z_scores = (returns - mu) / std
+
+            if sym1 not in z_scores.index or sym2 not in z_scores.index:
+                return True, ""
+
+            z1 = float(z_scores[sym1])
+            z2 = float(z_scores[sym2])
+            divergence = abs(z1 - z2)
+
+            if divergence > self.threshold:
+                return False, (
+                    "momentum_divergence=%.2f>%.2f z(%s)=%.2f z(%s)=%.2f"
+                    % (divergence, self.threshold, sym1, z1, sym2, z2)
+                )
+            return True, ""
+        except Exception:
+            return True, ""  # degrade gracefully

@@ -278,6 +278,7 @@ class TestDataLoadingErrorHandling:
         mock_loader.load_ibkr_data.return_value = None  # No data
         
         mock_settings = Mock()
+        mock_settings.trading.data_max_age_hours = 99999.0
         
         with pytest.raises(DataError) as exc_info:
             _load_market_data_for_symbols(["AAPL"], mock_loader, mock_settings)
@@ -312,6 +313,7 @@ class TestDataLoadingErrorHandling:
         mock_loader.load_ibkr_data.side_effect = load_side_effect
         
         mock_settings = Mock()
+        mock_settings.trading.data_max_age_hours = 99999.0
         
         # Should succeed with partial data
         prices = _load_market_data_for_symbols(

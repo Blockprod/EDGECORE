@@ -1,7 +1,8 @@
+from dataclasses import dataclass
+from typing import List, Optional
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
-from typing import Optional, List
 
 # Annualisation factor  - configurable per market:
 #   Equities: 252 (NYSE/NASDAQ trading days)
@@ -83,7 +84,10 @@ class BacktestMetrics:
         realized_pnl = sum(trades) if trades else 0.0
 
         # Sharpe ratio (annualised using configured trading days, excess return)
-        if len(returns) > 1:
+        # Guard: if no trades were made, Sharpe is meaningless (FP noise can inflate it)
+        if not trades:
+            sharpe_ratio = 0.0
+        elif len(returns) > 1:
             excess = returns - rf_daily
             sharpe_ratio = (excess.mean() / excess.std()) * np.sqrt(TRADING_DAYS_PER_YEAR) if excess.std() > 0 else 0.0
         else:

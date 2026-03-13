@@ -16,6 +16,7 @@ while providing a clean, composable API for the modular architecture.
 
 from __future__ import annotations
 
+import warnings
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -128,6 +129,11 @@ class PairDiscoveryEngine:
         """
         Run the full pair discovery pipeline.
 
+        .. deprecated:: 2026.03
+            Use ``PairTradingStrategy.find_cointegrated_pairs()`` as the
+            single canonical pair discovery path.  This class will be
+            removed in a future release.
+
         Args:
             price_data: DataFrame with symbols as columns, DatetimeIndex.
             candidate_pairs: Pre-screened pairs to test.  If *None*, all
@@ -138,6 +144,12 @@ class PairDiscoveryEngine:
         Returns:
             List of CointegratedPair results sorted by half-life.
         """
+        warnings.warn(
+            "PairDiscoveryEngine.discover() is deprecated. "
+            "Use PairTradingStrategy.find_cointegrated_pairs() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         lb = lookback or self.config.lookback_window
 
         # Cache check

@@ -14,8 +14,13 @@ logger = get_logger(__name__)
 class StrategyConfig:
     """Pair trading strategy parameters."""
     lookback_window: int = 252  # Days for cointegration
-    entry_z_score: float = 2.0  # Entry threshold
+    entry_z_score: float = 2.0  # Entry threshold (P0: raised from 1.0)
     exit_z_score: float = 0.5   # Exit threshold (was 0.0 — unreachable in float)
+    entry_z_min_spread: float = 0.50  # Min absolute spread ($) to filter micro-deviations
+    short_sizing_multiplier: float = 0.50  # Sizing multiplier for shorts in TRENDING/NEUTRAL regime (P1 fix)
+    disable_shorts_in_bull_trend: bool = False  # If True, block all shorts in TRENDING regime
+    regime_directional_filter: bool = False  # When True, regime only blocks shorts; longs allowed in TRENDING
+    trend_long_sizing: float = 0.75  # Sizing multiplier for longs in TRENDING regime (when directional filter ON)
     min_correlation: float = 0.7  # Min correlation for pairs
     max_half_life: int = 60  # Max half-life (days) for spread mean reversion
     bonferroni_correction: bool = True  # NEW: Apply Bonferroni correction to handle multiple testing
@@ -92,6 +97,8 @@ class RiskConfig:
     max_leverage: float = 2.0  # Maximum portfolio leverage (equity: 2x)
     # Drawdown Tier 1 (of 3): halt new entries. Tier 2 = kill_switch 15%. Tier 3 = strategy 20%.
     max_drawdown_pct: float = 0.10  # Portfolio drawdown hard stop (10% default)
+    max_sector_weight: float = 0.40  # Max 40% of positions in a single sector
+    spread_correlation_max: float = 0.40  # Max |ρ| between spreads (R-6)
 
 @dataclass
 class CostConfig:
@@ -108,6 +115,23 @@ class CostConfig:
     borrowing_cost_annual: float = 0.005  # Short-borrow GC rate (0.5%)
     max_slippage_bps: float = 50.0      # Hard cap on adaptive slippage
     slippage_model: str = "adaptive"    # fixed_bps | adaptive | volume_based
+
+@dataclass
+class TradingConfig:
+    """Operational constants for paper/live trading loops (F-7).
+
+    All values formerly hardcoded in main.py are centralised here
+    so they can be overridden per-environment via YAML.
+    """
+    max_loop_iterations: int = 100           # Max trading-loop iterations
+    max_consecutive_errors: int = 10         # Halt after N consecutive failures
+    data_max_age_hours: float = 99999.0      # Max staleness for OHLCV validation
+    max_allocation_pct: float = 0.20         # Max single-pair allocation (20%)
+    equity_tolerance_pct: float = 0.01       # Reconciler equity tolerance (%)
+    reconciliation_divergence_pct: float = 0.10  # Alert threshold for periodic recon
+    fallback_spread_vol: float = 0.02        # Fallback spread-vol if < 10 bars
+    min_order_quantity: float = 1.0          # Floor on order quantity (shares)
+    limit_price_offset_pct: float = 0.01     # Limit price = market * (1 - offset)
 
 @dataclass
 class ExecutionConfig:
@@ -140,7 +164,65 @@ class SecretsConfig:
     auto_load_from_env: bool = True  # Auto-load secrets from environment
     mask_ratio: float = 0.8  # Mask 80% of secret value in logs
     audit_trail_enabled: bool = True  # Enable audit logging for secret access
-    
+
+
+@dataclass
+class BlacklistConfig:
+    """Dynamic pair blacklist configuration (post-v27 Étape 3).
+
+    Tracks consecutive losses per pair and blocks re-entry for a
+    configurable cooldown period.
+    """
+    enabled: bool = True                     # Enable/disable blacklist
+    max_consecutive_losses: int = 2          # Losses before blacklisting
+    cooldown_days: int = 30                  # Calendar days of cooldown
+
+
+@dataclass
+class SignalCombinerConfig:
+    """Signal combiner / ensemble configuration (v31).
+
+    Controls the weighted combination of multiple alpha sources
+    into a single composite entry/exit score.
+    """
+    enabled: bool = True               # Enable/disable signal combiner
+    zscore_weight: float = 0.70       # Weight for z-score signal
+    momentum_weight: float = 0.30     # Weight for momentum signal
+    entry_threshold: float = 0.6      # Composite score threshold for entry
+    exit_threshold: float = 0.2       # Composite score threshold for exit
+
+
+@dataclass
+class MomentumConfig:
+    """Relative momentum overlay configuration (v31).
+
+    Computes cross-sectional relative strength between pair legs
+    and adjusts signal strength accordingly.
+    """
+    enabled: bool = True               # Enable/disable momentum overlay
+    lookback: int = 20                 # Rolling return window (bars)
+    weight: float = 0.30              # Momentum weight in composite score
+    min_strength: float = 0.30        # Floor for contra-momentum signals
+    max_boost: float = 1.0            # Cap for momentum-confirmed signals
+
+
+@dataclass
+class RegimeConfig:
+    """Market-level regime filter configuration (v30: adaptive bidirectional).
+
+    Controls the SPY-based trend & volatility regime detector.
+    v30: detects bull vs bear trends for per-side entry gating.
+    """
+    enabled: bool = True                 # Enable/disable regime filter
+    ma_fast: int = 50                    # Fast moving average (days)
+    ma_slow: int = 200                   # Slow moving average (days)
+    vol_threshold: float = 0.18          # Annualized realized vol threshold
+    vol_window: int = 20                 # Rolling window for realized vol
+    neutral_band_pct: float = 0.02       # MA spread % to distinguish NEUTRAL
+    trend_favorable_sizing: float = 0.80 # Sizing for favorable side in trends
+    neutral_sizing: float = 0.65         # Sizing for both sides in NEUTRAL
+
+
 class Settings:
     """Global configuration manager."""
     
@@ -180,6 +262,11 @@ class Settings:
         self.secrets = SecretsConfig()
         self.costs = CostConfig()
         self.scanner = ScannerConfig()
+        self.trading = TradingConfig()
+        self.regime = RegimeConfig()
+        self.momentum = MomentumConfig()
+        self.signal_combiner = SignalCombinerConfig()
+        self.pair_blacklist = BlacklistConfig()
         self.raw_config = {}
         
         if config_path.exists():
@@ -205,6 +292,10 @@ class Settings:
             initial_capital=self.execution.initial_capital
         )
         
+        # R-3: Assert risk-threshold tier coherence
+        # Tier 1 (RiskConfig) < Tier 2 (KillSwitch) < Tier 3 (Strategy internal)
+        self._assert_risk_tier_coherence()
+        
         self._initialized = True
     
     def _validate_config(self) -> None:
@@ -220,6 +311,8 @@ class Settings:
             StrategyConfigSchema(
                 entry_z_score=self.strategy.entry_z_score,
                 exit_z_score=self.strategy.exit_z_score,
+                entry_z_min_spread=self.strategy.entry_z_min_spread,
+                short_sizing_multiplier=self.strategy.short_sizing_multiplier,
                 lookback_window=self.strategy.lookback_window,
             )
             logger.debug("config_validation_passed")
@@ -229,22 +322,74 @@ class Settings:
             logger.error("config_validation_failed", error=str(exc)[:200])
             raise ValueError(f"Configuration validation failed: {exc}") from exc
 
+    def _assert_risk_tier_coherence(self) -> None:
+        """R-3: Assert that risk thresholds respect the tiered hierarchy.
+
+        Tier 1 (RiskConfig)  ≤  Tier 2 (KillSwitch via raw_config)  ≤  Tier 3 (Strategy internal).
+        Violation means a tighter tier fires after a looser one, which is
+        confusing at best and dangerous at worst.
+        """
+        tier1_dd = self.risk.max_drawdown_pct              # e.g. 0.10
+        tier3_dd = self.strategy.internal_max_drawdown_pct  # e.g. 0.20 (fraction)
+
+        # KillSwitch tier (Tier 2) lives in raw_config YAML, not in a dataclass
+        ks = (self.raw_config.get('risk', {}) or {}).get('kill_switch', {}) or {}
+        tier2_dd = ks.get('max_drawdown_pct', 0.15)        # default 0.15
+
+        # Normalise: config stores as fraction, strategy stores as fraction
+        # but if tier3 was given as >1 interpret as percent
+        if tier3_dd > 1:
+            tier3_dd = tier3_dd / 100.0
+
+        if not (tier1_dd <= tier2_dd <= tier3_dd):
+            msg = (
+                f"Risk-tier drawdown hierarchy violated: "
+                f"Tier1(RiskConfig)={tier1_dd:.2%} ≤ "
+                f"Tier2(KillSwitch)={tier2_dd:.2%} ≤ "
+                f"Tier3(Strategy)={tier3_dd:.2%} must hold."
+            )
+            logger.error("risk_tier_coherence_failed", detail=msg)
+            raise ValueError(msg)
+
+        logger.debug(
+            "risk_tier_coherence_ok",
+            tier1_dd=tier1_dd,
+            tier2_dd=tier2_dd,
+            tier3_dd=tier3_dd,
+        )
+
     def _load_yaml(self, path: Path) -> None:
         """Load configuration from YAML file."""
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             config = yaml.safe_load(f) or {}
         
         self.raw_config = config
+        
+        # F-8: Reject unknown top-level YAML sections
+        _KNOWN_SECTIONS = {
+            'market', 'strategy', 'trading_universe', 'risk', 'execution',
+            'backtest', 'secrets', 'scanner', 'costs', 'trading',
+            'portfolio', 'validation', 'monitoring', 'regime',
+            'momentum', 'signal_combiner', 'pair_blacklist',
+        }
+        unknown_sections = set(config.keys()) - _KNOWN_SECTIONS
+        if unknown_sections:
+            logger.error(
+                "unknown_top_level_config_sections",
+                unknown=sorted(unknown_sections),
+                valid=sorted(_KNOWN_SECTIONS),
+            )
+            raise ValueError(
+                f"Unknown top-level config section(s): {sorted(unknown_sections)}. "
+                f"Valid sections: {sorted(_KNOWN_SECTIONS)}"
+            )
         
         if 'strategy' in config:
             self._apply_section(self.strategy, config['strategy'], 'strategy')
         
         if 'trading_universe' in config:
-            tu = config['trading_universe']
-            if 'symbols' in tu:
-                self.trading_universe.symbols = tu['symbols']
-            if 'max_leverage' in tu:
-                self.trading_universe.max_leverage = tu['max_leverage']
+            # F-8: Use _apply_section for strict validation (was manual)
+            self._apply_section(self.trading_universe, config['trading_universe'], 'trading_universe')
         
         if 'risk' in config:
             self._apply_section(self.risk, config['risk'], 'risk')
@@ -260,6 +405,21 @@ class Settings:
 
         if 'scanner' in config:
             self._apply_section(self.scanner, config['scanner'], 'scanner')
+
+        if 'trading' in config:
+            self._apply_section(self.trading, config['trading'], 'trading')
+
+        if 'regime' in config:
+            self._apply_section(self.regime, config['regime'], 'regime')
+
+        if 'momentum' in config:
+            self._apply_section(self.momentum, config['momentum'], 'momentum')
+
+        if 'signal_combiner' in config:
+            self._apply_section(self.signal_combiner, config['signal_combiner'], 'signal_combiner')
+
+        if 'pair_blacklist' in config:
+            self._apply_section(self.pair_blacklist, config['pair_blacklist'], 'pair_blacklist')
 
     @staticmethod
     def _apply_section(target, mapping: dict, section_name: str) -> None:
@@ -310,7 +470,7 @@ class Settings:
             config_path = Path(__file__).parent / f"{self.env}.yaml"
             if config_path.exists():
                 old_symbols = self.trading_universe.symbols.copy()
-                with open(config_path, 'r') as f:
+                with open(config_path, 'r', encoding='utf-8') as f:
                     config = yaml.safe_load(f) or {}
                 
                 if 'trading_universe' in config and 'symbols' in config['trading_universe']:

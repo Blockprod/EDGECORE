@@ -2,8 +2,11 @@
 Tests for risk_engine — KillSwitch, PositionRiskManager, PortfolioRiskManager.
 """
 
+import json
 import os
 import pytest
+from unittest.mock import patch, MagicMock
+
 from risk_engine.kill_switch import KillSwitch, KillSwitchConfig, KillReason
 from risk_engine.position_risk import PositionRiskManager, PositionRiskConfig
 from risk_engine.portfolio_risk import PortfolioRiskManager, PortfolioRiskConfig
@@ -99,6 +102,69 @@ class TestKillSwitch:
         ks.reset()
         ks.activate(KillReason.DRAWDOWN, "third")
         assert len(ks.activation_history) == 2
+
+    # ── Phase 3: persistence fail-safe ────────────────────────────────
+
+    def test_save_state_failure_activates_fail_safe(self, tmp_path):
+        """If _save_state() raises (disk error), kill switch stays active."""
+        state_file = str(tmp_path / "ks_state.json")
+        ks = KillSwitch(state_file=state_file)
+
+        # Mock write to raise IOError
+        with patch.object(type(ks._state_path), "with_suffix", side_effect=IOError("disk full")):
+            with pytest.raises(IOError):
+                ks.activate(KillReason.MANUAL, "test")
+        # Fail-safe: must remain active despite exception
+        assert ks.is_active is True
+        assert "FAIL-SAFE" in ks._message
+
+    def test_load_halted_state_blocks_trading(self, tmp_path):
+        """Restart with persisted halted state → is_active=True immediately."""
+        state_file = str(tmp_path / "ks_state.json")
+        # Write a halted state file
+        (tmp_path / "ks_state.json").write_text(json.dumps({
+            "is_active": True,
+            "reason": "drawdown_breach",
+            "message": "Drawdown 16.00%",
+            "activated_at": "2026-03-03T10:00:00",
+        }))
+        # New KillSwitch restores halted state
+        ks = KillSwitch(state_file=state_file)
+        assert ks.is_active is True
+        assert ks.reason == KillReason.DRAWDOWN
+
+    def test_corrupt_state_file_activates_fail_safe(self, tmp_path):
+        """Corrupt JSON on disk → fail-safe activation."""
+        state_file = str(tmp_path / "ks_state.json")
+        (tmp_path / "ks_state.json").write_text("{{{{NOT JSON")
+        ks = KillSwitch(state_file=state_file)
+        assert ks.is_active is True
+        assert "FAIL-SAFE" in ks._message
+
+    def test_check_activates_on_data_staleness(self):
+        """DATA_STALE condition triggers kill switch."""
+        cfg = KillSwitchConfig(max_data_stale_seconds=60)
+        ks = KillSwitch(config=cfg)
+        is_active = ks.check(seconds_since_last_data=120)
+        assert is_active is True
+        assert ks.reason == KillReason.DATA_STALE
+
+    def test_check_activates_on_extreme_volatility(self):
+        """VOLATILITY_EXTREME condition triggers kill switch."""
+        cfg = KillSwitchConfig(extreme_vol_multiplier=2.0)
+        ks = KillSwitch(config=cfg)
+        is_active = ks.check(current_vol=0.10, historical_vol_mean=0.02)
+        assert is_active is True
+        assert ks.reason == KillReason.VOLATILITY_EXTREME
+
+    def test_simultaneous_drawdown_and_daily_loss(self):
+        """Both drawdown and daily loss exceed thresholds → first hit wins."""
+        cfg = KillSwitchConfig(max_drawdown_pct=0.05, max_daily_loss_pct=0.02)
+        ks = KillSwitch(config=cfg)
+        is_active = ks.check(drawdown_pct=0.10, daily_loss_pct=0.05)
+        assert is_active is True
+        # Drawdown is checked first in source → should be the reason
+        assert ks.reason == KillReason.DRAWDOWN
 
 
 # ── PositionRiskManager tests ────────────────────────────────────────────

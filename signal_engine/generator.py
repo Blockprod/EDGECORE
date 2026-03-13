@@ -25,6 +25,7 @@ from models.stationarity_monitor import StationarityMonitor
 from models.regime_detector import RegimeDetector, VolatilityRegime
 from signal_engine.zscore import ZScoreCalculator
 from signal_engine.adaptive import AdaptiveThresholdEngine
+from signal_engine.momentum import MomentumOverlay
 
 logger = get_logger(__name__)
 
@@ -91,11 +92,13 @@ class SignalGenerator:
         threshold_engine: Optional[AdaptiveThresholdEngine] = None,
         regime_detector: Optional[RegimeDetector] = None,
         stationarity_monitor: Optional[StationarityMonitor] = None,
+        momentum_overlay: Optional[MomentumOverlay] = None,
     ):
         self.zscore_calc = zscore_calc or ZScoreCalculator()
         self.threshold_engine = threshold_engine or AdaptiveThresholdEngine()
         self.regime_detector = regime_detector or RegimeDetector()
         self.stationarity_monitor = stationarity_monitor or StationarityMonitor()
+        self.momentum_overlay = momentum_overlay  # None = disabled
 
         # Internal state
         self._spread_models: Dict[str, SpreadModel] = {}
@@ -229,27 +232,55 @@ class SignalGenerator:
             strength = min(abs(current_z) / 3.0, 1.0)
 
             if current_z > thresh.entry_threshold:
+                side = "short"
+                # Apply momentum overlay if available
+                if self.momentum_overlay is not None:
+                    m_result = self.momentum_overlay.adjust_signal_strength(
+                        side=side,
+                        raw_strength=strength,
+                        prices_a=y,
+                        prices_b=x,
+                    )
+                    strength = m_result.adjusted_strength
+                    mom_tag = f" [mom:{'C' if m_result.confirms_signal else 'X'}]"
+                else:
+                    mom_tag = ""
+
                 return Signal(
                     pair_key=pair_key,
-                    side="short",
+                    side=side,
                     strength=strength,
                     z_score=current_z,
                     entry_threshold=thresh.entry_threshold,
                     exit_threshold=thresh.exit_threshold,
                     regime=regime,
-                    reason=f"Z={current_z:.2f} > {thresh.entry_threshold:.2f}",
+                    reason=f"Z={current_z:.2f} > {thresh.entry_threshold:.2f}{mom_tag}",
                 )
 
             if current_z < -thresh.entry_threshold:
+                side = "long"
+                # Apply momentum overlay if available
+                if self.momentum_overlay is not None:
+                    m_result = self.momentum_overlay.adjust_signal_strength(
+                        side=side,
+                        raw_strength=strength,
+                        prices_a=y,
+                        prices_b=x,
+                    )
+                    strength = m_result.adjusted_strength
+                    mom_tag = f" [mom:{'C' if m_result.confirms_signal else 'X'}]"
+                else:
+                    mom_tag = ""
+
                 return Signal(
                     pair_key=pair_key,
-                    side="long",
+                    side=side,
                     strength=strength,
                     z_score=current_z,
                     entry_threshold=thresh.entry_threshold,
                     exit_threshold=thresh.exit_threshold,
                     regime=regime,
-                    reason=f"Z={current_z:.2f} < -{thresh.entry_threshold:.2f}",
+                    reason=f"Z={current_z:.2f} < -{thresh.entry_threshold:.2f}{mom_tag}",
                 )
 
         return None

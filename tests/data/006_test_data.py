@@ -11,25 +11,39 @@ from data.preprocessing import resample_ohlcv, align_pairs, remove_outliers
 class TestDataLoader:
     """Test DataLoader for OHLCV and CSV loading."""
 
+    @staticmethod
+    def _make_bars(dates, opens, highs, lows, closes, volumes):
+        """Build list of mock bar objects matching ibapi BarData interface."""
+        bars = []
+        for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes):
+            bar = MagicMock()
+            bar.date = d.strftime('%Y%m%d') if hasattr(d, 'strftime') else str(d)
+            bar.open = o
+            bar.high = h
+            bar.low = l
+            bar.close = c
+            bar.volume = v
+            bars.append(bar)
+        return bars
+
     def test_load_ibkr_data_structure(self):
         """Test that loaded equity data has correct OHLCV structure."""
         loader = DataLoader()
 
-        # Mock IBKRExecutionEngine to return equity-like data
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_engine = MagicMock()
-            mock_engine_cls.return_value = mock_engine
+        dates = pd.date_range('2023-01-01', periods=3, freq='B')
+        bars = self._make_bars(
+            dates,
+            opens=[175.0, 176.0, 177.0],
+            highs=[178.0, 179.0, 180.0],
+            lows=[174.0, 175.0, 176.0],
+            closes=[176.5, 177.5, 178.5],
+            volumes=[50000000, 55000000, 60000000],
+        )
 
-            dates = pd.date_range('2023-01-01', periods=3, freq='B')
-            df = pd.DataFrame({
-                'Open': [175.0, 176.0, 177.0],
-                'High': [178.0, 179.0, 180.0],
-                'Low': [174.0, 175.0, 176.0],
-                'Close': [176.5, 177.5, 178.5],
-                'Volume': [50000000, 55000000, 60000000],
-            }, index=dates)
-            df.index.name = 'timestamp'
-            mock_engine.get_historical_data.return_value = df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            mock_gw.get_historical_data.return_value = bars
 
             result = loader.load_ibkr_data('AAPL', timeframe='1d', limit=3)
 
@@ -65,10 +79,10 @@ class TestDataLoader:
         """Test error handling when IBKR connection fails."""
         loader = DataLoader()
 
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_engine = MagicMock()
-            mock_engine_cls.return_value = mock_engine
-            mock_engine.get_historical_data.side_effect = Exception("Network error")
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            mock_gw.get_historical_data.side_effect = Exception("Network error")
 
             with pytest.raises(Exception):
                 loader.load_ibkr_data('AAPL')
@@ -77,38 +91,27 @@ class TestDataLoader:
         """Test loading data for multiple US equity tickers."""
         loader = DataLoader()
 
-        def mock_history_factory(close_price):
-            dates = pd.date_range('2023-01-03', periods=1, freq='B')
-            return pd.DataFrame({
-                'Open': [close_price * 0.99],
-                'High': [close_price * 1.01],
-                'Low': [close_price * 0.98],
-                'Close': [close_price],
-                'Volume': [50000000],
-            }, index=dates)
+        def _bars_for_price(price):
+            bar = MagicMock()
+            bar.date = '20230103'
+            bar.open = price * 0.99
+            bar.high = price * 1.01
+            bar.low = price * 0.98
+            bar.close = price
+            bar.volume = 50000000
+            return [bar]
 
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            def side_effect_factory():
-                return MagicMock()
+        prices = {'AAPL': 175.0, 'MSFT': 300.0}
 
-            def make_engine_with_data(symbol_prices):
-                engine = MagicMock()
-                def get_hist(symbol=None, **kwargs):
-                    price = symbol_prices.get(symbol, 175.0)
-                    dates = pd.date_range('2023-01-03', periods=1, freq='B')
-                    return pd.DataFrame({
-                        'Open': [price * 0.99],
-                        'High': [price * 1.01],
-                        'Low': [price * 0.98],
-                        'Close': [price],
-                        'Volume': [50000000],
-                    }, index=dates)
-                engine.get_historical_data.side_effect = get_hist
-                return engine
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
 
-            prices = {'AAPL': 175.0, 'MSFT': 300.0}
-            mock_engine = make_engine_with_data(prices)
-            mock_engine_cls.return_value = mock_engine
+            def get_hist(symbol=None, **kwargs):
+                price = prices.get(symbol, 175.0)
+                return _bars_for_price(price)
+
+            mock_gw.get_historical_data.side_effect = get_hist
 
             aapl_data = loader.load_ibkr_data('AAPL', limit=1)
             msft_data = loader.load_ibkr_data('MSFT', limit=1)

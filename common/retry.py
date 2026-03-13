@@ -132,7 +132,7 @@ def retry_with_backoff(
                         logger.error(
                             "retry_fatal_exception",
                             func_name=func.__name__,
-                            exception=type(e).__name__,
+                            exc_type=type(e).__name__,
                             message=str(e),
                             attempt=attempt
                         )
@@ -159,7 +159,7 @@ def retry_with_backoff(
                         attempt=attempt,
                         max_attempts=policy.max_attempts,
                         delay_seconds=delay,
-                        exception=type(e).__name__,
+                        exc_type=type(e).__name__,
                         message=str(e)
                     )
                     

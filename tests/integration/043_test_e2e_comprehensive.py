@@ -25,6 +25,14 @@ from monitoring.dashboard import DashboardGenerator
 from monitoring.api import create_app
 
 
+@pytest.fixture(autouse=True)
+def _reset_ibkr_client_ids():
+    """Clear IBKRExecutionEngine client_id registry between tests."""
+    IBKRExecutionEngine._active_client_ids.clear()
+    yield
+    IBKRExecutionEngine._active_client_ids.clear()
+
+
 class TestFullTradingCycle:
     """Test complete trading cycle from data to execution."""
 

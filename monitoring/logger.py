@@ -43,7 +43,6 @@ def setup_logger(name: str, log_level: str = "INFO", log_dir: str = "logs") -> s
             structlog.stdlib.PositionalArgumentsFormatter(),
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
             structlog.processors.UnicodeDecoder(),
             structlog.processors.JSONRenderer(),
         ],

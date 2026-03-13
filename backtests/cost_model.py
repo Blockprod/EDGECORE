@@ -24,12 +24,15 @@ class CostModelConfig:
     """Trading cost parameters for US equities via IBKR."""
     maker_fee_bps: float = 1.5          # IBKR avg execution cost
     taker_fee_bps: float = 2.0          # Taker + exchange fees
-    base_slippage_bps: float = 2.0      # Large-cap average slippage
+    base_slippage_bps: float = 2.0      # Large-cap average bid-ask spread
     borrowing_cost_annual_pct: float = 0.5  # General collateral ETB rate
     include_borrowing: bool = True
-    slippage_model: str = "volume_adaptive"  # "fixed" or "volume_adaptive"
+    slippage_model: str = "almgren_chriss"  # "fixed", "volume_adaptive", or "almgren_chriss"
     include_funding: bool = False         # Not applicable for equities
     funding_rate_daily_bps: float = 0.0   # Not used for equities (kept for API compat)
+    # Almgren-Chriss market impact parameters
+    market_impact_eta: float = 0.05      # Temporary impact coefficient (calibrated v32j)
+    execution_delay_days: float = 0.01   # Execution delay in trading days (calibrated v32j)
 
 
 class CostModel:
@@ -53,7 +56,8 @@ class CostModel:
     # ------------------------------------------------------------------
 
     def execution_cost_one_leg(
-        self, notional: float, volume_24h: float = 1e7
+        self, notional: float, volume_24h: float = 1e7,
+        sigma_daily: float = 0.02,
     ) -> float:
         """Cost for ONE transaction (one leg, one direction).
 
@@ -63,9 +67,11 @@ class CostModel:
                 Default is $10M – a conservative estimate for mid-cap
                 assets.  Callers should pass real volume data whenever
                 available.
+            sigma_daily: Daily return volatility of the symbol (decimal).
+                Default is 0.02 (2%).
         """
         fee = self.config.taker_fee_bps / 10_000
-        slip = self._slippage(notional, volume_24h)
+        slip = self._slippage(notional, volume_24h, sigma_daily)
         return notional * (fee + slip)
 
     def entry_cost(
@@ -73,11 +79,13 @@ class CostModel:
         notional_per_leg: float,
         volume_24h_sym1: float = 1e7,
         volume_24h_sym2: float = 1e7,
+        sigma_sym1: float = 0.02,
+        sigma_sym2: float = 0.02,
     ) -> float:
         """Cost to ENTER a pair trade (2 legs)."""
         return (
-            self.execution_cost_one_leg(notional_per_leg, volume_24h_sym1)
-            + self.execution_cost_one_leg(notional_per_leg, volume_24h_sym2)
+            self.execution_cost_one_leg(notional_per_leg, volume_24h_sym1, sigma_sym1)
+            + self.execution_cost_one_leg(notional_per_leg, volume_24h_sym2, sigma_sym2)
         )
 
     def exit_cost(
@@ -85,9 +93,11 @@ class CostModel:
         notional_per_leg: float,
         volume_24h_sym1: float = 1e7,
         volume_24h_sym2: float = 1e7,
+        sigma_sym1: float = 0.02,
+        sigma_sym2: float = 0.02,
     ) -> float:
         """Cost to EXIT a pair trade (2 legs)."""
-        return self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
+        return self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2, sigma_sym1, sigma_sym2)
 
     def holding_cost(
         self, notional_short_leg: float, holding_days: int
@@ -138,18 +148,42 @@ class CostModel:
     # Internal
     # ------------------------------------------------------------------
 
-    def _slippage(self, order_size: float, volume_24h: float) -> float:
-        """Return slippage as a decimal fraction (not bps)."""
+    def _slippage(self, order_size: float, volume_24h: float,
+                   sigma_daily: float = 0.02) -> float:
+        """Return slippage as a decimal fraction (not bps).
+
+        Three models available:
+        - "fixed": flat base_slippage_bps
+        - "volume_adaptive": legacy linear model
+        - "almgren_chriss": 3-component institutional model
+        """
         if self.config.slippage_model == "fixed":
             return self.config.base_slippage_bps / 10_000
 
-        # Volume-adaptive model: base + market-impact component
         if volume_24h <= 0:
-            return 50.0 / 10_000  # worst-case: 50 bps
+            return 50.0 / 10_000
 
+        if self.config.slippage_model == "volume_adaptive":
+            # Legacy linear model
+            participation = order_size / volume_24h
+            impact_bps = self.config.base_slippage_bps + 100.0 * participation
+            return min(impact_bps, 100.0) / 10_000
+
+        # Almgren-Chriss 3-component model
+        # 1. Spread (bid-ask)
+        spread = self.config.base_slippage_bps / 10_000
+
+        # 2. Temporary market impact: η × σ × √(Q/ADV)
+        eta = self.config.market_impact_eta
         participation = order_size / volume_24h
-        impact_bps = self.config.base_slippage_bps + 100.0 * participation
-        return min(impact_bps, 100.0) / 10_000  # cap at 100 bps
+        market_impact = eta * sigma_daily * (participation ** 0.5)
+
+        # 3. Timing cost: σ × √(T_exec / 252)
+        t_exec = self.config.execution_delay_days
+        timing_cost = sigma_daily * (t_exec / 252) ** 0.5
+
+        total = spread + market_impact + timing_cost
+        return min(total, 100.0 / 10_000)  # cap at 100 bps
 
 
 # ======================================================================
@@ -171,17 +205,20 @@ def equity_cost_config() -> CostModelConfig:
       - General collateral average: ~0.5% annualised
       - Hard-to-borrow excluded by pre-screening
 
-    Slippage:
-      - S&P 500 large-cap: ~1-2 bps
-      - Mid-cap: ~3-5 bps
+    Slippage (Almgren-Chriss):
+      - Spread: ~2 bps (mega-cap bid-ask)
+      - Market impact: η=0.10, σ-dependent
+      - Timing cost: half-day execution delay
     """
     return CostModelConfig(
         maker_fee_bps=1.5,               # IBKR execution ~1.5 bps avg
         taker_fee_bps=2.0,               # Taker + exchange fees
-        base_slippage_bps=2.0,           # Large-cap average
+        base_slippage_bps=2.0,           # Large-cap bid-ask spread
         borrowing_cost_annual_pct=0.5,   # General collateral ETB rate
         include_borrowing=True,
-        slippage_model="volume_adaptive",
+        slippage_model="almgren_chriss", # Institutional 3-component model
         funding_rate_daily_bps=0.0,      # Not applicable for equities
         include_funding=False,
+        market_impact_eta=0.10,          # Temporary impact (mega-caps)
+        execution_delay_days=0.5,        # Half-day execution
     )

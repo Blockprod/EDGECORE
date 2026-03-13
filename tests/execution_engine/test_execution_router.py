@@ -2,6 +2,8 @@
 Tests for ExecutionRouter — verifies order routing across modes.
 """
 
+import time
+
 import pytest
 from execution_engine.router import (
     ExecutionRouter,
@@ -9,6 +11,7 @@ from execution_engine.router import (
     TradeOrder,
     TradeExecution,
 )
+from execution.rate_limiter import TokenBucketRateLimiter
 
 
 @pytest.fixture
@@ -137,3 +140,59 @@ class TestMultipleOrders:
         for _ in range(5):
             backtest_router.submit_order(sample_order)
         assert len(backtest_router._execution_log) == 5
+
+# ── Phase 3: rate limiter, paper exclusion, live path ─────────────────
+
+
+class TestRateLimiter:
+    """Tests for the TokenBucketRateLimiter integrated in the router."""
+
+    def test_burst_capacity(self):
+        """10 tokens available immediately (burst)."""
+        limiter = TokenBucketRateLimiter(rate=45, burst=10)
+        for _ in range(10):
+            assert limiter.try_acquire() is True
+        # 11th should fail (no time for refill)
+        assert limiter.try_acquire() is False
+
+    def test_throttle_beyond_rate(self):
+        """After burst, acquire blocks for ~1/rate seconds."""
+        limiter = TokenBucketRateLimiter(rate=45, burst=5)
+        for _ in range(5):
+            limiter.acquire()
+        t0 = time.monotonic()
+        limiter.acquire()
+        elapsed = time.monotonic() - t0
+        # Should wait approximately 1/45 ≈ 22ms
+        assert elapsed >= 0.015, f"Expected throttle, got {elapsed*1000:.1f}ms"
+
+    def test_timeout_raises(self):
+        """Exhausted bucket + tiny timeout → RuntimeError."""
+        limiter = TokenBucketRateLimiter(rate=1, burst=1)
+        limiter.acquire()  # consume the only token
+        with pytest.raises(RuntimeError, match="Rate limiter timeout"):
+            limiter.acquire(timeout=0.01)
+
+    def test_router_has_rate_limiter(self):
+        """Router initializes with a TokenBucketRateLimiter."""
+        router = ExecutionRouter(mode=ExecutionMode.PAPER)
+        assert isinstance(router._rate_limiter, TokenBucketRateLimiter)
+        assert router._rate_limiter.rate == 45
+
+
+class TestPaperExclusion:
+    """Paper mode must NOT touch IBKR engine."""
+
+    def test_paper_mode_ibkr_engine_stays_none(self, paper_router, sample_order):
+        """After paper fill, _ibkr_engine must remain None."""
+        paper_router.submit_order(sample_order)
+        assert paper_router._ibkr_engine is None
+
+
+class TestUnknownMode:
+    def test_unknown_mode_raises(self, sample_order):
+        """Invalid mode raises ValueError on submit."""
+        router = ExecutionRouter(mode=ExecutionMode.PAPER)
+        router._mode = "INVALID"
+        with pytest.raises(ValueError, match="Unknown mode"):
+            router.submit_order(sample_order)

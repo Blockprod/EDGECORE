@@ -228,7 +228,7 @@ class TestConfigCleanup:
 
     def _load_yaml(self, name):
         path = Path(__file__).parent.parent.parent / "config" / name
-        with open(path) as f:
+        with open(path, encoding='utf-8') as f:
             return yaml.safe_load(f)
 
     def test_dev_no_ftt(self):

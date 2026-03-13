@@ -1,19 +1,33 @@
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date, datetime, timedelta
+from multiprocessing import cpu_count
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from typing import List, Dict, Tuple, Optional
-from datetime import datetime, date, timedelta
-from pathlib import Path
-from structlog import get_logger
-from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import cpu_count
-
-from strategies.base import BaseStrategy, Signal
-from models.cointegration import engle_granger_test, half_life_mean_reversion, newey_west_consensus as _newey_west_consensus, verify_integration_order
-from models.spread import SpreadModel
-from config.settings import get_settings
 from statsmodels.tsa.stattools import adfuller
+from structlog import get_logger
+
+from config.settings import get_settings
+from models.cointegration import engle_granger_test, half_life_mean_reversion, verify_integration_order
+from models.cointegration import newey_west_consensus as _newey_west_consensus
+from models.spread import SpreadModel
+from signal_engine.combiner import SignalCombiner, SignalSource
+from signal_engine.cross_sectional import CrossSectionalMomentum
+from signal_engine.earnings_signal import EarningsSurpriseSignal
+from signal_engine.momentum import MomentumOverlay
+from signal_engine.options_flow import OptionsFlowSignal
+from signal_engine.ou_signal import OUSignalGenerator
+from signal_engine.sentiment import SentimentSignal
+from signal_engine.vol_signal import VolatilityRegimeSignal
+from strategies.base import BaseStrategy, Signal
 
 logger = get_logger(__name__)
+
+
+# Type alias for injectable clock function (REPR-1)
+ClockFn = Callable[[], datetime]
 
 class PairTradingStrategy(BaseStrategy):
     """
@@ -28,6 +42,28 @@ class PairTradingStrategy(BaseStrategy):
     """
 
     @staticmethod
+    def is_cointegration_stable(sym1, sym2, price_data, windows=[60, 120, 180], threshold=0.8):
+        """
+        Check cointegration stability for a pair over multiple rolling windows.
+        Returns True if cointegration holds in >= threshold fraction of windows.
+        """
+        from models.cointegration import engle_granger_test
+        stable_count = 0
+        total = 0
+        for win in windows:
+            if len(price_data[sym1]) < win or len(price_data[sym2]) < win:
+                continue
+            y = price_data[sym1].tail(win)
+            x = price_data[sym2].tail(win)
+            result = engle_granger_test(y, x, apply_bonferroni=False, check_integration_order=False)
+            if result.get('is_cointegrated', False):
+                stable_count += 1
+            total += 1
+        if total == 0:
+            return False
+        return stable_count / total >= threshold
+
+    @staticmethod
     def _cfg_val(config, name: str, default):
         """Safe config accessor – returns *default* when the attribute is absent
         or is a mock auto-attribute (MagicMock)."""
@@ -36,12 +72,15 @@ class PairTradingStrategy(BaseStrategy):
             return val
         return default
     
-    def __init__(self):
+    def __init__(self, clock: Optional[ClockFn] = None):
         self.config = get_settings().strategy
         self.spread_models: Dict[str, SpreadModel] = {}
         self.active_trades: Dict[str, dict] = {}
         self.historical_spreads: Dict[str, pd.Series] = {}
         self.use_cache: bool = True
+
+        # REPR-1: Injectable clock — datetime.now in live, bar timestamp in backtest
+        self._clock: ClockFn = clock or datetime.now
         
         # Initialize cache directory
         self.cache_dir = Path("cache/pairs")
@@ -50,13 +89,13 @@ class PairTradingStrategy(BaseStrategy):
         _c = self.config  # shorthand
 
         # ── Sprint components ──
-        from models.regime_detector import RegimeDetector
-        from models.hedge_ratio_tracker import HedgeRatioTracker
-        from models.stationarity_monitor import StationarityMonitor
-        from data.liquidity_filter import LiquidityFilter
         from data.delisting_guard import DelistingGuard
-        from execution.trailing_stop import TrailingStopManager
+        from data.liquidity_filter import LiquidityFilter
         from execution.concentration_limits import ConcentrationLimitManager
+        from execution.trailing_stop import TrailingStopManager
+        from models.hedge_ratio_tracker import HedgeRatioTracker
+        from models.regime_detector import RegimeDetector
+        from models.stationarity_monitor import StationarityMonitor
 
         self.regime_detector = RegimeDetector(
             lookback_window=self._cfg_val(_c, 'regime_lookback_window', 20),
@@ -81,6 +120,58 @@ class PairTradingStrategy(BaseStrategy):
         from models.model_retraining import ModelRetrainingManager
         self.model_retrainer = ModelRetrainingManager()
         self.pair_regime_states: Dict[str, object] = {}
+
+        # ── Momentum overlay (v31) ──
+        try:
+            _mom_cfg = get_settings().momentum
+            self._momentum_enabled = bool(getattr(_mom_cfg, 'enabled', False))
+            if self._momentum_enabled:
+                _lb = getattr(_mom_cfg, 'lookback', 20)
+                _wt = getattr(_mom_cfg, 'weight', 0.30)
+                _ms = getattr(_mom_cfg, 'min_strength', 0.30)
+                _mb = getattr(_mom_cfg, 'max_boost', 1.0)
+                # Guard against mocked / non-numeric config values
+                if all(isinstance(v, (int, float)) for v in (_lb, _wt, _ms, _mb)):
+                    self._momentum = MomentumOverlay(
+                        lookback=int(_lb), weight=float(_wt),
+                        min_strength=float(_ms), max_boost=float(_mb),
+                    )
+                else:
+                    self._momentum_enabled = False
+                    self._momentum = None
+            else:
+                self._momentum = None
+        except Exception:
+            self._momentum_enabled = False
+            self._momentum = None
+
+        # ── Phase 1 signal sources (v32) ──
+        self._ou_signal = OUSignalGenerator(lookback=60)
+        self._cross_sectional = CrossSectionalMomentum()
+        self._vol_signal = VolatilityRegimeSignal()
+
+        # ── Phase 4 signal sources (v37) ──
+        self._earnings_signal = EarningsSurpriseSignal()
+        self._options_flow = OptionsFlowSignal()
+        self._sentiment_signal = SentimentSignal()
+
+        # ── SignalCombiner with all 9 sources ──
+        _sources = [
+            SignalSource("zscore", weight=0.35),
+            SignalSource("momentum", weight=0.08, enabled=self._momentum_enabled),
+            SignalSource("ou", weight=0.15),
+            SignalSource("vol_regime", weight=0.07),
+            SignalSource("cross_sectional", weight=0.05),
+            SignalSource("intraday_mr", weight=0.05),
+            SignalSource("earnings", weight=0.10),
+            SignalSource("options_flow", weight=0.07),
+            SignalSource("sentiment", weight=0.08),
+        ]
+        self._signal_combiner = SignalCombiner(
+            sources=_sources,
+            entry_threshold=0.30,
+            exit_threshold=0.12,
+        )
 
         # ── Leg-correlation monitoring state ──
         self._excluded_pairs_correlation: set = set()
@@ -172,7 +263,7 @@ class PairTradingStrategy(BaseStrategy):
 
         if not stable:
             self._excluded_pairs_correlation.add(pair_key)
-            self._correlation_exclusions[pair_key] = datetime.now()
+            self._correlation_exclusions[pair_key] = self._clock()
 
         return stable
 
@@ -255,7 +346,7 @@ class PairTradingStrategy(BaseStrategy):
         
         if cache_file.exists():
             mod_time = datetime.fromtimestamp(cache_file.stat().st_mtime)
-            age = datetime.now() - mod_time
+            age = self._clock() - mod_time
             
             if age < timedelta(hours=max_age_hours):
                 try:
@@ -586,7 +677,23 @@ class PairTradingStrategy(BaseStrategy):
             correction="BH-FDR-per-sector",
         )
         
-        return cointegrated_pairs
+        # ── Cointegration stability filter ──────────────────────────
+        # Only keep pairs that are stable across rolling windows
+        stability_windows = [60, 120, 180]
+        stability_threshold = 0.8
+        stable_pairs = []
+        for sym1, sym2, pvalue, hl in cointegrated_pairs:
+            if self.is_cointegration_stable(sym1, sym2, price_data, windows=stability_windows, threshold=stability_threshold):
+                stable_pairs.append((sym1, sym2, pvalue, hl))
+            else:
+                logger.info("pair_stability_failed", pair=f"{sym1}_{sym2}", windows=stability_windows, threshold=stability_threshold)
+        logger.info(
+            "stability_filter_applied",
+            pre_stability=len(cointegrated_pairs),
+            post_stability=len(stable_pairs),
+            rejected=len(cointegrated_pairs) - len(stable_pairs),
+        )
+        return stable_pairs
     
     def find_cointegrated_pairs(
         self,
@@ -665,7 +772,7 @@ class PairTradingStrategy(BaseStrategy):
         # enabled in config, filter pairs that don't hold on weekly.
         weekly_conf = self._cfg_val(self.config, 'weekly_confirmation', False)
         if weekly_conf and weekly_prices is not None and not weekly_prices.empty:
-            from data.multi_timeframe import MultiTimeframeEngine, MTFConfig
+            from data.multi_timeframe import MTFConfig, MultiTimeframeEngine
             mtf = MultiTimeframeEngine(MTFConfig(
                 weekly_coint_weight=self._cfg_val(self.config, 'weekly_coint_weight', 0.40),
                 weekly_max_pvalue=self._cfg_val(self.config, 'weekly_max_pvalue', 0.10),
@@ -770,6 +877,22 @@ class PairTradingStrategy(BaseStrategy):
         else:
             cointegrated = self.find_cointegrated_pairs(market_data, self.config.lookback_window)
         
+        # ── Phase 1: Update cross-sectional rankings once per bar ──
+        _csm = getattr(self, '_cross_sectional', None)
+        if _csm is not None:
+            _csm.update_rankings(market_data)
+
+        # ── Phase 4: Update advanced signal generators once per bar ──
+        _earn = getattr(self, '_earnings_signal', None)
+        if _earn is not None:
+            _earn.update(market_data)
+        _opt = getattr(self, '_options_flow', None)
+        if _opt is not None:
+            _opt.update(market_data)
+        _sent = getattr(self, '_sentiment_signal', None)
+        if _sent is not None:
+            _sent.update(market_data)
+        
         for sym1, sym2, pvalue, hl in cointegrated:
             pair_key = f"{sym1}_{sym2}"
 
@@ -854,8 +977,40 @@ class PairTradingStrategy(BaseStrategy):
                 # Current Z-score
                 current_z = z_score.iloc[-1]
 
+                # RISK-3: Update regime detector with latest spread data
+                try:
+                    regime_state = self.regime_detector.update(
+                        spread=float(current_z),
+                        date=self._clock(),
+                    )
+                except Exception:
+                    regime_state = None
+
+                # RISK-2: Trailing stop check for active positions
+                if pair_key in self.active_trades:
+                    ts_exit, ts_reason = self.trailing_stop_manager.should_exit_on_trailing_stop(
+                        symbol_pair=pair_key,
+                        current_z=float(current_z),
+                    )
+                    if ts_exit:
+                        signals.append(Signal(
+                            symbol_pair=pair_key,
+                            side="exit",
+                            strength=1.0,
+                            reason=ts_reason or "Trailing stop triggered",
+                        ))
+                        del self.active_trades[pair_key]
+                        continue
+
                 # Internal risk limits check for new entries
                 risk_ok, risk_reason = self._check_internal_risk_limits()
+
+                # RISK-3: Widen entry threshold in volatile regimes
+                effective_entry_z = self.config.entry_z_score
+                if regime_state is not None:
+                    regime_label = getattr(regime_state, 'regime', None) or getattr(regime_state, 'current_regime', None)
+                    if regime_label is not None and str(regime_label).lower() in ('crisis', 'high_volatility', 'volatile'):
+                        effective_entry_z = self.config.entry_z_score * 1.5
 
                 # ── Weekly z-score gate ──────────────────────────────
                 # Block entry if weekly z-score doesn't confirm the
@@ -873,33 +1028,138 @@ class PairTradingStrategy(BaseStrategy):
                         if _wz is not None and abs(_wz) < weekly_zgate:
                             weekly_gate_ok = False
                 
-                # Entry signals
-                if risk_ok and weekly_gate_ok and current_z > self.config.entry_z_score and pair_key not in self.active_trades:
+                # P0 fix: Min-spread filter — reject micro-deviations
+                _min_spread = getattr(self.config, 'entry_z_min_spread', 0.0)
+                _abs_spread = abs(float(spread.iloc[-1])) if len(spread) > 0 else 0.0
+                _spread_ok = _abs_spread >= _min_spread if _min_spread > 0 else True
+
+                # ── Momentum overlay gate (v31) ──
+                _mom_result = None
+                _mom_gate = True  # default: allow entry
+                _mom_score = 0.0
+                if getattr(self, '_momentum_enabled', False) and self._momentum is not None:
+                    _raw_str = min(abs(current_z) / 3.0, 1.0)
+                    if current_z > effective_entry_z and pair_key not in self.active_trades:
+                        _mom_result = self._momentum.adjust_signal_strength(
+                            side="short", raw_strength=_raw_str,
+                            prices_a=y, prices_b=x,
+                        )
+                        # Gate: block entry if momentum strongly contradicts
+                        if not _mom_result.confirms_signal and _mom_result.adjusted_strength <= self._momentum.min_strength:
+                            _mom_gate = False
+                        # Compute momentum score for combiner: RS > 0 means A outperforming
+                        _rs = self._momentum.compute_relative_strength(y, x)
+                        _mom_score = float(np.clip(_rs * 5.0, -1.0, 1.0))
+                    elif current_z < -effective_entry_z and pair_key not in self.active_trades:
+                        _mom_result = self._momentum.adjust_signal_strength(
+                            side="long", raw_strength=_raw_str,
+                            prices_a=y, prices_b=x,
+                        )
+                        if not _mom_result.confirms_signal and _mom_result.adjusted_strength <= self._momentum.min_strength:
+                            _mom_gate = False
+                        _rs = self._momentum.compute_relative_strength(y, x)
+                        _mom_score = float(np.clip(_rs * 5.0, -1.0, 1.0))
+
+                # ── Phase 1 + Phase 4: Multi-signal combiner ──
+                _ou_gen = getattr(self, '_ou_signal', None)
+                _vol_gen = getattr(self, '_vol_signal', None)
+                _csm_gen = getattr(self, '_cross_sectional', None)
+                _earn_gen = getattr(self, '_earnings_signal', None)
+                _opt_gen = getattr(self, '_options_flow', None)
+                _sent_gen = getattr(self, '_sentiment_signal', None)
+                _combiner = getattr(self, '_signal_combiner', None)
+                _composite = None
+
+                if _combiner is not None:
+                    _z_norm = float(np.clip(-current_z / (effective_entry_z * 2), -1.0, 1.0))
+                    _ou_score = _ou_gen.compute_score(spread) if _ou_gen else 0.0
+                    _vol_raw = _vol_gen.compute_score(spread) if _vol_gen else 0.0
+                    _z_dir = -1.0 if current_z > 0 else (1.0 if current_z < 0 else 0.0)
+                    _vol_score = _vol_raw * _z_dir
+                    _cs_raw = _csm_gen.compute_score(sym1, sym2) if _csm_gen else 0.0
+                    _cs_score = -_cs_raw
+                    _earn_score = _earn_gen.compute_score(sym1, sym2) if _earn_gen else 0.0
+                    _opt_score = _opt_gen.compute_score(sym1, sym2) if _opt_gen else 0.0
+                    _sent_score = _sent_gen.compute_score(sym1, sym2) if _sent_gen else 0.0
+
+                    _combo_scores = {
+                        "zscore": _z_norm,
+                        "ou": _ou_score,
+                        "vol_regime": _vol_score,
+                        "cross_sectional": _cs_score,
+                        "intraday_mr": _ou_score * 0.5 + _z_norm * 0.5,
+                        "earnings": _earn_score,
+                        "options_flow": _opt_score,
+                        "sentiment": _sent_score,
+                    }
+                    if getattr(self, '_momentum_enabled', False):
+                        _combo_scores["momentum"] = _mom_score
+
+                    _composite = _combiner.combine(
+                        _combo_scores,
+                        in_position=pair_key in self.active_trades,
+                    )
+                    self._last_composite = _composite
+
+                # Entry signals (z-score threshold + combiner confirmation)
+                if risk_ok and weekly_gate_ok and _spread_ok and _mom_gate and current_z > effective_entry_z and pair_key not in self.active_trades:
+                    if _composite is not None and _composite.confidence > 0.3:
+                        _entry_str = abs(_composite.composite_score)
+                    else:
+                        _entry_str = min(abs(current_z) / 3.0, 1.0)
+                    _combo_tag = f" [C:{_composite.composite_score:.2f}]" if _composite else ""
+                    _mom_tag = ""
+                    if _mom_result:
+                        _mom_tag = " [mom:C]" if _mom_result.confirms_signal else " [mom:X]"
                     signals.append(Signal(
                         symbol_pair=pair_key,
                         side="short",
-                        strength=min(abs(current_z) / 3.0, 1.0),
-                        reason=f"Z-score={current_z:.2f} > entry threshold"
+                        strength=_entry_str,
+                        reason=f"Z-score={current_z:.2f} > entry threshold{_mom_tag}{_combo_tag}"
                     ))
                     self.active_trades[pair_key] = {
                         'entry_z': current_z,
-                        'entry_time': datetime.now(),
+                        'entry_time': self._clock(),
                         'side': 'short'
                     }
+                    # RISK-2: Register position with trailing stop manager
+                    self.trailing_stop_manager.add_position(
+                        symbol_pair=pair_key,
+                        side='short',
+                        entry_z=float(current_z),
+                        entry_spread=float(spread.iloc[-1]),
+                        entry_time=pd.Timestamp(self._clock()),
+                    )
                     self._record_trade()
                 
-                elif risk_ok and weekly_gate_ok and current_z < -self.config.entry_z_score and pair_key not in self.active_trades:
+                elif risk_ok and weekly_gate_ok and _spread_ok and _mom_gate and current_z < -effective_entry_z and pair_key not in self.active_trades:
+                    if _composite is not None and _composite.confidence > 0.3:
+                        _entry_str = abs(_composite.composite_score)
+                    else:
+                        _entry_str = min(abs(current_z) / 3.0, 1.0)
+                    _combo_tag = f" [C:{_composite.composite_score:.2f}]" if _composite else ""
+                    _mom_tag = ""
+                    if _mom_result:
+                        _mom_tag = " [mom:C]" if _mom_result.confirms_signal else " [mom:X]"
                     signals.append(Signal(
                         symbol_pair=pair_key,
                         side="long",
-                        strength=min(abs(current_z) / 3.0, 1.0),
-                        reason=f"Z-score={current_z:.2f} < -entry threshold"
+                        strength=_entry_str,
+                        reason=f"Z-score={current_z:.2f} < -entry threshold{_mom_tag}{_combo_tag}"
                     ))
                     self.active_trades[pair_key] = {
                         'entry_z': current_z,
-                        'entry_time': datetime.now(),
+                        'entry_time': self._clock(),
                         'side': 'long'
                     }
+                    # RISK-2: Register position with trailing stop manager
+                    self.trailing_stop_manager.add_position(
+                        symbol_pair=pair_key,
+                        side='long',
+                        entry_z=float(current_z),
+                        entry_spread=float(spread.iloc[-1]),
+                        entry_time=pd.Timestamp(self._clock()),
+                    )
                     self._record_trade()
                 
                 # Exit signals (mean reversion)
@@ -913,6 +1173,9 @@ class PairTradingStrategy(BaseStrategy):
                             reason=f"Mean reversion at Z={current_z:.2f}"
                         ))
                         del self.active_trades[pair_key]
+                        # Clean up trailing stop state
+                        if pair_key in self.trailing_stop_manager.positions:
+                            del self.trailing_stop_manager.positions[pair_key]
                 
                 logger.info(
                     "pair_signal_generated",

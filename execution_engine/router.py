@@ -22,6 +22,8 @@ from typing import Dict, List, Optional
 
 from structlog import get_logger
 
+from execution.rate_limiter import TokenBucketRateLimiter
+
 logger = get_logger(__name__)
 
 
@@ -88,6 +90,10 @@ class ExecutionRouter:
         # Lazy-loaded backends
         self._paper_engine = None
         self._ibkr_engine = None
+
+        # IBKR API rate limiter — 45 req/s sustained, 10 burst
+        # (hard cap is 50/s; exceeding triggers disconnect)
+        self._rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
 
         logger.info("execution_router_initialized", mode=mode.value)
 
@@ -216,6 +222,9 @@ class ExecutionRouter:
             order_type=order.order_type.upper(),
         )
 
+        # Rate-limit before hitting IBKR API (50 req/s hard cap)
+        self._rate_limiter.acquire()
+
         # Submit through IBKR engine
         order_id = self._ibkr_engine.submit_order(ibkr_order)
 
@@ -288,3 +297,22 @@ class ExecutionRouter:
     def total_commissions(self) -> float:
         """Sum of all commissions paid."""
         return sum(e.commission for e in self._execution_log)
+
+    def get_account_balance(self) -> float:
+        """Return current account balance.
+
+        In paper mode, returns initial capital minus commissions
+        (a rough approximation). In live mode, queries IBKR.
+        """
+        if self._mode == ExecutionMode.LIVE and self._ibkr_engine is not None:
+            try:
+                return self._ibkr_engine.get_account_balance()
+            except Exception:
+                pass
+        if self._paper_engine is not None:
+            try:
+                return self._paper_engine.get_account_balance()
+            except Exception:
+                pass
+        # Fallback: no engine initialized yet
+        return 0.0

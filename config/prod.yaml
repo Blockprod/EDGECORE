@@ -16,7 +16,7 @@ market:
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
-  exit_z_score: 0.0
+  exit_z_score: 0.5                 # R-8 fix: was 0.0 → whipsaw at mean-crossing
   min_correlation: 0.7
   max_half_life: 60
   use_kalman: true
@@ -150,3 +150,16 @@ risk:
   max_daily_loss_pct: 0.015       # 1.5% daily drawdown circuit breaker
   max_leverage: 1.5
   max_drawdown_pct: 0.08          # 8% portfolio drawdown hard stop
+  spread_correlation_max: 0.40    # R-6: max |ρ| between spreads
+
+# Operational constants (F-7)
+trading:
+  max_loop_iterations: 999999       # Production: run indefinitely
+  max_consecutive_errors: 5         # Stricter than dev (was 10)
+  data_max_age_hours: 2.0           # Reject data older than 2h in prod
+  max_allocation_pct: 0.15          # 15% per pair (tighter than dev 20%)
+  equity_tolerance_pct: 0.02        # 0.02% reconciler tolerance
+  reconciliation_divergence_pct: 0.05  # Stricter divergence alert
+  fallback_spread_vol: 0.02
+  min_order_quantity: 1.0
+  limit_price_offset_pct: 0.005     # 0.5% offset (tighter in prod)

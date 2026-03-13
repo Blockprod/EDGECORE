@@ -18,8 +18,8 @@ over a rolling window.  If **any** correlation exceeds the threshold
     ========================  ============
     max(|ρ| with existing)     Decision
     ========================  ============
-    ≤ 0.60                     ALLOW entry
-    > 0.60                     REJECT entry
+    ≤ 0.40                     ALLOW entry
+    > 0.40                     REJECT entry
     ========================  ============
 
 Expected Impact: Ensures genuine portfolio diversification.  Prevents
@@ -40,9 +40,10 @@ logger = get_logger(__name__)
 class SpreadCorrelationConfig:
     """Configuration for the spread correlation guard."""
 
-    max_correlation: float = 0.70
+    max_correlation: float = 0.40
     """Reject new positions whose spread correlates above this with any
-    existing active spread (absolute value)."""
+    existing active spread (absolute value).  Lowered from 0.70 to 0.40
+    for genuine portfolio diversification (R-6)."""
 
     min_overlap_bars: int = 30
     """Minimum number of overlapping observations required to compute

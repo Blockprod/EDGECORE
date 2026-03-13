@@ -72,40 +72,85 @@ def _normalize_sector(value: Union[str, Sector]) -> str:
 # Canonical sector mapping for the default US large-cap universe.
 # Uses plain strings — compatible with both run_backtest.py and Sector enum.
 DEFAULT_SECTOR_MAP: Dict[str, str] = {
-    # Technology
+    # Technology (Mega Cap)
     "AAPL": "technology", "MSFT": "technology",
     "GOOGL": "technology", "META": "technology",
     "NVDA": "technology", "AMD": "technology",
     "INTC": "technology", "AVGO": "technology",
     "CRM": "technology", "ADBE": "technology",
-    # Financials
+    # Technology / Semiconductors (Mid-Cap)
+    "MRVL": "technology", "ON": "technology",
+    "MCHP": "technology", "QCOM": "technology",
+    "TXN": "technology", "AMAT": "technology",
+    "LRCX": "technology", "KLAC": "technology",
+    # Financials (Mega Cap)
     "JPM": "financials", "BAC": "financials",
     "GS": "financials", "MS": "financials",
     "WFC": "financials", "C": "financials",
     "BLK": "financials", "SCHW": "financials",
-    # Healthcare
+    # Financials - Regional Banks
+    "USB": "financials", "PNC": "financials",
+    "TFC": "financials", "RF": "financials",
+    "CFG": "financials", "HBAN": "financials",
+    "KEY": "financials",
+    # Healthcare / Pharma (Mega Cap)
     "JNJ": "healthcare", "PFE": "healthcare",
     "UNH": "healthcare", "MRK": "healthcare",
     "ABBV": "healthcare", "LLY": "healthcare",
     "TMO": "healthcare", "ABT": "healthcare",
+    # Healthcare / Biotech (Mid-Cap)
+    "GILD": "healthcare", "REGN": "healthcare",
+    "BIIB": "healthcare", "VRTX": "healthcare",
+    "BMY": "healthcare", "ZTS": "healthcare",
+    "MCK": "healthcare",
+    # Healthcare Services
+    "CVS": "healthcare", "CI": "healthcare",
+    "HUM": "healthcare", "ELV": "healthcare",
+    "CNC": "healthcare",
     # Consumer Staples
     "KO": "consumer_staples", "PEP": "consumer_staples",
     "PG": "consumer_staples", "CL": "consumer_staples",
     "WMT": "consumer_staples", "COST": "consumer_staples",
+    # Consumer Discretionary / Retail
+    "TGT": "consumer_discretionary", "LOW": "consumer_discretionary",
+    "HD": "consumer_discretionary", "ROST": "consumer_discretionary",
+    "TJX": "consumer_discretionary", "DLTR": "consumer_discretionary",
+    "DG": "consumer_discretionary",
     # Energy
     "XOM": "energy", "CVX": "energy",
     "COP": "energy", "SLB": "energy",
     "EOG": "energy",
+    "VLO": "energy", "MPC": "energy",
+    "PSX": "energy", "DVN": "energy",
+    "HAL": "energy", "BKR": "energy",
     # Industrials
     "CAT": "industrials", "DE": "industrials",
     "HON": "industrials", "GE": "industrials",
     "RTX": "industrials", "LMT": "industrials",
+    "MMM": "industrials", "EMR": "industrials",
+    "ITW": "industrials", "ROK": "industrials",
+    "CMI": "industrials", "PH": "industrials",
+    # Communication / Media
+    "CMCSA": "communication", "DIS": "communication",
+    "NFLX": "communication", "FOXA": "communication",
+    "VZ": "communication", "T": "communication",
     # Utilities
     "NEE": "utilities", "DUK": "utilities",
     "SO": "utilities", "D": "utilities",
     # REITs
     "PLD": "reits", "AMT": "reits",
     "SPG": "reits",
+    # --- ETFs Sectoriels ---
+    "XLK": "technology", "SMH": "technology",
+    "XLF": "financials", "KRE": "financials",
+    "XLE": "energy",
+    "XLV": "healthcare", "XBI": "healthcare", "IBB": "healthcare",
+    "XLI": "industrials",
+    "XLU": "utilities",
+    "XLP": "consumer_staples",
+    "XLB": "materials",
+    "XLC": "communication",
+    "XLRE": "reits", "IYR": "reits",
 }
 
 
@@ -389,6 +434,10 @@ class UniverseManager:
     # ------------------------------------------------------------------
     # Accessors
     # ------------------------------------------------------------------
+
+    def get_active_symbols(self) -> List[str]:
+        """Return symbols not manually excluded (for live trading runner)."""
+        return [s for s in self._all_symbols if s not in self._manually_excluded]
 
     @property
     def all_symbols(self) -> List[str]:

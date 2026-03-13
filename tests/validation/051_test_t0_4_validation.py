@@ -93,7 +93,7 @@ def test_t0_4():
     from pathlib import Path
     
     prod_yaml_path = Path("config/prod.yaml")
-    with open(prod_yaml_path, 'r') as f:
+    with open(prod_yaml_path, 'r', encoding='utf-8') as f:
         prod_content = f.read()
     
     assert "max_leverage: 1.5" in prod_content

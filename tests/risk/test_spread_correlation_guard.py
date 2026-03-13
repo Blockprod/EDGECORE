@@ -89,11 +89,11 @@ class TestSpreadCorrelationGuardBasic:
         assert allowed is False
 
     def test_moderate_correlation_allowed(self):
-        """Spread with |ρ| < 0.60 ↓ allowed."""
+        """Spread with |ρ| < 0.40 ↓ allowed."""
         guard = SpreadCorrelationGuard()
         s1 = _make_spread(100, seed=10)
-        # ρ ≈ 0.3 should pass
-        s_mod = _make_correlated_spread(s1, rho=0.3, seed=99)
+        # ρ ≈ 0.15 → empirical |corr| < 0.40
+        s_mod = _make_correlated_spread(s1, rho=0.15, seed=99)
 
         guard.register_spread("A_B", s1)
         allowed, _reason = guard.check_entry("C_D", s_mod)

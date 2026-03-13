@@ -362,21 +362,8 @@ class TestGenerateSignalsIntegration:
             "B": 100 + np.cumsum(rng.randn(n) * 0.5),
         }, index=idx)
 
-        # Mock remove_outliers to passthrough
-        with patch("strategies.pair_trading.remove_outliers", side_effect=lambda s, **kw: s):
-            # Mock DynamicSpreadModel to return dummy spread + signals
-            with patch("strategies.pair_trading.DynamicSpreadModel") as MockModel:
-                mock_instance = MagicMock()
-                mock_instance.reestimate_beta_if_needed.return_value = True
-                mock_instance.compute_spread.return_value = pd.Series(rng.randn(n), index=idx)
-                mock_instance.get_adaptive_signals.return_value = (
-                    pd.Series([0] * n, index=idx),
-                    {"entry_threshold": 2.0, "z_score": pd.Series([0.0] * n, index=idx), "adjustments": {}},
-                )
-                MockModel.return_value = mock_instance
-
-                discovered = [("A", "B", 0.01, 20)]
-                signals = strategy.generate_signals(market_data, discovered_pairs=discovered)
+        discovered = [("A", "B", 0.01, 20)]
+        signals = strategy.generate_signals(market_data, discovered_pairs=discovered)
 
         # Should have an exit signal for A_B
         exit_signals = [s for s in signals if s.side == "exit" and s.symbol_pair == "A_B"]
@@ -399,17 +386,7 @@ class TestGenerateSignalsIntegration:
             "A": 100 + np.cumsum(rng.randn(n) * 0.5),
             "B": 100 + np.cumsum(rng.randn(n) * 0.5),
         }, index=idx)
-        with patch("strategies.pair_trading.remove_outliers", side_effect=lambda s, **kw: s):
-            with patch("strategies.pair_trading.DynamicSpreadModel") as MockModel:
-                mock_instance = MagicMock()
-                mock_instance.reestimate_beta_if_needed.return_value = True
-                mock_instance.compute_spread.return_value = pd.Series(rng.randn(n), index=idx)
-                mock_instance.get_adaptive_signals.return_value = (
-                    pd.Series([0] * n, index=idx),
-                    {"entry_threshold": 2.0, "z_score": pd.Series([0.0] * n, index=idx), "adjustments": {}},
-                )
-                MockModel.return_value = mock_instance
-                strategy.generate_signals(market_data, discovered_pairs=[("A", "B", 0.01, 20)])
+        strategy.generate_signals(market_data, discovered_pairs=[("A", "B", 0.01, 20)])
         assert "A_B" in strategy._excluded_pairs_correlation
 
     def test_no_exit_when_no_active_trade(self):
@@ -427,17 +404,7 @@ class TestGenerateSignalsIntegration:
             "A": 100 + np.cumsum(rng.randn(n) * 0.5),
             "B": 100 + np.cumsum(rng.randn(n) * 0.5),
         }, index=idx)
-        with patch("strategies.pair_trading.remove_outliers", side_effect=lambda s, **kw: s):
-            with patch("strategies.pair_trading.DynamicSpreadModel") as MockModel:
-                mock_instance = MagicMock()
-                mock_instance.reestimate_beta_if_needed.return_value = True
-                mock_instance.compute_spread.return_value = pd.Series(rng.randn(n), index=idx)
-                mock_instance.get_adaptive_signals.return_value = (
-                    pd.Series([0] * n, index=idx),
-                    {"entry_threshold": 2.0, "z_score": pd.Series([0.0] * n, index=idx), "adjustments": {}},
-                )
-                MockModel.return_value = mock_instance
-                signals = strategy.generate_signals(market_data, discovered_pairs=[("A", "B", 0.01, 20)])
+        signals = strategy.generate_signals(market_data, discovered_pairs=[("A", "B", 0.01, 20)])
         exit_signals = [s for s in signals if s.side == "exit" and s.symbol_pair == "A_B"]
         assert len(exit_signals) == 0
         assert "A_B" in strategy._excluded_pairs_correlation
@@ -465,17 +432,7 @@ class TestPreExcludedPairSkip:
             "B": 100 + np.cumsum(rng.randn(n) * 0.5),
         }, index=idx)
 
-        with patch("strategies.pair_trading.remove_outliers", side_effect=lambda s, **kw: s):
-            with patch("strategies.pair_trading.DynamicSpreadModel") as MockModel:
-                mock_instance = MagicMock()
-                mock_instance.reestimate_beta_if_needed.return_value = True
-                mock_instance.compute_spread.return_value = pd.Series(rng.randn(n), index=idx)
-                mock_instance.get_adaptive_signals.return_value = (
-                    pd.Series([0] * n, index=idx),
-                    {"entry_threshold": 2.0, "z_score": pd.Series([0.0] * n, index=idx), "adjustments": {}},
-                )
-                MockModel.return_value = mock_instance
-                signals = strategy.generate_signals(market_data, discovered_pairs=[("A", "B", 0.01, 20)])
+        signals = strategy.generate_signals(market_data, discovered_pairs=[("A", "B", 0.01, 20)])
 
         # No signals of any kind should be generated for excluded pair
         ab_signals = [s for s in signals if s.symbol_pair == "A_B"]

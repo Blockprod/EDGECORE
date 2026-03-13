@@ -111,6 +111,13 @@ class PortfolioAllocator:
         Returns:
             AllocationResult with recommended notional.
         """
+        # Guard: equity must be positive to avoid silent zero-allocation
+        if self.equity <= 0:
+            raise ValueError(
+                f"Cannot allocate with equity={self.equity:.2f}. "
+                "Equity must be positive."
+            )
+
         details: Dict[str, float] = {}
 
         if self.sizing_method == SizingMethod.EQUAL_WEIGHT:

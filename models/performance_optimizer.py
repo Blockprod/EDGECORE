@@ -245,7 +245,11 @@ class VectorizedSignalGenerator:
         lookback: int = 20
     ) -> Dict[str, pd.Series]:
         """
-        Compute Z-scores for all pairs in vectorized fashion.
+        Compute Z-scores for all pairs in a single vectorized pass.
+        
+        Batches all spreads into one DataFrame so pandas computes
+        rolling mean/std across all columns simultaneously (single
+        C-level loop instead of N Python-level loops).
         
         Args:
             spread_dict: {'pair_key': spread_series}
@@ -254,21 +258,21 @@ class VectorizedSignalGenerator:
         Returns:
             {'pair_key': z_score_series}
         """
-        z_scores = {}
-        
-        for pair_key, spread_series in spread_dict.items():
-            if len(spread_series) < lookback:
-                continue
-            
-            # Rolling mean and std
-            rolling_mean = spread_series.rolling(window=lookback).mean()
-            rolling_std = spread_series.rolling(window=lookback).std()
-            
-            # Vectorized Z-score: (x - mean) / std
-            z_score = (spread_series - rolling_mean) / rolling_std.clip(lower=1e-6)
-            z_scores[pair_key] = z_score
-        
-        return z_scores
+        if not spread_dict:
+            return {}
+
+        # Filter out too-short series before building the DataFrame
+        valid = {k: v for k, v in spread_dict.items() if len(v) >= lookback}
+        if not valid:
+            return {}
+
+        # Single DataFrame — rolling operates on all columns at once
+        df = pd.DataFrame(valid)
+        rolling_mean = df.rolling(window=lookback).mean()
+        rolling_std = df.rolling(window=lookback).std().clip(lower=1e-6)
+        z_df = (df - rolling_mean) / rolling_std
+
+        return {col: z_df[col] for col in z_df.columns}
 
 
 class S34PerformanceOptimizer:

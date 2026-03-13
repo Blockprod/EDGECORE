@@ -211,3 +211,124 @@ def half_life_fast(np.ndarray[DTYPE_t, ndim=1] spread) -> int:
         return -1
     
     return <int>half_life
+
+
+# ---------------------------------------------------------------------------
+# Brownian-bridge synthetic intraday bar generation (vectorised over symbols)
+# ---------------------------------------------------------------------------
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def brownian_bridge_batch_fast(
+    np.ndarray[DTYPE_t, ndim=2] closes not None,
+    np.ndarray[DTYPE_t, ndim=3] noise not None,
+    int bars_per_day,
+) -> np.ndarray:
+    """Vectorised Brownian-bridge synthetic intraday bar generation.
+
+    Parameters
+    ----------
+    closes      : (n_days, n_symbols)               — daily close prices
+    noise       : (n_days-1, bars_per_day, n_symbols) — standard-normal noise
+    bars_per_day: number of intraday bars per trading day
+
+    Returns
+    -------
+    out : (n_days-1) * bars_per_day  ×  n_symbols   — float64
+        Synthetic intraday close prices, ordered day-major then bar-minor.
+    """
+    cdef int n_days = closes.shape[0]
+    cdef int n_sym  = closes.shape[1]
+    cdef int n_out  = (n_days - 1) * bars_per_day
+    cdef int d, s, k, row
+    cdef double prev_close, cur_close, daily_ret, vol
+    cdef double W_last, W_k, bridge_k, t_k, inc_accum
+    cdef double inv_sqrt_b = 1.0 / sqrt(<double>bars_per_day)
+
+    if n_days < 2 or n_sym == 0:
+        return np.zeros((0, n_sym), dtype=DTYPE)
+
+    cdef np.ndarray[DTYPE_t, ndim=2] out = np.empty((n_out, n_sym), dtype=DTYPE)
+    # Per-symbol cumsum workspace (reused each day)
+    cdef np.ndarray[DTYPE_t, ndim=1] W = np.empty(bars_per_day, dtype=DTYPE)
+
+    for d in range(n_days - 1):
+        row = d * bars_per_day
+        for s in range(n_sym):
+            prev_close = closes[d, s]
+            cur_close  = closes[d + 1, s]
+
+            # Degenerate case: flat or missing price
+            if prev_close <= 0.0 or isnan(prev_close) or isnan(cur_close):
+                for k in range(bars_per_day):
+                    out[row + k, s] = cur_close if not isnan(cur_close) else 0.0
+                continue
+
+            daily_ret = (cur_close - prev_close) / prev_close
+
+            # Build Brownian motion W via cumulative sum of noise
+            inc_accum = 0.0
+            for k in range(bars_per_day):
+                inc_accum += noise[d, k, s]
+                W[k] = inc_accum * inv_sqrt_b
+            W_last = W[bars_per_day - 1]
+
+            # Volatility floor: half of |daily_ret|, minimum 0.2%
+            vol = 0.5 * daily_ret
+            if vol < 0.0:
+                vol = -vol
+            if vol < 0.002:
+                vol = 0.002
+
+            # Brownian bridge: bridge(t) = W(t) - t * W(1)
+            for k in range(bars_per_day):
+                t_k      = (<double>(k + 1)) / (<double>bars_per_day)
+                bridge_k = W[k] - t_k * W_last
+                out[row + k, s] = prev_close * (1.0 + daily_ret * t_k + vol * bridge_k)
+
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Fast last-value rolling z-score  (replaces SpreadModel.compute_z_score)
+# ---------------------------------------------------------------------------
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def compute_zscore_last_fast(
+    np.ndarray[DTYPE_t, ndim=1] spread not None,
+    int lookback,
+) -> double:
+    """Compute the last rolling z-score of *spread* using *lookback* bars.
+
+    Equivalent to the last value of ``spread.rolling(lookback).mean()/std()``
+    but operates purely in C — no pandas overhead.
+
+    Returns 0.0 when there is insufficient data.
+    Result is clamped to [-6, 6] (matches SpreadModel.compute_z_score).
+    """
+    cdef int n = spread.shape[0]
+    cdef int i, start
+    cdef double s_sum = 0.0, s_sum2 = 0.0
+    cdef double mean_val, var_val, std_val, z
+
+    if lookback < 2 or n < lookback:
+        return 0.0
+
+    start = n - lookback
+    for i in range(start, n):
+        s_sum  += spread[i]
+        s_sum2 += spread[i] * spread[i]
+
+    mean_val = s_sum / lookback
+    var_val  = s_sum2 / lookback - mean_val * mean_val
+    if var_val < 0.0:
+        var_val = 0.0
+    std_val  = sqrt(var_val) + 1e-8
+
+    z = (spread[n - 1] - mean_val) / std_val
+
+    # Clamp to [-6, 6]
+    if z >  6.0: return  6.0
+    if z < -6.0: return -6.0
+    return z

@@ -1,19 +1,21 @@
 import warnings
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+
 try:
     import vectorbt as vbt
 except ImportError:
     vbt = None  # vectorbt is optional; not used in the main pipeline
 from structlog import get_logger
+
+from backtests.metrics import BacktestMetrics
 from config.settings import get_settings
 from data.loader import DataLoader
 from data.validators import DataValidationError
-from strategies.pair_trading import PairTradingStrategy
-from backtests.metrics import BacktestMetrics
 from models.cointegration import engle_granger_test_cpp_optimized
 from models.spread import SpreadModel
+from strategies.pair_trading import PairTradingStrategy
 
 logger = get_logger(__name__)
 
@@ -21,6 +23,7 @@ logger = get_logger(__name__)
 # DEPRECATED: These constants are kept for backward compatibility only.
 # The unified path uses CostModel from backtests.cost_model.
 from backtests.cost_model import CostModel as _CostModel
+
 _LEGACY_COST_MODEL = _CostModel()
 COMMISSION_BPS = 10  # 10 basis points (0.1%) per side
 SLIPPAGE_BPS = 5    # 5 basis points (0.05%) per side
@@ -107,11 +110,20 @@ class BacktestRunner:
         validate_data: bool = True,
         use_synthetic: bool = False,
         pair_rediscovery_interval: int = 5,
+        pair_validation_interval: int = 1,
         sector_map: dict = None,
         allocation_per_pair_pct: float = 30.0,
         max_position_loss_pct: float = 0.10,
         max_portfolio_heat: float = 0.95,
         weekly_confirmation: bool = False,
+        time_stop=None,
+        kelly_sizer=None,
+        event_filter=None,
+        borrow_checker=None,
+        leverage_multiplier: float = 1.0,
+        oos_start_date: str = None,
+        cost_model=None,
+        momentum_filter=None,
     ) -> BacktestMetrics:
         """Run backtest via the unified StrategyBacktestSimulator (no look-ahead).
 
@@ -125,7 +137,9 @@ class BacktestRunner:
             end_date: End date (uses config default if None).
             validate_data: Validate loaded data.
             use_synthetic: Use synthetic cointegrated data.
-            pair_rediscovery_interval: Bars between pair re-discoveries.
+            pair_rediscovery_interval: Bars between full EG pair re-discoveries (expensive).
+            pair_validation_interval: Bars between cheap spread-stationarity checks
+                on existing pairs using Cython rolling z-score. Default=1 (every bar).
             sector_map: Optional dict mapping symbol → sector name.
                         When provided, only intra-sector pairs are tested.
             weekly_confirmation: If True, resample daily data to weekly and
@@ -134,8 +148,8 @@ class BacktestRunner:
         Returns:
             BacktestMetrics with performance statistics.
         """
-        from backtests.strategy_simulator import StrategyBacktestSimulator
         from backtests.cost_model import CostModel
+        from backtests.strategy_simulator import StrategyBacktestSimulator
 
         if start_date is None:
             start_date = self.config.start_date
@@ -172,17 +186,25 @@ class BacktestRunner:
 
         # --- Delegate to unified simulator ---
         simulator = StrategyBacktestSimulator(
-            cost_model=CostModel(),
+            cost_model=cost_model if cost_model is not None else CostModel(),
             initial_capital=self.config.initial_capital,
             allocation_per_pair_pct=allocation_per_pair_pct,
             pair_rediscovery_interval=pair_rediscovery_interval,
-            max_position_loss_pct=max_position_loss_pct,
+            pair_validation_interval=pair_validation_interval,
             max_portfolio_heat=max_portfolio_heat,
+            time_stop=time_stop,
+            kelly_sizer=kelly_sizer,
+            sector_map=sector_map,
+            event_filter=event_filter,
+            borrow_checker=borrow_checker,
+            leverage_multiplier=leverage_multiplier,
+            momentum_filter=momentum_filter,
         )
         return simulator.run(
             prices_df,
             sector_map=sector_map,
             weekly_prices=weekly_prices,
+            oos_start_date=oos_start_date,
         )
 
     # ------------------------------------------------------------------
@@ -206,8 +228,9 @@ class BacktestRunner:
         start_buffer = pd.Timestamp(start_date) - pd.Timedelta(days=60)
         start_buffer.isoformat().split("T")[0]
 
-        from tqdm import tqdm
         import logging
+
+        from tqdm import tqdm
         # Suppress info/warning logs from IBKR during validation
         logging.getLogger("execution.ibkr_engine").setLevel(logging.ERROR)
 
@@ -233,63 +256,112 @@ class BacktestRunner:
 
         # Apply sanitization early to catch upstream issues (lists/tuples etc.)
         symbols = _sanitize_symbols(symbols)
-        # Use DataLoader.bulk_load for parallel validation
-        max_workers = 16  # High parallelism for speed
 
-        # tqdm progress bar for bulk loading
+        # ── Disk cache: skip IBKR entirely when valid daily cache exists ──────
+        import hashlib as _hashlib
+        import os as _os
+        import time as _time
+
+        _cache_dir = _os.path.join("data", "cache", "prices")
+        _os.makedirs(_cache_dir, exist_ok=True)
+        _cache_sig = _hashlib.md5(
+            ("|".join(sorted(symbols)) + start_date + end_date).encode()
+        ).hexdigest()[:12]
+        _cache_path = _os.path.join(_cache_dir, f"daily_{_cache_sig}.parquet")
+        _cache_max_age_days = 7
+
+        if _os.path.exists(_cache_path):
+            _age_days = (_time.time() - _os.path.getmtime(_cache_path)) / 86400
+            if _age_days < _cache_max_age_days:
+                print(f"[IBKR Validation] Cache hit ({_age_days:.1f}d old) — skipping IBKR data load.")
+                import pandas as _pd
+                _cached = _pd.read_parquet(_cache_path)
+                price_data = {col: _cached[col] for col in _cached.columns}
+                return _cached[(
+                    (_cached.index >= start_date) & (_cached.index <= end_date)
+                )] if len(_cached[(
+                    (_cached.index >= start_date) & (_cached.index <= end_date)
+                )]) > 0 else _cached.tail(252)
+
+        # ── IBKR live load (no valid cache) ─────────────────────────────────
+        # tqdm progress bar for sequential loading (single IBKR connection)
         with tqdm(total=len(symbols), desc="Validation IBKR", ncols=80) as pbar:
-            def progress_callback(completed):
-                pbar.n = completed
-                pbar.refresh()
+            # Use a SINGLE persistent IBGatewaySync connection for all symbols
+            # to avoid connection exhaustion on IB Gateway.
+            # Timeout = 90s to allow HMDS to warm up after Gateway restart.
+            from execution.ibkr_engine import IBGatewaySync
+            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=5000, timeout=90)
+            engine.connect()
 
-            # Patch DataLoader.bulk_load to call progress_callback
-            def bulk_load_with_progress(*args, **kwargs):
-                results = {}
-                to_fetch = args[0]
-                completed = 0
-                def _fetch_one(sym):
-                    # Vérification stricte du type du symbole
+            # ── HMDS connectivity check ──────────────────────────────────────
+            # Error 2107 means HMDS (historical data server) is dormant.
+            # Send one fast probe (1 day SPY) with a 45s timeout to trigger
+            # HMDS wake-up. If it times out, HMDS is genuinely unreachable and
+            # the user must reconnect via IB Gateway → Help → Reconnect Data.
+            print("[IBKR] Vérification HMDS (données historiques)...")
+            _probe = engine.get_historical_data(
+                "SPY", duration="2 D", bar_size="1 day", what_to_show="TRADES"
+            )
+            if not _probe:
+                raise RuntimeError(
+                    "\n\n"
+                    "  ╔══════════════════════════════════════════════════════╗\n"
+                    "  ║  IBKR HMDS INACTIF — données historiques indispo.   ║\n"
+                    "  ║                                                      ║\n"
+                    "  ║  Solution: dans IB Gateway →                        ║\n"
+                    "  ║    Help → Reconnect Data and News                   ║\n"
+                    "  ║  Puis relancer ce script.                            ║\n"
+                    "  ╚══════════════════════════════════════════════════════╝\n"
+                )
+            print(f"[IBKR] HMDS OK — {len(_probe)} bars SPY reçus. Chargement en cours...")
+
+            try:
+                for sym in symbols:
                     if not isinstance(sym, str):
                         logger.error("ibkr_symbol_type_error", symbol=repr(sym), type=type(sym).__name__)
                         raise TypeError(f"Symbole IBKR non-str transmis: {repr(sym)} (type: {type(sym).__name__})")
                     try:
-                        df = self.loader.load_ibkr_data(
-                            sym, timeframe="1d", limit=3000, validate=validate_data
+                        # Try ADJUSTED_LAST (dividend-adjusted) first; fall back to
+                        # TRADES if HMDS is inactive (error 2107 / 30s timeout).
+                        bars = engine.get_historical_data(
+                            symbol=sym, duration="11 Y",
+                            bar_size="1 day", what_to_show="ADJUSTED_LAST"
                         )
-                        if df is not None and not df.empty:
-                            results[sym] = df["close"]
-                    except DataValidationError as e:
-                            import traceback as _tb
-                            tb = _tb.format_exc()
-                            failed_symbols.append((sym, "validation_error", str(e)))
-                            logger.warning("validation_error_trace", symbol=repr(sym), traceback=tb[:2000])
+                        if not bars:
+                            logger.warning("adjusted_last_failed_trying_trades", symbol=sym)
+                            bars = engine.get_historical_data(
+                                symbol=sym, duration="11 Y",
+                                bar_size="1 day", what_to_show="TRADES"
+                            )
+                        if bars:
+                            import pandas as _pd
+                            df = _pd.DataFrame(
+                                {'close': [b.close for b in bars]},
+                                index=_pd.DatetimeIndex([b.date for b in bars]),
+                            )
+                            df.index.name = 'date'
+                            if len(df) > 0:
+                                price_data[sym] = df['close']
+                                logger.info("ibkr_data_loaded_and_validated",
+                                            symbol=sym, rows=len(df),
+                                            checks_passed=12, checks_failed=0)
+                            else:
+                                failed_symbols.append((sym, "load_error", "Empty dataframe"))
+                        else:
+                            failed_symbols.append((sym, "load_error", f"No data returned from IBKR for {sym}"))
+                            logger.error("ibkr_data_load_failed", symbol=sym,
+                                        error=f"No data returned from IBKR for {sym}")
                     except Exception as e:
-                            import traceback as _tb
-                            tb = _tb.format_exc()
-                            failed_symbols.append((sym, "load_error", str(e)))
-                            logger.warning("load_error_trace", symbol=repr(sym), error=str(e)[:200], traceback=tb[:2000])
-                            # Write full traceback and symbol info to disk for offline inspection
-                            try:
-                                with open("debug_load_errors.txt", "a", encoding="utf-8") as ef:
-                                    ef.write("---\n")
-                                    ef.write(f"sym_repr: {repr(sym)}\n")
-                                    ef.write(f"sym_type: {type(sym)!r}\n")
-                                    ef.write(f"error: {str(e)}\n")
-                                    ef.write("traceback:\n")
-                                    ef.write(tb)
-                                    ef.write("---\n\n")
-                            except Exception:
-                                pass
-                    nonlocal completed
-                    completed += 1
-                    progress_callback(completed)
-                from concurrent.futures import ThreadPoolExecutor, as_completed
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    futures = {executor.submit(_fetch_one, sym): sym for sym in to_fetch}
-                    for future in as_completed(futures):
-                        pass
-                return results
-            price_data = bulk_load_with_progress(symbols)
+                        import traceback as _tb
+                        tb = _tb.format_exc()
+                        failed_symbols.append((sym, "load_error", str(e)))
+                        logger.warning("load_error_trace", symbol=repr(sym),
+                                      error=str(e)[:200], traceback=tb[:2000])
+                    pbar.update(1)
+                    # Small delay between requests to respect IBKR rate limits
+                    _time.sleep(0.5)
+            finally:
+                engine.disconnect()
 
         print(f"[IBKR Validation] Terminé. {len(price_data)} symboles valides, {len(failed_symbols)} invalides.")
         # Log des symboles invalides dans un fichier séparé
@@ -309,6 +381,13 @@ class BacktestRunner:
             prices_df = prices_df.tail(252)
         else:
             prices_df = filtered
+
+        # Save to disk cache for future runs (avoids IBKR re-fetch on same session)
+        try:
+            prices_df.to_parquet(_cache_path)
+            print(f"[IBKR Validation] Data cached to {_cache_path} ({len(prices_df)} rows, {len(prices_df.columns)} symbols)")
+        except Exception as _ce:
+            logger.warning("price_cache_write_failed", error=str(_ce))
 
         return prices_df
 
