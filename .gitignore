@@ -38,6 +38,17 @@ env/
 
 # Backtest outputs
 backtests/results/
+# Large workflow outputs (GitHub limit)
+results/v46_wf_output.txt
+results/v47_wf_output.txt
+results/v48_wf_output.txt
+results/v45_wf_output.txt
+results/v45b_wf_output.txt
+results/v44_wf_output.txt
+results/v42_wf_output.txt
+# All large output files
+results/v*_output.txt
+results/v*_wf_output.txt
 backtests/*.html
 bt_results_*.txt
 bt_errors_*.txt
