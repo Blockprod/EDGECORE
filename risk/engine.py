@@ -1,19 +1,21 @@
-import numpy as np
 from dataclasses import dataclass
-from typing import List, Optional, Dict
 from datetime import datetime
+from typing import Dict, List, Optional
+
+import numpy as np
 from structlog import get_logger
-from monitoring.events import TradingEvent, EventType
-from config.settings import get_settings
-from persistence.audit_trail import AuditTrail
+
+import config.settings as settings_mod
 from common.validators import (
-    validate_equity,
-    validate_position_size,
-    validate_volatility,
     EquityError,
     ValidationError,
     VolatilityError,
+    validate_equity,
+    validate_position_size,
+    validate_volatility,
 )
+from monitoring.events import EventType, TradingEvent
+from persistence.audit_trail import AuditTrail
 
 logger = get_logger(__name__)
 
@@ -73,7 +75,7 @@ class RiskEngine:
         # Validate initial equity
         validate_equity(initial_equity)
         
-        self.config = get_settings().risk
+        self.config = settings_mod.get_settings().risk
         self.initial_equity = initial_equity
         self.initial_cash = initial_cash if initial_cash is not None else initial_equity
         
@@ -136,13 +138,48 @@ class RiskEngine:
             logger.error("trade_entry_validation_failed", error=str(e))
             raise
         
-        # Check 1: Max concurrent positions
+        # Check 1: Risk per trade and leverage constraint (reject if either exceeded)
+        current_exposure = self.get_total_exposure()
+        new_position_exposure = position_size * (1.0 + volatility)  # Conservative estimate
+        total_with_new = current_exposure + new_position_exposure
+        current_leverage = total_with_new / current_equity if current_equity > 0 else 0
+
+        # Calculate risk per trade
+        try:
+            risk_amount = position_size * volatility
+            risk_pct = risk_amount / current_equity
+        except ZeroDivisionError as e:
+            logger.error("equity_division_error", error=str(e), current_equity=current_equity)
+            raise EquityError(f"Division by zero: current_equity={current_equity}")
+
+        if risk_pct > self.config.max_risk_per_trade:
+            reason = f"Risk per trade ({risk_pct:.4f}) exceeds limit ({self.config.max_risk_per_trade}) [risk]"
+            logger.warning("trade_rejected_risk", reason=reason, pair=symbol_pair)
+            return False, reason
+
+        if current_leverage > self.config.max_leverage:
+            reason = f"Leverage {current_leverage:.2f}x exceeds limit {self.config.max_leverage}x [leverage]"
+            logger.warning("trade_rejected_leverage", reason=reason, pair=symbol_pair, current_leverage=current_leverage)
+            return False, reason
+
+        # Check 2: Max concurrent positions
         if len(self.positions) >= self.config.max_concurrent_positions:
             reason = f"Max concurrent positions ({self.config.max_concurrent_positions}) reached"
             logger.warning("trade_rejected", reason=reason, pair=symbol_pair)
+            try:
+                from monitoring.alerter import AlertCategory, AlertManager, AlertSeverity
+                AlertManager().create_alert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.RISK,
+                    title="Max concurrent positions limit breached",
+                    message=reason,
+                    data={"pair": symbol_pair}
+                )
+            except Exception as alert_exc:
+                logger.error("alert_trigger_failed", error=str(alert_exc), reason=reason)
             return False, reason
-        
-        # Check 2: Risk per trade (requires positive equity for division)
+
+        # Check 3: Risk per trade (requires positive equity for division)
         if current_equity <= 0:
             raise EquityError(
                 f"Cannot enter trade: current_equity must be positive, got {current_equity}"
@@ -165,8 +202,19 @@ class RiskEngine:
             raise EquityError(f"Division by zero: current_equity={current_equity}")
         
         if risk_pct > self.config.max_risk_per_trade:
-            reason = f"Risk per trade ({risk_pct:.4f}) exceeds limit ({self.config.max_risk_per_trade})"
+            reason = f"Risk per trade ({risk_pct:.4f}) exceeds limit ({self.config.max_risk_per_trade}) [risk]"
             logger.warning("trade_rejected", reason=reason, pair=symbol_pair)
+            try:
+                from monitoring.alerter import AlertCategory, AlertManager, AlertSeverity
+                AlertManager().create_alert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.RISK,
+                    title="Risk per trade limit breached",
+                    message=reason,
+                    data={"pair": symbol_pair, "risk_pct": risk_pct}
+                )
+            except Exception as alert_exc:
+                logger.error("alert_trigger_failed", error=str(alert_exc), reason=reason)
             return False, reason
         
         # Check 3: Consecutive losses
@@ -194,6 +242,17 @@ class RiskEngine:
         if daily_loss_pct > self.config.max_daily_loss_pct:
             reason = f"Daily loss ({daily_loss_pct:.4f}) exceeds limit ({self.config.max_daily_loss_pct})"
             logger.warning("trade_rejected", reason=reason)
+            try:
+                from monitoring.alerter import AlertCategory, AlertManager, AlertSeverity
+                AlertManager().create_alert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.RISK,
+                    title="Daily loss limit breached",
+                    message=reason,
+                    data={"daily_loss_pct": daily_loss_pct, "current_equity": current_equity}
+                )
+            except Exception as alert_exc:
+                logger.error("alert_trigger_failed", error=str(alert_exc), reason=reason)
             return False, reason
         
         # Check 5: Sector concentration
@@ -221,7 +280,7 @@ class RiskEngine:
         current_leverage = total_with_new / current_equity if current_equity > 0 else 0
         
         if current_leverage > self.config.max_leverage:
-            reason = f"Leverage {current_leverage:.2f}x exceeds limit {self.config.max_leverage}x"
+            reason = f"Leverage {current_leverage:.2f}x exceeds limit {self.config.max_leverage}x [leverage]"
             logger.warning("trade_rejected_leverage", reason=reason, pair=symbol_pair, current_leverage=current_leverage)
             return False, reason
         
