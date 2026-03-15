@@ -1,9 +1,7 @@
-"""Flask API endpoints for EDGECORE dashboard."""
+﻿"""Flask API endpoints for EDGECORE dashboard."""
 
-import json
-import os
 from typing import Optional, Dict, Any, Tuple
-from flask import Flask, jsonify, request
+from flask import Flask, request
 from datetime import datetime
 import structlog
 
@@ -13,8 +11,7 @@ from monitoring.api_security import (
     require_api_key,
     add_security_headers,
     log_api_call,
-    get_request_stats,
-    _auth
+    get_request_stats
 )
 
 logger = structlog.get_logger(__name__)
@@ -216,6 +213,22 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
         stats = get_request_stats()
         return stats, 200
 
+    @app.route('/metrics', methods=['GET'])
+    def prometheus_metrics():
+        """
+        Prometheus scrape endpoint.
+
+        Returns Prometheus text format metrics for the trading system.
+        No auth required ÔÇö intended for internal Prometheus scraping.
+        """
+        from monitoring.metrics import SystemMetrics
+        from flask import Response
+
+        # Use global metrics instance if available, else default
+        metrics = getattr(app, '_system_metrics', None) or SystemMetrics()
+        body = metrics.to_prometheus_format()
+        return Response(body, mimetype='text/plain; version=0.0.4; charset=utf-8')
+
     @app.errorhandler(404)
     def not_found(error) -> Tuple[Dict[str, Any], int]:
         """Handle 404 errors."""
@@ -224,6 +237,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
             'message': f"Endpoint not found: {request.path}",
             'available_endpoints': [
                 '/health',
+                '/metrics',
                 '/api/dashboard',
                 '/api/dashboard/system',
                 '/api/dashboard/risk',

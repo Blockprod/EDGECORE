@@ -1,4 +1,4 @@
-"""Real-time latency measurement and monitoring system.
+﻿"""Real-time latency measurement and monitoring system.
 
 Tracks latency for operations across components:
 - Event-based timing with high precision
@@ -14,8 +14,9 @@ from datetime import datetime
 from collections import defaultdict
 import logging
 import statistics
+import numpy as np
 
-from common.types import LatencyMeasurement, LatencyMetrics, LatencyBudget
+from common.types import LatencyMetrics, LatencyBudget
 
 logger = logging.getLogger(__name__)
 
@@ -136,8 +137,8 @@ class LatencyTracker:
         if not latencies:
             return None
         
-        all_measurements = self.measurements if not success_only else [m for m in self.measurements if m.success]
-        failures = sum(1 for m in self.measurements if not m.success)
+        self.measurements if not success_only else [m for m in self.measurements if m.success]
+        sum(1 for m in self.measurements if not m.success)
         
         return {
             "operation": self.operation,
@@ -283,7 +284,7 @@ class LatencyMonitor:
             self.alerts.append(alert)
             
             severity = alert["severity"]
-            logger.warning(f"⚠️  SLA alert ({severity}): {operation} took {latency_ms:.1f}ms")
+            logger.warning(f"ÔÜá´©Å  SLA alert ({severity}): {operation} took {latency_ms:.1f}ms")
     
     def get_metrics(self, operation: str) -> Optional[LatencyMetrics]:
         """
@@ -400,9 +401,9 @@ class LatencyContext:
         )
         
         if success:
-            logger.debug(f"⏱️  {self.operation}: {latency_ms:.2f}ms")
+            logger.debug(f"ÔÅ▒´©Å  {self.operation}: {latency_ms:.2f}ms")
         else:
-            logger.error(f"❌ {self.operation} failed: {latency_ms:.2f}ms")
+            logger.error(f"ÔØî {self.operation} failed: {latency_ms:.2f}ms")
 
 
 # Import numpy for percentile calculation (late import to avoid circular deps)

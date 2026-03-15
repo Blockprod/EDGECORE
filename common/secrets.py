@@ -1,4 +1,4 @@
-"""
+﻿"""
 Secrets management for secure API key handling.
 
 Provides:
@@ -11,7 +11,7 @@ Provides:
 
 from typing import Dict, Optional, Any, List, Set
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import re
 import logging
@@ -36,7 +36,7 @@ class SecretMetadata:
     """Metadata about a secret."""
     name: str
     created_at: datetime
-    last_accessed: datetime = field(default_factory=datetime.utcnow)
+    last_accessed: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     access_count: int = 0
     rotated_at: Optional[datetime] = None
     rotation_interval_days: Optional[int] = None
@@ -47,17 +47,17 @@ class SecretMetadata:
             return False
         
         last_rotation = self.rotated_at or self.created_at
-        days_since = (datetime.utcnow() - last_rotation).days
+        days_since = (datetime.now(timezone.utc) - last_rotation).days
         return days_since >= self.rotation_interval_days
     
     def mark_accessed(self) -> None:
         """Update access metadata."""
-        self.last_accessed = datetime.utcnow()
+        self.last_accessed = datetime.now(timezone.utc)
         self.access_count += 1
     
     def mark_rotated(self) -> None:
         """Mark as just rotated."""
-        self.rotated_at = datetime.utcnow()
+        self.rotated_at = datetime.now(timezone.utc)
 
 
 class MaskedString:
@@ -153,7 +153,7 @@ class SecretsVault:
         Store a secret in the vault.
         
         Args:
-            name: Secret name (e.g., "BINANCE_API_KEY")
+            name: Secret name (e.g., "IBKR_API_KEY")
             value: Secret value
             rotation_interval_days: Days before rotation recommended
         
@@ -172,7 +172,7 @@ class SecretsVault:
         # Store metadata
         self._metadata[name] = SecretMetadata(
             name=name,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             rotation_interval_days=rotation_interval_days
         )
         
@@ -302,7 +302,7 @@ class SecretsVault:
         
         for secret_name, metadata in self._metadata.items():
             last_rotation = metadata.rotated_at or metadata.created_at
-            days_since = (datetime.utcnow() - last_rotation).days
+            days_since = (datetime.now(timezone.utc) - last_rotation).days
             
             next_rotation = None
             needs_rotation = False
@@ -384,7 +384,7 @@ class SecretsVault:
         Returns:
             List of audit log entries
         """
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         
         entries = [
             e for e in self._audit_log
@@ -415,7 +415,7 @@ class SecretsVault:
     ) -> None:
         """Log action to audit trail."""
         self._audit_log.append({
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(timezone.utc),
             'action': action,
             'secret_name': secret_name,
             'success': success,
@@ -429,7 +429,7 @@ class SecretsVault:
             return 0
         
         last_rotation = meta.rotated_at or meta.created_at
-        return (datetime.utcnow() - last_rotation).days
+        return (datetime.now(timezone.utc) - last_rotation).days
 
 
 # Global vault instance
@@ -479,7 +479,7 @@ def inject_secrets(logging_handler=None) -> None:
     Args:
         logging_handler: Optional specific handler to inject
     """
-    vault = get_vault()
+    get_vault()
     
     class MaskingFilter(logging.Filter):
         """Logging filter that masks secrets."""

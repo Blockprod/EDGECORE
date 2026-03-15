@@ -1,4 +1,4 @@
-"""
+﻿"""
 Rate limiting and authentication for EDGECORE Flask API.
 
 Provides:
@@ -16,8 +16,7 @@ from typing import Dict, Optional, Callable, Any
 from flask import request, jsonify, Response
 import hashlib
 import hmac
-import struct
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 
 try:
@@ -137,11 +136,12 @@ class JWTAuth:
         if not HAS_JWT:
             raise ImportError("PyJWT not installed. Install with: pip install PyJWT")
         
-        self.secret_key = secret_key or os.getenv('JWT_SECRET', 'edgecore-default-secret-key-32-bytes-minimum')
-        if self.secret_key == 'edgecore-default-secret-key-32-bytes-minimum':
-            logger.warning(
-                "using_default_jwt_secret",
-                message="Using default JWT secret - set JWT_SECRET environment variable in production"
+        self.secret_key = secret_key or os.getenv('JWT_SECRET')
+        if not self.secret_key:
+            raise ValueError(
+                "JWT_SECRET not set. Set the JWT_SECRET environment variable "
+                "with a cryptographically random key (ÔëÑ32 bytes). "
+                "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
             )
     
     def generate_token(self, user_id: str, expires_in_hours: int = 24) -> str:
@@ -157,8 +157,8 @@ class JWTAuth:
         """
         payload = {
             'user_id': user_id,
-            'iat': datetime.utcnow(),
-            'exp': datetime.utcnow() + timedelta(hours=expires_in_hours)
+            'iat': datetime.now(timezone.utc),
+            'exp': datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
         }
         token = jwt.encode(payload, self.secret_key, algorithm='HS256')
         logger.info("jwt_token_generated", user_id=user_id, expires_in_hours=expires_in_hours)
@@ -218,7 +218,7 @@ def require_rate_limit(func: Callable) -> Callable:
         # Add rate limit headers to response
         response = func(*args, **kwargs)
         if isinstance(response, tuple):
-            resp_data, status_code = response[0], response[1] if len(response) > 1 else 200
+            _resp_data, _status_code = response[0], response[1] if len(response) > 1 else 200
             remaining = _rate_limiter.get_remaining(client_ip)
             # Headers will be added by Flask
         
@@ -316,7 +316,7 @@ def require_https(func: Callable) -> Callable:
 def generate_api_key(name: str = 'default') -> str:
     """Generate a new API key."""
     import secrets
-    random_bytes = secrets.token_bytes(32)
+    secrets.token_bytes(32)
     key = secrets.token_urlsafe(32)
     return f"edgecore_{name}_{key}"
 
@@ -399,7 +399,7 @@ def log_api_call(func: Callable) -> Callable:
             )
             
             return result
-        except Exception as e:
+        except Exception:
             elapsed_ms = (time.time() - start_time) * 1000
             _request_logger.log_request(
                 request.method,

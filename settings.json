@@ -1,0 +1,17 @@
+﻿{
+  // ÔöÇÔöÇ Python / Pylance ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  // La config d'analyse (include, exclude, typeCheckingMode, stubs, extraPaths)
+  // est g├®r├®e par pyrightconfig.json ├á la racine (priorit├® sur python.analysis.*)
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+
+  // Analyse tout le workspace en arri├¿re-plan (pas seulement les fichiers ouverts)
+  // Ce param├¿tre reste ici car il n'a pas d'├®quivalent dans pyrightconfig.json
+  "python.analysis.diagnosticMode": "workspace",
+
+  // ÔöÇÔöÇ ├ëditeur ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+  "editor.rulers": [120],
+  "files.associations": {
+    "*.pyx": "python",
+    "*.pxd": "python"
+  }
+}

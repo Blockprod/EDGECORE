@@ -1,4 +1,4 @@
-"""
+﻿"""
 Pytest configuration and shared fixtures for all integration tests.
 
 Provides:
@@ -10,15 +10,14 @@ Provides:
 """
 
 import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock
+from datetime import datetime
+from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
-from pathlib import Path
 
 from execution.modes import ExecutionEngine, ModeType, ExecutionContext
 from data.loader import DataLoader
-from data.validators import OHLCVValidator, PositionValidator, EquityValidator
+from data.validators import OHLCVValidator, EquityValidator
 from monitoring.alerter import AlertManager
 from risk.engine import RiskEngine
 from config.schemas import FullConfigSchema
@@ -178,7 +177,7 @@ def ranging_data():
 
 @pytest.fixture
 def cointegrated_pair():
-    """Two cointegrated price series (Y ≈ 2*X + noise)."""
+    """Two cointegrated price series (Y Ôëê 2*X + noise)."""
     dates = pd.date_range('2024-01-01', periods=200, freq='1h')
     
     X = 100 + np.cumsum(np.random.randn(200) * 0.5)
@@ -199,7 +198,7 @@ def cointegrated_pair():
     df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
     df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
     
-    return {"BTC/USDT": df_x, "ETH/USDT": df_y}
+    return {"AAPL": df_x, "MSFT": df_y}
 
 
 @pytest.fixture
@@ -225,7 +224,7 @@ def independent_pair():
     df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
     df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
     
-    return {"BTC/USDT": df_x, "ETH/USDT": df_y}
+    return {"AAPL": df_x, "MSFT": df_y}
 
 
 # ============================================================================
@@ -279,7 +278,7 @@ def execution_context():
 @pytest.fixture
 def ohlcv_validator():
     """OHLCV validator."""
-    return OHLCVValidator(symbol="BTC/USDT")
+    return OHLCVValidator(symbol="AAPL")
 
 
 @pytest.fixture
@@ -351,7 +350,7 @@ def temp_data_dir(tmp_path):
     return data_dir
 
 
-def create_sample_position(symbol="BTC/USDT", quantity=1.0, entry_price=50000.0):
+def create_sample_position(symbol="AAPL", quantity=1.0, entry_price=50000.0):
     """Helper to create sample position."""
     from execution.modes import Position
     
@@ -383,7 +382,6 @@ def assert_dataframe_valid(df, symbol="TEST"):
 def reset_singletons():
     """Reset singleton instances between tests."""
     from common.circuit_breaker import reset_all_circuit_breakers
-    from common.secrets import get_vault
     
     reset_all_circuit_breakers()
     
@@ -393,7 +391,7 @@ def reset_singletons():
 
 
 if __name__ == "__main__":
-    print("✅ Conftest configured")
+    print("... Conftest configured")
     print("- 6 data generation fixtures (clean, corrupted, trending, ranging, cointegrated, independent)")
     print("- 4 execution engine fixtures (paper, backtest, live mock, bare context)")
     print("- 3 risk/monitoring fixtures (default, conservative, alerter)")

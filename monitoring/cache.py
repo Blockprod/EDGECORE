@@ -1,4 +1,4 @@
-"""
+﻿"""
 Cache layer for expensive dashboard operations.
 
 Provides:
@@ -10,7 +10,7 @@ Provides:
 """
 
 import time
-from typing import Dict, Any, Optional, Callable, List, Tuple
+from typing import Dict, Any, Optional, Callable
 from collections import OrderedDict
 import threading
 

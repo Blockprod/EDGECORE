@@ -1,22 +1,25 @@
-"""
+﻿"""
 Append-only audit trail for position and equity tracking.
 
 Provides crash-safe persistent state reconstruction.
+Uses ``os.fsync()`` after every append to guarantee data reaches disk
+before the function returns.
 """
 
 import csv
+import io
 import os
+import tempfile
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 from structlog import get_logger
-from dataclasses import asdict
 
 from monitoring.events import TradingEvent, EventType
 from common.validators import EquityError
 
 if TYPE_CHECKING:
-    from risk.engine import Position
+    pass
 
 logger = get_logger(__name__)
 
@@ -131,20 +134,18 @@ class AuditTrail:
         event_id = event_id or f"{datetime.now().isoformat()}_{event.symbol_pair}"
         
         try:
-            with open(self.trail_file, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    event.timestamp.isoformat(),
-                    event.event_type.value,
-                    event.symbol_pair,
-                    event.reason if event.event_type == EventType.TRADE_ENTRY else None,
-                    event.position_size,
-                    event.entry_price or '',
-                    event.exit_price or '',
-                    event.pnl or '',
-                    current_equity,
-                    event_id
-                ])
+            self._atomic_append(self.trail_file, [
+                event.timestamp.isoformat(),
+                event.event_type.value,
+                event.symbol_pair,
+                event.reason if event.event_type == EventType.TRADE_ENTRY else None,
+                event.position_size,
+                event.entry_price or '',
+                event.exit_price or '',
+                event.pnl or '',
+                current_equity,
+                event_id
+            ])
             logger.info(
                 "trade_event_logged",
                 event_type=event.event_type.value,
@@ -176,14 +177,12 @@ class AuditTrail:
             raise EquityError(f"Cannot snapshot invalid equity: {current_equity}")
         
         try:
-            with open(self.equity_snapshot_file, 'a', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow([
-                    datetime.now().isoformat(),
-                    current_equity,
-                    positions_count,
-                    positions_list or ''
-                ])
+            self._atomic_append(self.equity_snapshot_file, [
+                datetime.now().isoformat(),
+                current_equity,
+                positions_count,
+                positions_list or ''
+            ])
             logger.info(
                 "equity_snapshot_logged",
                 equity=current_equity,
@@ -192,6 +191,32 @@ class AuditTrail:
         except IOError as e:
             logger.error("snapshot_write_failed", error=str(e), file=str(self.equity_snapshot_file))
             raise EquityError(f"Failed to persist equity snapshot: {e}")
+    
+    # ------------------------------------------------------------------
+    # Atomic I/O helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _atomic_append(filepath: Path, row: list) -> None:
+        """Append a single CSV row with ``os.fsync()`` durability.
+
+        Writes the row to a temporary file first, then appends its
+        content to *filepath* and calls ``os.fsync()`` on the file
+        descriptor.  If the process is killed between the write and
+        the fsync, the worst case is the row is missing ÔÇö the file
+        itself is never corrupted because we only ever append a
+        complete, pre-serialised line.
+        """
+        buf = io.StringIO()
+        csv.writer(buf).writerow(row)
+        line = buf.getvalue()
+
+        fd = os.open(str(filepath), os.O_WRONLY | os.O_APPEND | os.O_CREAT)
+        try:
+            os.write(fd, line.encode('utf-8'))
+            os.fsync(fd)
+        finally:
+            os.close(fd)
     
     def recover_state(self) -> Tuple[Dict[str, '_PositionRecord'], List[float]]:
         """

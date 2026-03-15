@@ -1,4 +1,4 @@
-"""Monte Carlo order book simulation with stochastic path generation.
+﻿"""Monte Carlo order book simulation with stochastic path generation.
 
 Provides Monte Carlo simulation for order book dynamics, supporting:
 - Geometric Brownian Motion (GBM) for price paths
@@ -9,12 +9,12 @@ Provides Monte Carlo simulation for order book dynamics, supporting:
 """
 
 import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
-from common.types import Symbol, MonteCarloConfig, MonteCarloResult, TraceLevel
+from common.types import Symbol, MonteCarloConfig, MonteCarloResult
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ class MonteCarloOrderBookSimulator:
         """
         Generate Geometric Brownian Motion price path.
         
-        dS = μ*S*dt + σ*S*dW
+        dS = ╬╝*S*dt + ¤â*S*dW
         """
         dt = 1.0 / 252.0  # Daily time step (252 trading days/year)
         dW = np.random.normal(0, np.sqrt(dt), time_steps)
@@ -239,7 +239,7 @@ class MonteCarloOrderBookSimulator:
         
         return spreads
     
-    def simulate_single_path(self, symbol: Symbol = "BTC/USD") -> PricePath:
+    def simulate_single_path(self, symbol: Symbol = "AAPL") -> PricePath:
         """Generate a single Monte Carlo price path."""
         # Convert annual drift from BPS to decimal
         drift = self.config["price_drift_bps"] / 10000.0
@@ -278,7 +278,7 @@ class MonteCarloOrderBookSimulator:
             returns=np.concatenate([[0.0], returns]),
         )
     
-    def simulate(self, symbol: Symbol = "BTC/USD") -> MonteCarloSimulation:
+    def simulate(self, symbol: Symbol = "AAPL") -> MonteCarloSimulation:
         """
         Generate complete Monte Carlo simulation.
         
@@ -290,7 +290,7 @@ class MonteCarloOrderBookSimulator:
         """
         logger.info(
             f"Starting Monte Carlo simulation: {self.config['num_simulations']} "
-            f"simulations × {self.config['time_steps']} steps for {symbol}"
+            f"simulations ├ù {self.config['time_steps']} steps for {symbol}"
         )
         
         paths = []
@@ -337,7 +337,7 @@ def create_correlated_simulations(
         np.random.seed(seed)
     
     # Generate correlated random numbers using Cholesky decomposition
-    L = np.linalg.cholesky(correlation_matrix)
+    np.linalg.cholesky(correlation_matrix)
     
     results = {}
     

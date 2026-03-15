@@ -1,21 +1,17 @@
-"""
+﻿"""
 Type-annotated wrapper functions for production APIs.
 
 Provides fully typed interfaces to all public APIs.
 """
 
-from typing import Dict, List, Optional, Any, Tuple, Callable
-from datetime import datetime, timedelta
+from typing import Dict, Optional, Any, Tuple, Callable
 from common.types import (
-    OHLCVCandle, OrderRequest, OrderRecord, PositionRecord, 
-    AlertRecord, ValidationResult, RiskMetrics, RiskCheckResult,
-    TradeRecord, EquitySnapshot, Price, Quantity, Symbol, OrderID,
-    OrderSide, OrderType, OrderStatus, ExecutionMode
+    AlertRecord, ValidationResult, RiskCheckResult,
+    Price, Quantity, Symbol, OrderID,
+    OrderSide, OrderType
 )
 from dataclasses import dataclass
-from enum import Enum
 import pandas as pd
-import numpy as np
 
 
 # ============================================================================
@@ -276,7 +272,7 @@ def check_risk_typed(
     Args:
         symbol_pair: Trading pair
         position_size: Quantity to trade
-        current_equity ​: Portfolio equity
+        current_equity ÔÇï: Portfolio equity
         volatility: Current volatility
     
     Returns:
@@ -390,7 +386,7 @@ def get_secret_typed(name: str) -> Optional[str]:
 
 
 if __name__ == "__main__":
-    print("✅ Type-annotated API wrappers loaded")
+    print("Ô£à Type-annotated API wrappers loaded")
     print("- Retry policy types")
     print("- Circuit breaker types")
     print("- Execution types")

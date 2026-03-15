@@ -1,4 +1,4 @@
-"""
+﻿"""
 Broker reconciliation system for EDGECORE trading.
 
 Ensures broker state matches internal tracking:
@@ -11,7 +11,7 @@ Ensures broker state matches internal tracking:
 
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timezone
 from structlog import get_logger
 from enum import Enum
 import math
@@ -313,7 +313,7 @@ class BrokerReconciler:
         Raises:
              ValueError: If any input is invalid
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         self.divergences = []  # Reset divergences for this reconciliation
         
         # Reconcile each component
@@ -329,7 +329,7 @@ class BrokerReconciler:
         else:
             status = ReconciliationStatus.WARNING
         
-        duration = (datetime.utcnow() - start_time).total_seconds()
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         
         report = ReconciliationReport(
             status=status,
@@ -378,12 +378,12 @@ class BrokerReconciler:
             
             elif divergence.type == "position":
                 if divergence.severity == "high":
-                    actions.append(f"CLOSE: Liquidate missing position immediately")
+                    actions.append("CLOSE: Liquidate missing position immediately")
                 else:
-                    actions.append(f"SYNC: Recheck position sizes")
+                    actions.append("SYNC: Recheck position sizes")
             
             elif divergence.type == "order":
                 if divergence.severity == "high":
-                    actions.append(f"CANCEL: Stale order found on broker")
+                    actions.append("CANCEL: Stale order found on broker")
         
         return actions

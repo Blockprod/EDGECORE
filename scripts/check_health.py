@@ -1,4 +1,4 @@
-"""
+﻿"""
 Example: Test EDGECORE configuration and system health
 """
 
@@ -17,7 +17,7 @@ def check_environment():
     py_major, py_minor, py_patch = sys.version_info[:3]
     if py_major != 3 or py_minor != 11:
         print(f"    [!] WARNING: EDGECORE requires Python 3.11.x, you have {py_major}.{py_minor}.{py_patch}")
-        print(f"        Consider installing Python 3.11.9")
+        print("        Consider installing Python 3.11.9")
 
 def check_dependencies():
     """Check installed packages"""
@@ -32,14 +32,14 @@ def check_dependencies():
     for pkg in required:
         try:
             __import__(pkg)
-            print(f"    ✓ {pkg}")
+            print(f"    Ô£ô {pkg}")
         except ImportError:
-            print(f"    ✗ {pkg} (missing)")
+            print(f"    Ô£ù {pkg} (missing)")
             missing.append(pkg)
     
     if missing:
         print(f"\n    [!] Missing packages: {', '.join(missing)}")
-        print(f"    Run: pip install -r requirements.txt")
+        print("    Run: pip install -r requirements.txt")
         return False
     return True
 
@@ -49,7 +49,7 @@ def check_configuration():
     
     config_dir = Path("config")
     if not config_dir.exists():
-        print(f"    ✗ config/ directory not found")
+        print("    Ô£ù config/ directory not found")
         return False
     
     required_configs = [
@@ -61,9 +61,9 @@ def check_configuration():
     for config_file in required_configs:
         config_path = config_dir / config_file
         if config_path.exists():
-            print(f"    ✓ {config_file}")
+            print(f"    Ô£ô {config_file}")
         else:
-            print(f"    ✗ {config_file} (missing)")
+            print(f"    Ô£ù {config_file} (missing)")
             return False
     
     return True
@@ -76,13 +76,13 @@ def check_settings():
         from config.settings import get_settings
         settings = get_settings()
         
-        print(f"    ✓ Settings loaded (environment: {settings.env})")
+        print(f"    Ô£ô Settings loaded (environment: {settings.env})")
         print(f"      - Strategy: lookback={settings.strategy.lookback_window} days")
         print(f"      - Risk: max_risk={settings.risk.max_risk_per_trade*100:.1f}%")
         print(f"      - Execution: engine={settings.execution.engine}, sandbox={settings.execution.use_sandbox}")
         return True
     except Exception as e:
-        print(f"    ✗ Failed to load settings: {e}")
+        print(f"    Ô£ù Failed to load settings: {e}")
         return False
 
 def check_modules():
@@ -94,7 +94,7 @@ def check_modules():
         ('models.cointegration', 'engle_granger_test'),
         ('strategies.pair_trading', 'PairTradingStrategy'),
         ('risk.engine', 'RiskEngine'),
-        ('execution.ccxt_engine', 'CCXTExecutionEngine'),
+        ('execution.ibkr_engine', 'IBKRExecutionEngine'),
         ('backtests.runner', 'BacktestRunner'),
     ]
     
@@ -102,12 +102,12 @@ def check_modules():
         try:
             module = __import__(module_name, fromlist=[class_name])
             getattr(module, class_name)
-            print(f"    ✓ {module_name}.{class_name}")
+            print(f"    Ô£ô {module_name}.{class_name}")
         except ImportError as e:
-            print(f"    ✗ {module_name} (import error: {e})")
+            print(f"    Ô£ù {module_name} (import error: {e})")
             return False
         except AttributeError:
-            print(f"    ✗ {module_name}.{class_name} (not found)")
+            print(f"    Ô£ù {module_name}.{class_name} (not found)")
             return False
     
     return True
@@ -129,7 +129,7 @@ def main():
     # Summary
     print("\n" + "="*70)
     if all_ok:
-        print("✓ SYSTEM READY - All checks passed!")
+        print("Ô£ô SYSTEM READY - All checks passed!")
         print("\nNext steps:")
         print("  1. cp .env.example .env")
         print("  2. Edit .env with your credentials")
@@ -137,7 +137,7 @@ def main():
         print("  4. python examples_pair_discovery.py (find pairs)")
         print("  5. python main.py --mode paper     (paper trading)")
     else:
-        print("✗ SYSTEM NOT READY - Fix issues above")
+        print("Ô£ù SYSTEM NOT READY - Fix issues above")
         sys.exit(1)
     print("="*70 + "\n")
 

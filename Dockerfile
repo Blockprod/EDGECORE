@@ -1,25 +1,29 @@
-# Use official Python runtime as base image
-FROM python:3.11-slim AS builder
+﻿# Use official Python runtime as base image (must match pyproject.toml)
+FROM python:3.11.9-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install build dependencies (including C++ compiler and CMake)
 RUN apt-get update && apt-get install -y \
     build-essential \
+    cmake \
+    gcc \
+    g++ \
     git \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
 
-# Create virtual environment and install Python dependencies
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# Production stage
-FROM python:3.11-slim
+# Production stage (must match pyproject.toml)
+FROM python:3.11.9-slim
 
 # Set working directory
 WORKDIR /app
@@ -28,11 +32,12 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
-    ENVIRONMENT=production
+    EDGECORE_ENV=production
 
 # Install runtime dependencies only
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy virtual environment from builder

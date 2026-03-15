@@ -1,4 +1,4 @@
-"""
+﻿"""
 Realistic order book modeling for backtest execution.
 
 Simulates realistic market microstructure including:
@@ -16,7 +16,6 @@ from datetime import datetime
 from typing import Optional
 
 from common.types import (
-    DepthMode,
     LiquidityMetrics,
     OrderBook,
     OrderBookLevel,

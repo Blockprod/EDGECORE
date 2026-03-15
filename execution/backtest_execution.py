@@ -1,4 +1,4 @@
-"""
+﻿"""
 Realistic backtest execution with slippage, commissions, and partial fills.
 
 This module provides realistic order fill simulation for backtesting,
@@ -12,7 +12,6 @@ including:
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 from common.types import (
     CommissionConfig,

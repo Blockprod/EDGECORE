@@ -1,20 +1,21 @@
-import pandas as pd
-import numpy as np
-from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Tuple
+﻿from dataclasses import dataclass
 from datetime import datetime
+from typing import Dict, List, Optional
+
+import numpy as np
 from structlog import get_logger
-from monitoring.events import TradingEvent, EventType
-from config.settings import get_settings
-from persistence.audit_trail import AuditTrail
+
+import config.settings as settings_mod
 from common.validators import (
-    validate_equity,
-    validate_position_size,
-    validate_volatility,
     EquityError,
     ValidationError,
     VolatilityError,
+    validate_equity,
+    validate_position_size,
+    validate_volatility,
 )
+from monitoring.events import EventType, TradingEvent
+from persistence.audit_trail import AuditTrail
 
 logger = get_logger(__name__)
 
@@ -74,7 +75,7 @@ class RiskEngine:
         # Validate initial equity
         validate_equity(initial_equity)
         
-        self.config = get_settings().risk
+        self.config = settings_mod.get_settings().risk
         self.initial_equity = initial_equity
         self.initial_cash = initial_cash if initial_cash is not None else initial_equity
         
@@ -90,6 +91,9 @@ class RiskEngine:
         self.loss_streak = 0
         self.daily_trades = 0
         self.daily_loss = 0.0
+        # Sector map: symbol -> sector string (e.g. {"AAPL": "Technology"})
+        self.sector_map: Dict[str, str] = {}
+        self._daily_date = datetime.now().date()  # track date for auto-reset
         
         # Initialize persistent audit trail for crash recovery
         self.audit_trail = AuditTrail()
@@ -134,13 +138,48 @@ class RiskEngine:
             logger.error("trade_entry_validation_failed", error=str(e))
             raise
         
-        # Check 1: Max concurrent positions
+        # Check 1: Risk per trade and leverage constraint (reject if either exceeded)
+        current_exposure = self.get_total_exposure()
+        new_position_exposure = position_size * (1.0 + volatility)  # Conservative estimate
+        total_with_new = current_exposure + new_position_exposure
+        current_leverage = total_with_new / current_equity if current_equity > 0 else 0
+
+        # Calculate risk per trade
+        try:
+            risk_amount = position_size * volatility
+            risk_pct = risk_amount / current_equity
+        except ZeroDivisionError as e:
+            logger.error("equity_division_error", error=str(e), current_equity=current_equity)
+            raise EquityError(f"Division by zero: current_equity={current_equity}")
+
+        if risk_pct > self.config.max_risk_per_trade:
+            reason = f"Risk per trade ({risk_pct:.4f}) exceeds limit ({self.config.max_risk_per_trade}) [risk]"
+            logger.warning("trade_rejected_risk", reason=reason, pair=symbol_pair)
+            return False, reason
+
+        if current_leverage > self.config.max_leverage:
+            reason = f"Leverage {current_leverage:.2f}x exceeds limit {self.config.max_leverage}x [leverage]"
+            logger.warning("trade_rejected_leverage", reason=reason, pair=symbol_pair, current_leverage=current_leverage)
+            return False, reason
+
+        # Check 2: Max concurrent positions
         if len(self.positions) >= self.config.max_concurrent_positions:
             reason = f"Max concurrent positions ({self.config.max_concurrent_positions}) reached"
             logger.warning("trade_rejected", reason=reason, pair=symbol_pair)
+            try:
+                from monitoring.alerter import AlertCategory, AlertManager, AlertSeverity
+                AlertManager().create_alert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.RISK,
+                    title="Max concurrent positions limit breached",
+                    message=reason,
+                    data={"pair": symbol_pair}
+                )
+            except Exception as alert_exc:
+                logger.error("alert_trigger_failed", error=str(alert_exc), reason=reason)
             return False, reason
-        
-        # Check 2: Risk per trade (requires positive equity for division)
+
+        # Check 3: Risk per trade (requires positive equity for division)
         if current_equity <= 0:
             raise EquityError(
                 f"Cannot enter trade: current_equity must be positive, got {current_equity}"
@@ -163,15 +202,27 @@ class RiskEngine:
             raise EquityError(f"Division by zero: current_equity={current_equity}")
         
         if risk_pct > self.config.max_risk_per_trade:
-            reason = f"Risk per trade ({risk_pct:.4f}) exceeds limit ({self.config.max_risk_per_trade})"
+            reason = f"Risk per trade ({risk_pct:.4f}) exceeds limit ({self.config.max_risk_per_trade}) [risk]"
             logger.warning("trade_rejected", reason=reason, pair=symbol_pair)
+            try:
+                from monitoring.alerter import AlertCategory, AlertManager, AlertSeverity
+                AlertManager().create_alert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.RISK,
+                    title="Risk per trade limit breached",
+                    message=reason,
+                    data={"pair": symbol_pair, "risk_pct": risk_pct}
+                )
+            except Exception as alert_exc:
+                logger.error("alert_trigger_failed", error=str(alert_exc), reason=reason)
             return False, reason
         
         # Check 3: Consecutive losses
         if self.loss_streak >= self.config.max_consecutive_losses:
             return False, f"Consecutive loss limit ({self.config.max_consecutive_losses}) exceeded"
         
-        # Check 4: Daily loss (requires positive equity for division)
+        # Check 4: Daily loss (auto-reset if new calendar day)
+        self._maybe_reset_daily()
         if current_equity <= 0:
             raise EquityError(
                 f"Cannot check daily loss: current_equity must be positive, got {current_equity}"
@@ -191,16 +242,45 @@ class RiskEngine:
         if daily_loss_pct > self.config.max_daily_loss_pct:
             reason = f"Daily loss ({daily_loss_pct:.4f}) exceeds limit ({self.config.max_daily_loss_pct})"
             logger.warning("trade_rejected", reason=reason)
+            try:
+                from monitoring.alerter import AlertCategory, AlertManager, AlertSeverity
+                AlertManager().create_alert(
+                    severity=AlertSeverity.CRITICAL,
+                    category=AlertCategory.RISK,
+                    title="Daily loss limit breached",
+                    message=reason,
+                    data={"daily_loss_pct": daily_loss_pct, "current_equity": current_equity}
+                )
+            except Exception as alert_exc:
+                logger.error("alert_trigger_failed", error=str(alert_exc), reason=reason)
             return False, reason
         
-        # Check 5: Leverage constraint
+        # Check 5: Sector concentration
+        if self.sector_map:
+            sector = self._get_sector_for_pair(symbol_pair)
+            if sector is not None:
+                sector_count = sum(
+                    1 for sp in self.positions
+                    if self._get_sector_for_pair(sp) == sector
+                )
+                total_positions = len(self.positions) + 1  # including the new one
+                sector_weight = (sector_count + 1) / max(total_positions, 1)
+                if sector_weight > self.config.max_sector_weight:
+                    reason = (
+                        f"Sector concentration ({sector}: {sector_weight:.0%}) "
+                        f"exceeds limit ({self.config.max_sector_weight:.0%})"
+                    )
+                    logger.warning("trade_rejected_sector", reason=reason, pair=symbol_pair, sector=sector)
+                    return False, reason
+
+        # Check 6: Leverage constraint
         current_exposure = self.get_total_exposure()
         new_position_exposure = position_size * (1.0 + volatility)  # Conservative estimate
         total_with_new = current_exposure + new_position_exposure
         current_leverage = total_with_new / current_equity if current_equity > 0 else 0
         
         if current_leverage > self.config.max_leverage:
-            reason = f"Leverage {current_leverage:.2f}x exceeds limit {self.config.max_leverage}x"
+            reason = f"Leverage {current_leverage:.2f}x exceeds limit {self.config.max_leverage}x [leverage]"
             logger.warning("trade_rejected_leverage", reason=reason, pair=symbol_pair, current_leverage=current_leverage)
             return False, reason
         
@@ -212,6 +292,19 @@ class RiskEngine:
         )
         return True, None
     
+    def _get_sector_for_pair(self, symbol_pair: str) -> Optional[str]:
+        """Return the sector for a symbol pair, or None if unknown.
+
+        Pair keys use ``SYM1_SYM2`` convention.  If both symbols are in
+        ``self.sector_map`` and share a sector, that sector is returned.
+        If only one matches, its sector is used. Otherwise ``None``.
+        """
+        parts = symbol_pair.split("_")
+        sectors = [self.sector_map.get(p) for p in parts if self.sector_map.get(p)]
+        if not sectors:
+            return None
+        return sectors[0]
+
     def get_total_exposure(self) -> float:
         """
         Calculate total notional exposure across all positions.
@@ -234,9 +327,9 @@ class RiskEngine:
             List of dicts with positions that should be closed:
             [
                 {
-                    'symbol': 'BTC/USDT',
-                    'entry_price': 45000.0,
-                    'current_price': 42750.0,
+                    'symbol': 'AAPL',
+                    'entry_price': 175.0,
+                    'current_price': 166.25,
                     'pnl_pct': -0.05,
                     'reason': 'Stop-loss: -5.00%',
                     'quantity': 1.0
@@ -439,6 +532,15 @@ class RiskEngine:
         """Reset daily counters (call at market open)."""
         self.daily_trades = 0
         self.daily_loss = 0.0
+        self._daily_date = datetime.now().date()
+
+    def _maybe_reset_daily(self) -> None:
+        """Auto-reset daily counters when the calendar date rolls over."""
+        today = datetime.now().date()
+        if self._daily_date != today:
+            self.daily_trades = 0
+            self.daily_loss = 0.0
+            self._daily_date = today
     
     def save_equity_snapshot(self) -> None:
         """

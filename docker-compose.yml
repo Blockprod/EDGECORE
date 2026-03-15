@@ -1,11 +1,10 @@
-version: '3.8'
-
-services:
+﻿services:
   # Main trading engine application
   trading-engine:
     build:
       context: .
       dockerfile: Dockerfile
+    image: edgecore:latest
     container_name: trading-engine
     environment:
       ENVIRONMENT: production
@@ -18,17 +17,17 @@ services:
       API_RATE_LIMIT_RPM: "600"
       FLASK_ENV: production
       FLASK_WORKERS: "4"
-      # Exchange credentials (from .env)
-      CCXT_EXCHANGE: ${CCXT_EXCHANGE:-binance}
-      CCXT_API_KEY: ${CCXT_API_KEY}
-      CCXT_API_SECRET: ${CCXT_API_SECRET}
-      # Risk limits
+      IBKR_HOST: host.docker.internal
+      IBKR_PORT: "4002"
+      IBKR_CLIENT_ID: ${IBKR_CLIENT_ID:-1}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       MAX_DAILY_LOSS_PERCENT: ${MAX_DAILY_LOSS_PERCENT:-5}
       MAX_POSITION_SIZE: ${MAX_POSITION_SIZE:-100000}
       MAX_LEVERAGE: ${MAX_LEVERAGE:-2}
-      # Monitoring
       ENABLE_MONITORING: "true"
       MONITORING_PORT: "5000"
+      DASHBOARD_API_HOST: "0.0.0.0"
       METRICS_ENABLED: "true"
     ports:
       - "5000:5000"
@@ -46,7 +45,10 @@ services:
     networks:
       - trading-network
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -54,139 +56,137 @@ services:
         max-file: "3"
         labels: "service=trading-engine"
 
-  # Redis for caching and session storage
+  # Redis
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
     container_name: trading-redis
-    environment:
-      REDIS_PORT: 6379
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
     networks:
       - trading-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "2"
-        labels: "service=redis"
 
-  # Prometheus for metrics collection
+  # Prometheus
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.1.0
     container_name: trading-prometheus
+    user: "nobody"
     ports:
       - "9090:9090"
     volumes:
-      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
     restart: unless-stopped
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=30d"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
     networks:
       - trading-network
     depends_on:
-      - trading-engine
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "2"
-        labels: "service=prometheus"
+      trading-engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-  # Grafana for visualization
+  # Grafana
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0
     container_name: trading-grafana
+    user: "472"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
       GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_SECURITY_COOKIE_SECURE: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
     ports:
       - "3000:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     restart: unless-stopped
     networks:
       - trading-network
     depends_on:
-      - prometheus
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "2"
-        labels: "service=grafana"
+      prometheus:
+        condition: service_healthy
 
-  # ELK Stack - Elasticsearch
+  # Elasticsearch
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.0.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.1
     container_name: trading-elasticsearch
     environment:
-      discovery.type: single-node
-      xpack.security.enabled: "false"
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     ports:
       - "9200:9200"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     restart: unless-stopped
+    networks:
+      - trading-network
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-    networks:
-      - trading-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "2"
-        labels: "service=elasticsearch"
+      start_period: 60s
 
-  # ELK Stack - Kibana
+  # Kibana
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.0.0
+    image: docker.elastic.co/kibana/kibana:8.16.1
     container_name: trading-kibana
     environment:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      SERVER_NAME: kibana
+      SERVER_HOST: "0.0.0.0"
     ports:
       - "5601:5601"
     restart: unless-stopped
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
     networks:
       - trading-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "2"
-        labels: "service=kibana"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
 volumes:
   redis-data:
-    driver: local
   prometheus-data:
-    driver: local
   grafana-data:
-    driver: local
   elasticsearch-data:
-    driver: local
 
 networks:
   trading-network:

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Data integrity validators for OHLCV market data and positions.
 
 Ensures:
@@ -9,9 +9,9 @@ Ensures:
 - Sequence continuity (no gaps, monotonic timestamps)
 """
 
-from typing import Dict, List, Optional, Any, Tuple
+from typing import List, Optional, Tuple
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 import pandas as pd
 import numpy as np
@@ -206,7 +206,11 @@ class OHLCVValidator:
             else:
                 latest_dt = latest_timestamp
             
-            age_hours = (datetime.utcnow() - latest_dt).total_seconds() / 3600
+            # Ensure timezone-aware comparison
+            if latest_dt.tzinfo is None:
+                latest_dt = latest_dt.replace(tzinfo=timezone.utc)
+            
+            age_hours = (datetime.now(timezone.utc) - latest_dt).total_seconds() / 3600
             
             if age_hours > max_age_hours:
                 errors.append(f"Latest data is {age_hours:.1f}h old (max allowed: {max_age_hours}h)")
@@ -223,7 +227,10 @@ class OHLCVValidator:
             else:
                 ts_dt = ts
             
-            time_diff = (ts_dt - datetime.utcnow()).total_seconds()
+            if ts_dt.tzinfo is None:
+                ts_dt = ts_dt.replace(tzinfo=timezone.utc)
+            
+            time_diff = (ts_dt - datetime.now(timezone.utc)).total_seconds()
             if time_diff > max_future_seconds:
                 future_count += 1
                 if future_count == 1:  # Only warn once
@@ -297,7 +304,7 @@ class PositionValidator:
         Validate position data.
         
         Args:
-            symbol: Trading pair (e.g., "BTC/USD")
+            symbol: Trading symbol (e.g., "AAPL")
             quantity: Position size
             entry_price: Entry price
             current_price: Current market price
@@ -312,8 +319,13 @@ class PositionValidator:
         checks_passed = 0
         checks_failed = 0
         
-        # Check 1: Symbol format
-        if not symbol or "/" not in symbol:
+        # Check 1: Symbol format  - accept equity tickers or BASE/QUOTE pairs
+        import re as _re
+        _sym_ok = bool(symbol) and (
+            _re.match(r'^[A-Za-z]{1,5}$', symbol) is not None
+            or '/' in symbol
+        )
+        if not _sym_ok:
             errors.append(f"Invalid symbol format: {symbol}")
             checks_failed += 1
         else:
@@ -349,9 +361,11 @@ class PositionValidator:
         
         # Check 6: Position age check (if provided)
         if opened_at:
-            age = datetime.utcnow() - opened_at
+            if opened_at.tzinfo is None:
+                opened_at = opened_at.replace(tzinfo=timezone.utc)
+            age = datetime.now(timezone.utc) - opened_at
             if age < timedelta(0):
-                errors.append(f"Position opened in the future")
+                errors.append("Position opened in the future")
                 checks_failed += 1
             elif age > timedelta(days=365):
                 warnings.append(f"Position age exceeds 1 year ({age})")
@@ -420,7 +434,9 @@ class EquityValidator:
         # Check 3: Jump detection
         if check_jump and len(self.equity_history) > 0:
             last_time, last_equity = self.equity_history[-1]
-            time_delta = datetime.utcnow() - last_time
+            if hasattr(last_time, 'tzinfo') and last_time.tzinfo is None:
+                last_time = last_time.replace(tzinfo=timezone.utc)
+            time_delta = datetime.now(timezone.utc) - last_time
             equity_change_pct = abs((equity - last_equity) / last_equity) * 100
             
             # Only alert for jumps > threshold in short timeframes
@@ -435,7 +451,7 @@ class EquityValidator:
             checks_passed += 1
         
         # Record this equity
-        self.equity_history.append((datetime.utcnow(), equity))
+        self.equity_history.append((datetime.now(timezone.utc), equity))
         # Keep only last 100 entries
         if len(self.equity_history) > 100:
             self.equity_history = self.equity_history[-100:]

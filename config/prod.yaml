@@ -1,36 +1,165 @@
+﻿# EDGECORE ÔÇö Equity Production Configuration
+# Market: US Equities via Interactive Brokers (LIVE)
+# Annualisation: 252 trading days
+# audit 2026-02-22 ÔÇö equity migration (Option A: 100% US equities via IBKR)
+#
+# Production config is more conservative than dev:
+#   - Tighter risk limits
+#   - More symbols for diversification
+#   - Lower allocation per pair
+
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
-  exit_z_score: 0.0
+  exit_z_score: 0.5                 # R-8 fix: was 0.0 ÔåÆ whipsaw at mean-crossing
   min_correlation: 0.7
   max_half_life: 60
+  use_kalman: true
+  max_position_loss_pct: 0.025    # 2.5% P&L stop (tighter in prod)
 
-risk:
-  max_risk_per_trade: 0.005
-  max_concurrent_positions: 5
-  max_daily_loss_pct: 0.01
-  max_consecutive_losses: 2
-  volatility_percentile_threshold: 1.5
-  position_sizing_method: "volatility"
-  max_leverage: 2.0
+trading_universe:
+  symbols:
+    # === TIER 1: Mega-cap sector leaders (highest liquidity) ===
+    # Technology
+    - "AAPL"
+    - "MSFT"
+    - "GOOGL"
+    - "META"
+    - "NVDA"
+    - "AMD"
+    - "INTC"
+    - "AVGO"
+    - "CRM"
+    - "ADBE"
+    - "ORCL"
+    - "CSCO"
+    - "TXN"
+    - "QCOM"
+    # Financials
+    - "JPM"
+    - "BAC"
+    - "GS"
+    - "MS"
+    - "WFC"
+    - "C"
+    - "BLK"
+    - "SCHW"
+    - "AXP"
+    - "USB"
+    # Healthcare / Pharma / Biotech
+    - "JNJ"
+    - "PFE"
+    - "UNH"
+    - "MRK"
+    - "ABBV"
+    - "LLY"
+    - "TMO"
+    - "ABT"
+    - "BMY"
+    - "AMGN"
+    - "GILD"
+    - "ISRG"
+    # Consumer Staples
+    - "KO"
+    - "PEP"
+    - "PG"
+    - "CL"
+    - "WMT"
+    - "COST"
+    - "MO"
+    - "PM"
+    - "MDLZ"
+    - "KHC"
+    # Consumer Discretionary
+    - "HD"
+    - "LOW"
+    - "MCD"
+    - "SBUX"
+    - "NKE"
+    - "TJX"
+    # Energy
+    - "XOM"
+    - "CVX"
+    - "COP"
+    - "SLB"
+    - "EOG"
+    - "PSX"
+    - "MPC"
+    - "VLO"
+    # Industrials
+    - "CAT"
+    - "DE"
+    - "HON"
+    - "GE"
+    - "RTX"
+    - "LMT"
+    - "UPS"
+    - "FDX"
+    - "BA"
+    - "MMM"
+    # Materials
+    - "LIN"
+    - "APD"
+    - "FCX"
+    - "NEM"
+    # Utilities
+    - "NEE"
+    - "DUK"
+    - "SO"
+    - "D"
+    - "AEP"
+    # REITs
+    - "PLD"
+    - "AMT"
+    - "SPG"
+    - "O"
+    # Communication Services
+    - "DIS"
+    - "NFLX"
+    - "CMCSA"
+    - "T"
+    - "VZ"
+
+  max_leverage: 1.5              # Conservative in production
 
 execution:
-  engine: "ccxt"
-  exchange: "binance"
-  timeout_seconds: 10
+  engine: "ibkr"
+  timeout_seconds: 30
   max_retries: 5
-  slippage_bps: 3.0
-  use_sandbox: true
-  # Override with ENABLE_LIVE_TRADING=true env var ONLY for live trading
-  paper_trading_loop_interval_seconds: 3600
-  initial_capital: 5000.0
-  paper_slippage_model: "adaptive"
-  paper_commission_pct: 0.15
+  slippage_bps: 2.0
+  use_sandbox: false             # LIVE trading
+  initial_capital: 100000.0
 
 backtest:
-  start_date: "2022-01-01"
-  end_date: "2024-01-01"
-  initial_capital: 1000000.0
-  commission_bps: 1.0
-  walk_forward_periods: 12
+  start_date: "2016-01-01"      # 10 years history for robustness
+  end_date: "2026-01-01"
+  initial_capital: 100000.0
+  commission_bps: 2.0
+  walk_forward_periods: 8
   out_of_sample_ratio: 0.2
+
+risk:
+  max_concurrent_positions: 12
+  max_risk_per_trade: 0.004       # 0.4% of equity per trade
+  max_consecutive_losses: 4
+  max_daily_loss_pct: 0.015       # 1.5% daily drawdown circuit breaker
+  max_leverage: 1.5
+  max_drawdown_pct: 0.08          # 8% portfolio drawdown hard stop
+  spread_correlation_max: 0.40    # R-6: max |¤ü| between spreads
+
+# Operational constants (F-7)
+trading:
+  max_loop_iterations: 999999       # Production: run indefinitely
+  max_consecutive_errors: 5         # Stricter than dev (was 10)
+  data_max_age_hours: 2.0           # Reject data older than 2h in prod
+  max_allocation_pct: 0.15          # 15% per pair (tighter than dev 20%)
+  equity_tolerance_pct: 0.02        # 0.02% reconciler tolerance
+  reconciliation_divergence_pct: 0.05  # Stricter divergence alert
+  fallback_spread_vol: 0.02
+  min_order_quantity: 1.0
+  limit_price_offset_pct: 0.005     # 0.5% offset (tighter in prod)

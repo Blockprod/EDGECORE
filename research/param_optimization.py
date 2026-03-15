@@ -1,4 +1,4 @@
-"""
+﻿"""
 Parameter optimization module for strategy tuning.
 
 TODO:
@@ -8,7 +8,6 @@ TODO:
 """
 
 import pandas as pd
-import numpy as np
 from itertools import product
 from structlog import get_logger
 

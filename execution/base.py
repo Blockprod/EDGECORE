@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+﻿from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Dict
@@ -9,13 +9,19 @@ class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"
 
-class OrderStatus(Enum):
-    """Order state."""
+class OrderStatus(str, Enum):
+    """Canonical order state ÔÇö single source of truth for the project."""
     PENDING = "PENDING"
+    SUBMITTED = "SUBMITTED"
     FILLED = "FILLED"
     PARTIAL = "PARTIAL"
-    REJECTED = "REJECTED"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
     CANCELLED = "CANCELLED"
+    REJECTED = "REJECTED"
+    FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    ERROR = "ERROR"
+    UNKNOWN = "UNKNOWN"
 
 @dataclass
 class Order:

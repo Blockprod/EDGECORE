@@ -1,4 +1,4 @@
-# Production Deployment Guide
+﻿# Production Deployment Guide
 
 **Last Updated**: February 8, 2026  
 **Version**: 1.0  
@@ -32,42 +32,42 @@ This guide provides comprehensive instructions for deploying the Trading Engine 
 ### Components
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      Production Environment                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              Trading Engine (Container)                   │   │
-│  │  ┌────────────────────────────────────────────────────┐  │   │
-│  │  │  Python 3.11 + Required Dependencies              │  │   │
-│  │  │  - Data Loading & Preprocessing                   │  │   │
-│  │  │  - Strategy (Pair Trading)                        │  │   │
-│  │  │  - Risk Management                                │  │   │
-│  │  │  - Order Execution (CCXT)                         │  │   │
-│  │  │  - Monitoring & Dashboard (Flask)                 │  │   │
-│  │  │  - JSON Logging                                   │  │   │
-│  │  │  - Dashboard Caching                              │  │   │
-│  │  │  - API Security (Rate Limit + Auth)               │  │   │
-│  │  └────────────────────────────────────────────────────┘  │   │
-│  │  Port: 5000                                             │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                 │                                 │
-│  ┌──────────────────────────────┼──────────────────────────┐    │
-│  │                              │                          │    │
-│  ▼                              ▼                          ▼    │
-│
-│  ┌────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
-│  │   Redis Cache  │  │   Prometheus     │  │  ELK Stack      │ │
-│  │   - Sessions   │  │   - Metrics      │  │  - Logs         │ │
-│  │   - Cache      │  │   - Dashboards   │  │  - Analysis     │ │
-│  │   Port: 6379   │  │   Port: 9090     │  │  Port: 9200/5601
-│  └────────────────┘  └──────────────────┘  └─────────────────┘ │
-│         │                     │                     │             │
-│  ┌──────┴─────────────────────┴─────────────────────┴──────┐    │
-│  │           Shared Docker Network (bridge)                 │    │
-│  └──────────────────────────────────────────────────────────┘    │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
+ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
+Ôöé                      Production Environment                      Ôöé
+Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
+Ôöé                                                                   Ôöé
+Ôöé  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ   Ôöé
+Ôöé  Ôöé              Trading Engine (Container)                   Ôöé   Ôöé
+Ôöé  Ôöé  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  Python 3.11 + Required Dependencies              Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - Data Loading & Preprocessing                   Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - Strategy (Pair Trading)                        Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - Risk Management                                Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - Order Execution (IBKR)                         Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - Monitoring & Dashboard (Flask)                 Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - JSON Logging                                   Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - Dashboard Caching                              Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  Ôöé  - API Security (Rate Limit + Auth)               Ôöé  Ôöé   Ôöé
+Ôöé  Ôöé  ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ  Ôöé   Ôöé
+Ôöé  Ôöé  Port: 5000                                             Ôöé   Ôöé
+Ôöé  ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ   Ôöé
+Ôöé                                 Ôöé                                 Ôöé
+Ôöé  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ    Ôöé
+Ôöé  Ôöé                              Ôöé                          Ôöé    Ôöé
+Ôöé  Ôû╝                              Ôû╝                          Ôû╝    Ôöé
+Ôöé
+Ôöé  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ Ôöé
+Ôöé  Ôöé   Redis Cache  Ôöé  Ôöé   Prometheus     Ôöé  Ôöé  ELK Stack      Ôöé Ôöé
+Ôöé  Ôöé   - Sessions   Ôöé  Ôöé   - Metrics      Ôöé  Ôöé  - Logs         Ôöé Ôöé
+Ôöé  Ôöé   - Cache      Ôöé  Ôöé   - Dashboards   Ôöé  Ôöé  - Analysis     Ôöé Ôöé
+Ôöé  Ôöé   Port: 6379   Ôöé  Ôöé   Port: 9090     Ôöé  Ôöé  Port: 9200/5601
+Ôöé  ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ  ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ  ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ Ôöé
+Ôöé         Ôöé                     Ôöé                     Ôöé             Ôöé
+Ôöé  ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ    Ôöé
+Ôöé  Ôöé           Shared Docker Network (bridge)                 Ôöé    Ôöé
+Ôöé  ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ    Ôöé
+Ôöé                                                                   Ôöé
+ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
 ```
 
 ### Services
@@ -101,7 +101,7 @@ This guide provides comprehensive instructions for deploying the Trading Engine 
 ### API Credentials
 
 You'll need:
-- **Exchange API Key** (Binance, Coinbase, etc.)
+- ****Broker API Key** (IBKR TWS/Gateway)
 - **Exchange API Secret**
 - **Optional**: Webhook URLs for notifications
 
@@ -149,8 +149,8 @@ kubectl create configmap trading-config --from-file=config/ \
 
 # 3. Create Secrets (sensitive data)
 kubectl create secret generic trading-secrets \
-  --from-literal=ccxt-api-key=$CCXT_API_KEY \
-  --from-literal=ccxt-api-secret=$CCXT_API_SECRET \
+  --from-literal=ibkr-host=$IBKR_HOST \
+  --from-literal=ibkr-port=$IBKR_PORT \
   -n trading-engine
 
 # 4. Deploy using Helm (optional)
@@ -218,10 +218,10 @@ MAX_POSITION_SIZE=100000
 MAX_LEVERAGE=2.0
 
 # Exchange
-CCXT_EXCHANGE=binance
-CCXT_API_KEY=your-key
-CCXT_API_SECRET=your-secret
-CCXT_SANDBOX=false                # Set to true for testing
+IBKR_HOST=127.0.0.1
+IBKR_PORT=7497
+IBKR_CLIENT_ID=1
+IBKR_PAPER=true                 # Set to false for live
 ```
 
 ### Configuration Files
@@ -251,7 +251,7 @@ datasources:
 
 ## Security Checklist
 
-### ✅ Pre-Deployment
+### Ô£à Pre-Deployment
 
 - [ ] All API credentials in `.env` (never in code)
 - [ ] SSL/TLS certificates obtained (Let's Encrypt recommended)
@@ -261,7 +261,7 @@ datasources:
 - [ ] Database backups automated
 - [ ] Log retention policies configured
 
-### ✅ Application Security
+### Ô£à Application Security
 
 - [ ] Rate limiting enabled (default: 600 RPM)
 - [ ] API key authentication enforced
@@ -272,7 +272,7 @@ datasources:
 - [ ] Output sanitization for JSON responses
 - [ ] SQL injection protections (if using DB)
 
-### ✅ Container Security
+### Ô£à Container Security
 
 - [ ] Non-root user in Dockerfile (appuser:1000)
 - [ ] Read-only root filesystem where possible
@@ -282,7 +282,7 @@ datasources:
 - [ ] Private Docker registry used
 - [ ] Image signing enabled
 
-### ✅ Infrastructure Security
+### Ô£à Infrastructure Security
 
 - [ ] VPC/Network isolation configured
 - [ ] Secrets management (HashiCorp Vault recommended)
@@ -292,7 +292,7 @@ datasources:
 - [ ] Regular security audits scheduled
 - [ ] Incident response plan documented
 
-### ✅ Operational Security
+### Ô£à Operational Security
 
 - [ ] Monitoring and alerting active
 - [ ] Automated backups (daily, encrypted)
@@ -463,7 +463,7 @@ docker logs trading-engine
 # Common causes:
 # - Port 5000 in use: change port in docker-compose.yml
 # - Missing .env file: cp config/.env.example .env
-# - API credentials invalid: verify CCXT_API_KEY and CCXT_API_SECRET
+# - API credentials invalid: verify IBKR_HOST, IBKR_PORT, and IBKR_CLIENT_ID
 ```
 
 #### 2. High Memory Usage
@@ -601,9 +601,9 @@ tar -xzf logs_20260208.tar.gz -C /backup/
 - [ ] Go/no-go decision made
 
 ### Launch Week
-- [ ] Gradual traffic increase (10% → 100%)
+- [ ] Gradual traffic increase (10% ÔåÆ 100%)
 - [ ] Monitor all metrics closely
-- [ ] Team on-call 24/7
+- [ ] Team on-call market hours
 - [ ] Daily stand-ups
 - [ ] Weekly review meeting
 

@@ -1,0 +1,1 @@
+﻿LIN	load_error	No data returned from IBKR for LIN

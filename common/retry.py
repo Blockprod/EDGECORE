@@ -1,4 +1,4 @@
-"""
+﻿"""
 Retry logic with exponential backoff for resilient error handling.
 
 Provides:
@@ -13,7 +13,6 @@ from typing import Callable, TypeVar, Any, Optional, Type, Tuple
 from functools import wraps
 import time
 import math
-from datetime import datetime, timedelta
 from structlog import get_logger
 from dataclasses import dataclass
 
@@ -111,7 +110,6 @@ def retry_with_backoff(
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
-            last_exception: Optional[Exception] = None
             
             for attempt in range(policy.max_attempts):
                 try:
@@ -128,14 +126,13 @@ def retry_with_backoff(
                     return result
                 
                 except Exception as e:
-                    last_exception = e
                     
                     # Check if exception is retryable
                     if not isinstance(e, policy.retryable_exceptions):
                         logger.error(
                             "retry_fatal_exception",
                             func_name=func.__name__,
-                            exception=type(e).__name__,
+                            exc_type=type(e).__name__,
                             message=str(e),
                             attempt=attempt
                         )
@@ -162,7 +159,7 @@ def retry_with_backoff(
                         attempt=attempt,
                         max_attempts=policy.max_attempts,
                         delay_seconds=delay,
-                        exception=type(e).__name__,
+                        exc_type=type(e).__name__,
                         message=str(e)
                     )
                     

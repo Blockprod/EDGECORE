@@ -1,4 +1,4 @@
-"""
+﻿"""
 Unified error handling for EDGECORE trading system.
 
 Provides:
@@ -9,7 +9,7 @@ Provides:
 
 import time
 from functools import wraps
-from typing import Callable, Optional, TypeVar, Any, Union
+from typing import Callable, Optional, TypeVar, Any
 from structlog import get_logger
 
 from common.errors import (
@@ -34,7 +34,7 @@ def handle_error(
     
     Args:
         error: Exception to handle
-        context: Human-readable context (e.g., "loading data for BTC/USDT")
+        context: Human-readable context (e.g., "loading data for AAPL")
         alerter: Optional AlertManager or SlackAlerter for critical errors
     
     Behavior:
@@ -120,7 +120,8 @@ def with_error_handling(
     category: ErrorCategory = ErrorCategory.RETRYABLE,
     max_retries: int = 3,
     backoff_base: float = 2.0,
-    context_prefix: str = ""
+    context_prefix: str = "",
+    alerter: Optional[Any] = None
 ) -> Callable[[Callable[..., T]], Callable[..., T]]:
     """
     Decorator for automatic error handling and retries.
@@ -133,6 +134,8 @@ def with_error_handling(
         max_retries: Maximum number of retry attempts
         backoff_base: Base for exponential backoff (2^attempt * backoff_base seconds)
         context_prefix: Prefix for error context messages
+        alerter: Optional alerter (EmailAlerter/SlackAlerter) for sending
+                 alerts on non-retryable/fatal errors or max retries exceeded
     
     Returns:
         Decorated function that handles errors automatically
@@ -167,8 +170,8 @@ def with_error_handling(
                     else:
                         error_category = classify_exception(e)
                     
-                    # Log the error
-                    handle_error(e, context=context)
+                    # Log the error (and alert if non-retryable/fatal)
+                    handle_error(e, context=context, alerter=alerter)
                     
                     # Decision: retry or raise?
                     if error_category in [ErrorCategory.TRANSIENT, ErrorCategory.RETRYABLE]:
@@ -190,6 +193,17 @@ def with_error_handling(
                                 function=func.__name__,
                                 max_retries=max_retries
                             )
+                            # Alert on max retries exhausted
+                            if alerter and hasattr(alerter, 'send_alert'):
+                                try:
+                                    alerter.send_alert(
+                                        level='ERROR',
+                                        title=f'Max retries exceeded: {func.__name__}',
+                                        message=f'{context}: {e}',
+                                        data={'max_retries': max_retries, 'error': str(e)[:200]},
+                                    )
+                                except Exception:
+                                    pass
                     
                     # Don't retry: re-raise the error
                     raise

@@ -1,21 +1,17 @@
-"""Venue-specific market models for realistic execution simulation.
+﻿"""Venue-specific market models for realistic execution simulation.
 
 Provides market models tailored to different trading venues:
-- Centralized exchanges (CEX): Binance, Kraken
-- Decentralized exchanges (DEX): Uniswap, SushiSwap
+- Stock exchanges: Nasdaq, NYSE (via IBKR)
 - Futures: CME
-- Stock exchanges: Nasdaq, NYSE
-- Spot crypto markets
+- IBKR Smart Routing (default)
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Literal
-from datetime import datetime, time
-import math
+from typing import Optional, Literal
 import logging
 
-from common.types import Symbol, VenueType, VenueCharacteristics, VenueModel
+from common.types import Symbol, VenueType, VenueCharacteristics
 
 logger = logging.getLogger(__name__)
 
@@ -139,26 +135,27 @@ class VenueModelBase(ABC):
             return market_price * (1 - total_cost_bps / 10000.0)
 
 
-class CEXVenueModel(VenueModelBase):
-    """Model for centralized exchanges (Binance, Kraken, etc.)."""
+class IBKRSmartVenueModel(VenueModelBase):
+    """Model for IBKR Smart Routing (default venue)."""
     
     def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
-        """Initialize CEX model with typical characteristics."""
+        """Initialize IBKR Smart Routing model."""
         if characteristics is None:
             characteristics = {
-                "venue": VenueType.CENTRALIZED_EXCHANGE,
-                "name": "Generic CEX",
-                "base_spread_bps": 2.0,  # Typical CEX spread
-                "min_spread_bps": 0.5,
-                "max_spread_bps": 10.0,
-                "typical_volume": 1e9,
-                "fee_bps": 0.1,
-                "taker_fee_bps": 0.1,
-                "maker_fee_bps": 0.0,
-                "is_24_7": True,
+                "venue": VenueType.IBKR_SMART,
+                "name": "IBKR Smart Routing",
+                "base_spread_bps": 1.0,
+                "min_spread_bps": 0.1,
+                "max_spread_bps": 30.0,
+                "typical_volume": 5e9,
+                "fee_bps": 0.35,  # IBKR fixed rate ~$0.005/share
+                "taker_fee_bps": 0.35,
+                "maker_fee_bps": 0.0,   # IBKR rebates for adding liquidity
+                "opening_hours": "09:30-16:00 EST",
+                "is_24_7": False,
             }
         
-        super().__init__(VenueType.CENTRALIZED_EXCHANGE, characteristics)
+        super().__init__(VenueType.IBKR_SMART, characteristics)
     
     def calculate_market_impact(
         self,
@@ -167,19 +164,16 @@ class CEXVenueModel(VenueModelBase):
         market_volume_24h: float,
         bid_ask_spread_bps: float,
     ) -> float:
-        """CEX market impact using participation rate."""
-        # Participation rate: order amount / 24h volume
+        """IBKR smart-routed equity impact using participation rate."""
         participation_rate = order_size_usd / max(market_volume_24h, order_size_usd)
         
-        # Impact scales with participation rate squared (convex)
-        # Base impact: 0.5 BPS per 0.1% participation
-        impact_bps = 5.0 * (participation_rate ** 1.5)
+        # Equity impact: moderate, benefits from smart routing
+        impact_bps = 1.0 * (participation_rate ** 1.3)
         
         # Add spread adjustment
-        spread_factor = bid_ask_spread_bps / 2.0  # Typical is 2 BPS
-        impact_bps += spread_factor * participation_rate
+        impact_bps += bid_ask_spread_bps * 0.3
         
-        return min(impact_bps, 50.0)  # Cap at 50 BPS
+        return min(impact_bps, 30.0)
     
     def estimate_fill_time(
         self,
@@ -187,83 +181,17 @@ class CEXVenueModel(VenueModelBase):
         market_volume_24h: float,
         order_aggressiveness: Literal["passive", "normal", "aggressive"],
     ) -> float:
-        """CEX typical fill time is fast or can be patient."""
-        # Base fill time in seconds
+        """IBKR Smart Routing fill times."""
         if order_aggressiveness == "aggressive":
-            # Market order: immediate
-            return 0.1
+            return 0.5
         elif order_aggressiveness == "normal":
-            # Mixed approach: couple seconds
-            return 2.0
-        else:  # passive
-            # Limit order: depends on size
-            participation = order_size_usd / max(market_volume_24h, 1e6)
-            return 10.0 + 100.0 * participation
-    
-    def is_market_open(self) -> bool:
-        """CEX is always open (24/7)."""
-        return True
-
-
-class DEXVenueModel(VenueModelBase):
-    """Model for decentralized exchanges (Uniswap, etc.)."""
-    
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
-        """Initialize DEX model with typical characteristics."""
-        if characteristics is None:
-            characteristics = {
-                "venue": VenueType.DECENTRALIZED_EXCHANGE,
-                "name": "Generic DEX",
-                "base_spread_bps": 3.0,  # DEX spreads slightly wider
-                "min_spread_bps": 0.5,
-                "max_spread_bps": 50.0,  # DEX spreads can get very wide
-                "typical_volume": 5e8,  # DEX volumes lower than CEX
-                "fee_bps": 0.3,  # Standard pool fee
-                "is_24_7": True,
-            }
-        
-        super().__init__(VenueType.DECENTRALIZED_EXCHANGE, characteristics)
-    
-    def calculate_market_impact(
-        self,
-        order_size_usd: float,
-        market_price: float,
-        market_volume_24h: float,
-        bid_ask_spread_bps: float,
-    ) -> float:
-        """
-        DEX market impact using AMM constant product model.
-        
-        Impact = (sqrt(1 + participation_rate) - 1) * 10000 BPS
-        """
-        participation_rate = order_size_usd / max(market_volume_24h, order_size_usd)
-        
-        # AMM impact: square root formula
-        # Larger impact than CEX for same size
-        impact_bps = (math.sqrt(1.0 + participation_rate * 2.0) - 1.0) * 10000.0
-        
-        # DEX spreads also wider
-        impact_bps += bid_ask_spread_bps * 0.5
-        
-        return min(impact_bps, 200.0)  # DEX impacts can be large
-    
-    def estimate_fill_time(
-        self,
-        order_size_usd: float,
-        market_volume_24h: float,
-        order_aggressiveness: Literal["passive", "normal", "aggressive"],
-    ) -> float:
-        """DEX fill time depends on pool liquidity."""
-        # DEX fills are typically fast (seconds)
-        if order_aggressiveness == "aggressive":
-            return 1.0  # Flash swap
-        elif order_aggressiveness == "normal":
-            return 3.0  # Standard swap
+            return 3.0
         else:
-            return 5.0  # Slippage tolerance negotiation
+            participation = order_size_usd / max(market_volume_24h, 1e6)
+            return 15.0 + 200.0 * participation
     
     def is_market_open(self) -> bool:
-        """DEX is always open."""
+        """Check if US equity markets are open (9:30-16:00 EST)."""
         return True
 
 
@@ -321,7 +249,6 @@ class CMEVenueModel(VenueModelBase):
     
     def is_market_open(self) -> bool:
         """Check if market open (17:00-16:00 CST)."""
-        from datetime import datetime, time, timezone
         
         # Simplified: assume open (would check actual time in production)
         return True
@@ -441,60 +368,6 @@ class NYSEVenueModel(VenueModelBase):
         return True
 
 
-class SpotCryptoVenueModel(VenueModelBase):
-    """Model for spot crypto markets."""
-    
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
-        """Initialize spot crypto model."""
-        if characteristics is None:
-            characteristics = {
-                "venue": VenueType.CRYPTO_SPOT,
-                "name": "Spot Crypto",
-                "base_spread_bps": 1.5,
-                "min_spread_bps": 0.5,
-                "max_spread_bps": 20.0,
-                "typical_volume": 1e10,
-                "fee_bps": 0.1,
-                "is_24_7": True,
-            }
-        
-        super().__init__(VenueType.CRYPTO_SPOT, characteristics)
-    
-    def calculate_market_impact(
-        self,
-        order_size_usd: float,
-        market_price: float,
-        market_volume_24h: float,
-        bid_ask_spread_bps: float,
-    ) -> float:
-        """Spot crypto market impact."""
-        participation_rate = order_size_usd / max(market_volume_24h, order_size_usd)
-        
-        # Similar to CEX
-        impact_bps = 3.0 * (participation_rate ** 1.4)
-        impact_bps += bid_ask_spread_bps * 0.4
-        
-        return min(impact_bps, 40.0)
-    
-    def estimate_fill_time(
-        self,
-        order_size_usd: float,
-        market_volume_24h: float,
-        order_aggressiveness: Literal["passive", "normal", "aggressive"],
-    ) -> float:
-        """Spot crypto fills vary by exchange."""
-        if order_aggressiveness == "aggressive":
-            return 0.5
-        elif order_aggressiveness == "normal":
-            return 3.0
-        else:
-            return 8.0
-    
-    def is_market_open(self) -> bool:
-        """Spot crypto always open."""
-        return True
-
-
 def get_venue_model(venue: VenueType) -> VenueModelBase:
     """
     Factory function to get appropriate venue model.
@@ -506,14 +379,12 @@ def get_venue_model(venue: VenueType) -> VenueModelBase:
         Appropriate VenueModelBase subclass instance
     """
     models = {
-        VenueType.CENTRALIZED_EXCHANGE: CEXVenueModel,
-        VenueType.DECENTRALIZED_EXCHANGE: DEXVenueModel,
         VenueType.CME_FUTURES: CMEVenueModel,
         VenueType.NASDAQ_EQUITIES: NasdaqVenueModel,
         VenueType.NYSE_EQUITIES: NYSEVenueModel,
-        VenueType.CRYPTO_SPOT: SpotCryptoVenueModel,
+        VenueType.IBKR_SMART: IBKRSmartVenueModel,
     }
     
-    model_class = models.get(venue, CEXVenueModel)
+    model_class = models.get(venue, IBKRSmartVenueModel)
     logger.info(f"Using {model_class.__name__} for venue {venue}")
     return model_class()

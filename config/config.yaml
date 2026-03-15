@@ -1,0 +1,375 @@
+﻿# ============================================================================
+# EDGECORE ÔÇö Unified Configuration
+# ============================================================================
+# Master configuration for the EDGECORE statistical arbitrage system.
+# Market: US Equities via Interactive Brokers
+# Annualisation: 252 trading days
+#
+# Environment-specific overrides can be placed in dev.yaml / prod.yaml / test.yaml
+# and will be merged on top of this base config.
+# ============================================================================
+
+# --------------------------------------------------------------------------
+# Market & Venue
+# --------------------------------------------------------------------------
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
+# --------------------------------------------------------------------------
+# Trading Universe
+# --------------------------------------------------------------------------
+trading_universe:
+  # US large-cap equity pairs grouped by sector.
+  # Each group contains economically related companies where cointegration
+  # has a genuine fundamental basis (same industry, common factors).
+  symbols:
+    # --- Technology (Mega Cap) ---
+    - "AAPL"      # Apple
+    - "MSFT"      # Microsoft
+    - "GOOGL"     # Alphabet
+    - "META"      # Meta Platforms
+    - "NVDA"      # NVIDIA
+    - "AMD"       # Advanced Micro Devices
+    - "INTC"      # Intel
+    - "AVGO"      # Broadcom
+    - "CRM"       # Salesforce
+    - "ADBE"      # Adobe
+    # --- Financials ---
+    - "JPM"       # JPMorgan Chase
+    - "BAC"       # Bank of America
+    - "GS"        # Goldman Sachs
+    - "MS"        # Morgan Stanley
+    - "WFC"       # Wells Fargo
+    - "C"         # Citigroup
+    - "BLK"       # BlackRock
+    - "SCHW"      # Charles Schwab
+    # --- Healthcare / Pharma ---
+    - "JNJ"       # Johnson & Johnson
+    - "PFE"       # Pfizer
+    - "UNH"       # UnitedHealth
+    - "MRK"       # Merck
+    - "ABBV"      # AbbVie
+    - "LLY"       # Eli Lilly
+    - "TMO"       # Thermo Fisher
+    - "ABT"       # Abbott Labs
+    # --- Consumer Staples ---
+    - "KO"        # Coca-Cola
+    - "PEP"       # PepsiCo
+    - "PG"        # Procter & Gamble
+    - "CL"        # Colgate-Palmolive
+    - "WMT"       # Walmart
+    - "COST"      # Costco
+    # --- Energy ---
+    - "XOM"       # ExxonMobil
+    - "CVX"       # Chevron
+    - "COP"       # ConocoPhillips
+    - "SLB"       # Schlumberger
+    - "EOG"       # EOG Resources
+    - "VLO"       # Valero Energy
+    - "MPC"       # Marathon Petroleum
+    - "PSX"       # Phillips 66
+    - "DVN"       # Devon Energy
+    - "HAL"       # Halliburton
+    - "BKR"       # Baker Hughes
+    # --- Industrials ---
+    - "CAT"       # Caterpillar
+    - "DE"        # Deere & Company
+    - "HON"       # Honeywell
+    - "GE"        # GE Aerospace
+    - "RTX"       # RTX (Raytheon)
+    - "LMT"       # Lockheed Martin
+    - "MMM"       # 3M
+    - "EMR"       # Emerson Electric
+    - "ITW"       # Illinois Tool Works
+    - "ROK"       # Rockwell Automation
+    - "CMI"       # Cummins
+    - "PH"        # Parker Hannifin
+    # --- Utilities ---
+    - "NEE"       # NextEra Energy
+    - "DUK"       # Duke Energy
+    - "SO"        # Southern Company
+    - "D"         # Dominion Energy
+    # --- REITs ---
+    - "PLD"       # Prologis
+    - "AMT"       # American Tower
+    - "SPG"       # Simon Property Group
+    # --- Technology / Semiconductors (Mid-Cap) ---
+    - "MRVL"      # Marvell Technology
+    - "ON"        # ON Semiconductor
+    - "MCHP"      # Microchip Technology
+    - "QCOM"      # Qualcomm
+    - "TXN"       # Texas Instruments
+    - "AMAT"      # Applied Materials
+    - "LRCX"      # Lam Research
+    - "KLAC"      # KLA Corporation
+    # --- Biotech / Pharma (Mid-Cap) ---
+    - "GILD"      # Gilead Sciences
+    - "REGN"      # Regeneron
+    - "BIIB"      # Biogen
+    - "VRTX"      # Vertex Pharma
+    - "BMY"       # Bristol-Myers Squibb
+    - "ZTS"       # Zoetis
+    - "MCK"       # McKesson
+    # --- Healthcare Services ---
+    - "CVS"       # CVS Health
+    - "CI"        # Cigna
+    - "HUM"       # Humana
+    - "ELV"       # Elevance Health
+    - "CNC"       # Centene
+    # --- Regional Banks ---
+    - "USB"       # US Bancorp
+    - "PNC"       # PNC Financial
+    - "TFC"       # Truist Financial
+    - "RF"        # Regions Financial
+    - "CFG"       # Citizens Financial
+    - "HBAN"      # Huntington Bancshares
+    - "KEY"       # KeyCorp
+    # --- Consumer Discretionary / Retail ---
+    - "TGT"       # Target
+    - "LOW"       # Lowe's
+    - "HD"        # Home Depot
+    - "ROST"      # Ross Stores
+    - "TJX"       # TJX Companies
+    - "DLTR"      # Dollar Tree
+    - "DG"        # Dollar General
+    # --- Media / Communication ---
+    - "CMCSA"     # Comcast
+    - "DIS"       # Walt Disney
+    - "NFLX"      # Netflix
+    - "FOXA"      # Fox Corp
+    - "VZ"        # Verizon
+    - "T"         # AT&T
+    # --- ETFs Sectoriels ---
+    - "XLK"       # Technology Select SPDR
+    - "XLF"       # Financial Select SPDR
+    - "XLE"       # Energy Select SPDR
+    - "XLV"       # Health Care Select SPDR
+    - "XLI"       # Industrial Select SPDR
+    - "XLU"       # Utilities Select SPDR
+    - "XLP"       # Consumer Staples SPDR
+    - "XLB"       # Materials Select SPDR
+    - "XLC"       # Communication Services SPDR
+    - "XLRE"      # Real Estate Select SPDR
+    - "SMH"       # VanEck Semiconductor ETF
+    - "KRE"       # SPDR Regional Banking ETF
+    - "XBI"       # SPDR Biotech ETF
+    - "IBB"       # iShares Biotech ETF
+    - "IYR"       # iShares US Real Estate ETF
+
+  max_leverage: 2.0
+
+# --------------------------------------------------------------------------
+# Pair Blacklist (post-v27: block pairs after consecutive losses)
+# --------------------------------------------------------------------------
+pair_blacklist:
+  enabled: true                       # Enable dynamic pair blacklisting
+  max_consecutive_losses: 6           # v31: raised from 2 for less restrictive blacklisting
+  cooldown_days: 7                    # v31: lowered from 30 for faster pair recycling
+
+# --------------------------------------------------------------------------
+# Market Regime Filter (post-v27: block entries in trending markets)
+# --------------------------------------------------------------------------
+regime:
+  enabled: true                       # Enable SPY-based regime filter
+  ma_fast: 50                         # Fast MA window (days)
+  ma_slow: 200                        # Slow MA window (days)
+  vol_threshold: 0.18                 # Annualized realized vol threshold
+  vol_window: 20                      # Rolling vol window (days)
+  neutral_band_pct: 0.02              # MA spread % for NEUTRAL zone
+  trend_favorable_sizing: 0.80        # Sizing for favorable side in trends (v30)
+  neutral_sizing: 0.65                # Sizing for both sides in NEUTRAL (v30)
+
+# --------------------------------------------------------------------------
+# Momentum Overlay (v31: relative strength signal)
+# --------------------------------------------------------------------------
+momentum:
+  enabled: true                       # Enable momentum overlay
+  lookback: 20                        # Rolling return window (bars)
+  weight: 0.30                        # Momentum weight in strength adjustment
+  min_strength: 0.30                  # Floor for contra-momentum signals
+  max_boost: 1.0                      # Cap for momentum-confirmed signals
+
+# --------------------------------------------------------------------------
+# Signal Combiner (v31: weighted ensemble of alpha sources)
+# --------------------------------------------------------------------------
+signal_combiner:
+  enabled: true                       # Enable signal combiner
+  zscore_weight: 0.70                 # Weight for z-score signal
+  momentum_weight: 0.30              # Weight for momentum signal
+  entry_threshold: 0.6                # Composite score threshold for entry
+  exit_threshold: 0.2                 # Composite score threshold for exit
+
+# --------------------------------------------------------------------------
+# Strategy Parameters
+# --------------------------------------------------------------------------
+strategy:
+  # Pair selection
+  lookback_window: 120              # Days for cointegration window
+  entry_z_score: 1.6                # v31: lowered from 2.0 for more entries
+  exit_z_score: 0.5                 # Z-score threshold to exit
+  entry_z_min_spread: 0.50          # Min absolute spread ($) to filter micro-deviations (P0 fix)
+  short_sizing_multiplier: 0.50     # Short sizing x 0.5 in TRENDING/NEUTRAL bull (P1 fix)
+  disable_shorts_in_bull_trend: false  # If true, block all shorts in TRENDING regime
+  regime_directional_filter: false   # If true, regime only blocks shorts; longs allowed in TRENDING
+  trend_long_sizing: 0.75           # Sizing multiplier for longs in TRENDING (when directional ON)
+  min_correlation: 0.60             # v31: lowered from 0.7 for more qualifying pairs
+  max_half_life: 70                 # v31: raised from 60 to accept slower-reverting pairs
+  use_kalman: true                  # Kalman filter hedge ratio (ON)
+  max_position_loss_pct: 0.10       # 10% P&L stop per position
+
+  # Statistical testing
+  bonferroni_correction: true       # Bonferroni for multiple testing
+  significance_level: 0.05          # Nominal significance (before Bonferroni)
+  johansen_confirmation: true       # Confirm EG pairs with Johansen
+  newey_west_consensus: true        # Require OLS + HAC agreement
+
+  # Hedge ratio management
+  hedge_ratio_reestimation_days: 7  # Days between re-estimation
+  emergency_vol_threshold_sigma: 3.0
+
+  # Regime detection
+  regime_min_duration: 1            # Min bars before regime transition
+  instant_transition_percentile: 99.0
+
+  # Adaptive cache TTL by regime (hours)
+  cache_ttl_high_vol: 2
+  cache_ttl_normal_vol: 12
+  cache_ttl_low_vol: 24
+
+  # Leg correlation monitoring
+  leg_correlation_window: 30
+  leg_correlation_decay_threshold: 0.3
+
+  # Internal safety limits (defense in depth)
+  internal_max_positions: 50
+  internal_max_drawdown_pct: 20.0
+  internal_max_daily_trades: 200
+
+# --------------------------------------------------------------------------
+# Risk Management
+# --------------------------------------------------------------------------
+risk:
+  max_risk_per_trade: 0.005         # 0.5% of equity per trade
+  max_concurrent_positions: 20      # v31: raised from 10 for more simultaneous trades
+  max_daily_loss_pct: 0.02          # 2% daily drawdown circuit breaker
+  max_consecutive_losses: 5         # Consecutive loss kill-switch
+  max_leverage: 2.0                 # Max portfolio leverage
+  max_drawdown_pct: 0.10            # 10% portfolio drawdown hard stop
+  volatility_percentile_threshold: 1.5
+  position_sizing_method: "volatility"  # "volatility" | "kelly" | "equal"
+  spread_correlation_max: 0.40       # Max |¤ü| between spreads (R-6: was 0.70)
+
+  # Kill-switch thresholds
+  kill_switch:
+    max_drawdown_pct: 0.15          # 15% portfolio drawdown
+    max_daily_loss_pct: 0.03        # 3% single-day loss
+    max_consecutive_losses: 5       # Consecutive losing trades
+    extreme_vol_sigma: 4.0          # VIX-equivalent spike
+    data_stale_seconds: 300         # No data for 5 minutes
+
+  # Trailing stop
+  trailing_stop:
+    sigma_multiplier: 1.0           # Trailing stop at 1-sigma
+    min_profit_to_activate: 0.005   # 0.5% profit before trailing starts
+
+  # Time stop (post-v27 ├ëtape 5: multiplier 3.0 ÔåÆ 2.0)
+  time_stop:
+    half_life_multiplier: 2.0       # Close at 2├ù half-life (was 3.0)
+    max_holding_days: 60            # Close after 60 days regardless
+
+# --------------------------------------------------------------------------
+# Portfolio Engine
+# --------------------------------------------------------------------------
+portfolio:
+  sizing_method: "volatility_inverse"  # "equal_weight" | "volatility_inverse" | "kelly" | "signal_weighted"
+  heat_limit_pct: 0.95               # Max 95% capital deployed
+  concentration:
+    max_pair_weight: 0.20             # Max 20% in single pair
+    max_sector_weight: 0.40           # Max 40% in single sector
+    max_symbol_weight: 0.25           # Max 25% in single symbol
+  hedging:
+    beta_neutral: true                # Portfolio-level beta hedging
+    pca_monitoring: true              # PCA factor concentration check
+    max_factor_concentration: 0.60    # Max factor exposure
+
+# --------------------------------------------------------------------------
+# Trading Operational Constants (F-7: was hardcoded in main.py)
+# --------------------------------------------------------------------------
+trading:
+  max_loop_iterations: 100          # Max paper/live trading loop iterations
+  max_consecutive_errors: 10        # Halt loop after N consecutive failures
+  data_max_age_hours: 99999.0       # Max OHLCV staleness (hours)
+  max_allocation_pct: 0.20          # Max 20% in a single pair
+  equity_tolerance_pct: 0.01        # Reconciler equity tolerance (%)
+  reconciliation_divergence_pct: 0.10  # Alert threshold for periodic recon
+  fallback_spread_vol: 0.02         # Fallback spread vol when < 10 bars
+  min_order_quantity: 1.0           # Floor on order quantity (shares)
+  limit_price_offset_pct: 0.01      # Limit price = market * (1 - offset)
+
+# --------------------------------------------------------------------------
+# Execution
+# --------------------------------------------------------------------------
+execution:
+  engine: "ibkr"                    # "ibkr" | "paper" | "backtest"
+  timeout_seconds: 30
+  max_retries: 3
+  slippage_bps: 2.0
+  use_sandbox: true                 # IBKR paper trading gateway
+  initial_capital: 100000.0
+  paper_slippage_model: "fixed_bps" # "fixed_bps" | "adaptive" | "volume_based"
+  paper_commission_pct: 0.005       # 0.005% Ôëê $0.005/share IBKR
+  paper_trading_loop_interval_seconds: 10
+
+# --------------------------------------------------------------------------
+# Backtesting
+# --------------------------------------------------------------------------
+backtest:
+  start_date: "2018-01-01"
+  end_date: "2026-01-01"
+  initial_capital: 100000.0
+  commission_bps: 2.0
+  walk_forward_periods: 6
+  out_of_sample_ratio: 0.2
+
+# --------------------------------------------------------------------------
+# OOS Validation
+# --------------------------------------------------------------------------
+validation:
+  oos_acceptance_threshold: 0.70    # 70% of pairs must validate OOS
+  half_life_drift_tolerance: 0.50   # Max ┬▒50% HL drift
+  oos_window_days: 21               # Forward test window
+
+# --------------------------------------------------------------------------
+# Monitoring & Alerting
+# --------------------------------------------------------------------------
+monitoring:
+  log_level: "INFO"
+  structured_logging: true          # structlog JSON format
+  log_file: "logs/edgecore.log"
+
+  # Slack alerts
+  slack:
+    enabled: false                  # Set true + provide webhook in .env
+    channel: "#edgecore-alerts"
+
+  # Email alerts
+  email:
+    enabled: false
+    recipients: []
+
+  # Dashboard
+  dashboard:
+    enabled: false
+    port: 8501                      # Streamlit default
+
+# --------------------------------------------------------------------------
+# Secrets Management
+# --------------------------------------------------------------------------
+secrets:
+  rotation_interval_days: 90
+  rotation_time_utc: "02:00"
+  auto_load_from_env: true
+  mask_ratio: 0.8
+  audit_trail_enabled: true

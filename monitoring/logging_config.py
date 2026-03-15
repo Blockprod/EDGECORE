@@ -1,4 +1,4 @@
-"""
+﻿"""
 Production Logging Configuration and Infrastructure
 
 Provides structured, context-aware logging with:
@@ -19,7 +19,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 from functools import wraps
 import time
 
@@ -380,7 +380,7 @@ def log_with_metrics(func):
             logger.handle(record)
             return result
 
-        except Exception as e:
+        except Exception:
             duration_ms = (time.time() - start_time) * 1000
             logger.exception(
                 f'Error in {func.__name__} after {duration_ms:.2f}ms',

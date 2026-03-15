@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 """Simple backtest without pair trading complexity - just buy & hold simulation."""
 
 import sys
@@ -77,10 +77,10 @@ def simple_backtest_demo():
         end_date=end_date
     )
     
-    print(f"\nBacktest Results:")
+    print("\nBacktest Results:")
     print(metrics.summary())
     
-    print(f"\nAnalysis:")
+    print("\nAnalysis:")
     print(f"  Portfolio Value: ${portfolio_values[-1]:,.2f}")
     print(f"  Total P&L: ${portfolio_values[-1] - initial_capital:,.2f}")
     print(f"  Total Return: {metrics.total_return:.2%}")
@@ -90,9 +90,9 @@ def simple_backtest_demo():
     
     # Validate metrics are NOT zero
     if metrics.total_return == 0:
-        print("\n  ⚠ WARNING: Total return is 0!")
+        print("\n  ÔÜá WARNING: Total return is 0!")
     else:
-        print("\n  ✓ Backtest is working correctly!")
+        print("\n  Ô£ô Backtest is working correctly!")
     
     print("\n" + "="*60)
 

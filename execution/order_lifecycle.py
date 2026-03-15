@@ -1,4 +1,4 @@
-"""
+﻿"""
 Order lifecycle management with timeout protection for EDGECORE.
 
 Prevents:
@@ -19,19 +19,18 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from structlog import get_logger
 from enum import Enum
-import math
 
 logger = get_logger(__name__)
 
 
 class OrderStatus(Enum):
-    """Order lifecycle status."""
-    PENDING = "pending"
-    PARTIALLY_FILLED = "partially_filled"
-    FILLED = "filled"
-    CANCELLED = "cancelled"
-    TIMEOUT = "timeout"
-    ERROR = "error"
+    """Order lifecycle status ÔÇö aligned with execution.base.OrderStatus."""
+    PENDING = "PENDING"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
+    FILLED = "FILLED"
+    CANCELLED = "CANCELLED"
+    TIMEOUT = "TIMEOUT"
+    ERROR = "ERROR"
 
 
 class OrderLifecycleEvent(Enum):
@@ -143,7 +142,7 @@ class OrderLifecycleManager:
         
         Args:
             order_id: Unique order identifier
-            symbol: Trading pair (e.g., "BTC/USD")
+            symbol: Trading symbol (e.g., "AAPL")
             quantity: Order quantity
             price: Order price
             timeout_seconds: Custom timeout (defaults to default_timeout_seconds)
@@ -158,7 +157,13 @@ class OrderLifecycleManager:
         if order_id in self.orders:
             raise RuntimeError(f"Order {order_id} already exists")
         
-        if not symbol or "/" not in symbol:
+        import re as _re
+        if not symbol:
+            raise ValueError(f"Invalid symbol: {symbol}")
+        # Accept equity tickers (1-5 uppercase letters) or BASE/QUOTE pairs
+        is_equity = _re.match(r'^[A-Za-z]{1,5}$', symbol) is not None
+        is_pair = '/' in symbol
+        if not is_equity and not is_pair:
             raise ValueError(f"Invalid symbol: {symbol}")
         
         if quantity <= 0:
@@ -241,7 +246,7 @@ class OrderLifecycleManager:
         lifecycle.add_event(OrderLifecycleEvent.UPDATED, message)
         
         if status == OrderStatus.FILLED:
-            lifecycle.add_event(OrderLifecycleEvent.FILLED, f"Order fully filled")
+            lifecycle.add_event(OrderLifecycleEvent.FILLED, "Order fully filled")
         elif status == OrderStatus.CANCELLED:
             lifecycle.add_event(OrderLifecycleEvent.CANCELLED, "Order cancelled")
         

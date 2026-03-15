@@ -1,41 +1,27 @@
-"""
+﻿"""
 BacktestEngine wrapper - maintains API compatibility with Python version.
-Falls back to pure Python if C++ extension is not available.
+Now using Python-only implementation (C++ approach deprecated).
 """
 
 import logging
-from typing import Dict, List, Callable, Tuple, Any, Optional
+from typing import Dict, List, Callable, Any
 
 logger = logging.getLogger(__name__)
 
-# Try to import C++ extension
-try:
-    from edgecore.backtest_engine_cpp import BacktestEngine as _BacktestEngineCpp
-    CPP_AVAILABLE = True
-    logger.info("C++ BacktestEngine extension loaded successfully")
-except ImportError as e:
-    CPP_AVAILABLE = False
-    logger.debug(f"C++ BacktestEngine not available: {e}")
-    _BacktestEngineCpp = None
+# C++ extension no longer used - deprecated in favor of Python/Cython
+# This module kept for test compatibility
 
 
 class BacktestEngineWrapper:
     """
-    Wrapper around C++ BacktestEngine that maintains backward compatibility.
-    Automatically selects C++ or Python implementation.
+    Wrapper around BacktestEngine.
+    Now Python-only implementation (C++ deprecated).
     """
     
     def __init__(self, initial_equity: float = 100000.0):
         self.initial_equity = initial_equity
-        
-        if CPP_AVAILABLE:
-            self._engine = _BacktestEngineCpp(initial_equity)
-            self.use_cpp = True
-            logger.debug("Using C++ BacktestEngine")
-        else:
-            self._engine = None
-            self.use_cpp = False
-            logger.debug("C++ BacktestEngine not available, will use fallback")
+        self.use_cpp = False  # Python-only now
+        logger.debug("Using Python BacktestEngine")
     
     def run(
         self,
@@ -59,20 +45,7 @@ class BacktestEngineWrapper:
             Dictionary with equity, daily_returns, positions
         """
         
-        if self.use_cpp and CPP_AVAILABLE:
-            try:
-                return self._engine.run(
-                    prices,
-                    symbols,
-                    strategy_callback,
-                    risk_callback,
-                    lookback
-                )
-            except Exception as e:
-                logger.error(f"C++ BacktestEngine failed: {e}, falling back to Python")
-                self.use_cpp = False
-        
-        # Fallback or initial Python implementation
+        # Use Python implementation
         return self._run_python(prices, symbols, strategy_callback, risk_callback)
     
     def _run_python(
@@ -156,14 +129,10 @@ class BacktestEngineWrapper:
     
     def get_equity(self) -> float:
         """Get current equity."""
-        if self.use_cpp and CPP_AVAILABLE:
-            return self._engine.get_equity()
         return self.initial_equity
     
     def get_daily_returns(self) -> List[float]:
         """Get daily returns."""
-        if self.use_cpp and CPP_AVAILABLE:
-            return self._engine.get_daily_returns()
         return []
 
 

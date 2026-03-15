@@ -1,34 +1,215 @@
-strategy:
-  lookback_window: 252
-  entry_z_score: 2.0
-  exit_z_score: 0.0
-  min_correlation: 0.7
-  max_half_life: 60
+﻿# EDGECORE ÔÇö Equity Development Configuration
+# Market: US Equities via Interactive Brokers
+# Annualisation: 252 trading days
+# audit 2026-02-22 ÔÇö equity migration (Option A: 100% US equities via IBKR)
+#
+# Pair selection rationale:
+#   Sector-matched pairs with genuine economic cointegration drivers
+#   (same industry, common factor exposure, regulatory overlap).
 
-risk:
-  max_risk_per_trade: 0.005
-  max_concurrent_positions: 10
-  max_daily_loss_pct: 0.02
-  max_consecutive_losses: 3
-  volatility_percentile_threshold: 1.5
-  position_sizing_method: "volatility"
-  max_leverage: 3.0
+market:
+  type: "equity"
+  trading_days_per_year: 252
+  currency: "USD"
+
+strategy:
+  lookback_window: 120
+  entry_z_score: 1.6              # v31: lowered from 2.0 for more entries
+  exit_z_score: 0.5
+  entry_z_min_spread: 0.50        # Min absolute spread ($) filter
+  short_sizing_multiplier: 0.50   # Short sizing x 0.5 in TRENDING/NEUTRAL bull (P1 fix)
+  disable_shorts_in_bull_trend: false
+  regime_directional_filter: false  # Default OFF for backward compat
+  trend_long_sizing: 0.75
+  min_correlation: 0.60            # v31: lowered from 0.7 for more qualifying pairs
+  max_half_life: 70                # v31: raised from 60 to accept slower-reverting pairs
+  use_kalman: true                # Dynamic hedge ratio (Kalman filter ON)
+  max_position_loss_pct: 0.10     # 10% P&L stop per position
+
+regime:
+  enabled: true
+  ma_fast: 50
+  ma_slow: 200
+  vol_threshold: 0.18
+  vol_window: 20
+  neutral_band_pct: 0.02
+  trend_favorable_sizing: 0.80    # v30: sizing for favorable side in trends
+  neutral_sizing: 0.65            # v30: sizing for both sides in NEUTRAL
+
+momentum:
+  enabled: true
+  lookback: 20                    # Rolling return window (bars)
+  weight: 0.30                    # Momentum weight in strength adjustment
+  min_strength: 0.30              # Floor for contra-momentum signals
+  max_boost: 1.0                  # Cap for momentum-confirmed signals
+
+signal_combiner:
+  enabled: true
+  zscore_weight: 0.70             # Weight for z-score signal
+  momentum_weight: 0.30           # Weight for momentum signal
+  entry_threshold: 0.6            # Composite threshold for entry
+  exit_threshold: 0.2             # Composite threshold for exit
+
+trading_universe:
+  # US large-cap equity pairs grouped by sector.
+  # Each group contains economically related companies
+  # where cointegration has a genuine fundamental basis.
+  symbols:
+    # --- Technology (Mega Cap) ---
+    - "AAPL"     # Apple
+    - "MSFT"     # Microsoft
+    - "GOOGL"    # Alphabet
+    - "META"     # Meta Platforms
+    - "NVDA"     # NVIDIA
+    - "AMD"      # Advanced Micro Devices
+    - "INTC"     # Intel
+    - "AVGO"     # Broadcom
+    - "CRM"      # Salesforce
+    - "ADBE"     # Adobe
+    # --- Financials ---
+    - "JPM"      # JPMorgan Chase
+    - "BAC"      # Bank of America
+    - "GS"       # Goldman Sachs
+    - "MS"       # Morgan Stanley
+    - "WFC"      # Wells Fargo
+    - "C"        # Citigroup
+    - "BLK"      # BlackRock
+    - "SCHW"     # Charles Schwab
+    # --- Healthcare / Pharma ---
+    - "JNJ"      # Johnson & Johnson
+    - "PFE"      # Pfizer
+    - "UNH"      # UnitedHealth
+    - "MRK"      # Merck
+    - "ABBV"     # AbbVie
+    - "LLY"      # Eli Lilly
+    - "TMO"      # Thermo Fisher
+    - "ABT"      # Abbott Labs
+    # --- Consumer Staples ---
+    - "KO"       # Coca-Cola
+    - "PEP"      # PepsiCo
+    - "PG"       # Procter & Gamble
+    - "CL"       # Colgate-Palmolive
+    - "WMT"      # Walmart
+    - "COST"     # Costco
+    # --- Energy ---
+    - "XOM"      # ExxonMobil
+    - "CVX"      # Chevron
+    - "COP"      # ConocoPhillips
+    - "SLB"      # Schlumberger
+    - "EOG"      # EOG Resources
+    - "VLO"      # Valero Energy
+    - "MPC"      # Marathon Petroleum
+    - "PSX"      # Phillips 66
+    - "DVN"      # Devon Energy
+    - "HAL"      # Halliburton
+    - "BKR"      # Baker Hughes
+    # --- Industrials ---
+    - "CAT"      # Caterpillar
+    - "DE"       # Deere & Company
+    - "HON"      # Honeywell
+    - "GE"       # GE Aerospace
+    - "RTX"      # RTX (Raytheon)
+    - "LMT"      # Lockheed Martin
+    - "MMM"      # 3M
+    - "EMR"      # Emerson Electric
+    - "ITW"      # Illinois Tool Works
+    - "ROK"      # Rockwell Automation
+    - "CMI"      # Cummins
+    - "PH"       # Parker Hannifin
+    # --- Utilities ---
+    - "NEE"      # NextEra Energy
+    - "DUK"      # Duke Energy
+    - "SO"       # Southern Company
+    - "D"        # Dominion Energy
+    # --- REITs ---
+    - "PLD"      # Prologis
+    - "AMT"      # American Tower
+    - "SPG"      # Simon Property
+    # --- Technology / Semiconductors (Mid-Cap) ---
+    - "MRVL"     # Marvell Technology
+    - "ON"       # ON Semiconductor
+    - "MCHP"     # Microchip Technology
+    - "QCOM"     # Qualcomm
+    - "TXN"      # Texas Instruments
+    - "AMAT"     # Applied Materials
+    - "LRCX"     # Lam Research
+    - "KLAC"     # KLA Corporation
+    # --- Biotech / Pharma (Mid-Cap) ---
+    - "GILD"     # Gilead Sciences
+    - "REGN"     # Regeneron
+    - "BIIB"     # Biogen
+    - "VRTX"     # Vertex Pharma
+    - "BMY"      # Bristol-Myers Squibb
+    - "ZTS"      # Zoetis
+    - "MCK"      # McKesson
+    # --- Healthcare Services ---
+    - "CVS"      # CVS Health
+    - "CI"       # Cigna
+    - "HUM"      # Humana
+    - "ELV"      # Elevance Health
+    - "CNC"      # Centene
+    # --- Regional Banks ---
+    - "USB"      # US Bancorp
+    - "PNC"      # PNC Financial
+    - "TFC"      # Truist Financial
+    - "RF"       # Regions Financial
+    - "CFG"      # Citizens Financial
+    - "HBAN"     # Huntington Bancshares
+    - "KEY"      # KeyCorp
+    # --- Consumer Discretionary / Retail ---
+    - "TGT"      # Target
+    - "LOW"      # Lowe's
+    - "HD"       # Home Depot
+    - "ROST"     # Ross Stores
+    - "TJX"      # TJX Companies
+    - "DLTR"     # Dollar Tree
+    - "DG"       # Dollar General
+    # --- Media / Communication ---
+    - "CMCSA"    # Comcast
+    - "DIS"      # Walt Disney
+    - "NFLX"     # Netflix
+    - "FOXA"     # Fox Corp
+    - "VZ"       # Verizon
+    - "T"        # AT&T
+    # --- ETFs Sectoriels ---
+    - "XLK"      # Technology Select SPDR
+    - "XLF"      # Financial Select SPDR
+    - "XLE"      # Energy Select SPDR
+    - "XLV"      # Health Care Select SPDR
+    - "XLI"      # Industrial Select SPDR
+    - "XLU"      # Utilities Select SPDR
+    - "XLP"      # Consumer Staples SPDR
+    - "XLB"      # Materials Select SPDR
+    - "XLC"      # Communication Services SPDR
+    - "XLRE"     # Real Estate Select SPDR
+    - "SMH"      # VanEck Semiconductor ETF
+    - "KRE"      # SPDR Regional Banking ETF
+    - "XBI"      # SPDR Biotech ETF
+    - "IBB"      # iShares Biotech ETF
+    - "IYR"      # iShares US Real Estate ETF
+
+  max_leverage: 2.0              # Conservative for equities
 
 execution:
-  engine: "ccxt"
-  exchange: "binance"
+  engine: "ibkr"
   timeout_seconds: 30
   max_retries: 3
-  slippage_bps: 5.0
-  use_sandbox: true
-  paper_trading_loop_interval_seconds: 10
+  slippage_bps: 2.0
+  use_sandbox: true               # IB paper trading gateway
   initial_capital: 100000.0
-  paper_slippage_model: "fixed_bps"
-  paper_commission_pct: 0.1
+
 backtest:
-  start_date: "2023-01-01"
-  end_date: "2024-01-01"
+  start_date: "2018-01-01"       # 8 years of history (includes COVID crash)
+  end_date: "2026-01-01"
   initial_capital: 100000.0
   commission_bps: 2.0
-  walk_forward_periods: 4
+  walk_forward_periods: 6
   out_of_sample_ratio: 0.2
+
+risk:
+  max_concurrent_positions: 20    # v31: raised from 10 for more simultaneous trades
+  max_risk_per_trade: 0.005       # 0.5% of equity per trade
+  max_consecutive_losses: 5
+  max_daily_loss_pct: 0.02        # 2% daily drawdown circuit breaker
+  max_leverage: 2.0
+  max_drawdown_pct: 0.10          # 10% portfolio drawdown hard stop

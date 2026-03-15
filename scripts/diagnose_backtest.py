@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 """Diagnose backtest data flow and signal generation."""
 
 import sys
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 import os
 
 # Add project root to path (go up from scripts/)
@@ -40,28 +39,27 @@ def diagnose_backtest():
     # 2. Try loading data manually
     print("\n[2] Data Loading Check:")
     loader = DataLoader()
-    symbols = ["BTC/USDT", "ETH/USDT"]
+    symbols = ["AAPL", "MSFT"]
     price_data = {}
     failed = []
     
     for symbol in symbols:
         try:
             print(f"    Loading {symbol}...", end=" ")
-            df = loader.load_ccxt_data(
-                exchange_name='binance',
+            df = loader.load_ibkr_data(
                 symbol=symbol,
                 timeframe='1d',
                 validate=False  # Skip validation for now
             )
             price_data[symbol] = df['close']
-            print(f"✓ ({len(df)} rows)")
+            print(f"Ô£ô ({len(df)} rows)")
         except Exception as e:
-            print(f"✗ ERROR: {str(e)[:50]}")
+            print(f"Ô£ù ERROR: {str(e)[:50]}")
             failed.append((symbol, str(e)))
     
     if failed:
-        print(f"\n    ⚠ {len(failed)} symbol(s) failed to load")
-        print("    This is expected if CCXT cannot reach the exchange")
+        print(f"\n    ÔÜá {len(failed)} symbol(s) failed to load")
+        print("    This is expected if IBKR TWS/Gateway is not running")
         print("    Continuing with synthetic test data...")
         
         # Create synthetic data for testing
@@ -73,7 +71,7 @@ def diagnose_backtest():
             # Generate correlated random walk
             np.random.seed(hash(symbol) % 2**32)
             returns = np.random.normal(0.0005, 0.02, len(dates))
-            prices = 50000 * np.exp(np.cumsum(returns)) if 'BTC' in symbol else 3000 * np.exp(np.cumsum(returns))
+            prices = 150 * np.exp(np.cumsum(returns)) if symbol == symbols[0] else 100 * np.exp(np.cumsum(returns))
             price_data[symbol] = pd.Series(prices, index=dates)
             print(f"    Generated {symbol}: {len(price_data[symbol])} points")
     
@@ -95,7 +93,7 @@ def diagnose_backtest():
         for i, sig in enumerate(signals[:3]):
             print(f"      Signal {i+1}: {sig.symbol_pair} - {sig.side} (strength: {sig.strength:.2f})")
     except Exception as e:
-        print(f"    ✗ Error: {str(e)[:100]}")
+        print(f"    Ô£ù Error: {str(e)[:100]}")
         signals = []
     
     # 5. Run full backtest
@@ -121,11 +119,11 @@ def diagnose_backtest():
             metrics.max_drawdown == 0,
             metrics.win_rate == 0
         ]):
-            print("\n    ⚠⚠⚠ WARNING: All metrics are zero ⚠⚠⚠")
+            print("\n    ÔÜáÔÜáÔÜá WARNING: All metrics are zero ÔÜáÔÜáÔÜá")
             print("    This suggests NO trades were generated or P&L calculated")
             
     except Exception as e:
-        print(f"    ✗ Backtest failed: {str(e)}")
+        print(f"    Ô£ù Backtest failed: {str(e)}")
         import traceback
         traceback.print_exc()
     

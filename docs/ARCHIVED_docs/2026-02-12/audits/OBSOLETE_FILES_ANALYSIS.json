@@ -1,0 +1,205 @@
+﻿
+{
+  "analysis_date": "2026-02-12",
+  "total_test_files_analyzed": 88,
+  "tests_collected_successfully": 1587,
+  "import_errors_found": 0,
+  
+  "OBSOLETE_FILES": [
+    {
+      "path": "tests/__pycache__/__init__.py",
+      "lines": 0,
+      "size_bytes": 0,
+      "reason": "Cache file directory marker - should not be in version control",
+      "replaced_by": "N/A",
+      "recommendation": "DELETE",
+      "priority": "HIGH"
+    }
+  ],
+  
+  "POTENTIALLY_REDUNDANT_FILES": {
+    "status": "ANALYZED - KEEP ALL",
+    "summary": "Non-numbered test files are NOT doublons. They test specific modules, not numbered development phases.",
+    "files_checked": [
+      {
+        "path": "tests/models/test_regime_detector.py",
+        "lines": 660,
+        "purpose": "Tests regime detection module (S2.5)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests specific models.regime_detector module"
+      },
+      {
+        "path": "tests/models/test_z_score_lookback.py",
+        "lines": 409,
+        "purpose": "Tests dynamic Z-score lookback (S2.2)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests adaptive threshold computation"
+      },
+      {
+        "path": "tests/models/test_spread_integration.py",
+        "lines": 193,
+        "purpose": "Tests spread model integration (S3.2d)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests SpreadModel class"
+      },
+      {
+        "path": "tests/models/test_performance_optimizer.py",
+        "lines": 492,
+        "purpose": "Tests performance optimization (S3.4)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests LRU cache and vectorized generation"
+      },
+      {
+        "path": "tests/models/test_ml_threshold_optimizer.py",
+        "lines": 565,
+        "purpose": "Tests ML threshold optimization (S4.1)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests MLThresholdOptimizer class"
+      },
+      {
+        "path": "tests/models/test_model_retraining.py",
+        "lines": 712,
+        "purpose": "Tests model retraining (S2.6)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests ModelRetrainingManager class"
+      },
+      {
+        "path": "tests/models/test_half_life_estimator.py",
+        "lines": 322,
+        "purpose": "Tests half-life estimation (S3.2c)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests SpreadHalfLifeEstimator class"
+      },
+      {
+        "path": "tests/models/test_hedge_ratio_tracker.py",
+        "lines": 248,
+        "purpose": "Tests hedge ratio tracking",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests HedgeRatioTracker class"
+      },
+      {
+        "path": "tests/models/test_bonferroni_correction.py",
+        "lines": 346,
+        "purpose": "Tests Bonferroni correction",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests statistical correction implementation"
+      },
+      {
+        "path": "tests/models/test_adaptive_thresholds.py",
+        "lines": 337,
+        "purpose": "Tests adaptive threshold calculator",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests AdaptiveThresholdCalculator class"
+      },
+      {
+        "path": "tests/backtests/test_trading_costs.py",
+        "lines": 152,
+        "purpose": "Tests trading cost implementation",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests cost constants and P&L calculations"
+      },
+      {
+        "path": "tests/backtests/test_cache_isolation.py",
+        "lines": 176,
+        "purpose": "Tests cache isolation in walk-forward",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests cache clearing between periods"
+      },
+      {
+        "path": "tests/execution/test_concentration_limits.py",
+        "lines": 432,
+        "purpose": "Tests concentration limit manager (S2.4)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests SymbolExposure and ConcentrationLimitManager"
+      },
+      {
+        "path": "tests/execution/test_trailing_stop.py",
+        "lines": 492,
+        "purpose": "Tests trailing stop implementation (S2.3)",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests TrailingStopManager class"
+      },
+      {
+        "path": "tests/validation/test_oos_validator.py",
+        "lines": 316,
+        "purpose": "Tests out-of-sample validator",
+        "numbered_equivalent": "None - NOT a duplicate",
+        "recommendation": "KEEP",
+        "reason": "Tests OutOfSampleValidator class"
+      }
+    ]
+  },
+  
+  "NUMBERED_TEST_FILES": {
+    "status": "VALID - NO ISSUES FOUND",
+    "total_numbered_files": 55,
+    "organization": "Numbered by development phase (001-059)",
+    "examples": [
+      "001_test_cointegration.py (Cointegration tests)",
+      "024_test_phase32_types.py (Phase 3.2 types)",
+      "056_test_cython_module.py (Cython acceleration)"
+    ]
+  },
+  
+  "SKIP_TESTS": {
+    "status": "CONDITIONAL SKIPS ONLY",
+    "files_with_skips": [
+      {
+        "file": "tests/models/056_test_cython_module.py",
+        "reason": "Cython module not available - conditional skip",
+        "recommendation": "KEEP",
+        "note": "Skips are conditional and appropriate"
+      }
+    ]
+  },
+  
+  "INIT_FILES": {
+    "status": "STANDARD PYTHON PACKAGES",
+    "empty_init_files": 13,
+    "recommendation": "KEEP ALL",
+    "note": "Empty __init__.py files are standard for Python packages"
+  },
+  
+  "FINDINGS_SUMMARY": {
+    "total_files_analyzed": 88,
+    "definitely_obsolete": 1,
+    "potentially_redundant": 0,
+    "files_with_broken_imports": 0,
+    "files_with_todo_markers": 0,
+    "cache_files": 1,
+    "pseudo_code_files": 0
+  },
+  
+  "RECOMMENDATIONS": {
+    "IMMEDIATE_ACTIONS": [
+      {
+        "action": "DELETE",
+        "file": "tests/__pycache__/__init__.py",
+        "reason": "Cache artifact, zero bytes, should not be in git",
+        "severity": "HIGH"
+      }
+    ],
+    "NO_CHANGES_NEEDED": [
+      "All numbered test files (001-059) are valid and complete",
+      "All non-numbered test files are legitimate module-specific tests",
+      "No broken imports detected",
+      "No pseudo-code or incomplete tests found",
+      "No TODO/FIXME/WIP markers found in test files",
+      "Conditional pytest.skip() calls are appropriate"
+    ]
+  }
+}

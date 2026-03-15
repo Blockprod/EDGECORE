@@ -1,9 +1,8 @@
-"""
+﻿"""
 Pair discovery and screening module for identifying potential pairs.
 """
 
 import pandas as pd
-import numpy as np
 from models.cointegration import correlation_matrix, engle_granger_test, half_life_mean_reversion
 from structlog import get_logger
 

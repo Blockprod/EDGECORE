@@ -1,4 +1,4 @@
-"""
+﻿"""
 Configuration validation with Pydantic v2.
 
 Schemas for:
@@ -10,9 +10,8 @@ Schemas for:
 All configs validated on instantiation with clear error messages.
 """
 
-from typing import Dict, List, Optional, Any, Literal
+from typing import Dict, Optional, Any, Literal
 from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
-from datetime import timedelta
 from enum import Enum
 
 
@@ -162,6 +161,61 @@ class StrategyConfigSchema(BaseModel):
         gt=0,
         description="Exit threshold in standard deviations"
     )
+
+    # Stat-arb z-score entry/exit (validated in _validate_config)
+    entry_z_score: float = Field(
+        default=2.0,
+        ge=1.5,
+        le=4.0,
+        description="Z-score threshold for stat-arb entry (1.5-4.0)"
+    )
+    
+    exit_z_score: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=2.0,
+        description="Z-score threshold for stat-arb exit (0-2.0)"
+    )
+
+    entry_z_min_spread: float = Field(
+        default=0.50,
+        ge=0.0,
+        le=5.0,
+        description="Min absolute spread ($) for entry ÔÇö filters micro-deviations"
+    )
+
+    short_sizing_multiplier: float = Field(
+        default=0.50,
+        ge=0.0,
+        le=1.0,
+        description="Sizing multiplier for shorts in TRENDING/NEUTRAL bull regime (0=block, 1=full)"
+    )
+
+    regime_directional_filter: bool = Field(
+        default=False,
+        description="When True, regime filter only blocks shorts; longs allowed in TRENDING"
+    )
+
+    trend_long_sizing: float = Field(
+        default=0.75,
+        ge=0.1,
+        le=1.0,
+        description="Sizing multiplier for longs in TRENDING regime (when directional filter ON)"
+    )
+
+    trend_favorable_sizing: float = Field(
+        default=0.80,
+        ge=0.1,
+        le=1.0,
+        description="v30: Sizing for the favorable side in trending regimes (BULL->longs, BEAR->shorts)"
+    )
+
+    neutral_sizing: float = Field(
+        default=0.65,
+        ge=0.1,
+        le=1.0,
+        description="v30: Sizing for both sides in NEUTRAL regime"
+    )
     
     take_profit_pct: float = Field(
         default=2.0,
@@ -205,6 +259,13 @@ class StrategyConfigSchema(BaseModel):
             raise ValueError('take_profit must be > stop_loss')
         if self.entry_threshold_std <= self.exit_threshold_std:
             raise ValueError('entry_threshold must be > exit_threshold')
+        return self
+
+    @model_validator(mode='after')
+    def validate_z_score_thresholds(self):
+        """Validate stat-arb z-score entry > exit."""
+        if self.entry_z_score <= self.exit_z_score:
+            raise ValueError('entry_z_score must be > exit_z_score')
         return self
     
     model_config = ConfigDict(validate_assignment=True)

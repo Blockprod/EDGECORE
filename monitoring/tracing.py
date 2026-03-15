@@ -1,4 +1,4 @@
-"""Distributed tracing system for monitoring execution flow.
+﻿"""Distributed tracing system for monitoring execution flow.
 
 Provides OpenTelemetry-like tracing capabilities for order execution:
 - Trace span creation and tracking
@@ -9,16 +9,14 @@ Provides OpenTelemetry-like tracing capabilities for order execution:
 """
 
 import uuid
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime, timedelta
-import time
+from datetime import datetime
 import logging
 from contextlib import contextmanager
 import json
 
-from common.types import TraceLevel, TraceSpan, TraceContext
+from common.types import TraceLevel, TraceContext
 
 logger = logging.getLogger(__name__)
 

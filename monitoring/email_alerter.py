@@ -1,5 +1,6 @@
-"""Email alerting for critical trading events."""
+﻿"""Email alerting for critical trading events."""
 
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -40,6 +41,9 @@ class EmailAlerter:
         self.enabled = bool(smtp_server and sender_email and recipient_emails)
         self.send_count = 0
         self.failure_count = 0
+        # Set via alerter.trading_mode = "paper" | "live" | "backtest"
+        # Overrides PROJECT_NAME env var when set
+        self.trading_mode: Optional[str] = None
 
     def send_alert(self, level: str, title: str, message: str,
                    data: Optional[Dict] = None) -> Tuple[bool, str]:
@@ -74,16 +78,22 @@ class EmailAlerter:
             msg = MIMEMultipart('text', 'plain')
             msg['From'] = self.sender_email
             msg['To'] = ', '.join(self.recipients)
-            msg['Subject'] = f"[{level}] EDGECORE: {title}"
+            base_name = os.environ.get("PROJECT_NAME", "EDGECORE")
+            if self.trading_mode:
+                project = f"{base_name} ÔÇö {self.trading_mode.title()} Trading"
+            else:
+                project = base_name
+            msg['Subject'] = f"[{project}] [{level}] {title}"
 
             # Build body
-            body = f"""EDGECORE Trading System Alert
+            body = f"""{project} ÔÇö Trading System Alert
 
-═══════════════════════════════════════════════════════════════
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+Project:     {project}
 Severity:    {level}
 Title:       {title}
 Timestamp:   {datetime.now().isoformat()}
-═══════════════════════════════════════════════════════════════
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 
 Message:
 {message}
@@ -93,13 +103,13 @@ Message:
             if data:
                 body += "Details:\n"
                 for key, value in data.items():
-                    body += f"  • {key}: {value}\n"
+                    body += f"  ÔÇó {key}: {value}\n"
 
             body += """
-═══════════════════════════════════════════════════════════════
-This is an automated alert from EDGECORE trading system.
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+This is an automated alert from {project} trading system.
 Do not reply to this email.
-═══════════════════════════════════════════════════════════════
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 """
 
             msg.attach(MIMEText(body))
@@ -201,23 +211,23 @@ Do not reply to this email.
         """
         Create EmailAlerter from environment variables.
         
-        Required env vars:
-            - EMAIL_SMTP_SERVER: SMTP hostname
-            - EMAIL_SMTP_PORT: SMTP port
-            - EMAIL_SMTP_USER: Sender email address
-            - EMAIL_SMTP_PASS: Sender password
-            - EMAIL_RECIPIENTS: Comma-separated recipient emails
+        Supported env vars (checks both legacy and current names):
+            - SMTP_SERVER / EMAIL_SMTP_SERVER:  SMTP hostname
+            - SMTP_PORT / EMAIL_SMTP_PORT:      SMTP port
+            - SENDER_EMAIL / EMAIL_SMTP_USER:   Sender email address
+            - GOOGLE_MAIL_PASSWORD / EMAIL_SMTP_PASS:  Sender password / app token
+            - RECEIVER_EMAIL / EMAIL_RECIPIENTS: Comma-separated recipient emails
         
         Returns:
             EmailAlerter instance or None if not configured
         """
         import os
 
-        smtp_server = os.getenv("EMAIL_SMTP_SERVER")
-        smtp_port_str = os.getenv("EMAIL_SMTP_PORT")
-        sender_email = os.getenv("EMAIL_SMTP_USER")
-        sender_password = os.getenv("EMAIL_SMTP_PASS")
-        recipients_str = os.getenv("EMAIL_RECIPIENTS")
+        smtp_server = os.getenv("SMTP_SERVER") or os.getenv("EMAIL_SMTP_SERVER")
+        smtp_port_str = os.getenv("SMTP_PORT") or os.getenv("EMAIL_SMTP_PORT")
+        sender_email = os.getenv("SENDER_EMAIL") or os.getenv("EMAIL_SMTP_USER")
+        sender_password = os.getenv("GOOGLE_MAIL_PASSWORD") or os.getenv("EMAIL_SMTP_PASS")
+        recipients_str = os.getenv("RECEIVER_EMAIL") or os.getenv("EMAIL_RECIPIENTS")
 
         if not all([smtp_server, smtp_port_str, sender_email, sender_password, recipients_str]):
             logger.debug("EMAIL_NOT_CONFIGURED",

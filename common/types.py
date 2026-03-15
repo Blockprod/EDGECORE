@@ -1,4 +1,4 @@
-"""
+﻿"""
 Type definitions for EDGECORE trading system.
 
 Provides:
@@ -8,7 +8,7 @@ Provides:
 - Protocol definitions for interfaces
 """
 
-from typing import TypedDict, Optional, Dict, List, Any, Union, Literal
+from typing import TypedDict, Dict, List, Any, Literal
 from typing_extensions import NotRequired
 from datetime import datetime
 from enum import Enum
@@ -31,12 +31,12 @@ class OrderType(Enum):
 
 
 class OrderStatus(Enum):
-    """Order execution status."""
-    PENDING = "pending"
-    FILLED = "filled"
-    PARTIAL = "partial"
-    CANCELLED = "cancelled"
-    REJECTED = "rejected"
+    """Order execution status ÔÇö aligned with execution.base.OrderStatus."""
+    PENDING = "PENDING"
+    FILLED = "FILLED"
+    PARTIAL = "PARTIAL"
+    CANCELLED = "CANCELLED"
+    REJECTED = "REJECTED"
 
 
 class ExecutionMode(Enum):
@@ -97,12 +97,10 @@ class DepthMode(Enum):
 
 class VenueType(Enum):
     """Trading venue type."""
-    CENTRALIZED_EXCHANGE = "cex"      # Binance, Kraken, etc.
-    DECENTRALIZED_EXCHANGE = "dex"    # Uniswap, SushiSwap
     CME_FUTURES = "cme"               # CME futures
-    NASDAQ_EQUITIES = "nasdaq"        # US stock market
-    NYSE_EQUITIES = "nyse"            # US stock market
-    CRYPTO_SPOT = "spot"              # Spot crypto
+    NASDAQ_EQUITIES = "nasdaq"        # US equities (Nasdaq)
+    NYSE_EQUITIES = "nyse"            # US equities (NYSE)
+    IBKR_SMART = "smart"             # IBKR Smart Routing (default)
 
 
 class TraceLevel(Enum):
@@ -618,7 +616,7 @@ class MLModelMetrics(TypedDict):
     """Performance metrics for ML impact model."""
     model_version: str
     training_samples: int
-    r_squared: float  # R² on test set
+    r_squared: float  # R┬▓ on test set
     mean_absolute_error_bps: float  # MAE on test set
     mean_squared_error: float  # MSE
     is_production: bool
@@ -744,8 +742,8 @@ class AlerterConfig(TypedDict):
     rate_limit_per_hour: int
 
 
-class BacktestConfig(TypedDict):
-    """Backtest configuration."""
+class BacktestConfigSimple(TypedDict):
+    """Backtest configuration (simple, flat fields)."""
     start_date: str
     end_date: str
     initial_equity: Equity
@@ -807,7 +805,7 @@ class ConnectionEvent(TypedDict):
 
 
 if __name__ == "__main__":
-    print("✅ Common types module loaded")
+    print("Ô£à Common types module loaded")
     print(f"- Order types: {[t.name for t in OrderType]}")
     print(f"- Execution modes: {[m.name for m in ExecutionMode]}")
     print(f"- Circuit breaker states: {[s.name for s in CircuitBreakerState]}")

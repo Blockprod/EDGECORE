@@ -1,4 +1,4 @@
-"""
+﻿"""
 Position-level stop loss and take profit management.
 
 Provides:
@@ -10,13 +10,11 @@ Provides:
 """
 
 from typing import Dict, Optional, Tuple, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass, field
 from structlog import get_logger
 from common.types import (
-    PositionID, Symbol, Price, Quantity, PnL,
-    PositionStopConfig, PositionStopStatus, PositionWithStops,
-    StopType
+    PositionID, Symbol, Price, PositionStopConfig, PositionStopStatus, StopType
 )
 
 logger = get_logger(__name__)
@@ -477,7 +475,7 @@ def reset_stop_manager() -> None:
 
 
 if __name__ == "__main__":
-    print("✅ Position Stop Management module loaded")
+    print("Ô£à Position Stop Management module loaded")
     print("- PositionStop class for individual stops")
     print("- PositionStopManager for multi-position management")
     print("- Stop types: stop loss, take profit, trailing stop")

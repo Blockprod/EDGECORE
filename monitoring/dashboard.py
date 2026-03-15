@@ -1,13 +1,13 @@
-"""Dashboard generator for real-time system metrics and status."""
+﻿"""Dashboard generator for real-time system metrics and status."""
 
 import psutil
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Dict, List, Optional, Any
 import structlog
 from risk.engine import RiskEngine
 from execution.base import BaseExecutionEngine
-from monitoring.cache import DashboardCache, get_dashboard_cache
+from monitoring.cache import get_dashboard_cache
 
 logger = structlog.get_logger(__name__)
 
@@ -260,7 +260,7 @@ class DashboardGenerator:
             # Total return
             total_return = (equity_history[-1] - equity_history[0]) / equity_history[0]
 
-            # Sharpe ratio (simplified - assuming ~252 trading days per year)
+            # Sharpe ratio (252 days/year  - US equity trading days)
             if len(returns) > 1:
                 import numpy as np
                 returns_arr = np.array(returns)

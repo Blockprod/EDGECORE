@@ -1,4 +1,4 @@
-"""
+﻿"""
 Example: Run a basic backtest on pair trading strategy
 """
 
@@ -14,7 +14,7 @@ def main():
     
     Steps:
     1. Initialize BacktestRunner
-    2. Run backtest on crypto pairs
+    2. Run backtest on equity pairs
     3. Display performance metrics
     """
     
@@ -23,19 +23,19 @@ def main():
     print("="*70)
     
     # Configuration
-    symbols = ["BTC/USDC", "ETH/USDC"]
+    symbols = ["AAPL", "MSFT"]
     start_date = "2023-01-01"
     end_date = "2024-01-01"
     
-    print(f"\n[*] Backtest Configuration:")
+    print("\n[*] Backtest Configuration:")
     print(f"    Symbols:    {symbols}")
     print(f"    Period:     {start_date} to {end_date}")
-    print(f"    Strategy:   Pair Trading (Mean Reversion)")
+    print("    Strategy:   Pair Trading (Mean Reversion)")
     
     try:
         runner = BacktestRunner()
         
-        print(f"\n[*] Running backtest...")
+        print("\n[*] Running backtest...")
         metrics = runner.run(
             symbols=symbols,
             start_date=start_date,
@@ -45,14 +45,14 @@ def main():
         # Display results
         print(metrics.summary())
         
-        print("[✓] Backtest completed successfully")
+        print("[Ô£ô] Backtest completed successfully")
         
         # Next steps
-        print(f"\n[*] Next steps:")
-        print(f"    1. Review metrics above")
-        print(f"    2. Check logs in logs/ directory")
-        print(f"    3. If Sharpe > 1.0 and max drawdown < 20%, consider paper trading")
-        print(f"    4. Test live on small position size first")
+        print("\n[*] Next steps:")
+        print("    1. Review metrics above")
+        print("    2. Check logs in logs/ directory")
+        print("    3. If Sharpe > 1.0 and max drawdown < 20%, consider paper trading")
+        print("    4. Test live on small position size first")
         
     except ImportError as e:
         print(f"\n[!] Missing dependency: {e}")

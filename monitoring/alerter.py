@@ -1,4 +1,4 @@
-"""
+﻿"""
 Monitoring and alerting system for EDGECORE trading.
 
 Provides:
@@ -11,7 +11,7 @@ Provides:
 
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 from enum import Enum
 import json
@@ -47,7 +47,7 @@ class Alert:
     category: AlertCategory
     title: str
     message: str
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     data: Dict[str, Any] = field(default_factory=dict)
     acknowledged_at: Optional[datetime] = None
     acknowledged_by: Optional[str] = None
@@ -55,12 +55,12 @@ class Alert:
     
     def acknowledge(self, username: str = "system") -> None:
         """Mark alert as acknowledged."""
-        self.acknowledged_at = datetime.utcnow()
+        self.acknowledged_at = datetime.now(timezone.utc)
         self.acknowledged_by = username
     
     def resolve(self) -> None:
         """Mark alert as resolved."""
-        self.resolved_at = datetime.utcnow()
+        self.resolved_at = datetime.now(timezone.utc)
     
     def is_acknowledged(self) -> bool:
         """Check if alert has been acknowledged."""
@@ -72,7 +72,7 @@ class Alert:
     
     def age_seconds(self) -> float:
         """Get alert age in seconds."""
-        return (datetime.utcnow() - self.timestamp).total_seconds()
+        return (datetime.now(timezone.utc) - self.timestamp).total_seconds()
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert alert to dictionary."""
@@ -157,7 +157,7 @@ class AlertManager:
             raise ValueError(f"Message must be 1-2000 chars, got: {message}")
         
         self.alert_counter += 1
-        alert_id = f"alert_{datetime.utcnow().timestamp()}_{self.alert_counter}"
+        alert_id = f"alert_{datetime.now(timezone.utc).timestamp()}_{self.alert_counter}"
         
         alert = Alert(
             alert_id=alert_id,
@@ -397,12 +397,12 @@ class AlertManager:
             overall_status = "OK"
         
         # Recent alerts (last 24 hours)
-        cutoff = datetime.utcnow() - timedelta(hours=24)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
         recent = [a for a in active if a.timestamp > cutoff]
         
         return {
             "overall_status": overall_status,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "active_alert_count": len(active),
             "critical_count": len(critical),
             "unacknowledged_count": len(self.get_unacknowledged_alerts()),
@@ -524,7 +524,7 @@ def alert_position_limit_breach(
         return alert_manager.create_alert(
             severity=AlertSeverity.WARNING,
             category=AlertCategory.POSITION,
-            title=f"Position Limit Reached",
+            title="Position Limit Reached",
             message=f"Current positions: {current_positions}/{max_positions}",
             data={"current": current_positions, "max": max_positions}
         )
