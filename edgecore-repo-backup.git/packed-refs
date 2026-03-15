@@ -1,0 +1,8 @@
+# pack-refs with: peeled fully-peeled sorted 
+0a7b890d6ef4f9989343ff474f3187034810ea6b refs/heads/ci/add-workflow
+0a7b890d6ef4f9989343ff474f3187034810ea6b refs/heads/clean/fixes
+4501a712fdd45652de775a0eb953257d085a608a refs/heads/fix/ci-yml
+d6eea5386a1ada4529b3057de1b69ba9f873c767 refs/heads/fix/correction-plan
+b73f64a652882efd788ebdda072825059c19fd24 refs/heads/lfs-migration-preview
+eb338b8c5456a8539bd84c4933bca41229fc1492 refs/heads/main
+e700101881e62e9200c72eef269c9e6cc1ea98f5 refs/heads/recover/clean
