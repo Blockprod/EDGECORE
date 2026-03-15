@@ -1,3 +1,7 @@
-results/** filter=lfs diff=lfs merge=lfs -text
-debug_load_errors.txt filter=lfs diff=lfs merge=lfs -text
+*.pyd filter=lfs diff=lfs merge=lfs -text
 bt_results_* filter=lfs diff=lfs merge=lfs -text
+results/** filter=lfs diff=lfs merge=lfs -text
+results/* filter=lfs diff=lfs merge=lfs -text
+logs/** filter=lfs diff=lfs merge=lfs -text
+build/** filter=lfs diff=lfs merge=lfs -text
+debug_load_errors.txt filter=lfs diff=lfs merge=lfs -text
