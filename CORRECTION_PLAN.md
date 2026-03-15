@@ -101,6 +101,10 @@ python -m pytest tests/ -v
 
 ---
 
-Si vous voulez que je crée ou mette à jour un fichier `CONTRIBUTING.md` ou que
-je crée un petit commit git avec ces changements, dites-le moi et je m'en
+Si vous voulez que je crée ou mette à jour un fichier `CONTRIBUTING.md` ou que je
+crée un petit commit git avec ces changements, dites-le moi et je m'en
 occupe.
+
+---
+
+Note: CI trigger: workflow run requested (2026-03-15)
