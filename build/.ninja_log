@@ -1,5 +1,0 @@
-# ninja log v7
-19	18503	7921826153002298	CMakeFiles/cointegration_cpp.dir/cpp/src/cointegration_engine.cpp.obj	bd8de7aa8c7ce9c9
-8	19036	7921826152889326	CMakeFiles/backtest_engine_cpp.dir/cpp/src/backtest_engine.cpp.obj	6bf7bd5f47f6ee28
-18521	19181	7921826338009460	C:/Users/averr/EDGECORE/edgecore/cointegration_cpp.cp313-win_amd64.pyd	2f901066c6dbe9ad
-19037	19505	7921826343153900	C:/Users/averr/EDGECORE/edgecore/backtest_engine_cpp.cp313-win_amd64.pyd	9b0a624a1607e753
