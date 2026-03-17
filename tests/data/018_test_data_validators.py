@@ -12,7 +12,7 @@ Covers:
 import pytest
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from data.validators import (
     OHLCVValidator,
@@ -527,7 +527,7 @@ class TestPositionValidator:
     
     def test_position_opened_in_future(self):
         """Test warning for position opened in future."""
-        future_time = datetime.utcnow() + timedelta(hours=1)
+        future_time = datetime.now(timezone.utc) + timedelta(hours=1)
         result = PositionValidator.validate_position(
             symbol="AAPL",
             quantity=1.5,
@@ -541,7 +541,7 @@ class TestPositionValidator:
     
     def test_position_age_warning(self):
         """Test warning for very old position."""
-        old_time = datetime.utcnow() - timedelta(days=400)
+        old_time = datetime.now(timezone.utc) - timedelta(days=400)
         result = PositionValidator.validate_position(
             symbol="AAPL",
             quantity=1.5,

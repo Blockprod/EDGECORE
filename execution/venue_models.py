@@ -368,6 +368,90 @@ class NYSEVenueModel(VenueModelBase):
         return True
 
 
+class CEXVenueModel(VenueModelBase):
+    """Model for centralized crypto exchanges (CEX)."""
+
+    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+        if characteristics is None:
+            characteristics = {
+                "venue": VenueType.CENTRALIZED_EXCHANGE,
+                "name": "Centralized Exchange",
+                "base_spread_bps": 2.0,
+                "min_spread_bps": 0.5,
+                "max_spread_bps": 200.0,
+                "typical_volume": 1e10,
+                "fee_bps": 0.2,
+                "is_24_7": True,
+            }
+        super().__init__(VenueType.CENTRALIZED_EXCHANGE, characteristics)
+
+    def calculate_market_impact(
+        self,
+        order_size_usd: float,
+        market_price: float,
+        market_volume_24h: float,
+        bid_ask_spread_bps: float,
+    ) -> float:
+        participation = order_size_usd / max(market_volume_24h, 1.0)
+        impact = 2.0 * (participation ** 0.9) + bid_ask_spread_bps * 0.5
+        return max(0.0, min(impact, 200.0))
+
+    def estimate_fill_time(self, order_size_usd: float, market_volume_24h: float, order_aggressiveness: Literal["passive", "normal", "aggressive"]) -> float:
+        if order_aggressiveness == "aggressive":
+            return 0.2
+        elif order_aggressiveness == "normal":
+            return 1.0
+        else:
+            return 10.0
+
+    def is_market_open(self) -> bool:
+        return True
+
+
+class DEXVenueModel(VenueModelBase):
+    """Model for decentralized exchanges (AMM-style)."""
+
+    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+        if characteristics is None:
+            characteristics = {
+                "venue": VenueType.DECENTRALIZED_EXCHANGE,
+                "name": "Decentralized Exchange (AMM)",
+                "base_spread_bps": 5.0,
+                "min_spread_bps": 1.0,
+                "max_spread_bps": 500.0,
+                "typical_volume": 5e9,
+                "fee_bps": 0.3,
+                "is_24_7": True,
+            }
+        super().__init__(VenueType.DECENTRALIZED_EXCHANGE, characteristics)
+
+    def calculate_market_impact(self, order_size_usd: float, market_price: float, market_volume_24h: float, bid_ask_spread_bps: float) -> float:
+        # AMM impact scales non-linearly (simulated as power law)
+        participation = order_size_usd / max(market_volume_24h, 1.0)
+        impact = 10.0 * (participation ** 0.6) + bid_ask_spread_bps * 0.8
+        return max(0.0, min(impact, 500.0))
+
+    def estimate_fill_time(self, order_size_usd: float, market_volume_24h: float, order_aggressiveness: Literal["passive", "normal", "aggressive"]) -> float:
+        if order_aggressiveness == "aggressive":
+            return 0.5
+        elif order_aggressiveness == "normal":
+            return 2.0
+        else:
+            return 20.0
+
+    def is_market_open(self) -> bool:
+        return True
+
+
+class SpotCryptoVenueModel(CEXVenueModel):
+    """Specialization for spot crypto markets (inherits CEX behavior)."""
+
+    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+        super().__init__(characteristics)
+        self.venue = VenueType.CRYPTO_SPOT
+
+
+
 def get_venue_model(venue: VenueType) -> VenueModelBase:
     """
     Factory function to get appropriate venue model.
@@ -383,6 +467,9 @@ def get_venue_model(venue: VenueType) -> VenueModelBase:
         VenueType.NASDAQ_EQUITIES: NasdaqVenueModel,
         VenueType.NYSE_EQUITIES: NYSEVenueModel,
         VenueType.IBKR_SMART: IBKRSmartVenueModel,
+        VenueType.CENTRALIZED_EXCHANGE: CEXVenueModel,
+        VenueType.DECENTRALIZED_EXCHANGE: DEXVenueModel,
+        VenueType.CRYPTO_SPOT: SpotCryptoVenueModel,
     }
     
     model_class = models.get(venue, IBKRSmartVenueModel)

@@ -10,7 +10,7 @@ Provides:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
@@ -358,7 +358,7 @@ def create_sample_position(symbol="AAPL", quantity=1.0, entry_price=50000.0):
         symbol=symbol,
         quantity=quantity,
         entry_price=entry_price,
-        entry_time=datetime.utcnow(),
+        entry_time=datetime.now(timezone.utc),
         current_price=entry_price,
     )
 
@@ -382,12 +382,15 @@ def assert_dataframe_valid(df, symbol="TEST"):
 def reset_singletons():
     """Reset singleton instances between tests."""
     from common.circuit_breaker import reset_all_circuit_breakers
-    
+    from monitoring.api_security import reset_rate_limiter_for_testing
+
     reset_all_circuit_breakers()
-    
+    reset_rate_limiter_for_testing()
+
     yield
-    
+
     reset_all_circuit_breakers()
+    reset_rate_limiter_for_testing()
 
 
 if __name__ == "__main__":

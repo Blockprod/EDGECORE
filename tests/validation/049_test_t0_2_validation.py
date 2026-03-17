@@ -8,7 +8,7 @@ def test_t0_2():
     
     # Step 1: Check .env.example has SLACK_WEBHOOK_URL template
     env_example_path = ".env.example"
-    with open(env_example_path, 'r') as f:
+    with open(env_example_path, 'r', encoding='utf-8') as f:
         env_content = f.read()
     
     assert "SLACK_WEBHOOK_URL" in env_content

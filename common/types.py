@@ -101,6 +101,9 @@ class VenueType(Enum):
     NASDAQ_EQUITIES = "nasdaq"        # US equities (Nasdaq)
     NYSE_EQUITIES = "nyse"            # US equities (NYSE)
     IBKR_SMART = "smart"             # IBKR Smart Routing (default)
+    CENTRALIZED_EXCHANGE = "centralized_exchange"
+    DECENTRALIZED_EXCHANGE = "decentralized_exchange"
+    CRYPTO_SPOT = "crypto_spot"
 
 
 class TraceLevel(Enum):

@@ -1,6 +1,7 @@
 ﻿
 import logging
 import os
+import random
 import threading
 import time
 
@@ -21,6 +22,7 @@ _ibkr_rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
 class IBWrapper(EWrapper):
     def __init__(self):
         super().__init__()
+        self._lock = threading.RLock()  # A-03: protège l'accès concurrent msg-thread / thread principal
         self.current_time = None
         self.contract_details = []
         self.contract_details_done = False
@@ -29,28 +31,44 @@ class IBWrapper(EWrapper):
         self.fundamental_data = None
         self.fundamental_data_done = False
         self.error_msg = None
+        self.shortable_shares = -1.0          # A-08: mis à jour par tickGeneric tick 236
+        self.shortable_shares_received = False  # A-08: flag de complétion
 
     def currentTime(self, time_: int):
-        self.current_time = time_
+        with self._lock:
+            self.current_time = time_
 
     def contractDetails(self, reqId, contractDetails):
-        self.contract_details.append(contractDetails)
+        with self._lock:
+            self.contract_details.append(contractDetails)
 
     def contractDetailsEnd(self, reqId):
-        self.contract_details_done = True
+        with self._lock:
+            self.contract_details_done = True
 
     def historicalData(self, reqId, bar):
-        self.historical_data.append(bar)
+        with self._lock:
+            self.historical_data.append(bar)
 
     def historicalDataEnd(self, reqId, start, end):
-        self.historical_data_done = True
+        with self._lock:
+            self.historical_data_done = True
 
     def fundamentalData(self, reqId, data):
-        self.fundamental_data = data
-        self.fundamental_data_done = True
+        with self._lock:
+            self.fundamental_data = data
+            self.fundamental_data_done = True
+
+    def tickGeneric(self, reqId: int, tickType: int, value: float):
+        """A-08: Capture tick type 236 (shortable shares) from reqMktData snapshot."""
+        with self._lock:
+            if tickType == 236:
+                self.shortable_shares = value
+                self.shortable_shares_received = True
 
     def error(self, reqId, errorCode, errorString, *args):
-        self.error_msg = (reqId, errorCode, errorString)
+        with self._lock:
+            self.error_msg = (reqId, errorCode, errorString)
         # Error codes 2104, 2106, 2158 are informational - not real errors
         if errorCode not in (2104, 2106, 2158):
             logger.warning("[IBWrapper] Error %d: %s (reqId=%d)", errorCode, errorString, reqId)
@@ -71,11 +89,18 @@ class IBGatewaySync:
         self.timeout = timeout
         self.app = None
         self._lock = threading.Lock()
+        self._req_id_lock = threading.Lock()  # A-06: protège _req_id_counter contre les accès concurrents
         self.connected = False
         self._msg_thread = None  # message processing thread
         self._req_id_counter = 10  # start at 10; incremented before each request
         self.wrapper = IBWrapper()
         self.client = EClient(self.wrapper)
+
+    def _get_next_req_id(self) -> int:
+        """Thread-safe increment and return of the next request ID."""
+        with self._req_id_lock:
+            self._req_id_counter += 1
+            return self._req_id_counter
 
     def connect(self):
         with self._lock:
@@ -113,11 +138,15 @@ class IBGatewaySync:
             return None
         self.wrapper.current_time = None
         self.client.reqCurrentTime()
-        # Wait for response
+        # Wait for response (lecture atomique sous lock)
         t0 = time.time()
-        while self.wrapper.current_time is None and time.time() - t0 < self.timeout:
+        while time.time() - t0 < self.timeout:
+            with self.wrapper._lock:
+                if self.wrapper.current_time is not None:
+                    break
             time.sleep(0.1)
-        return self.wrapper.current_time
+        with self.wrapper._lock:
+            return self.wrapper.current_time
 
     def get_contract_details(self, symbol, secType="STK", exchange="SMART", currency="USD"):
         if not self.connect():
@@ -129,11 +158,15 @@ class IBGatewaySync:
         contract.secType = secType
         contract.exchange = exchange
         contract.currency = currency
-        self.client.reqContractDetails(1, contract)
+        self.client.reqContractDetails(self._get_next_req_id(), contract)
         t0 = time.time()
-        while not self.wrapper.contract_details_done and time.time() - t0 < self.timeout:
+        while time.time() - t0 < self.timeout:
+            with self.wrapper._lock:
+                if self.wrapper.contract_details_done:
+                    break
             time.sleep(0.1)
-        return self.wrapper.contract_details
+        with self.wrapper._lock:
+            return list(self.wrapper.contract_details)
 
     def get_historical_data(self, symbol, duration="1 Y", bar_size="1 day", what_to_show="TRADES"):
         if not self.connect():
@@ -141,8 +174,7 @@ class IBGatewaySync:
         # Use a unique, incrementing reqId for every request.
         # Reusing reqId=1 causes error 322 "Duplicate ticker ID" when IB Gateway
         # hasn't fully released the previous request (e.g. after cancelHistoricalData).
-        self._req_id_counter += 1
-        req_id = self._req_id_counter
+        req_id = self._get_next_req_id()
 
         self.wrapper.historical_data = []
         self.wrapper.historical_data_done = False
@@ -165,17 +197,22 @@ class IBGatewaySync:
             chartOptions=[],
         )
         t0 = time.time()
-        while not self.wrapper.historical_data_done and time.time() - t0 < self.timeout:
+        while time.time() - t0 < self.timeout:
+            with self.wrapper._lock:
+                done = self.wrapper.historical_data_done
+                err = self.wrapper.error_msg
+            if done:
+                break
             # Only break on errors for THIS specific request (check reqId).
             # Stale error 162 from a previous cancelHistoricalData can arrive
             # during the next request and must NOT cut it short.
-            if (self.wrapper.error_msg
-                    and self.wrapper.error_msg[0] == req_id
-                    and self.wrapper.error_msg[1] in (162, 200, 354)):
+            if err and err[0] == req_id and err[1] in (162, 200, 354):
                 break
             time.sleep(0.1)
         # Cancel if still pending so IB Gateway frees this reqId.
-        if not self.wrapper.historical_data_done:
+        with self.wrapper._lock:
+            done = self.wrapper.historical_data_done
+        if not done:
             try:
                 self.client.cancelHistoricalData(req_id)
             except Exception:
@@ -183,7 +220,8 @@ class IBGatewaySync:
             # Brief pause: let IB Gateway process the cancel and flush any
             # delayed 162/366 responses before the next request starts.
             time.sleep(0.3)
-        return self.wrapper.historical_data
+        with self.wrapper._lock:
+            return list(self.wrapper.historical_data)
 
     def get_shortable_shares(self, symbol, secType="STK", exchange="SMART", currency="USD"):
         """Query shortable share availability via reqMktData (generic tick 236).
@@ -194,6 +232,8 @@ class IBGatewaySync:
         if not self.connect():
             return -1
         self.wrapper.error_msg = None
+        self.wrapper.shortable_shares = -1.0          # A-08: reset avant chaque requête
+        self.wrapper.shortable_shares_received = False  # A-08: reset flag
 
         contract = Contract()
         contract.symbol = symbol
@@ -201,21 +241,27 @@ class IBGatewaySync:
         contract.exchange = exchange
         contract.currency = currency
 
-        # Generic tick 236 = shortable shares
-        self.client.reqMktData(3, contract, "236", True, False, [])
+        # Generic tick 236 = shortable shares; save req_id for cancelMktData
+        req_id = self._get_next_req_id()
+        self.client.reqMktData(req_id, contract, "236", True, False, [])
 
         t0 = time.time()
-        shortable = -1
         while time.time() - t0 < self.timeout:
-            if self.wrapper.error_msg and self.wrapper.error_msg[1] in (162, 200, 354):
+            with self.wrapper._lock:
+                received = self.wrapper.shortable_shares_received
+                err = self.wrapper.error_msg
+            if received:
+                break
+            if err and err[0] == req_id and err[1] in (162, 200, 354):
                 break
             time.sleep(0.2)
             # Snapshot requests auto-complete; give a short window
             if time.time() - t0 > 3.0:
                 break
 
-        self.client.cancelMktData(3)
-        return shortable
+        self.client.cancelMktData(req_id)  # A-08: utilise req_id correct
+        with self.wrapper._lock:
+            return self.wrapper.shortable_shares
 
     def get_earnings_calendar(self, symbol, secType="STK", exchange="SMART", currency="USD"):
         """Retrieve earnings calendar via reqFundamentalData(CalendarReport).
@@ -235,19 +281,25 @@ class IBGatewaySync:
         contract.exchange = exchange
         contract.currency = currency
 
-        self.client.reqFundamentalData(2, contract, "CalendarReport", [])
+        self.client.reqFundamentalData(self._get_next_req_id(), contract, "CalendarReport", [])
 
         t0 = time.time()
-        while not self.wrapper.fundamental_data_done and time.time() - t0 < self.timeout:
-            if self.wrapper.error_msg and self.wrapper.error_msg[1] in (162, 200, 354, 430):
+        while time.time() - t0 < self.timeout:
+            with self.wrapper._lock:
+                done = self.wrapper.fundamental_data_done
+                err = self.wrapper.error_msg
+            if done:
+                break
+            if err and err[1] in (162, 200, 354, 430):
                 logger.warning(
                     "[IBGatewaySync] Fundamental data unavailable for %s: %s",
-                    symbol, self.wrapper.error_msg[2],
+                    symbol, err[2],
                 )
                 break
             time.sleep(0.1)
 
-        return self.wrapper.fundamental_data
+        with self.wrapper._lock:
+            return self.wrapper.fundamental_data
 
     # Ajoute ici d'autres m├®thodes selon les besoins (place_order, get_portfolio, etc.)
 
@@ -308,6 +360,9 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         self._persisted_order_ids: Dict[str, int] = {}  # order_id ÔåÆ IB permId
         self._consecutive_failures = 0
         self._max_consecutive_failures = 5  # circuit breaker threshold
+        self._last_failure_time: float = 0.0  # A-11: timestamp of last failure for auto-reset
+        _CB_RESET_TIMEOUT = 300  # 5 minutes — auto-reset after sustained inactivity
+        self._cb_reset_timeout = _CB_RESET_TIMEOUT
 
         # Restore persisted order map on init (crash recovery)
         self._load_order_map()
@@ -322,14 +377,12 @@ class IBKRExecutionEngine(BaseExecutionEngine):
             )
         IBKRExecutionEngine._active_client_ids[self.client_id] = count + 1
 
-        import traceback
         logger.info(
             "ibkr_engine_init",
             host=self.host,
             port=self.port,
             client_id=self.client_id,
             readonly=self.readonly,
-            stack="".join(traceback.format_stack())
         )
 
     # ÔöÇÔöÇ Connection helpers ÔöÇÔöÇ
@@ -345,10 +398,20 @@ class IBKRExecutionEngine(BaseExecutionEngine):
 
         # Circuit breaker: refuse to connect after too many failures
         if self._consecutive_failures >= self._max_consecutive_failures:
-            raise ConnectionError(
-                f"IBKR circuit breaker open: {self._consecutive_failures} consecutive failures. "
-                "Manual intervention required."
-            )
+            elapsed = time.time() - self._last_failure_time
+            if elapsed >= self._cb_reset_timeout:
+                # A-11: auto-reset after 5 minutes of no activity
+                logger.warning(
+                    "ibkr_circuit_breaker_auto_reset",
+                    elapsed_s=round(elapsed, 0),
+                    previous_failures=self._consecutive_failures,
+                )
+                self._consecutive_failures = 0
+            else:
+                raise ConnectionError(
+                    f"IBKR circuit breaker open: {self._consecutive_failures} consecutive failures. "
+                    f"Auto-reset in {self._cb_reset_timeout - elapsed:.0f}s"
+                )
 
         # Ensure an asyncio event loop exists (required by ib_insync on Python 3.10+)
         try:
@@ -356,11 +419,10 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
 
-        import time
-        retry_delays = [5, 15, 30]  # seconds
+        retry_base_delays = [5, 15, 30]  # seconds base
         last_error = None
 
-        for attempt, delay in enumerate(retry_delays, 1):
+        for attempt, base_delay in enumerate(retry_base_delays, 1):
             try:
                 from ib_insync import IB
                 self._ib = IB()
@@ -380,23 +442,27 @@ class IBKRExecutionEngine(BaseExecutionEngine):
                 return
             except Exception as exc:
                 last_error = exc
+                # A-09: add ±30% jitter to avoid thundering herd on reconnect
+                jitter = random.uniform(0, base_delay * 0.3)
+                actual_delay = round(base_delay + jitter, 1)
                 logger.warning(
                     "ibkr_connection_attempt_failed",
                     attempt=attempt,
-                    max_attempts=len(retry_delays),
+                    max_attempts=len(retry_base_delays),
                     error=str(exc)[:120],
-                    retry_in=delay,
+                    retry_in=actual_delay,
                 )
-                if attempt < len(retry_delays):
-                    time.sleep(delay)
+                if attempt < len(retry_base_delays):
+                    time.sleep(actual_delay)
 
         self._consecutive_failures += 1
+        self._last_failure_time = time.time()  # A-11: record failure timestamp for auto-reset
         logger.error(
             "ibkr_connection_failed_all_retries",
             consecutive_failures=self._consecutive_failures,
             error=str(last_error)[:120],
         )
-        raise ConnectionError(f"IBKR connection failed after {len(retry_delays)} attempts: {last_error}")
+        raise ConnectionError(f"IBKR connection failed after {len(retry_base_delays)} attempts: {last_error}")
 
     def _on_disconnect(self) -> None:
         """Callback fired when IBKR connection drops."""
@@ -496,12 +562,16 @@ class IBKRExecutionEngine(BaseExecutionEngine):
     def _save_order_map(self) -> None:
         """Persist order_id ÔåÆ permId mapping atomically."""
         import json
+        import shutil
         from pathlib import Path
         path = Path(self._ORDER_MAP_FILE)
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix('.tmp')
         try:
             tmp.write_text(json.dumps(self._persisted_order_ids, indent=2))
+            # A-10: backup existing file before overwrite
+            if path.exists():
+                shutil.copy2(path, path.with_suffix('.bak'))
             tmp.replace(path)
         except Exception as exc:
             logger.error("ibkr_order_map_save_failed", error=str(exc)[:120])
@@ -527,6 +597,32 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         if trade is None:
             return OrderStatus.UNKNOWN
         return OrderStatus.FILLED if trade.isDone() else OrderStatus.PENDING
+
+    def get_shortable_shares(self, symbol: str) -> float:
+        """Query shortable share availability from IBKR (tick type 236).
+
+        Uses ib_insync reqMktData snapshot mode.  Returns −1 on failure
+        or when market data is unavailable / not subscribed.
+        Requires IBKR market data subscription.
+        """
+        self._ensure_connected()
+        try:
+            from ib_insync import Stock
+            contract = Stock(symbol, 'SMART', 'USD')
+            ticker = self._ib.reqMktData(contract, genericTickList='236', snapshot=True)
+            deadline = time.time() + 5.0
+            while time.time() < deadline:
+                self._ib.sleep(0.1)
+                shortable = getattr(ticker, 'shortableShares', None)
+                if shortable is not None and shortable >= 0:
+                    self._ib.cancelMktData(contract)
+                    return float(shortable)
+            self._ib.cancelMktData(contract)
+            logger.warning("ibkr_shortable_shares_timeout", symbol=symbol)
+            return -1.0
+        except Exception as exc:
+            logger.warning("ibkr_shortable_shares_failed", symbol=symbol, error=str(exc)[:100])
+            return -1.0
 
     def get_positions(self) -> Dict[str, float]:
         self._ensure_connected()

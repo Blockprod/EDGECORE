@@ -9,7 +9,7 @@ Tests complete trading flows:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
 import numpy as np
 
@@ -202,7 +202,7 @@ class TestRiskGatingFlow:
         for i in range(risk_engine.config.max_concurrent_positions):
             position = RiskPosition(
                 symbol_pair=f"PAIR{i}",
-                entry_time=datetime.utcnow(),
+                entry_time=datetime.now(timezone.utc),
                 entry_price=100.0,
                 quantity=1.0,
                 side="long"

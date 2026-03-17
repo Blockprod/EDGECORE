@@ -170,7 +170,8 @@ class SpreadHalfLifeEstimator:
                 'mean_reversion_speed': mean_reversion_speed,
                 'half_life_days': int(np.round(half_life))
             }
-        except:
+        except Exception as exc:
+            logger.warning("compute_ou_process_parameters_failed", error=str(exc))
             return {
                 'half_life': None,
                 'ar1_coeff': None,
@@ -212,7 +213,8 @@ class SpreadHalfLifeEstimator:
             
             # Mean-reverting if 0 < ¤ü < threshold
             return 0 < rho < threshold_rho
-        except:
+        except Exception as exc:
+            logger.warning("validate_mean_reversion_failed", error=str(exc))
             return False
 
 

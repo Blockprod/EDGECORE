@@ -1,4 +1,5 @@
-﻿services:
+﻿version: '3.8'
+services:
   # Main trading engine application
   trading-engine:
     build:
@@ -7,7 +8,7 @@
     image: edgecore:latest
     container_name: trading-engine
     environment:
-      ENVIRONMENT: production
+      EDGECORE_ENV: prod
       LOG_DIR: /app/logs
       LOG_LEVEL: INFO
       LOG_CONSOLE_LEVEL: WARNING

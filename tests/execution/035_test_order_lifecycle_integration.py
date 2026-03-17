@@ -8,7 +8,7 @@ timeout checking invoked each iteration, and error handling.
 import pytest
 import time
 from unittest.mock import Mock
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from execution.order_lifecycle_integration import OrderLifecycleIntegration
 from execution.order_lifecycle import OrderStatus
@@ -169,7 +169,7 @@ class TestOrderAging:
         
         # Manually set to 5 seconds old
         integration.order_mgr.orders[order_id].created_at = (
-            datetime.utcnow() - timedelta(seconds=5)
+            datetime.now(timezone.utc) - timedelta(seconds=5)
         )
         
         age = integration.get_order_age_seconds(order_id)

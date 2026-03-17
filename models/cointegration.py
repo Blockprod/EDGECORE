@@ -534,16 +534,6 @@ def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> Optional[i
     Returns:
         Half-life in periods (int), or None if not mean-reverting.
     """
-    # ÔöÇÔöÇ Cython fast path ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-    if CYTHON_COINTEGRATION_AVAILABLE:
-        try:
-            hl = _half_life_fast(spread.values.astype(np.float64))
-            if 5 <= hl <= 200:
-                return hl
-        except Exception:
-            pass
-
-    # ÔöÇÔöÇ Pure-Python fallback ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     from models.half_life_estimator import SpreadHalfLifeEstimator
     estimator = SpreadHalfLifeEstimator(lookback=min(252, len(spread)))
     hl = estimator.estimate_half_life_from_spread(spread, validate=True)

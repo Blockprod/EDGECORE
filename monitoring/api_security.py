@@ -190,6 +190,11 @@ _rate_limiter = RateLimiter(
     requests_per_minute=int(os.getenv('RATE_LIMIT_RPM', '100'))
 )
 
+
+def reset_rate_limiter_for_testing() -> None:
+    """Reset the global rate limiter state. For use in tests only."""
+    _rate_limiter.requests.clear()
+
 _auth = APIKeyAuth(
     required=os.getenv('API_AUTH_REQUIRED', 'false').lower() == 'true'
 )

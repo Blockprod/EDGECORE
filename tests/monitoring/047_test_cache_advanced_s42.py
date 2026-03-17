@@ -15,7 +15,7 @@ import time
 import tempfile
 from pathlib import Path
 
-from monitoring.cache_advanced_s42 import (
+from monitoring.cache_advanced import (
     LFUEvictionPolicy,
     ARCEvictionPolicy,
     DistributedCacheManager,

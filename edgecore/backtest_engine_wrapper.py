@@ -21,6 +21,7 @@ class BacktestEngineWrapper:
     def __init__(self, initial_equity: float = 100000.0):
         self.initial_equity = initial_equity
         self.use_cpp = False  # Python-only now
+        self._engine = None
         logger.debug("Using Python BacktestEngine")
     
     def run(

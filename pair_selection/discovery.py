@@ -325,6 +325,7 @@ class PairDiscoveryEngine:
     def _save_cache(self, pairs: List[CointegratedPair]) -> None:
         try:
             import json
+            import shutil
             path = self._cache_path()
             tmp = path.with_suffix(".tmp")
             raw = [
@@ -341,6 +342,9 @@ class PairDiscoveryEngine:
             ]
             with open(tmp, "w") as f:
                 json.dump(raw, f, indent=2)
+            # A-10: backup existing cache file before overwrite
+            if path.exists():
+                shutil.copy2(path, path.with_suffix(".bak"))
             tmp.replace(path)
             logger.info("pair_cache_saved", count=len(pairs))
         except Exception as exc:

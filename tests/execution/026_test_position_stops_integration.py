@@ -9,7 +9,7 @@ Tests for:
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from execution.position_stops import get_stop_manager, reset_stop_manager
 from common.types import PositionStopConfig
 
@@ -216,7 +216,7 @@ class TestExecutionIntegrationWithStops:
         
         # Get the position and backdating entry time
         pos = manager.positions["time_exit_pos"]
-        pos.entry_time = datetime.utcnow() - timedelta(minutes=2)
+        pos.entry_time = datetime.now(timezone.utc) - timedelta(minutes=2)
         
         # After hard exit time - should exit
         should_exit, reason = manager.check_exits("time_exit_pos", 50500.0)

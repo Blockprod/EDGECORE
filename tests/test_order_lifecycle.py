@@ -2,7 +2,7 @@
 
 import pytest
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import sleep
 from execution.order_lifecycle import (
     OrderLifecycleManager,
@@ -17,7 +17,7 @@ class TestOrderLifecycle:
     
     def test_create_order_lifecycle(self):
         """Test creating order lifecycle record."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         timeout = now + timedelta(seconds=300)
         
         lifecycle = OrderLifecycle(
@@ -37,7 +37,7 @@ class TestOrderLifecycle:
     
     def test_order_lifecycle_is_expired(self):
         """Test expiration detection."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         past = now - timedelta(seconds=60)  # 1 minute ago
         
         lifecycle = OrderLifecycle(
@@ -57,9 +57,9 @@ class TestOrderLifecycle:
             order_id="order_1",
             symbol="BTC/USD",
             status=OrderStatus.PENDING,
-            created_at=datetime.utcnow(),
-            timeout_at=datetime.utcnow() + timedelta(seconds=300),
-            last_update=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            timeout_at=datetime.now(timezone.utc) + timedelta(seconds=300),
+            last_update=datetime.now(timezone.utc)
         )
         
         lifecycle.add_event(OrderLifecycleEvent.CREATED, "Order created")
@@ -70,7 +70,7 @@ class TestOrderLifecycle:
     
     def test_order_lifecycle_time_remaining(self):
         """Test time remaining calculation."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         timeout = now + timedelta(seconds=100)
         
         lifecycle = OrderLifecycle(
@@ -448,7 +448,7 @@ class TestOrderCleanup:
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
         
         # Manually set last_update to old time
-        lifecycle.last_update = datetime.utcnow() - timedelta(seconds=3700)
+        lifecycle.last_update = datetime.now(timezone.utc) - timedelta(seconds=3700)
         
         removed = manager.cleanup_resolved_orders(older_than_seconds=3600.0)
         

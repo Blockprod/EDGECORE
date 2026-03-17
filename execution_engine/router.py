@@ -90,7 +90,8 @@ class ExecutionRouter:
         # Lazy-loaded backends
         self._paper_engine = None
         self._ibkr_engine = None
-
+        # A-02: order_id → OrderStatus tracking for fill confirmations
+        self._pending_orders: Dict[str, object] = {}
         # IBKR API rate limiter ÔÇö 45 req/s sustained, 10 burst
         # (hard cap is 50/s; exceeding triggers disconnect)
         self._rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
@@ -142,9 +143,9 @@ class ExecutionRouter:
         logger.info(
             "order_executed",
             mode=self._mode.value,
-            pair=order.pair_key,
+            pair=getattr(order, 'pair_key', None) or getattr(order, 'symbol', ''),
             symbol=order.symbol,
-            side=order.side,
+            side=order.side.value if hasattr(order.side, 'value') else order.side,
             filled=result.filled_qty,
             price=result.fill_price,
         )
@@ -171,31 +172,44 @@ class ExecutionRouter:
             slippage_bps=slippage,
         )
 
-    def _paper_fill(self, order: TradeOrder) -> TradeExecution:
-        """Paper mode: uses PaperExecutionEngine for realistic simulation."""
+    def _paper_fill(self, order) -> TradeExecution:
+        """Paper mode: uses PaperExecutionEngine for realistic simulation.
+
+        Accepts both TradeOrder and execution.base.Order objects.
+        """
         if self._paper_engine is None:
             from execution.paper_execution import PaperExecutionEngine
             self._paper_engine = PaperExecutionEngine()
 
-        # Delegate to paper engine
+        # Resolve fields compatible with both TradeOrder and execution.base.Order
+        pair_key = getattr(order, 'pair_key', None) or getattr(order, 'symbol', '')
+        side = order.side
+        side_str = side.value.lower() if hasattr(side, 'value') else str(side).lower()
         price = order.limit_price or 0.0
         slippage = 2.0
 
+        # A-02: record immediate fill for paper orders
+        order_id = getattr(order, 'order_id', None)
+        if order_id:
+            from execution.base import OrderStatus
+            self._pending_orders[order_id] = OrderStatus.FILLED
+
         return TradeExecution(
-            pair_key=order.pair_key,
+            pair_key=pair_key,
             symbol=order.symbol,
-            side=order.side,
+            side=side_str,
             requested_qty=order.quantity,
             filled_qty=order.quantity,
-            fill_price=price * (1 + slippage / 10_000 if order.side == "buy" else 1 - slippage / 10_000),
+            fill_price=price * (1 + slippage / 10_000 if side_str == "buy" else 1 - slippage / 10_000),
             commission=order.quantity * price * 0.00005,
             slippage_bps=slippage,
         )
 
-    def _live_fill(self, order: TradeOrder) -> TradeExecution:
+    def _live_fill(self, order) -> TradeExecution:
         """
         Live mode: submits to Interactive Brokers via IBKRExecutionEngine.
 
+        Accepts both TradeOrder and execution.base.Order objects.
         Connects lazily, submits the order, waits for fill confirmation,
         and returns a TradeExecution with actual fill data.
         """
@@ -208,13 +222,21 @@ class ExecutionRouter:
         # Ensure connection
         self._ibkr_engine._ensure_connected()
 
-        # Build an Order compatible with IBKRExecutionEngine
-        from execution.base import Order as IBKROrder, OrderSide
+        # Build an Order compatible with IBKRExecutionEngine.
+        # Reuse the caller's order_id if available (A-02: enables fill-confirmation tracking).
+        from execution.base import Order as IBKROrder, OrderSide, OrderStatus
         from uuid import uuid4
 
-        ibkr_side = OrderSide.BUY if order.side.lower() == "buy" else OrderSide.SELL
+        side = order.side
+        side_str = side.value.lower() if hasattr(side, 'value') else str(side).lower()
+        ibkr_side = OrderSide.BUY if side_str == 'buy' else OrderSide.SELL
+
+        # Preserve the caller's order_id so _pending_orders can be keyed on it
+        original_order_id = getattr(order, 'order_id', None) or str(uuid4())
+        pair_key = getattr(order, 'pair_key', None) or getattr(order, 'symbol', '')
+
         ibkr_order = IBKROrder(
-            order_id=str(uuid4()),
+            order_id=original_order_id,
             symbol=order.symbol,
             side=ibkr_side,
             quantity=order.quantity,
@@ -222,11 +244,34 @@ class ExecutionRouter:
             order_type=order.order_type.upper(),
         )
 
+        # A-08: Anti-short guard — block SELL orders when shortable shares are insufficient
+        if ibkr_side == OrderSide.SELL and hasattr(self._ibkr_engine, 'get_shortable_shares'):
+            shortable = self._ibkr_engine.get_shortable_shares(ibkr_order.symbol)
+            if 0 <= shortable < ibkr_order.quantity:
+                logger.warning(
+                    "short_blocked_insufficient_shortable_shares",
+                    symbol=ibkr_order.symbol,
+                    available=shortable,
+                    needed=ibkr_order.quantity,
+                )
+                self._pending_orders[original_order_id] = OrderStatus.REJECTED
+                return TradeExecution(
+                    pair_key=pair_key,
+                    symbol=ibkr_order.symbol,
+                    side=side_str,
+                    requested_qty=ibkr_order.quantity,
+                    filled_qty=0.0,
+                    fill_price=0.0,
+                    commission=0.0,
+                    slippage_bps=0.0,
+                    is_partial=False,
+                )
+
         # Rate-limit before hitting IBKR API (50 req/s hard cap)
         self._rate_limiter.acquire()
 
         # Submit through IBKR engine
-        order_id = self._ibkr_engine.submit_order(ibkr_order)
+        submitted_order_id = self._ibkr_engine.submit_order(ibkr_order)
 
         # Poll for fill (timeout after 60 seconds)
         max_wait = 60
@@ -238,11 +283,10 @@ class ExecutionRouter:
         is_partial = False
 
         while waited < max_wait:
-            status = self._ibkr_engine.get_order_status(order_id)
-            from execution.base import OrderStatus
+            status = self._ibkr_engine.get_order_status(submitted_order_id)
             if status == OrderStatus.FILLED:
                 # Retrieve actual fill data from ib_insync trade object
-                trade_obj = self._ibkr_engine._order_map.get(order_id)
+                trade_obj = self._ibkr_engine._order_map.get(submitted_order_id)
                 if trade_obj and hasattr(trade_obj, 'fills') and trade_obj.fills:
                     total_qty = sum(f.execution.shares for f in trade_obj.fills)
                     avg_price = sum(
@@ -257,25 +301,31 @@ class ExecutionRouter:
                     filled_qty = order.quantity
                 break
             elif status == OrderStatus.CANCELLED:
-                logger.warning("live_order_cancelled", order_id=order_id)
+                logger.warning("live_order_cancelled", order_id=submitted_order_id)
                 break
             _time.sleep(poll_interval)
             waited += poll_interval
 
         if waited >= max_wait and filled_qty == 0:
-            # Timeout ÔÇö cancel and log
-            logger.error("live_order_timeout", order_id=order_id, waited=max_wait)
-            self._ibkr_engine.cancel_order(order_id)
+            # Timeout — cancel and log
+            logger.error("live_order_timeout", order_id=submitted_order_id, waited=max_wait)
+            self._ibkr_engine.cancel_order(submitted_order_id)
             is_partial = True
 
         # Compute slippage
         ref_price = order.limit_price or fill_price
         slippage_bps = abs(fill_price - ref_price) / max(ref_price, 1e-9) * 10_000 if ref_price else 0.0
 
+        # A-02: record final status for fill-confirmation tracking
+        final_status = OrderStatus.FILLED if filled_qty > 0 else (
+            OrderStatus.TIMEOUT if is_partial else OrderStatus.UNKNOWN
+        )
+        self._pending_orders[original_order_id] = final_status
+
         return TradeExecution(
-            pair_key=order.pair_key,
+            pair_key=pair_key,
             symbol=order.symbol,
-            side=order.side,
+            side=side_str,
             requested_qty=order.quantity,
             filled_qty=filled_qty,
             fill_price=fill_price,
@@ -297,6 +347,24 @@ class ExecutionRouter:
     def total_commissions(self) -> float:
         """Sum of all commissions paid."""
         return sum(e.commission for e in self._execution_log)
+
+    def get_order_status(self, order_id: str) -> object:
+        """Return the current status for a previously submitted order.
+
+        Checks the local _pending_orders cache first (populated by all fill
+        paths), then delegates to the IBKR engine for live orders that may
+        not yet appear in the cache.
+
+        Returns an OrderStatus enum value (from execution.base).
+        """
+        from execution.base import OrderStatus
+        if order_id in self._pending_orders:
+            return self._pending_orders[order_id]
+        # Live mode: delegate to IBKR engine for real-time status
+        if self._ibkr_engine is not None:
+            return self._ibkr_engine.get_order_status(order_id)
+        # Paper / backtest: all orders fill instantly — treat unknown as FILLED
+        return OrderStatus.FILLED
 
     def get_account_balance(self) -> float:
         """Return current account balance.

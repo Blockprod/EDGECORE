@@ -35,7 +35,7 @@ class ReconciliationDivergence:
     description: str
     broker_value: Any
     internal_value: Any
-    detected_at: datetime = field(default_factory=datetime.utcnow)
+    detected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     resolution: Optional[str] = None
     resolved_at: Optional[datetime] = None
 

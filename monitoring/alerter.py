@@ -53,6 +53,10 @@ class Alert:
     acknowledged_by: Optional[str] = None
     resolved_at: Optional[datetime] = None
     
+    def __post_init__(self):
+        if self.timestamp.tzinfo is None:
+            self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
+
     def acknowledge(self, username: str = "system") -> None:
         """Mark alert as acknowledged."""
         self.acknowledged_at = datetime.now(timezone.utc)

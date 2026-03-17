@@ -12,7 +12,7 @@ Covers:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 
 from execution.modes import (
     ModeType,
@@ -101,7 +101,7 @@ class TestPosition:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=51000.0
         )
         
@@ -114,7 +114,7 @@ class TestPosition:
             symbol="AAPL",
             quantity=-1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=49000.0
         )
         
@@ -127,7 +127,7 @@ class TestPosition:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=51000.0
         )
         
@@ -139,7 +139,7 @@ class TestPosition:
             symbol="AAPL",
             quantity=-1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=49000.0
         )
         
@@ -151,7 +151,7 @@ class TestPosition:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=55000.0
         )
         
@@ -179,7 +179,7 @@ class TestExecutionContext:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=50000.0
         )
         
@@ -197,7 +197,7 @@ class TestExecutionContext:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=50000.0
         )
         
@@ -263,7 +263,7 @@ class TestExecutionContext:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=50000.0
         )
         
@@ -271,7 +271,7 @@ class TestExecutionContext:
             symbol="MSFT",
             quantity=10.0,
             entry_price=3000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=3000.0
         )
         
@@ -290,7 +290,7 @@ class TestExecutionContext:
             symbol="AAPL",
             quantity=1.0,
             entry_price=50000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=51000.0  # +1000
         )
         
@@ -298,7 +298,7 @@ class TestExecutionContext:
             symbol="MSFT",
             quantity=10.0,
             entry_price=3000.0,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=2900.0  # -1000
         )
         

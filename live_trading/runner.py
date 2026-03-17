@@ -18,6 +18,7 @@ process under process supervision (systemd, Docker, etc.).
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -90,6 +91,7 @@ class LiveTradingRunner:
         self._state = TradingState.INITIALIZING
         self._active_pairs: List[tuple] = []
         self._positions: Dict[str, Any] = {}
+        self._positions_lock = threading.Lock()
         self._last_discovery: Optional[datetime] = None
         self._iteration = 0
         # Data load tracking (for dashboard)
@@ -112,6 +114,7 @@ class LiveTradingRunner:
         self._kill_switch = None
         self._allocator = None
         self._router = None
+        self._audit_trail = None  # A-17: crash-recovery audit trail (lazy-init at startup)
 
     # ------------------------------------------------------------------
     # Alerting helpers
@@ -269,6 +272,20 @@ class LiveTradingRunner:
 
     def _run_startup_reconciliation(self) -> None:
         """Run full broker reconciliation at startup."""
+        # A-17: restore in-memory positions from audit trail (crash recovery)
+        try:
+            from persistence.audit_trail import AuditTrail
+            self._audit_trail = AuditTrail()
+            recovered_positions, _ = self._audit_trail.recover_state()
+            if recovered_positions:
+                with self._positions_lock:
+                    self._positions = {k: vars(v) for k, v in recovered_positions.items()}
+                logger.info(
+                    "positions_restored_from_audit_trail",
+                    count=len(recovered_positions),
+                )
+        except Exception as exc:
+            logger.warning("audit_trail_recovery_failed", error=str(exc)[:200])
         try:
             if not self._router:
                 return
@@ -286,8 +303,12 @@ class LiveTradingRunner:
             broker_positions = {}
             try:
                 broker_positions = self._router._engine.get_positions() if hasattr(self._router, '_engine') else {}
-            except Exception:
-                pass
+            except Exception as exc:
+                if self.config.mode == "live":
+                    raise RuntimeError(
+                        f"Cannot start live trading: broker position fetch failed: {exc}"
+                    ) from exc
+                logger.warning("startup_reconciliation_positions_unavailable", error=str(exc)[:200])
 
             report = self._reconciler.full_reconciliation(
                 broker_equity=broker_equity,
@@ -331,8 +352,9 @@ class LiveTradingRunner:
             broker_positions = {}
             try:
                 broker_positions = self._router._engine.get_positions() if hasattr(self._router, '_engine') else {}
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("periodic_reconciliation_positions_unavailable", error=str(exc)[:200])
+                return  # skip ce tick, réessayer au prochain intervalle
             report = self._reconciler.full_reconciliation(
                 broker_equity=broker_equity,
                 broker_positions=broker_positions,
@@ -361,12 +383,84 @@ class LiveTradingRunner:
     # ------------------------------------------------------------------
     # Main loop tick
     # ------------------------------------------------------------------
+    # Fill confirmation (A-02)
+    # ------------------------------------------------------------------
+
+    def _process_fill_confirmations(self) -> None:
+        """Check fill status of pending close orders and confirm or escalate.
+
+        Called at the start of every tick.  Positions marked ``pending_close``
+        are only removed from ``_positions`` once the broker confirms FILLED.
+        If the close order is rejected / cancelled, a CRITICAL alert is sent
+        and the position is intentionally retained so the operator can act.
+        """
+        from execution.base import OrderStatus
+
+        with self._positions_lock:
+            pending = {
+                k: v for k, v in self._positions.items()
+                if v.get("status") == "pending_close"
+            }
+
+        for pair_key, pos_info in pending.items():
+            order_id = pos_info.get("close_order_id")
+            if not order_id or not self._router:
+                continue
+            try:
+                status = self._router.get_order_status(order_id)
+                if status == OrderStatus.FILLED:
+                    with self._positions_lock:
+                        self._positions.pop(pair_key, None)
+                    logger.info(
+                        "position_closed_confirmed",
+                        pair=pair_key,
+                        order_id=order_id,
+                    )
+                elif status in (
+                    OrderStatus.CANCELLED,
+                    OrderStatus.REJECTED,
+                    OrderStatus.FAILED,
+                ):
+                    logger.error(
+                        "close_order_rejected_position_retained",
+                        pair=pair_key,
+                        order_id=order_id,
+                        status=str(status),
+                    )
+                    self._send_alert(
+                        "CRITICAL",
+                        f"Close order rejected — position retained: {pair_key}",
+                        f"Order {order_id} for {pair_key} ended with status {status}. "
+                        "Position NOT closed. Immediate operator intervention required.",
+                        {
+                            "pair": pair_key,
+                            "order_id": order_id,
+                            "status": str(status),
+                        },
+                    )
+                    # Reset status so we don't re-alert every tick
+                    with self._positions_lock:
+                        if pair_key in self._positions:
+                            self._positions[pair_key]["status"] = "close_failed"
+            except Exception as exc:
+                logger.error(
+                    "fill_confirmation_check_failed",
+                    pair=pair_key,
+                    error=str(exc)[:200],
+                )
+
+    # ------------------------------------------------------------------
+    # Main loop tick
+    # ------------------------------------------------------------------
 
     def _tick(self) -> None:
         """Execute one iteration of the trading loop."""
         self._iteration += 1
 
-        # 0a. Periodic reconciliation
+        # 0a. Process fill confirmations from pending close orders (A-02)
+        self._process_fill_confirmations()
+
+        # 0b. Periodic reconciliation
         self._maybe_reconcile()
 
         # 0. Kill-switch check
@@ -404,7 +498,9 @@ class LiveTradingRunner:
 
         # 2b. Stop manager checks on existing positions
         exit_signals_from_stops = []
-        for pair_key, pos_info in list(self._positions.items()):
+        with self._positions_lock:
+            positions_snapshot = list(self._positions.items())
+        for pair_key, pos_info in positions_snapshot:
             try:
                 holding_bars = pos_info.get('holding_bars', 0)
                 pos_info['holding_bars'] = holding_bars + 1  # increment
@@ -482,8 +578,9 @@ class LiveTradingRunner:
                         pos = self._positions[pair_key]
                         qty = pos.get('quantity', 0)
                         close_side = OrderSide.SELL if qty > 0 else OrderSide.BUY
+                        close_order_id = str(uuid4())
                         close_order = Order(
-                            order_id=str(uuid4()),
+                            order_id=close_order_id,
                             symbol=pair_key,
                             side=close_side,
                             quantity=abs(qty),
@@ -491,6 +588,13 @@ class LiveTradingRunner:
                             order_type="MARKET",
                         )
                         self._router.submit_order(close_order)
+                        # A-02: Mark pending_close instead of immediately removing.
+                        # _process_fill_confirmations() will confirm and remove on the
+                        # next tick once IBKR confirms the fill.
+                        with self._positions_lock:
+                            if pair_key in self._positions:
+                                self._positions[pair_key]["status"] = "pending_close"
+                                self._positions[pair_key]["close_order_id"] = close_order_id
                 except Exception as exc:
                     logger.error("live_trading_stop_exit_failed", pair=pair_key, error=str(exc)[:200])
                     self._send_alert(
@@ -499,7 +603,7 @@ class LiveTradingRunner:
                         f"Could not submit exit order for {pair_key}: {exc}",
                         {"pair": pair_key, "reason": reason},
                     )
-                del self._positions[pair_key]
+                    # Position intentionnellement conservée : l'ordre de fermeture a échoué
 
         # 3. Generate signals for active pairs
         signals = []
@@ -705,7 +809,9 @@ class LiveTradingRunner:
 
         # Close all open positions via router
         if self._router and self._positions:
-            for symbol, qty in list(self._positions.items()):
+            with self._positions_lock:
+                positions_to_close = list(self._positions.items())
+            for symbol, qty in positions_to_close:
                 try:
                     from execution.base import Order, OrderSide
                     from uuid import uuid4

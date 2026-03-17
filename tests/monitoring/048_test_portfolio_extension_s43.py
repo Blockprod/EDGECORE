@@ -6,7 +6,7 @@ Comprehensive tests for portfolio management, clustering, and concentration anal
 
 import numpy as np
 
-from monitoring.portfolio_extension_s43 import (
+from monitoring.portfolio_extension import (
     PairExposure,
     CorrelationCalculator,
     PairClustering,

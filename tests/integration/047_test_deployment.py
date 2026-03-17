@@ -182,17 +182,23 @@ class TestEnvironmentConfiguration:
 
     def test_env_example_no_secrets_exposed(self, env_example_content):
         """Test .env.example doesn't contain real secrets."""
-        assert 'your-' in env_example_content  # Template values
-        assert 'change-in-production' in env_example_content
-        
+        # Must contain obvious placeholder markers (either legacy 'your-' style
+        # or newer 'REPLACE_WITH' style introduced in A-15)
+        has_template_markers = (
+            'your-' in env_example_content
+            or 'REPLACE_WITH' in env_example_content
+            or 'change-in-production' in env_example_content
+        )
+        assert has_template_markers, "No template placeholder markers found in .env.example"
+
         # Should not have real-looking secrets
         lines = env_example_content.split('\n')
         for line in lines:
             if '=' in line and not line.strip().startswith('#'):
                 value = line.split('=', 1)[1].strip()
                 # Template values should be obvious
-                if value and not any(x in value for x in 
-                    ['your-', 'example', 'admin', 'false', 'true', 'none', '']):
+                if value and not any(x in value.lower() for x in
+                    ['your-', 'replace_with', 'example', 'admin', 'false', 'true', 'none', '']):
                     # Likely a real value - should not be there
                     pass
 

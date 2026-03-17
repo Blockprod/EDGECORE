@@ -196,3 +196,183 @@ class TestUnknownMode:
         router._mode = "INVALID"
         with pytest.raises(ValueError, match="Unknown mode"):
             router.submit_order(sample_order)
+
+
+class TestGetOrderStatus:
+    """A-02: ExecutionRouter.get_order_status() delegates to _pending_orders."""
+
+    def test_returns_filled_for_paper_order(self):
+        """Paper orders are recorded as FILLED in _pending_orders."""
+        from execution.base import OrderStatus, Order, OrderSide
+        from uuid import uuid4
+
+        router = ExecutionRouter(mode=ExecutionMode.PAPER)
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="AAPL",
+            side=OrderSide.BUY,
+            quantity=10,
+            limit_price=150.0,
+            order_type="MARKET",
+        )
+        router.submit_order(order)
+        status = router.get_order_status(order.order_id)
+        assert status == OrderStatus.FILLED
+
+    def test_returns_filled_for_unknown_in_paper_mode(self):
+        """Unknown order_id in paper mode → FILLED (paper fills are instant)."""
+        from execution.base import OrderStatus
+
+        router = ExecutionRouter(mode=ExecutionMode.PAPER)
+        status = router.get_order_status("non-existent-order-id")
+        assert status == OrderStatus.FILLED
+
+    def test_returns_cached_status(self):
+        """Manually injected status is returned directly from cache."""
+        from execution.base import OrderStatus
+
+        router = ExecutionRouter(mode=ExecutionMode.PAPER)
+        router._pending_orders["my-order-id"] = OrderStatus.REJECTED
+        assert router.get_order_status("my-order-id") == OrderStatus.REJECTED
+
+    def test_paper_order_with_execution_base_order(self):
+        """execution.base.Order submitted in paper mode is tracked by order_id."""
+        from execution.base import OrderStatus, Order, OrderSide
+        from uuid import uuid4
+
+        router = ExecutionRouter(mode=ExecutionMode.PAPER)
+        oid = str(uuid4())
+        order = Order(
+            order_id=oid,
+            symbol="MSFT",
+            side=OrderSide.SELL,
+            quantity=5,
+            limit_price=None,
+            order_type="MARKET",
+        )
+        router.submit_order(order)
+        assert router.get_order_status(oid) == OrderStatus.FILLED
+
+
+class TestAntiShortGuard:
+    """A-08: Anti-short guard blocks SELL when insufficient shortable shares."""
+
+    def test_sell_blocked_when_shares_insufficient(self):
+        """SELL order with quantity > shortable shares → filled_qty=0, status REJECTED."""
+        from execution.base import OrderStatus, Order, OrderSide
+        from unittest.mock import patch, MagicMock
+        from uuid import uuid4
+
+        router = ExecutionRouter(mode=ExecutionMode.LIVE)
+
+        # Mock IBKR engine with get_shortable_shares returning 50 (< order qty 100)
+        mock_engine = MagicMock()
+        mock_engine.get_shortable_shares.return_value = 50.0
+        mock_engine._ensure_connected.return_value = None
+        router._ibkr_engine = mock_engine
+
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="GME",
+            side=OrderSide.SELL,
+            quantity=100.0,
+            limit_price=None,
+            order_type="MARKET",
+        )
+
+        result = router.submit_order(order)
+
+        assert result.filled_qty == 0.0
+        assert router.get_order_status(order.order_id) == OrderStatus.REJECTED
+        mock_engine.submit_order.assert_not_called()
+
+    def test_sell_allowed_when_shares_sufficient(self):
+        """SELL order with quantity <= shortable shares → proceeds to IBKR."""
+        from execution.base import OrderStatus, Order, OrderSide
+        from unittest.mock import MagicMock
+        from uuid import uuid4
+
+        router = ExecutionRouter(mode=ExecutionMode.LIVE)
+
+        mock_engine = MagicMock()
+        mock_engine.get_shortable_shares.return_value = 500.0
+        mock_engine._ensure_connected.return_value = None
+        # Simulate IBKR fill
+        mock_engine.submit_order.return_value = "ibkr-order-123"
+        mock_engine.get_order_status.return_value = OrderStatus.FILLED
+        mock_engine._order_map = {}
+        router._ibkr_engine = mock_engine
+
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="AAPL",
+            side=OrderSide.SELL,
+            quantity=100.0,
+            limit_price=None,
+            order_type="MARKET",
+        )
+
+        result = router.submit_order(order)
+
+        mock_engine.submit_order.assert_called_once()
+        assert result.filled_qty == 100.0
+
+    def test_buy_order_skips_guard(self):
+        """BUY orders are never checked for shortable shares."""
+        from execution.base import Order, OrderSide
+        from unittest.mock import MagicMock
+        from uuid import uuid4
+
+        router = ExecutionRouter(mode=ExecutionMode.LIVE)
+
+        mock_engine = MagicMock()
+        mock_engine._ensure_connected.return_value = None
+        from execution.base import OrderStatus
+        mock_engine.submit_order.return_value = "ibkr-buy-001"
+        mock_engine.get_order_status.return_value = OrderStatus.FILLED
+        mock_engine._order_map = {}
+        router._ibkr_engine = mock_engine
+
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="AAPL",
+            side=OrderSide.BUY,
+            quantity=100.0,
+            limit_price=None,
+            order_type="MARKET",
+        )
+
+        router.submit_order(order)
+
+        mock_engine.get_shortable_shares.assert_not_called()
+
+    def test_sell_with_negative_shortable_allowed(self):
+        """get_shortable_shares() returning -1 (unavailable) should not block the order."""
+        from execution.base import OrderStatus, Order, OrderSide
+        from unittest.mock import MagicMock
+        from uuid import uuid4
+
+        router = ExecutionRouter(mode=ExecutionMode.LIVE)
+
+        mock_engine = MagicMock()
+        mock_engine.get_shortable_shares.return_value = -1.0  # unavailable
+        mock_engine._ensure_connected.return_value = None
+        mock_engine.submit_order.return_value = "ibkr-sell-neg"
+        mock_engine.get_order_status.return_value = OrderStatus.FILLED
+        mock_engine._order_map = {}
+        router._ibkr_engine = mock_engine
+
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="AAPL",
+            side=OrderSide.SELL,
+            quantity=100.0,
+            limit_price=None,
+            order_type="MARKET",
+        )
+
+        result = router.submit_order(order)
+        # -1 means "data unavailable", should NOT block
+        mock_engine.submit_order.assert_called_once()
+        assert result.filled_qty == 100.0
+

@@ -8,7 +8,7 @@ Provides:
 - Data integrity checks
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from structlog import get_logger
 from persistence.audit_trail import AuditTrail
@@ -39,11 +39,11 @@ class DisasterRecovery:
         Returns:
             Recovery status report
         """
-        logger.critical("DISASTER_RECOVERY_INITIATED", timestamp=datetime.utcnow())
+        logger.critical("DISASTER_RECOVERY_INITIATED", timestamp=datetime.now(timezone.utc))
         
         report = {
             "status": "in_progress",
-            "start_time": datetime.utcnow(),
+            "start_time": datetime.now(timezone.utc),
             "steps": []
         }
         
@@ -103,7 +103,7 @@ class DisasterRecovery:
             })
             
             report["status"] = "success"
-            report["end_time"] = datetime.utcnow()
+            report["end_time"] = datetime.now(timezone.utc)
             
             logger.critical(
                 "RECOVERY_COMPLETE",
@@ -117,7 +117,7 @@ class DisasterRecovery:
             logger.error("RECOVERY_FAILED", error=str(e))
             report["status"] = "failed"
             report["error"] = str(e)
-            report["end_time"] = datetime.utcnow()
+            report["end_time"] = datetime.now(timezone.utc)
             return report
     
     def verify_data_integrity(self, audit_data: list) -> dict:
@@ -251,7 +251,7 @@ class DisasterRecovery:
         backup_path = Path(backup_dir)
         backup_path.mkdir(parents=True, exist_ok=True)
         
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         backup_file = backup_path / f"audit_trail_backup_{timestamp}.csv"
         
         # Load audit trail
@@ -282,7 +282,7 @@ class DisasterRecovery:
         Returns:
             Path to report file
         """
-        timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         report_file = self.recovery_log_dir / f"recovery_report_{timestamp}.txt"
         
         with open(report_file, 'w') as f:

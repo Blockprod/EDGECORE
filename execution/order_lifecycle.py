@@ -16,7 +16,7 @@ Main Features:
 
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 from enum import Enum
 
@@ -60,16 +60,16 @@ class OrderLifecycle:
     
     def add_event(self, event: OrderLifecycleEvent, message: str = "") -> None:
         """Record an event in the order lifecycle."""
-        self.events.append((event, datetime.utcnow(), message))
-        self.last_update = datetime.utcnow()
+        self.events.append((event, datetime.now(timezone.utc), message))
+        self.last_update = datetime.now(timezone.utc)
     
     def is_expired(self) -> bool:
         """Check if order has exceeded timeout."""
-        return datetime.utcnow() > self.timeout_at
+        return datetime.now(timezone.utc) > self.timeout_at
     
     def time_remaining_seconds(self) -> float:
         """Get seconds remaining before timeout."""
-        remaining = (self.timeout_at - datetime.utcnow()).total_seconds()
+        remaining = (self.timeout_at - datetime.now(timezone.utc)).total_seconds()
         return max(0, remaining)
     
     def get_event_count(self, event_type: OrderLifecycleEvent) -> int:
@@ -119,7 +119,7 @@ class OrderLifecycleManager:
         self.max_retries = max_retries
         
         self.orders: Dict[str, OrderLifecycle] = {}
-        self.last_timeout_check = datetime.utcnow()
+        self.last_timeout_check = datetime.now(timezone.utc)
         self.force_close_attempts: Dict[str, int] = {}
         
         logger.info(
@@ -176,7 +176,7 @@ class OrderLifecycleManager:
         if timeout <= 0:
             raise ValueError(f"Timeout must be positive, got {timeout}")
         
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         timeout_at = now + timedelta(seconds=timeout)
         
         lifecycle = OrderLifecycle(
@@ -270,7 +270,7 @@ class OrderLifecycleManager:
         Raises:
             ValueError: If check encounters invalid state
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         expired_orders = []
         remediation_actions = []
         
@@ -405,7 +405,7 @@ class OrderLifecycleManager:
             raise ValueError(f"Threshold cannot be negative: {stale_threshold_seconds}")
         
         stale_orders = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         for order_id, lifecycle in self.orders.items():
             if lifecycle.status in [OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.TIMEOUT]:
@@ -432,10 +432,14 @@ class OrderLifecycleManager:
             "expired_count": 0
         }
         
-        # Count by status
+        # Count by status. Populate both original (uppercase) and
+        # lowercase keys to remain compatible with tests expecting
+        # either representation.
         for status in OrderStatus:
             count = sum(1 for o in self.orders.values() if o.status == status)
             stats["by_status"][status.value] = count
+            # also expose lowercase key (e.g. "FILLED" and "filled")
+            stats["by_status"][status.value.lower()] = count
         
         # Count stale and expired
         stale = self.get_stale_orders(60.0)
@@ -460,7 +464,7 @@ class OrderLifecycleManager:
         if older_than_seconds < 0:
             raise ValueError(f"Threshold cannot be negative: {older_than_seconds}")
         
-        cutoff_time = datetime.utcnow() - timedelta(seconds=older_than_seconds)
+        cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=older_than_seconds)
         orders_to_remove = []
         
         for order_id, lifecycle in self.orders.items():

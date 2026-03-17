@@ -27,6 +27,7 @@ strategy logic ÔÇö it only reads portfolio-level metrics.
 from __future__ import annotations
 
 import json
+import threading
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -129,6 +130,7 @@ class KillSwitch:
         self._check_count: int = 0
         self._fail_count: int = 0
         self._activation_history: List[Dict] = []
+        self._activation_lock = threading.Lock()  # A-16: makes check-then-set atomic
 
         # Restore state from disk (crash recovery)
         self._load_state()
@@ -225,20 +227,20 @@ class KillSwitch:
 
     def activate(self, reason: KillReason, message: str) -> None:
         """Activate the kill switch (halt all trading)."""
-        if self._is_active:
-            return  # already active
-
-        self._is_active = True
-        self._reason = reason
-        self._message = message
-        self._activated_at = datetime.now()
-        self._fail_count += 1
-
-        self._activation_history.append({
-            "reason": reason.value,
-            "message": message,
-            "timestamp": self._activated_at.isoformat(),
-        })
+        # A-16: check-then-set is atomic under the lock
+        with self._activation_lock:
+            if self._is_active:
+                return  # already active
+            self._is_active = True
+            self._reason = reason
+            self._message = message
+            self._activated_at = datetime.now()
+            self._fail_count += 1
+            self._activation_history.append({
+                "reason": reason.value,
+                "message": message,
+                "timestamp": self._activated_at.isoformat(),
+            })
 
         logger.critical(
             "KILL_SWITCH_ACTIVATED",
@@ -261,24 +263,28 @@ class KillSwitch:
         This should ONLY be called after the operator has reviewed
         the situation and confirmed it is safe to resume trading.
         """
-        if not self._is_active:
-            return
+        # A-16: reset under lock so it never races with activate()
+        with self._activation_lock:
+            if not self._is_active:
+                return
+            self._is_active = False
+            prev_reason = self._reason
+            prev_message = self._message
+            prev_activated_at = self._activated_at
+            self._reason = KillReason.UNKNOWN
+            self._message = ""
+            self._activated_at = None
 
         logger.warning(
             "KILL_SWITCH_RESET",
-            was_reason=self._reason.value,
-            was_message=self._message,
+            was_reason=prev_reason.value,
+            was_message=prev_message,
             duration_seconds=(
-                (datetime.now() - self._activated_at).total_seconds()
-                if self._activated_at
+                (datetime.now() - prev_activated_at).total_seconds()
+                if prev_activated_at
                 else 0
             ),
         )
-
-        self._is_active = False
-        self._reason = KillReason.UNKNOWN
-        self._message = ""
-        self._activated_at = None
 
         self._save_state()
 
@@ -303,6 +309,10 @@ class KillSwitch:
             # Atomic write: .tmp ÔåÆ rename
             tmp_path = self._state_path.with_suffix('.tmp')
             tmp_path.write_text(json.dumps(state, indent=2))
+            # A-10: backup existing state file before overwrite
+            if self._state_path.exists():
+                import shutil
+                shutil.copy2(self._state_path, self._state_path.with_suffix('.bak'))
             tmp_path.replace(self._state_path)
         except Exception as exc:
             logger.critical(
@@ -352,7 +362,9 @@ class KillSwitch:
     @property
     def is_active(self) -> bool:
         """True if trading is halted."""
-        return self._is_active
+        # A-16: read under lock for happens-before guarantee
+        with self._activation_lock:
+            return self._is_active
 
     @property
     def reason(self) -> KillReason:

@@ -15,7 +15,7 @@ from common.types import (
     OrderSide, OrderType, OrderStatus, ExecutionMode, AlertSeverity,
     CircuitBreakerState, Price, Quantity, Symbol, OrderID,
 )
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class TestTypedDictStructures:
@@ -29,7 +29,7 @@ class TestTypedDictStructures:
             "low": 95.0,
             "close": 102.0,
             "volume": 1000.0,
-            "timestamp": datetime.utcnow()
+            "timestamp": datetime.now(timezone.utc)
         }
         
         assert candle["open"] == 100.0
@@ -46,7 +46,7 @@ class TestTypedDictStructures:
             "filled_quantity": 0.5,
             "order_type": OrderType.MARKET,
             "status": OrderStatus.PARTIAL,
-            "submitted_at": datetime.utcnow(),
+            "submitted_at": datetime.now(timezone.utc),
         }
         
         assert order["order_id"] == "order_123"
@@ -59,7 +59,7 @@ class TestTypedDictStructures:
             "symbol": "AAPL",
             "quantity": 1.5,
             "entry_price": 50000.0,
-            "entry_time": datetime.utcnow(),
+            "entry_time": datetime.now(timezone.utc),
             "current_price": 51000.0,
             "marked_price": 51000.0,
             "side": "long",
@@ -74,7 +74,7 @@ class TestTypedDictStructures:
     def test_equity_snapshot_structure(self):
         """Test EquitySnapshot TypedDict."""
         snapshot: EquitySnapshot = {
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "total_equity": 100000.0,
             "cash": 50000.0,
             "positions_value": 50000.0,
@@ -92,7 +92,7 @@ class TestTypedDictStructures:
             "category": "risk",
             "title": "High volatility detected",
             "message": "Volatility exceeded threshold",
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "acknowledged": False,
             "resolved": False,
         }
@@ -228,7 +228,7 @@ class TestTypeCompliance:
     
     def test_trade_record_compliance(self):
         """Test TradeRecord compliance."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         trade: TradeRecord = {
             "trade_id": "trade_001",
             "symbol": "AAPL",
@@ -284,7 +284,7 @@ class TestTypeValidation:
     def test_typed_dict_key_access(self):
         """Test TypedDict key access patterns."""
         snapshot: EquitySnapshot = {
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
             "total_equity": 100000.0,
             "cash": 50000.0,
             "positions_value": 50000.0,
@@ -345,8 +345,8 @@ class TestTypeIntegration:
             "order_type": OrderType.MARKET,
             "status": OrderStatus.FILLED,
             "filled_price": 50000.0,
-            "submitted_at": datetime.utcnow(),
-            "filled_at": datetime.utcnow(),
+            "submitted_at": datetime.now(timezone.utc),
+            "filled_at": datetime.now(timezone.utc),
         }
         
         # Can construct position from order
@@ -368,7 +368,7 @@ class TestTypeIntegration:
     
     def test_position_to_trade_type_conversion(self):
         """Test position closing creates trade record."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         
         position: PositionRecord = {
             "position_id": "pos_001",

@@ -12,7 +12,7 @@ This eliminates code duplication and makes adding new modes easy.
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from structlog import get_logger
 import threading
@@ -49,8 +49,8 @@ class Order:
     status: OrderStatus = OrderStatus.PENDING
     filled_quantity: float = 0.0
     filled_price: Optional[float] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
     
     @property
@@ -150,7 +150,7 @@ class ExecutionContext:
         with self.lock:
             if order_id in self.orders:
                 self.orders[order_id].status = status
-                self.orders[order_id].updated_at = datetime.utcnow()
+                self.orders[order_id].updated_at = datetime.now(timezone.utc)
     
     def update_market_price(self, symbol: str, price: float) -> None:
         """Update market price for symbol."""
@@ -391,7 +391,7 @@ class PaperTradingMode(ExecutionMode):
             symbol=symbol,
             quantity=quantity,
             entry_price=entry_price,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=entry_price,
             metadata=metadata or {}
         )
@@ -613,7 +613,7 @@ class LiveTradingMode(ExecutionMode):
                 symbol=symbol,
                 quantity=quantity,
                 entry_price=entry_price,
-                entry_time=datetime.utcnow(),
+                entry_time=datetime.now(timezone.utc),
                 current_price=entry_price,
                 metadata=metadata or {}
             )
@@ -761,7 +761,7 @@ class BacktestMode(ExecutionMode):
             symbol=symbol,
             quantity=quantity,
             entry_price=entry_price,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             current_price=entry_price,
             metadata=metadata or {}
         )

@@ -1,29 +1,31 @@
-﻿# Use official Python runtime as base image (must match pyproject.toml)
-FROM python:3.11.9-slim AS builder
+﻿# Both stages use debian:bookworm-slim — zero additional CVE surface vs python:3.11-slim.
+# Python 3.11 is installed from Debian's patched repos (same CVE baseline as bookworm-slim).
+FROM debian:bookworm-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install build dependencies (including C++ compiler and CMake)
-RUN apt-get update && apt-get install -y \
+# Apply OS patches + build tools + Python 3.11 from Debian repos
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
+    python3-pip \
     build-essential \
-    cmake \
     gcc \
     g++ \
-    git \
-    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
+# Copy requirements and install Python dependencies into a venv
 COPY requirements.txt .
 
-RUN python -m venv /opt/venv
+RUN python3.11 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Production stage (must match pyproject.toml)
-FROM python:3.11.9-slim
+# Production stage — same base as builder: debian:bookworm-slim
+FROM debian:bookworm-slim
 
 # Set working directory
 WORKDIR /app
@@ -32,15 +34,17 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
-    EDGECORE_ENV=production
+    EDGECORE_ENV=prod
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Apply OS patches + Python 3.11 runtime + minimal system deps
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-minimal \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy virtual environment from builder
+# Copy virtual environment (all packages) from builder — no /usr/local copy needed
 COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code

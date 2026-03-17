@@ -1,7 +1,7 @@
 ﻿"""Tests for retry logic and exponential backoff."""
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from common.retry import (
     RetryPolicy,
     retry_with_backoff,
@@ -285,7 +285,7 @@ class TestRetryIntegration:
         
         @retry_with_backoff(RetryPolicy(max_attempts=3, initial_delay_seconds=0.01))
         def flaky_api():
-            call_times.append(datetime.utcnow())
+            call_times.append(datetime.now(timezone.utc))
             if len(call_times) < 2:
                 raise TimeoutError("Temp timeout")
             return "success"

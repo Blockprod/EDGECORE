@@ -8,7 +8,7 @@ Bridges OrderLifecycleManager with execution engine to:
 - Log timeout events
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 from structlog import get_logger
 
@@ -142,7 +142,7 @@ class OrderLifecycleIntegration:
                 try:
                     symbol = self.order_mgr.orders[order_id].symbol
                     age_seconds = (
-                        datetime.utcnow() - self.order_mgr.orders[order_id].created_at
+                        datetime.now(timezone.utc) - self.order_mgr.orders[order_id].created_at
                     ).total_seconds()
                     
                     # Cancel order on exchange
@@ -219,5 +219,5 @@ class OrderLifecycleIntegration:
             return None
         
         lifecycle = self.order_mgr.orders[order_id]
-        age = (datetime.utcnow() - lifecycle.created_at).total_seconds()
+        age = (datetime.now(timezone.utc) - lifecycle.created_at).total_seconds()
         return max(0, age)

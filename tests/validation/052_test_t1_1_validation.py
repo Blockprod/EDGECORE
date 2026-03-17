@@ -2,7 +2,7 @@
 """Validation test for T1.1: Data Staleness Checks"""
 
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from data.validators import OHLCVValidator
 
 def test_t1_1():
@@ -10,7 +10,7 @@ def test_t1_1():
     
     # Step 1: Test fresh data (should pass)
     print("[TEST] Testing fresh data (within 2 hours)...")
-    current_time = datetime.utcnow()
+    current_time = datetime.now(timezone.utc)
     dates = pd.date_range(end=current_time - timedelta(minutes=30), periods=100, freq='1h')
     df_fresh = pd.DataFrame({
         'open': 100.0,
@@ -46,7 +46,7 @@ def test_t1_1():
     
     # Step 3: Test future timestamps (should fail)
     print("\n[TEST] Testing future timestamps (should be rejected)...")
-    future_time = datetime.utcnow() + timedelta(minutes=5)
+    future_time = datetime.now(timezone.utc) + timedelta(minutes=5)
     dates_future = pd.date_range(end=future_time, periods=10, freq='1h')
     df_future = pd.DataFrame({
         'open': 100.0,

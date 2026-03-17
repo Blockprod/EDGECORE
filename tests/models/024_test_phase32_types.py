@@ -11,7 +11,7 @@ Tests:
 """
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Import all type definitions
 from common.types import (
@@ -99,7 +99,7 @@ class TestPhase32TypeSystem:
             'low': 99.0,
             'close': 102.0,
             'volume': 1000.0,
-            'timestamp': datetime.utcnow()
+            'timestamp': datetime.now(timezone.utc)
         }
         
         assert candle['open'] == 100.0
@@ -145,7 +145,7 @@ class TestPhase32TypeSystem:
             'category': 'risk',
             'title': 'High volatility detected',
             'message': 'Volatility exceeded 5%',
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(timezone.utc),
             'acknowledged': False,
             'resolved': False,
             'data': {'volatility': 5.2}
@@ -298,7 +298,7 @@ class TestPhase32TypeSystem:
             'success': True,
             'data': {'order_id': '123'},
             'error': None,
-            'timestamp': datetime.utcnow()
+            'timestamp': datetime.now(timezone.utc)
         }
         
         assert response['success']
@@ -308,7 +308,7 @@ class TestPhase32TypeSystem:
         """Verify HealthCheckResponse TypedDict."""
         health: HealthCheckResponse = {
             'status': 'healthy',
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(timezone.utc),
             'services': {'data_loader': 'ok', 'execution_engine': 'ok'},
             'details': {}
         }
@@ -323,7 +323,7 @@ class TestPhase32TypeSystem:
         # OHLCVCandle
         ohlcv: OHLCVCandle = {
             'open': 1.0, 'high': 2.0, 'low': 0.5, 'close': 1.5,
-            'volume': 100.0, 'timestamp': datetime.utcnow()
+            'volume': 100.0, 'timestamp': datetime.now(timezone.utc)
         }
         assert ohlcv is not None
         

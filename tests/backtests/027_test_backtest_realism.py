@@ -8,7 +8,7 @@ Covers:
 - End-to-end order execution workflows
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -355,7 +355,7 @@ class TestBacktestExecutor:
             order_price=150.0,
             market_price=150.0,
             market_volume=1000000.0,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         assert result["order_id"] == "ORD001"
@@ -378,7 +378,7 @@ class TestBacktestExecutor:
             order_price=150.0,
             market_price=150.0,
             market_volume=1000000.0,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         assert result["filled_quantity"] == 100.0
@@ -414,7 +414,7 @@ class TestBacktestExecutor:
             order_price=150.0,
             market_price=150.0,
             market_volume=1000000.0,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         assert result["slippage_bps"] == 10.0
@@ -448,7 +448,7 @@ class TestBacktestExecutor:
         results = executor.execute_multi_leg_order(
             order_id="PAIR001",
             legs=legs,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         assert len(results) == 2
@@ -473,7 +473,7 @@ class TestBacktestExecutor:
             order_price=100.0,
             market_price=100.0,
             market_volume=500000.0,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         # Verify all required fields present
@@ -502,7 +502,7 @@ class TestBacktestExecutor:
             order_price=100.0,
             market_price=100.0,
             market_volume=0.0,  # No market volume
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         # Should still execute with fallback slippage model
@@ -522,7 +522,7 @@ class TestBacktestExecutor:
             order_price=100.0,
             market_price=100.0,
             market_volume=1000000.0,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         sell_result = executor.execute_order(
@@ -533,7 +533,7 @@ class TestBacktestExecutor:
             order_price=101.0,  # Profitable by $1
             market_price=101.0,
             market_volume=1000000.0,
-            execution_time=datetime.utcnow(),
+            execution_time=datetime.now(timezone.utc),
         )
 
         # Total cost
@@ -623,7 +623,7 @@ class TestBacktestRealismIntegration:
                 order_price=price,
                 market_price=price,
                 market_volume=1000000.0,
-                execution_time=datetime.utcnow(),
+                execution_time=datetime.now(timezone.utc),
             )
 
             trades.append(result)

@@ -40,7 +40,15 @@ class SecretMetadata:
     access_count: int = 0
     rotated_at: Optional[datetime] = None
     rotation_interval_days: Optional[int] = None
-    
+
+    def __post_init__(self):
+        if self.created_at.tzinfo is None:
+            self.created_at = self.created_at.replace(tzinfo=timezone.utc)
+        if self.last_accessed.tzinfo is None:
+            self.last_accessed = self.last_accessed.replace(tzinfo=timezone.utc)
+        if self.rotated_at is not None and self.rotated_at.tzinfo is None:
+            self.rotated_at = self.rotated_at.replace(tzinfo=timezone.utc)
+
     def needs_rotation(self) -> bool:
         """Check if secret needs rotation."""
         if not self.rotation_interval_days:
@@ -108,12 +116,30 @@ class MaskedString:
 
 class SecretsVault:
     """Centralized secrets management vault.
-    
+
     Stores API keys, passwords, tokens with:
     - Metadata tracking (access, rotation)
     - Masked logging
     - Environment variable support
     - Audit trail
+
+    Architecture decision — secrets strategy:
+        v1 (current): secrets are read from environment variables at process
+        start (via os.getenv / python-dotenv from a local .env file).  They
+        are held in-memory as MaskedString objects inside this vault.  This
+        is secure enough for a single-host deployment where the .env file is
+        protected by filesystem permissions (chmod 600).
+
+        v2 (future, production scale): replace the in-memory dict with a call
+        to an external secrets-manager such as HashiCorp Vault, AWS Secrets
+        Manager, or Azure Key Vault.  The ``_retrieve`` method below should
+        become the sole integration point — swap its implementation without
+        touching any caller.  Use short-lived tokens (TTL ≤ 1 h) and enable
+        audit logging on the external vault.
+
+        Migration path: set the env var ``SECRETS_BACKEND=vault`` (or
+        ``aws_sm``, ``azure_kv``) to activate the v2 backend once it is
+        implemented.  The default is ``env`` (current v1 behaviour).
     """
     
     # Patterns for sensitive data masking

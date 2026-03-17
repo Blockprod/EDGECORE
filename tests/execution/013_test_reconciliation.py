@@ -2,7 +2,7 @@
 
 import pytest
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 from execution.reconciler import (
     BrokerReconciler,
     ReconciliationStatus,
@@ -31,7 +31,7 @@ class TestReconciliationDivergence:
     
     def test_divergence_has_timestamp(self):
         """Test divergence records timestamp."""
-        before = datetime.utcnow()
+        before = datetime.now(timezone.utc)
         div = ReconciliationDivergence(
             type="position",
             severity="low",
@@ -39,7 +39,7 @@ class TestReconciliationDivergence:
             broker_value=1.0,
             internal_value=1.0
         )
-        after = datetime.utcnow()
+        after = datetime.now(timezone.utc)
         assert before <= div.detected_at <= after
 
 
@@ -50,7 +50,7 @@ class TestReconciliationReport:
         """Test creating OK status report."""
         report = ReconciliationReport(
             status=ReconciliationStatus.OK,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             equity_match=True,
             equity_broker=100000.0,
             equity_internal=100000.0,

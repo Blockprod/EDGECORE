@@ -10,7 +10,7 @@ Provides:
 """
 
 from typing import Dict, Optional, Tuple, List
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from structlog import get_logger
 from common.types import (
@@ -28,7 +28,7 @@ class PositionStop:
     symbol: Symbol
     entry_price: Price
     side: str  # "long" or "short"
-    entry_time: datetime = field(default_factory=datetime.utcnow)
+    entry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     stop_loss_price: Optional[Price] = None
     take_profit_price: Optional[Price] = None
@@ -43,7 +43,7 @@ class PositionStop:
     highest_profit: float = 0.0
     max_price: Optional[Price] = None
     min_price: Optional[Price] = None
-    last_update: datetime = field(default_factory=datetime.utcnow)
+    last_update: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
     def __post_init__(self):
         """Validate and initialize stop configuration."""
@@ -75,7 +75,7 @@ class PositionStop:
         Returns:
             Dict with update details (triggered stops, etc)
         """
-        self.last_update = datetime.utcnow()
+        self.last_update = datetime.now(timezone.utc)
         self.max_price = max(self.max_price or current_price, current_price)
         self.min_price = min(self.min_price or current_price, current_price)
         
@@ -232,7 +232,7 @@ class PositionStop:
         if not self.hard_exit_time_minutes:
             return False
         
-        elapsed = datetime.utcnow() - self.entry_time
+        elapsed = datetime.now(timezone.utc) - self.entry_time
         elapsed_minutes = elapsed.total_seconds() / 60
         
         if elapsed_minutes >= self.hard_exit_time_minutes:
@@ -308,7 +308,7 @@ class PositionStop:
         # Time to hard exit
         time_to_exit = None
         if self.hard_exit_time_minutes:
-            elapsed = datetime.utcnow() - self.entry_time
+            elapsed = datetime.now(timezone.utc) - self.entry_time
             remaining = (self.hard_exit_time_minutes * 60) - elapsed.total_seconds()
             time_to_exit = max(0, int(remaining))
         
@@ -359,7 +359,7 @@ class PositionStopManager:
             symbol=symbol,
             entry_price=entry_price,
             side=side,
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             stop_loss_price=stop_config.get("stop_loss_price") if stop_config else None,
             take_profit_price=stop_config.get("take_profit_price") if stop_config else None,
             trailing_stop_percent=stop_config.get("trailing_stop_percent") if stop_config else None,

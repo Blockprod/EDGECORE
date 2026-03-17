@@ -11,7 +11,7 @@ Tests for:
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from execution.position_stops import (
     PositionStop, PositionStopManager, 
     get_stop_manager, reset_stop_manager
@@ -317,7 +317,7 @@ class TestHardExitTime:
             entry_price=50000.0,
             side="long",
             hard_exit_time_minutes=60,
-            entry_time=datetime.utcnow()
+            entry_time=datetime.now(timezone.utc)
         )
         
         assert stop.check_hard_exit() is False
@@ -325,7 +325,7 @@ class TestHardExitTime:
     def test_hard_exit_triggered(self):
         """Verify hard exit triggers after time limit."""
         # Create with old entry time
-        old_time = datetime.utcnow() - timedelta(minutes=65)
+        old_time = datetime.now(timezone.utc) - timedelta(minutes=65)
         stop = PositionStop(
             position_id="pos_402",
             symbol="AAPL",
@@ -340,7 +340,7 @@ class TestHardExitTime:
     def test_hard_exit_at_boundary(self):
         """Verify hard exit at exact time limit."""
         # Create with entry time exactly 60 minutes ago
-        old_time = datetime.utcnow() - timedelta(minutes=60)
+        old_time = datetime.now(timezone.utc) - timedelta(minutes=60)
         stop = PositionStop(
             position_id="pos_403",
             symbol="AAPL",
@@ -354,7 +354,7 @@ class TestHardExitTime:
     
     def test_no_hard_exit_without_limit(self):
         """Verify position without hard exit limit never triggers."""
-        old_time = datetime.utcnow() - timedelta(days=100)
+        old_time = datetime.now(timezone.utc) - timedelta(days=100)
         stop = PositionStop(
             position_id="pos_404",
             symbol="AAPL",
@@ -467,7 +467,7 @@ class TestPositionStopStatus:
             entry_price=50000.0,
             side="long",
             hard_exit_time_minutes=60,
-            entry_time=datetime.utcnow() - timedelta(minutes=30)
+            entry_time=datetime.now(timezone.utc) - timedelta(minutes=30)
         )
         
         status = stop.get_status()

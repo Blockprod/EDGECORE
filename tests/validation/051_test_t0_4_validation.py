@@ -3,7 +3,7 @@
 
 from config.settings import get_settings
 from risk.engine import RiskEngine, Position
-from datetime import datetime
+from datetime import datetime, timezone
 
 def test_t0_4():
     print("\n=== T0.4 VALIDATION: Max Leverage Configuration ===\n")
@@ -32,7 +32,7 @@ def test_t0_4():
     print("\n[TEST] Adding test position to calculate exposure...")
     pos = Position(
         symbol_pair="AAPL",
-        entry_time=datetime.utcnow(),
+        entry_time=datetime.now(timezone.utc),
         entry_price=45000.0,
         quantity=1.0,
         side="long",
@@ -66,7 +66,7 @@ def test_t0_4():
     for i in range(2):
         risk_engine.positions[f"PRE{i}"] = Position(
             symbol_pair=f"PRE{i}",
-            entry_time=datetime.utcnow(),
+            entry_time=datetime.now(timezone.utc),
             entry_price=1000.0,
             quantity=100000.0,  # ~1x equity per position
             side="long",

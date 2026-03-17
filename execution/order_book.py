@@ -12,7 +12,7 @@ Simulates realistic market microstructure including:
 import math
 import random
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from common.types import (
@@ -68,7 +68,7 @@ class OrderBookSimulator:
             Realistic OrderBook snapshot
         """
         if timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
 
         # Calculate bid-ask spread
         spread_bps = self._calculate_spread(volatility)
@@ -325,7 +325,7 @@ class OrderBookSimulator:
         Returns:
             OrderBookUpdate simulating market activity
         """
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
         
         if side.lower() == "bid":
             levels = order_book["bid_levels"]
