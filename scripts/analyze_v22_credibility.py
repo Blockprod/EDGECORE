@@ -1,5 +1,7 @@
 ﻿"""Analyse de cr├®dibilit├® du backtest v22"""
-import os, re, statistics
+import os
+import re
+import statistics
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -34,7 +36,7 @@ if trade_pnls:
     total_profit = sum(p for p in trade_pnls if p > 0)
     total_loss = sum(p for p in trade_pnls if p < 0)
     
-    print(f'\n=== CONCENTRATION RISK ===')
+    print('\n=== CONCENTRATION RISK ===')
     print(f'  Top 5 trades:    {[round(p) for p in sorted_pnls[:5]]}')
     print(f'  Bottom 5 trades: {[round(p) for p in sorted_pnls[-5:]]}')
     if total_profit > 0:
@@ -47,7 +49,7 @@ if trade_pnls:
     mean_pnl = statistics.mean(trade_pnls)
     std_pnl = statistics.stdev(trade_pnls)
     outliers_3s = [p for p in trade_pnls if abs(p - mean_pnl) > 3 * std_pnl]
-    print(f'\n=== STATISTICAL PROFILE ===')
+    print('\n=== STATISTICAL PROFILE ===')
     print(f'  Mean PnL: {mean_pnl:,.0f} EUR')
     print(f'  Median PnL: {statistics.median(trade_pnls):,.0f} EUR')
     print(f'  Std PnL: {std_pnl:,.0f} EUR')
@@ -68,7 +70,7 @@ if trade_pnls:
         else:
             current = min(0, current) - 1
         streaks.append(current)
-    print(f'\n=== STREAKS ===')
+    print('\n=== STREAKS ===')
     print(f'  Max win streak: {max(streaks)}')
     print(f'  Max loss streak: {abs(min(streaks))}')
 
@@ -78,7 +80,7 @@ months = {}
 for d in trade_dates:
     m = d[:7]
     months[m] = months.get(m, 0) + 1
-print(f'\n=== TRADE DISTRIBUTION ===')
+print('\n=== TRADE DISTRIBUTION ===')
 print(f'  Active months: {len(months)}/60 ({100*len(months)/60:.0f}%)')
 if months:
     print(f'  Max trades/month: {max(months.values())}')
@@ -90,7 +92,7 @@ pair_counts = {}
 for a, b in pair_trades:
     key = f'{a}/{b}'
     pair_counts[key] = pair_counts.get(key, 0) + 1
-print(f'\n=== PAIR DIVERSITY ===')
+print('\n=== PAIR DIVERSITY ===')
 print(f'  Unique pairs traded: {len(pair_counts)}')
 for pair, count in sorted(pair_counts.items(), key=lambda x: -x[1])[:10]:
     print(f'    {pair}: {count} trades')
@@ -100,13 +102,13 @@ hold_days = [int(m) for m in re.findall(r'holding_days=(\d+)', text)]
 if not hold_days:
     hold_days = [int(m) for m in re.findall(r'duration=(\d+)', text)]
 if hold_days:
-    print(f'\n=== HOLDING PERIODS ===')
+    print('\n=== HOLDING PERIODS ===')
     print(f'  Mean: {statistics.mean(hold_days):.1f} days')
     print(f'  Median: {statistics.median(hold_days):.0f} days')
     print(f'  Min: {min(hold_days)}, Max: {max(hold_days)}')
 
 # 6. Key risk metrics check
-print(f'\n=== CREDIBILITY CHECKLIST ===')
+print('\n=== CREDIBILITY CHECKLIST ===')
 wins = [p for p in trade_pnls if p > 0]
 losses = [p for p in trade_pnls if p < 0]
 wr = len(wins)/len(trade_pnls)*100 if trade_pnls else 0

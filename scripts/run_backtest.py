@@ -29,7 +29,8 @@ v19d - Conditional Prefilter + v18 params.
         400% heat (allows ~4 concurrent leveraged pairs)
 """
 
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

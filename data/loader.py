@@ -345,7 +345,7 @@ class DataLoader:
             engine = IBKRExecutionEngine(client_id=client_id)
             logger.info("ibkr_worker_engine_actual_client_id", worker_idx=idx, client_id=engine.client_id)
             assert engine.client_id == client_id, f"Worker {idx}: IBKRExecutionEngine client_id mismatch! Got {engine.client_id}, expected {client_id}"
-            print(f"[DEBUG] Worker {idx} assigned client_id={client_id}, engine.client_id={engine.client_id}")
+            logger.debug("ibkr_worker_client_id_assigned", worker_idx=idx, assigned=client_id, actual=engine.client_id)
             engine.connect()
             def _normalize_symbol(s):
                 # Flatten lists/tuples and coerce to a deterministic string

@@ -10,11 +10,10 @@ Verifies the full tick pipeline with mocked infrastructure:
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import numpy as np
-import pytest
 
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
 

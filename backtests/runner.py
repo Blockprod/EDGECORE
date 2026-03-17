@@ -12,9 +12,7 @@ from structlog import get_logger
 from backtests.metrics import BacktestMetrics
 from config.settings import get_settings
 from data.loader import DataLoader
-from data.validators import DataValidationError
 from models.cointegration import engle_granger_test_cpp_optimized
-from models.spread import SpreadModel
 from strategies.pair_trading import PairTradingStrategy
 
 logger = get_logger(__name__)
@@ -261,6 +259,8 @@ class BacktestRunner:
         import hashlib as _hashlib
         import os as _os
         import time as _time
+        from execution.rate_limiter import TokenBucketRateLimiter as _TokenBucketRateLimiter
+        _ibkr_rate_limiter = _TokenBucketRateLimiter(rate=45, burst=10)
 
         _cache_dir = _os.path.join("data", "cache", "prices")
         _os.makedirs(_cache_dir, exist_ok=True)
@@ -358,8 +358,8 @@ class BacktestRunner:
                         logger.warning("load_error_trace", symbol=repr(sym),
                                       error=str(e)[:200], traceback=tb[:2000])
                     pbar.update(1)
-                    # Small delay between requests to respect IBKR rate limits
-                    _time.sleep(0.5)
+                    # Respect IBKR 50 req/s hard cap via token-bucket rate limiter.
+                    _ibkr_rate_limiter.acquire()
             finally:
                 engine.disconnect()
 
@@ -445,299 +445,14 @@ class BacktestRunner:
         validate_data: bool = True,
         use_synthetic: bool = False
     ) -> BacktestMetrics:
-        # Docstring supprim├®e pour ├®viter toute erreur de guillemets ou d'encodage
+        # C-02: This method has confirmed look-ahead bias and is disabled.
         warnings.warn(
             "BacktestRunner.run() has look-ahead bias (C-02). "
             "Use run_unified() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if start_date is None:
-            start_date = self.config.start_date
-        if end_date is None:
-            end_date = self.config.end_date
-        # Docstring supprim├®e pour ├®viter toute erreur de guillemets ou d'encodage
-        
-        # Load data
-        if use_synthetic:
-            logger.info("backtest_using_synthetic_data")
-            prices_df = _generate_cointegrated_pair(start_date, end_date)
-            price_data = {
-                'Symbol1': prices_df['Symbol1'],
-                'Symbol2': prices_df['Symbol2']
-            }
-        else:
-            price_data = {}
-            failed_symbols = []
-            
-            # Calculate proper since date for IBKR loader
-            # Add extra buffer to ensure we have enough data for indicators
-            start_buffer = pd.Timestamp(start_date) - pd.Timedelta(days=60)
-            since_date = start_buffer.isoformat().split('T')[0]
-            
-            for symbol in symbols:
-                # V├®rification stricte du type du symbole
-                if not isinstance(symbol, str):
-                    logger.error("ibkr_symbol_type_error", symbol=repr(symbol), type=type(symbol).__name__)
-                    raise TypeError(f"Symbole IBKR non-str transmis: {repr(symbol)} (type: {type(symbol).__name__})")
-                try:
-                    df = self.loader.load_ibkr_data(
-                        symbol=symbol,
-                        timeframe='1d',
-                        since=since_date,
-                        limit=3000,
-                        validate=validate_data
-                    )
-                    price_data[symbol] = df['close']
-                except DataValidationError as e:
-                    logger.error(
-                        "backtest_data_validation_error",
-                        symbol=symbol,
-                        error=str(e)
-                    )
-                    failed_symbols.append((symbol, "validation_error", str(e)))
-                except Exception as e:
-                    logger.error(
-                        "backtest_data_load_failed",
-                        symbol=symbol,
-                        error=str(e)
-                    )
-                    failed_symbols.append((symbol, "load_error", str(e)))
-            
-            if failed_symbols:
-                logger.warning(
-                    "backtest_symbols_failed",
-                    count=len(failed_symbols),
-                    symbols=[s[0] for s in failed_symbols]
-                )
-            
-            if not price_data:
-                raise ValueError(f"No valid data loaded. Failed symbols: {failed_symbols}")
-        
-        logger.info(
-            "backtest_data_loaded_successfully",
-            loaded_symbols=list(price_data.keys()),
-            failed_symbols=len(failed_symbols) if not use_synthetic else 0
+        raise NotImplementedError(
+            "BacktestRunner.run() removed (C-02: look-ahead bias). "
+            "Use run_unified() instead."
         )
-        
-        # Align dates - use actual data range if dates in config are out of range
-        prices_df = pd.DataFrame(price_data)
-        
-        # Filter by dates if data is available in that range
-        filtered_df = prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)]
-        
-        # If filtered result is empty, use all available data
-        if len(filtered_df) == 0:
-            logger.warning(
-                "backtest_date_range_out_of_data_range",
-                requested_start=start_date,
-                requested_end=end_date,
-                actual_start=str(prices_df.index[0]),
-                actual_end=str(prices_df.index[-1])
-            )
-            prices_df = prices_df.tail(252)  # Use last 252 days (~1 trading year)
-        else:
-            prices_df = filtered_df
-        
-        logger.info(
-            "backtest_data_aligned",
-            rows=len(prices_df),
-            start=str(prices_df.index[0]),
-            end=str(prices_df.index[-1])
-        )
-        
-        # Find cointegrated pairs upfront
-        cointegrated_pairs = self._find_cointegrated_pairs_in_data(prices_df)
-        
-        if len(cointegrated_pairs) == 0:
-            # Sprint 2.6 (M-06): No synthetic fallback ÔÇô abort cleanly.
-            logger.error(
-                "backtest_no_cointegrated_pairs_ABORT",
-                symbols=list(price_data.keys()),
-            )
-            metrics = BacktestMetrics.from_returns(
-                returns=pd.Series([0.0]),
-                trades=[],
-                start_date=start_date,
-                end_date=end_date,
-                note="NO_PAIRS_FOUND - backtest non exploitable",
-            )
-            return metrics
-        
-        logger.info("backtest_cointegrated_pairs_found", count=len(cointegrated_pairs), pairs=cointegrated_pairs)
-        
-        # Real pair trading backtest simulation - day by day
-        portfolio_value = [self.config.initial_capital]
-        daily_returns = []
-        trades = []
-        active_positions = {}  # {pair_key: {'entry_date': idx, 'entry_z': float, 'entry_price': dict, 'side': str}}
-        
-        lookback_min = 60  # Need at least 60 days for Z-score calculation
-        for date_idx in range(lookback_min, len(prices_df)):
-            prices_df.index[date_idx]
-            daily_pnl = 0.0
-            
-            # Get historical data up to current date
-            hist_prices = prices_df.iloc[:date_idx+1]
-            current_prices = prices_df.iloc[date_idx]
-            
-            # For each cointegrated pair, calculate Z-score at current date
-            for sym1, sym2, pvalue, hl in cointegrated_pairs:
-                pair_key = f"{sym1}_{sym2}"
-                
-                try:
-                    # Get historical price series for the pair
-                    y = hist_prices[sym1]
-                    x = hist_prices[sym2]
-                    
-                    # Calculate spread via OLS regression
-                    model = SpreadModel(y, x)
-                    spread = model.compute_spread(y, x)
-                    z_scores = model.compute_z_score(spread, lookback=20)
-                    current_z = z_scores.iloc[-1] if len(z_scores) > 0 else 0.0
-                    
-                    # Entry signals: |Z| > entry_z_score (from strategy config)
-                    entry_threshold = self.strategy.config.entry_z_score
-                    exit_threshold = self.strategy.config.exit_z_score
-                    
-                    # EXIT: Mean reversion signal (Z returns to ~0)
-                    if pair_key in active_positions and abs(current_z) <= exit_threshold:
-                        trade_info = active_positions[pair_key]
-                        side = trade_info['side']
-                        
-                        # Calculate real P&L based on actual price movement
-                        entry_prices = trade_info['entry_price']
-                        sym1_entry = entry_prices[sym1]
-                        sym2_entry = entry_prices[sym2]
-                        sym1_current = current_prices[sym1]
-                        sym2_current = current_prices[sym2]
-                        
-                        if side == "long":
-                            # Long spread: long sym1, short sym2
-                            pnl = (sym1_current - sym1_entry) - (sym2_current - sym2_entry)
-                        else:  # short
-                            # Short spread: short sym1, long sym2
-                            pnl = (sym2_current - sym2_entry) - (sym1_current - sym1_entry)
-                        
-                        # Calculate gross P&L in dollars
-                        pnl_dollars_gross = pnl * self.config.initial_capital * 0.01  # ~1% allocation per pair
-                        
-                        # Apply trading costs (entry + exit)
-                        # Cost is applied on the notional value of the position
-                        notional_value = (sym1_entry + sym2_entry) * self.config.initial_capital * 0.01 / 2
-                        trading_cost = notional_value * TOTAL_COST_FACTOR * 2  # Entry + exit
-                        
-                        pnl_dollars = pnl_dollars_gross - trading_cost
-                        daily_pnl += pnl_dollars
-                        trades.append(pnl_dollars)
-                        
-                        logger.debug(
-                            "trade_closed_mean_reversion",
-                            pair=pair_key,
-                            side=side,
-                            entry_z=trade_info['entry_z'],
-                            exit_z=current_z,
-                            pnl=pnl_dollars,
-                            days_held=date_idx - trade_info['entry_date']
-                        )
-                        
-                        del active_positions[pair_key]
-                    
-                    # ENTRY: Z-score extremes signal new positions
-                    elif pair_key not in active_positions and len(active_positions) < 5:  # Max 5 concurrent pairs
-                        if current_z > entry_threshold:
-                            # SHORT signal: Z > threshold means spread is overvalued
-                            active_positions[pair_key] = {
-                                'entry_date': date_idx,
-                                'entry_z': current_z,
-                                'entry_price': {sym1: current_prices[sym1], sym2: current_prices[sym2]},
-                                'side': 'short'
-                            }
-                            logger.debug(
-                                "trade_opened_short",
-                                pair=pair_key,
-                                z_score=current_z,
-                                prices={sym1: current_prices[sym1], sym2: current_prices[sym2]}
-                            )
-                        
-                        elif current_z < -entry_threshold:
-                            # LONG signal: Z < -threshold means spread is undervalued
-                            active_positions[pair_key] = {
-                                'entry_date': date_idx,
-                                'entry_z': current_z,
-                                'entry_price': {sym1: current_prices[sym1], sym2: current_prices[sym2]},
-                                'side': 'long'
-                            }
-                            logger.debug(
-                                "trade_opened_long",
-                                pair=pair_key,
-                                z_score=current_z,
-                                prices={sym1: current_prices[sym1], sym2: current_prices[sym2]}
-                            )
-                
-                except Exception as e:
-                    logger.error("pair_backtest_error", pair=pair_key, error=str(e))
-                    continue
-            
-            # Calculate daily portfolio return
-            new_value = portfolio_value[-1] + daily_pnl
-            if portfolio_value[-1] > 0:
-                daily_return = daily_pnl / portfolio_value[-1]
-            else:
-                daily_return = 0.0
-            
-            daily_returns.append(daily_return)
-            portfolio_value.append(new_value)
-        
-        # Force-close any remaining open positions at final price
-        if len(active_positions) > 0:
-            final_prices = prices_df.iloc[-1]
-            for pair_key, trade_info in list(active_positions.items()):
-                sym1, sym2 = pair_key.split('_')
-                side = trade_info['side']
-                entry_prices = trade_info['entry_price']
-                sym1_entry = entry_prices[sym1]
-                sym2_entry = entry_prices[sym2]
-                sym1_final = final_prices[sym1]
-                sym2_final = final_prices[sym2]
-                
-                if side == "long":
-                    pnl = (sym1_final - sym1_entry) - (sym2_final - sym2_entry)
-                else:  # short
-                    pnl = (sym2_final - sym2_entry) - (sym1_final - sym1_entry)
-                
-                # Calculate gross P&L and apply trading costs
-                pnl_dollars_gross = pnl * self.config.initial_capital * 0.01
-                notional_value = (sym1_entry + sym2_entry) * self.config.initial_capital * 0.01 / 2
-                trading_cost = notional_value * TOTAL_COST_FACTOR * 2  # Entry + exit
-                pnl_dollars = pnl_dollars_gross - trading_cost
-                trades.append(pnl_dollars)
-                
-                logger.debug(
-                    "trade_closed_force_close",
-                    pair=pair_key,
-                    side=side,
-                    pnl=pnl_dollars,
-                    days_held=len(prices_df) - trade_info['entry_date']
-                )
-        
-        # Calculate metrics from real returns
-        returns_series = pd.Series(daily_returns) if daily_returns else pd.Series([0.0])
-        
-        metrics = BacktestMetrics.from_returns(
-            returns=returns_series,
-            trades=trades if trades else [],
-            start_date=start_date,
-            end_date=end_date,
-            num_symbols=len(symbols),
-        )
-        
-        logger.info(
-            "backtest_completed",
-            total_trades=len(trades),
-            avg_trade_pnl=np.mean(trades) if trades else 0,
-            win_rate=sum(1 for t in trades if t > 0) / len(trades) if trades else 0,
-            num_symbols=len(symbols),
-            metrics=metrics.__dict__
-        )
-        return metrics

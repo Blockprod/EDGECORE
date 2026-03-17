@@ -22,11 +22,10 @@ from structlog import get_logger
 from backtests.cost_model import CostModel
 from backtests.metrics import BacktestMetrics, set_trading_days
 from data.event_filter import EventFilter
-from execution.algo_executor import AlgoConfig, AlgoType, TWAPExecutor, VWAPExecutor
+from execution.algo_executor import AlgoConfig, AlgoType, TWAPExecutor
 from execution.borrow_check import BorrowChecker
 from execution.partial_profit import PartialProfitManager
 from execution.time_stop import TimeStopManager
-from execution.trailing_stop import TrailingStopManager
 from pair_selection.blacklist import PairBlacklist
 from risk.drawdown_manager import DrawdownManager
 from risk.engine import RiskEngine
@@ -38,7 +37,7 @@ from risk.spread_correlation import SpreadCorrelationGuard
 from risk.var_monitor import VaRMonitor
 from signal_engine.earnings_signal import EarningsSurpriseSignal
 from signal_engine.intraday_signals import IntradaySignalEngine
-from signal_engine.market_regime import MarketRegime, MarketRegimeFilter
+from signal_engine.market_regime import MarketRegimeFilter
 from signal_engine.ml_combiner import MLSignalCombiner
 from signal_engine.options_flow import OptionsFlowSignal
 from signal_engine.sentiment import SentimentSignal
@@ -51,9 +50,17 @@ logger = get_logger(__name__)
 try:
     from models.cointegration_fast import compute_zscore_last_fast as _compute_zscore_last_fast  # noqa: E402
     _HALF_LIFE_CYTHON_SIM = True
-except ImportError:
+except ImportError as _e_cython_sim:
     _compute_zscore_last_fast = None
     _HALF_LIFE_CYTHON_SIM = False
+    import structlog as _structlog
+    _structlog.get_logger(__name__).warning(
+        "cython_extension_missing_using_python_fallback",
+        module="models.cointegration_fast",
+        function="compute_zscore_last_fast",
+        error=str(_e_cython_sim),
+        impact="10x slower z-score backtest loop — recompile with: python setup.py build_ext --inplace",
+    )
 
 
 class StrategyBacktestSimulator:

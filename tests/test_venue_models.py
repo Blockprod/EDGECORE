@@ -1,6 +1,5 @@
 """Tests for venue-specific market models."""
 
-import pytest
 
 from execution.venue_models import (
     CEXVenueModel,

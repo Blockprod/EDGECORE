@@ -5,7 +5,7 @@ Tests for risk_engine ÔÇö KillSwitch, PositionRiskManager, PortfolioRiskManag
 import json
 import os
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from risk_engine.kill_switch import KillSwitch, KillSwitchConfig, KillReason
 from risk_engine.position_risk import PositionRiskManager, PositionRiskConfig

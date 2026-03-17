@@ -36,7 +36,14 @@ class ExecutionMode(Enum):
 
 @dataclass
 class TradeOrder:
-    """Typed order submitted to the execution router."""
+    """Typed order submitted to the execution router.
+
+    .. deprecated::
+        Use ``execution.base.Order`` instead.  ``TradeOrder`` is a legacy
+        duplicate (B2-01) that will be removed in a future release.
+        Migrate callers to ``execution.base.Order`` with ``pair_key`` stored
+        in the ``metadata`` dict.
+    """
     pair_key: str
     symbol: str
     side: str           # "buy" or "sell"
@@ -44,6 +51,14 @@ class TradeOrder:
     limit_price: Optional[float] = None
     order_type: str = "market"
     metadata: Dict = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        import warnings
+        warnings.warn(
+            "TradeOrder is deprecated (B2-01). Use execution.base.Order instead.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     def __repr__(self) -> str:
         return f"Order({self.symbol} {self.side} {self.quantity:.2f} @{self.limit_price or 'MKT'})"
@@ -156,18 +171,24 @@ class ExecutionRouter:
     # Backend implementations
     # ------------------------------------------------------------------
 
-    def _simulate_fill(self, order: TradeOrder) -> TradeExecution:
-        """Backtest mode: instant fill at limit price with cost model."""
+    def _simulate_fill(self, order) -> TradeExecution:
+        """Backtest mode: instant fill at limit price with cost model.
+
+        Accepts both ``execution.base.Order`` and the legacy ``TradeOrder``.
+        """
+        from config.settings import get_settings
         price = order.limit_price or 0.0
-        slippage = 2.0  # default bps
+        slippage = get_settings().costs.slippage_bps
+        pair_key = getattr(order, 'pair_key', None) or order.symbol
+        side_str = order.side.value.lower() if hasattr(order.side, 'value') else str(order.side).lower()
 
         return TradeExecution(
-            pair_key=order.pair_key,
+            pair_key=pair_key,
             symbol=order.symbol,
-            side=order.side,
+            side=side_str,
             requested_qty=order.quantity,
             filled_qty=order.quantity,
-            fill_price=price * (1 + slippage / 10_000 if order.side == "buy" else 1 - slippage / 10_000),
+            fill_price=price * (1 + slippage / 10_000 if side_str == "buy" else 1 - slippage / 10_000),
             commission=order.quantity * price * 0.00005,  # ~0.5 bps
             slippage_bps=slippage,
         )
@@ -186,7 +207,8 @@ class ExecutionRouter:
         side = order.side
         side_str = side.value.lower() if hasattr(side, 'value') else str(side).lower()
         price = order.limit_price or 0.0
-        slippage = 2.0
+        from config.settings import get_settings
+        slippage = get_settings().execution.slippage_bps
 
         # A-02: record immediate fill for paper orders
         order_id = getattr(order, 'order_id', None)

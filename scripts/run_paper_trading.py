@@ -137,7 +137,7 @@ def main():
     print(f"  Correlation:  min={strat.min_correlation}")
     print(f"  Half-life:    max={strat.max_half_life}")
     print(f"  FDR q-level:  {strat.fdr_q_level}")
-    print(f"  IB Gateway:   127.0.0.1:4002 (paper)")
+    print("  IB Gateway:   127.0.0.1:4002 (paper)")
     print("=" * 60)
     print()
     print("[EDGECORE] Starting paper trading... Press Ctrl+C to stop.")

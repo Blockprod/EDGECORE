@@ -7,7 +7,6 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 from main import _load_market_data_for_symbols, _close_all_positions
 from risk.engine import RiskEngine, Position
-from execution.ibkr_engine import IBGatewaySync
 from execution.base import Order, OrderSide, BaseExecutionEngine
 from data.loader import DataLoader
 from config.settings import get_settings

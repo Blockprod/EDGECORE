@@ -386,11 +386,8 @@ def get_secret_typed(name: str) -> Optional[str]:
 
 
 if __name__ == "__main__":
-    print("Ô£à Type-annotated API wrappers loaded")
-    print("- Retry policy types")
-    print("- Circuit breaker types")
-    print("- Execution types")
-    print("- Validation types")
-    print("- Risk engine types")
-    print("- Monitoring types")
-    print("- Secrets types")
+    import structlog as _structlog
+    _log = _structlog.get_logger(__name__)
+    _log.info("typed_api_wrappers_loaded",
+              modules=["retry_policy", "circuit_breaker", "execution",
+                       "validation", "risk_engine", "monitoring", "secrets"])

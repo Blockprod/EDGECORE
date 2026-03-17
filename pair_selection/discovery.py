@@ -204,8 +204,9 @@ class PairDiscoveryEngine:
             logger.error("pair_discovery_failed", error=str(exc))
             return []
 
-        # Sort by half-life (fastest mean-reversion first)
-        results.sort(key=lambda p: p.half_life)
+        # Sort by half-life (fastest mean-reversion first).
+        # Guard against None in case cache data is malformed.
+        results.sort(key=lambda p: p.half_life if p.half_life is not None else float("inf"))
 
         logger.info(
             "pair_discovery_complete",

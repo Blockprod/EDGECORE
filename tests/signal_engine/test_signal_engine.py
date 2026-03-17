@@ -10,8 +10,7 @@ Covers:
 
 import numpy as np
 import pandas as pd
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from signal_engine.zscore import ZScoreCalculator
 from signal_engine.adaptive import AdaptiveThresholdEngine, ThresholdResult

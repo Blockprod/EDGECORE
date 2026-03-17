@@ -9,9 +9,8 @@ before the function returns.
 import csv
 import io
 import os
-import tempfile
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 from structlog import get_logger
 
@@ -66,7 +65,7 @@ class AuditTrail:
         self.trail_dir.mkdir(parents=True, exist_ok=True)
         
         # Current session's trail file (one per day)
-        date_str = datetime.now().strftime("%Y%m%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y%m%d")
         self.trail_file = self.trail_dir / f"audit_trail_{date_str}.csv"
         self.equity_snapshot_file = self.trail_dir / f"equity_snapshots_{date_str}.csv"
         
@@ -131,7 +130,7 @@ class AuditTrail:
         if current_equity <= 0:
             raise EquityError(f"Cannot log trade with invalid equity: {current_equity}")
         
-        event_id = event_id or f"{datetime.now().isoformat()}_{event.symbol_pair}"
+        event_id = event_id or f"{datetime.now(timezone.utc).isoformat()}_{event.symbol_pair}"
         
         try:
             self._atomic_append(self.trail_file, [
@@ -178,7 +177,7 @@ class AuditTrail:
         
         try:
             self._atomic_append(self.equity_snapshot_file, [
-                datetime.now().isoformat(),
+                datetime.now(timezone.utc).isoformat(),
                 current_equity,
                 positions_count,
                 positions_list or ''

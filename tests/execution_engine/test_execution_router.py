@@ -5,10 +5,10 @@ Tests for ExecutionRouter ÔÇö verifies order routing across modes.
 import time
 
 import pytest
+from execution.base import Order, OrderSide
 from execution_engine.router import (
     ExecutionRouter,
     ExecutionMode,
-    TradeOrder,
     TradeExecution,
 )
 from execution.rate_limiter import TokenBucketRateLimiter
@@ -26,10 +26,10 @@ def paper_router():
 
 @pytest.fixture
 def sample_order():
-    return TradeOrder(
-        pair_key="AAPL_MSFT",
+    return Order(
+        order_id="test_AAPL_MSFT",
         symbol="AAPL",
-        side="buy",
+        side=OrderSide.BUY,
         quantity=100.0,
         limit_price=150.0,
     )
@@ -54,7 +54,7 @@ class TestBacktestFill:
     def test_backtest_fill_returns_execution(self, backtest_router, sample_order):
         result = backtest_router.submit_order(sample_order)
         assert isinstance(result, TradeExecution)
-        assert result.pair_key == "AAPL_MSFT"
+        assert result.pair_key == "AAPL"  # Order has no pair_key; router falls back to symbol
         assert result.symbol == "AAPL"
         assert result.side == "buy"
         assert result.filled_qty == 100.0
@@ -66,10 +66,10 @@ class TestBacktestFill:
         assert result.fill_price >= sample_order.limit_price
 
     def test_backtest_sell_slippage_negative(self, backtest_router):
-        sell_order = TradeOrder(
-            pair_key="AAPL_MSFT",
+        sell_order = Order(
+            order_id="test_AAPL_MSFT_sell",
             symbol="AAPL",
-            side="sell",
+            side=OrderSide.SELL,
             quantity=50.0,
             limit_price=150.0,
         )
@@ -98,15 +98,15 @@ class TestPaperFill:
         # (may or may not be set depending on implementation)
 
 
-class TestTradeOrder:
+class TestOrder:
     def test_repr(self, sample_order):
         r = repr(sample_order)
         assert "AAPL" in r
-        assert "buy" in r
+        assert "BUY" in r  # OrderSide.BUY appears in dataclass repr
 
-    def test_market_order_default(self):
-        order = TradeOrder(pair_key="A_B", symbol="A", side="buy", quantity=10)
-        assert order.order_type == "market"
+    def test_limit_order_default(self):
+        order = Order(order_id="test_limit", symbol="A", side=OrderSide.BUY, quantity=10, limit_price=None)
+        assert order.order_type == "LIMIT"  # Order defaults to LIMIT
         assert order.limit_price is None
 
 
@@ -260,7 +260,7 @@ class TestAntiShortGuard:
     def test_sell_blocked_when_shares_insufficient(self):
         """SELL order with quantity > shortable shares → filled_qty=0, status REJECTED."""
         from execution.base import OrderStatus, Order, OrderSide
-        from unittest.mock import patch, MagicMock
+        from unittest.mock import MagicMock
         from uuid import uuid4
 
         router = ExecutionRouter(mode=ExecutionMode.LIVE)

@@ -26,7 +26,6 @@ Usage::
 
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 from structlog import get_logger
@@ -57,6 +56,7 @@ class RiskFacade:
         initial_cash: Optional[float] = None,
         kill_switch_config: Optional[KillSwitchConfig] = None,
         sector_map: Optional[Dict[str, str]] = None,
+        kill_switch: Optional[KillSwitch] = None,
     ):
         self.risk_engine = RiskEngine(
             initial_equity=initial_equity,
@@ -65,9 +65,14 @@ class RiskFacade:
         if sector_map:
             self.risk_engine.sector_map = sector_map
 
-        self.kill_switch = KillSwitch(
-            config=kill_switch_config or KillSwitchConfig(),
-        )
+        # Accept an externally-created KillSwitch so that the runner and the
+        # facade always share a single instance (fixes B2-02 divergent state).
+        if kill_switch is not None:
+            self.kill_switch = kill_switch
+        else:
+            self.kill_switch = KillSwitch(
+                config=kill_switch_config or KillSwitchConfig(),
+            )
 
         logger.info(
             "risk_facade_initialized",

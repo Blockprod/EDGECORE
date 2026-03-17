@@ -22,10 +22,9 @@ Fallback: if insufficient training data, falls back to equal-weight.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
-import pandas as pd
 from structlog import get_logger
 
 logger = get_logger(__name__)

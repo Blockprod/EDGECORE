@@ -1,7 +1,6 @@
 """Tests for order lifecycle management."""
 
 import pytest
-import math
 from datetime import datetime, timedelta, timezone
 from time import sleep
 from execution.order_lifecycle import (

@@ -9,10 +9,10 @@
 
 | Champ | Valeur |
 |-------|--------|
-| **ID** | B5-01 *(ex. B5-01, B2-02, issue GitHub #42)* |
+| **ID** | *(ex. B2-01, B5-02, issue GitHub #42)* |
 | **Sévérité** | P0 — Critique bloquant prod |
-| **Module** | `Dockerfile`, `docker-compose.yml` |
-| **Fichier:Ligne** | `Dockerfile:34`, `docker-compose.yml:11` |
+| **Module** | *(ex. `execution_engine/`, `risk_engine/`)* |
+| **Fichier:Ligne** | *(ex. `execution_engine/router.py:162`)* |
 | **Découvert le** | AAAA-MM-JJ |
 | **Découvert par** | [nom / audit automatique / test] |
 
@@ -22,7 +22,7 @@
 
 *Description concise du bug en 2-3 phrases.*
 
-> Exemple : `EDGECORE_ENV=production` dans Dockerfile et docker-compose.yml. La valeur `production` n'est pas un environnement valide — la config tombe silencieusement sur `dev.yaml` en production. Cela désactive les contrôles de risque production et expose le système avec des seuils de développement.
+> Exemple : `slippage = 2.0` hardcodé dans `execution_engine/router.py` lignes 162 et 189. La valeur ignore `get_settings().costs.slippage_bps`, ce qui cause un drift silencieux des coûts de transaction en production par rapport à la configuration YAML.
 
 ---
 

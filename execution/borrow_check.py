@@ -15,7 +15,7 @@ Both modes enforce:
     - Maximum acceptable borrow fee (default 3% annualised)
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Dict, Optional, Set
 
 from structlog import get_logger

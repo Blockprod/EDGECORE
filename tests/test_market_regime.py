@@ -15,7 +15,6 @@ Verifies:
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from signal_engine.market_regime import (
     MarketRegime,

@@ -439,6 +439,43 @@ class UniverseManager:
         """Return symbols not manually excluded (for live trading runner)."""
         return [s for s in self._all_symbols if s not in self._manually_excluded]
 
+    def get_symbols(
+        self,
+        as_of_date: Optional[Union[str, pd.Timestamp]] = None,
+    ) -> List[str]:
+        """Return active symbols, optionally filtered by a historical date.
+
+        .. warning::
+            When *as_of_date* is provided the universe map is still the
+            **current** (static) DEFAULT_SECTOR_MAP that contains only
+            companies that survive to today.  Backtests using this list for
+            historical periods are subject to survivorship bias.
+            A point-in-time constituents file (``universe/constituents_history.csv``)
+            would eliminate this limitation.
+
+        Args:
+            as_of_date: Historical date string (``"YYYY-MM-DD"``) or
+                ``pd.Timestamp``.  When supplied a ``WARNING`` is emitted to
+                alert back-testers of the potential bias.
+
+        Returns:
+            List of active (non-excluded) symbol strings.
+        """
+        symbols = self.get_active_symbols()
+        if as_of_date is not None:
+            logger.warning(
+                "universe_survivorship_bias_possible",
+                as_of_date=str(as_of_date),
+                symbol_count=len(symbols),
+                note=(
+                    "Universe is static (current survivors only). "
+                    "Symbols that delisted or merged before as_of_date are not excluded. "
+                    "Sharpe ratios from backtests may be over-estimated. "
+                    "Provide universe/constituents_history.csv for point-in-time filtering."
+                ),
+            )
+        return symbols
+
     @property
     def all_symbols(self) -> List[str]:
         """Full symbol list (including manually excluded)."""

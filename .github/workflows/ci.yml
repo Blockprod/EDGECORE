@@ -39,6 +39,21 @@ jobs:
           # Install package in editable mode if present
           python -m pip install -e . || true
 
-      - name: Run tests
+      - name: Lint (ruff)
         run: |
-          pytest -q
+          ruff check .
+
+      - name: Type check (mypy)
+        # Non-blocking: reports errors but does not fail the pipeline (existing debt).
+        # Target: 0 errors in risk/ and execution/ — fix progressively.
+        continue-on-error: true
+        run: |
+          mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary
+
+      - name: Security audit (pip-audit)
+        run: |
+          pip-audit --skip-editable
+
+      - name: Run tests with coverage
+        run: |
+          pytest -q --cov=. --cov-report=term-missing --cov-fail-under=40

@@ -129,6 +129,16 @@ class SignalGenerator:
         if active_positions is None:
             active_positions = {}
 
+        # C-09: Evict spread models for pairs no longer active.
+        # Prevents unbounded memory growth on long-running bots with pair rotation.
+        active_keys = {f"{s1}_{s2}" for s1, s2, *_ in active_pairs}
+        stale_keys = set(self._spread_models) - active_keys
+        for k in stale_keys:
+            del self._spread_models[k]
+            self._spreads.pop(k, None)
+        if stale_keys:
+            logger.info("spread_models_evicted", count=len(stale_keys))
+
         signals: List[Signal] = []
 
         for sym1, sym2, _pval, hl in active_pairs:

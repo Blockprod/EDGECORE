@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from signal_engine.ou_signal import OUSignalGenerator, OUParams
+from signal_engine.ou_signal import OUSignalGenerator
 from signal_engine.cross_sectional import CrossSectionalMomentum
 from signal_engine.vol_signal import VolatilityRegimeSignal
 from signal_engine.combiner import SignalCombiner, SignalSource

@@ -10,8 +10,16 @@ from models.half_life_estimator import SpreadHalfLifeEstimator
 try:
     from models.cointegration_fast import half_life_fast as _half_life_fast_cython
     _HALF_LIFE_CYTHON = True
-except ImportError:
+except ImportError as _e_cython:
     _HALF_LIFE_CYTHON = False
+    import structlog as _structlog
+    _structlog.get_logger(__name__).warning(
+        "cython_extension_missing_using_python_fallback",
+        module="models.cointegration_fast",
+        function="half_life_fast",
+        error=str(_e_cython),
+        impact="10x slower half-life estimation — recompile with: python setup.py build_ext --inplace",
+    )
 
 logger = get_logger(__name__)
 
@@ -226,7 +234,13 @@ class SpreadModel:
                 # Cap at 60 for very slow reversion
                 lookback = min(lookback, 60)
             else:
-                # Default fallback (no half-life available)
+                # No half-life estimate available — warn so the issue is
+                # visible in logs rather than a silent wrong-window fallback.
+                logger.warning(
+                    "half_life_unavailable_using_default_lookback",
+                    pair=self.pair_key,
+                    default_lookback=20,
+                )
                 lookback = 20
         
         # Enforce bounds: [10, 120]

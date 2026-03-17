@@ -313,7 +313,6 @@ class Settings:
                 exit_z_score=self.strategy.exit_z_score,
                 entry_z_min_spread=self.strategy.entry_z_min_spread,
                 short_sizing_multiplier=self.strategy.short_sizing_multiplier,
-                lookback_window=self.strategy.lookback_window,
             )
             logger.debug("config_validation_passed")
         except ImportError:

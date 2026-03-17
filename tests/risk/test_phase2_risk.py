@@ -18,7 +18,6 @@ from risk.var_monitor import VaRMonitor, VaRConfig
 from risk.drawdown_manager import (
     DrawdownManager,
     DrawdownConfig,
-    DrawdownAction,
     DrawdownTier,
 )
 

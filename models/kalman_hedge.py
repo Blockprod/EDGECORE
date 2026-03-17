@@ -195,6 +195,17 @@ class KalmanHedgeRatio:
             return False
         return bool(abs(self.innovation_history[-1]) > self.innovation_threshold)
 
+    @property
+    def is_broken(self) -> bool:
+        """True if cumulative breakdown_count exceeds 10 % of observed bars.
+
+        A Kalman filter with this many anomalous innovations is unreliable:
+        callers should suspend signal generation and log a warning.
+        """
+        if self.bars_processed < 10:
+            return False
+        return self.breakdown_count >= max(int(self.bars_processed * 0.10), 5)
+
     def get_recent_breakdown_rate(self, window: int = 20) -> float:
         """
         Fraction of recent bars with normalized innovation > threshold.

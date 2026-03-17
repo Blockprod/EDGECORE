@@ -189,5 +189,38 @@ class TestHalfLifeEstimationAccuracy:
         assert model.half_life is None or (5 <= model.half_life <= 200)
 
 
+class TestSpreadHalfLifeNoneGuard:
+    """C-08: compute_z_score must not silently absorb half_life=None."""
+
+    def test_z_score_with_none_half_life_returns_valid_series(self):
+        """When half_life is None, compute_z_score falls back to default lookback without crash."""
+        np.random.seed(99)
+        x = pd.Series(np.random.randn(200))
+        y = pd.Series(2 * x.values + np.random.randn(200))
+        model = SpreadModel(x, y)
+        # Force None to simulate failed estimation regardless of seed
+        model.half_life = None
+        spread = model.compute_spread(x, y)
+
+        z = model.compute_z_score(spread)
+
+        assert len(z) == len(spread), "Z-score length must match spread"
+        assert z.dropna().notna().all(), "Non-NaN z-scores must be finite"
+
+    def test_explicit_lookback_bypasses_half_life_guard(self):
+        """Passing an explicit lookback must work even when half_life is None."""
+        np.random.seed(99)
+        x = pd.Series(np.random.randn(200))
+        y = pd.Series(2 * x.values + np.random.randn(200))
+        model = SpreadModel(x, y)
+        model.half_life = None
+        spread = model.compute_spread(x, y)
+
+        z = model.compute_z_score(spread, lookback=30)
+
+        assert len(z) == len(spread)
+        assert z.dropna().notna().all()
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

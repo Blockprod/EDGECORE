@@ -53,17 +53,29 @@ module = [
 ]
 ignore_missing_imports = true
 
+# Modules with broad ignore (non-critical paths or third-party-heavy code)
 [[tool.mypy.overrides]]
 module = [
-    "execution.*",
     "strategies.*",
-    "risk.*",
-    "risk_engine.*",
     "signal_engine.*",
     "portfolio_engine.*",
     "models.*",
+    "monitoring.*",
 ]
 ignore_errors = true
+
+# Strict mode on critical financial modules
+[[tool.mypy.overrides]]
+module = [
+    "risk.*",
+    "risk_engine.*",
+    "execution.*",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_return_any = true
+no_implicit_optional = true
 
 [tool.ruff]
 line-length = 120
@@ -93,4 +105,5 @@ select = ["F", "E"]
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["F401"]
 "tests/validation/*" = ["F401"]
+"tests/*" = ["F841"]
 "ARCHIVED_*/**" = ["F401"]

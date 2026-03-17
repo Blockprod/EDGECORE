@@ -23,10 +23,13 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 import pandas as pd
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    from monitoring.metrics import SystemMetrics
 
 logger = get_logger(__name__)
 
@@ -226,8 +229,11 @@ class LiveTradingRunner:
             initial_equity=self.config.initial_capital,
         )
         self._kill_switch = KillSwitch()
+        # Inject the shared KillSwitch into RiskFacade so both references
+        # point to the same object — prevents divergent halt states (B2-02).
         self._risk_facade = RiskFacade(
             initial_equity=self.config.initial_capital,
+            kill_switch=self._kill_switch,
         )
 
         # Wire portfolio heat and allocation from config

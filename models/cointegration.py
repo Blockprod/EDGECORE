@@ -20,7 +20,12 @@ try:
     logger.info("Cython cointegration engine loaded - hybrid acceleration enabled")
 except ImportError as e:
     CYTHON_COINTEGRATION_AVAILABLE = False
-    logger.debug(f"Cython cointegration engine not available: {e}")
+    logger.warning(
+        "cython_extension_missing_using_python_fallback",
+        module="models.cointegration_fast",
+        error=str(e),
+        impact="10x slower cointegration tests — recompile with: python setup.py build_ext --inplace",
+    )
 
 # Legacy alias kept for backward compatibility
 CPP_COINTEGRATION_AVAILABLE = CYTHON_COINTEGRATION_AVAILABLE

@@ -284,11 +284,19 @@ class DynamicSpreadModel:
                 delta=kalman_delta, ve=kalman_ve
             )
             kf_results = self.kalman_filter.run_filter(y, x)
-            # Use Kalman's final ╬▓ as the model ╬▓
+            # Use Kalman's final β as the model β
             self.beta = self.kalman_filter.beta
             # Kalman spread series (for residual stats)
             self.residuals = kf_results["spread"].values
             self.std_residuals = np.std(self.residuals[1:])  # skip first (0)
+            # C-07: alert when the filter accumulated too many anomalous innovations
+            if self.kalman_filter.is_broken:
+                logger.warning(
+                    "kalman_filter_broken_after_init",
+                    pair=pair_key,
+                    breakdown_count=self.kalman_filter.breakdown_count,
+                    bars_processed=self.kalman_filter.bars_processed,
+                )
         
         # Initialize adaptive threshold calculator
         self.threshold_config = ThresholdConfig()
@@ -377,7 +385,15 @@ class DynamicSpreadModel:
             self.kalman_filter = KalmanHedgeRatio()
         
         kf_results = self.kalman_filter.run_filter(y, x)
-        self.beta = self.kalman_filter.beta  # Update to latest ╬▓
+        self.beta = self.kalman_filter.beta  # Update to latest β
+        # C-07: warn if Kalman is broken so callers can suppress signals
+        if self.kalman_filter.is_broken:
+            logger.warning(
+                "kalman_filter_broken_during_spread",
+                pair=getattr(self, 'pair_key', None),
+                breakdown_count=self.kalman_filter.breakdown_count,
+                bars_processed=self.kalman_filter.bars_processed,
+            )
         return kf_results["spread"]
     
     def compute_z_score(

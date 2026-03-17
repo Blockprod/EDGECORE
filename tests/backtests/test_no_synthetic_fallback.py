@@ -11,9 +11,9 @@ Ensures:
 """
 
 import warnings
+import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import patch
 
 from backtests.runner import BacktestRunner, _generate_cointegrated_pair
 from backtests.metrics import BacktestMetrics
@@ -54,49 +54,48 @@ class TestNoSyntheticFallback:
         assert "SYNTHB" not in source
         assert "fallback_synthetic" not in source
 
+    def test_legacy_run_raises_not_implemented(self):
+        """
+        C-02: BacktestRunner.run() must raise NotImplementedError after emitting
+        a DeprecationWarning. The look-ahead-biased implementation was removed.
+        """
+        runner = BacktestRunner()
+        import warnings
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            with pytest.raises(NotImplementedError, match="look-ahead bias"):
+                runner.run(symbols=["FAKE1"], use_synthetic=True)
+
     def test_legacy_run_no_pairs_returns_empty_metrics(self):
         """
-        DoD: backtest with non-cointegrated symbols ? total_return=0, note=NO_PAIRS_FOUND.
-        
-        We mock _find_cointegrated_pairs_in_data to return [] to guarantee
-        the 0-pair path, and use use_synthetic=True to avoid real API calls.
+        C-02: run() is gone. Verifying via run_unified route instead is out of
+        scope for this unit test — just confirm the old path raises cleanly.
         """
         runner = BacktestRunner()
-
+        import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with patch.object(
-                runner, "_find_cointegrated_pairs_in_data", return_value=[]
-            ):
-                result = runner.run(
+            with pytest.raises(NotImplementedError):
+                runner.run(
                     symbols=["FAKE1"],
                     start_date="2023-01-01",
                     end_date="2024-01-01",
                     use_synthetic=True,
                 )
-
-        assert isinstance(result, BacktestMetrics)
-        assert result.total_return == 0.0
-        assert result.note is not None
-        assert "NO_PAIRS_FOUND" in result.note
 
     def test_legacy_run_no_pairs_zero_trades(self):
-        """No synthetic trades should be generated."""
+        """C-02: run() raises NotImplementedError — no trades by definition."""
         runner = BacktestRunner()
-
+        import warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            with patch.object(
-                runner, "_find_cointegrated_pairs_in_data", return_value=[]
-            ):
-                result = runner.run(
+            with pytest.raises(NotImplementedError):
+                runner.run(
                     symbols=["FAKE1"],
                     start_date="2023-01-01",
                     end_date="2024-01-01",
                     use_synthetic=True,
                 )
-
-        assert result.total_trades == 0
 
     def test_no_synthetic_columns_added(self):
         """
@@ -108,8 +107,8 @@ class TestNoSyntheticFallback:
         # After Sprint 2.6, there should be no SYNTHA/SYNTHB injection
         assert "SYNTHA" not in source
         assert "SYNTHB" not in source
-        # And the 0-pair path should return immediately with note
-        assert "NO_PAIRS_FOUND" in source
+        # C-02: method now raises immediately
+        assert "NotImplementedError" in source
 
 
 # --------------------------------------------------
@@ -130,22 +129,17 @@ class TestSyntheticDataLoading:
         assert len(df) > 100
 
     def test_use_synthetic_true_returns_metrics(self):
-        """Legacy run with use_synthetic=True should still return valid BacktestMetrics.
-        
-        Note: The synthetic pair may or may not find cointegrated pairs depending
-        on half-life filtering. Either outcome is acceptable - the key is that
-        it returns BacktestMetrics (not crashes or synthetic injection).
-        """
+        """C-02: run() is removed. Verifying NotImplementedError is raised."""
         runner = BacktestRunner()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
-            result = runner.run(
-                symbols=["FAKE"],
-                start_date="2023-01-01",
-                end_date="2024-01-01",
-                use_synthetic=True,
-            )
-        assert isinstance(result, BacktestMetrics)
+            with pytest.raises(NotImplementedError):
+                runner.run(
+                    symbols=["FAKE"],
+                    start_date="2023-01-01",
+                    end_date="2024-01-01",
+                    use_synthetic=True,
+                )
 
 
 # --------------------------------------------------

@@ -808,7 +808,9 @@ class ConnectionEvent(TypedDict):
 
 
 if __name__ == "__main__":
-    print("Ô£à Common types module loaded")
-    print(f"- Order types: {[t.name for t in OrderType]}")
-    print(f"- Execution modes: {[m.name for m in ExecutionMode]}")
-    print(f"- Circuit breaker states: {[s.name for s in CircuitBreakerState]}")
+    import structlog as _structlog
+    _log = _structlog.get_logger(__name__)
+    _log.info("common_types_loaded",
+              order_types=[t.name for t in OrderType],
+              execution_modes=[m.name for m in ExecutionMode],
+              circuit_breaker_states=[s.name for s in CircuitBreakerState])

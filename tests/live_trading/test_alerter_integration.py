@@ -12,7 +12,7 @@ at every critical point in the trading loop:
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
 from live_trading.paper_runner import PaperTradingRunner
 

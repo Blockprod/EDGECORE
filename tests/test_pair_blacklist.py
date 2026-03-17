@@ -10,10 +10,8 @@ Validates:
 - Disabled mode
 """
 
-import pytest
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
-import json
 
 from pair_selection.blacklist import PairBlacklist
 
@@ -177,7 +175,6 @@ class TestBlacklistConfig:
         assert cfg.enabled is True
 
     def test_yaml_has_section(self):
-        from pathlib import Path
         import yaml
         cfg_path = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(cfg_path, encoding="utf-8") as f:

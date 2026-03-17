@@ -14,10 +14,9 @@ Both modes apply a configurable blackout window (default ┬▒3 trading days)
 around detected events to prevent entering trades during high-IV periods.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set
+from dataclasses import dataclass
+from typing import Dict, Optional, Set
 
-import numpy as np
 import pandas as pd
 from structlog import get_logger
 

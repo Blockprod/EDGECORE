@@ -54,3 +54,25 @@ class TestTradingState:
         assert TradingState.HALTED.value == "halted"
         assert TradingState.SHUTTING_DOWN.value == "shutting_down"
         assert TradingState.STOPPED.value == "stopped"
+
+
+class TestKillSwitchSharedInstance:
+    """B2-02: runner._kill_switch and runner._risk_facade.kill_switch must be the same object."""
+
+    def test_kill_switch_shared_after_initialize(self):
+        """After _initialize(), kill_switch inside RiskFacade is the same object as runner._kill_switch."""
+        runner = LiveTradingRunner()
+        runner._initialize()
+        assert runner._kill_switch is runner._risk_facade.kill_switch, (
+            "B2-02 regression: _kill_switch and _risk_facade.kill_switch are different instances"
+        )
+
+    def test_facade_halted_when_kill_switch_activated(self):
+        """Activating runner._kill_switch must immediately reflect in _risk_facade.is_halted."""
+        from risk_engine.kill_switch import KillReason
+        runner = LiveTradingRunner()
+        runner._initialize()
+        runner._kill_switch.activate(KillReason.MANUAL, message="test")
+        assert runner._risk_facade.is_halted is True, (
+            "B2-02 regression: _risk_facade.is_halted should be True after _kill_switch.activate()"
+        )

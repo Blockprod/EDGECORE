@@ -22,7 +22,6 @@ from signal_engine.intraday_signals import (
 from execution.algo_executor import (
     AlgoType,
     AlgoConfig,
-    SliceFill,
     AlgoResult,
     TWAPExecutor,
     VWAPExecutor,

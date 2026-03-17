@@ -10,7 +10,6 @@ Phase 4 Tests ÔÇö Signaux Avanc├®s & ML.
 import numpy as np
 import pandas as pd
 import pytest
-from datetime import datetime, timedelta
 
 
 # =====================================================================
@@ -476,8 +475,6 @@ class TestPhase4Integration:
 
     def test_simulator_has_phase4_signals(self):
         """Check that the simulator initializes Phase 4 signal generators."""
-        from unittest.mock import patch, MagicMock
-        import importlib
         # We test that imports exist without running the full sim
         from signal_engine.earnings_signal import EarningsSurpriseSignal
         from signal_engine.options_flow import OptionsFlowSignal

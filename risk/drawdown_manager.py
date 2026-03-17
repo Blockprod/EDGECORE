@@ -12,9 +12,9 @@ Each tier escalates from the previous. The manager tracks which tier
 is currently active and provides action recommendations.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from structlog import get_logger
 

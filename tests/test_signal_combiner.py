@@ -14,7 +14,7 @@ Covers:
 
 import pytest
 
-from signal_engine.combiner import SignalCombiner, SignalSource, CompositeSignal
+from signal_engine.combiner import SignalCombiner, SignalSource
 
 
 # ---------------------------------------------------------------------------

@@ -159,13 +159,13 @@ venv\Scripts\python.exe -m pytest tests/ -W error::DeprecationWarning -q
 | B3-02 | Production modules | ✅ | 2026-03 |
 | B3-03 | execution_engine/router.py | ⏳ | — |
 | B3-04 | execution/ibkr_engine.py | ✅ | 2026-03 |
-| B4-01 | models/performance_optimizer_s41.py | ⏳ | — |
-| B4-02 | monitoring/cache_advanced_s42.py | ⏳ | — |
-| B4-03 | scripts/run_backtest_v*.py | ⏳ | — |
-| B4-04 | CMakeLists.txt | ⏳ | — |
-| B4-05 | backtester/__init__.py | ⏳ | — |
-| B4-06 | *.txt root files | ⏳ | — |
-| B5-01 | Dockerfile, docker-compose.yml | ⏳ | — |
+| B4-01 | models/performance_optimizer_s41.py | ✅ | 2026-03-17 |
+| B4-02 | monitoring/cache_advanced_s42.py | ✅ | 2026-03-17 |
+| B4-03 | scripts/run_backtest_v*.py | ✅ | 2026-03-17 |
+| B4-04 | CMakeLists.txt | ✅ | 2026-03-17 |
+| B4-05 | backtester/__init__.py | ✅ | 2026-03-17 |
+| B4-06 | *.txt root files | ✅ | 2026-03-17 |
+| B5-01 | Dockerfile, docker-compose.yml | ✅ | 2026-03-17 |
 | B5-02 | execution_engine/router.py | ⏳ | — |
 | B5-03 | backtests/runner.py | ⏳ | — |
 | B5-04 | config/settings.py | ✅ | 2026-03 |

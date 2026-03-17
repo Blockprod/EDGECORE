@@ -14,7 +14,7 @@ v31 ÔÇö Phase 1, Etape 3.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 from structlog import get_logger

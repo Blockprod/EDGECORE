@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 
 class OrderSide(Enum):
     """Order direction."""
@@ -40,7 +40,7 @@ class Order:
     
     def __post_init__(self):
         if self.created_at is None:
-            self.created_at = datetime.now()
+            self.created_at = datetime.now(timezone.utc)
 
 class BaseExecutionEngine(ABC):
     """Abstract base for execution engines."""

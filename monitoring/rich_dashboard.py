@@ -16,15 +16,14 @@ Features:
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 
-from rich.console import Console, Group
+from rich.console import Group
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 from rich.columns import Columns
 from rich.align import Align
-from rich.live import Live
 from rich.rule import Rule
 from rich.padding import Padding
 from rich import box
@@ -318,7 +317,7 @@ def build_dashboard(
         box=box.MINIMAL_HEAVY_HEAD,
         header_style=f"bold {_C_TITLE}",
         expand=True, show_edge=False,
-        row_styles=["", f"on #080F1A"],
+        row_styles=["", "on #080F1A"],
     )
     pairs_tbl.add_column("#",         style=_C_DIM, width=3)
     pairs_tbl.add_column("Pair",      style=f"bold {_C_CYAN}", min_width=14)
@@ -382,7 +381,7 @@ def build_dashboard(
             box=box.MINIMAL_HEAVY_HEAD,
             header_style=f"bold {_C_TITLE}",
             expand=True, show_edge=False,
-            row_styles=["", f"on #080F1A"],
+            row_styles=["", "on #080F1A"],
         )
         pos_tbl.add_column("Pair",        style=f"bold {_C_CYAN}")
         pos_tbl.add_column("Sector",      justify="center")
@@ -420,7 +419,7 @@ def build_dashboard(
     else:
         pos_content = Padding(
             Align.center(Text(
-                f"No open positions  ÔÇö  waiting for signal",
+                "No open positions  ÔÇö  waiting for signal",
                 style=f"italic {_C_DIM}",
             )),
             pad=(1, 0),
