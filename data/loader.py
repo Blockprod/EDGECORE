@@ -187,47 +187,6 @@ class DataLoader:
         except Exception as e:
             logger.error("ibkr_data_load_failed", symbol=str(symbol), error=str(e))
             raise
-    
-    def load_ccxt_data(
-        self,
-        exchange_name: str,
-        symbol: str,
-        timeframe: str = '1d',
-        limit: int = 1000,
-        validate: bool = True
-    ) -> pd.DataFrame:
-        """
-        Load OHLCV data from a CCXT-supported exchange.
-
-        Args:
-            exchange_name: CCXT exchange id (e.g. 'binance', 'coinbase')
-            symbol: Trading pair (e.g. 'BTC/USDT')
-            timeframe: Bar interval (e.g. '1d', '1h')
-            limit: Number of bars to fetch
-            validate: If True, validate OHLCV data
-
-        Returns:
-            DataFrame with columns: open, high, low, close, volume
-        """
-        import ccxt
-        exchange_class = getattr(ccxt, exchange_name)
-        exchange = exchange_class()
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe, limit=limit)
-        df = pd.DataFrame(
-            ohlcv,
-            columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']
-        )
-        df.index = pd.to_datetime(df['timestamp'], unit='ms')
-        df = df[['open', 'high', 'low', 'close', 'volume']]
-        if validate and len(df) > 0:
-            self.validator.validate(df, raise_on_error=True)
-        logger.info(
-            "ccxt_data_loaded",
-            exchange=exchange_name,
-            symbol=symbol,
-            rows=len(df)
-        )
-        return df
 
     def load_csv(self, filepath: str) -> pd.DataFrame:
         """Load OHLCV data from CSV file."""

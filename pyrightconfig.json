@@ -1,0 +1,24 @@
+{
+  "pythonVersion": "3.11",
+  "venvPath": ".",
+  "venv": "venv",
+  "include": [
+    "."
+  ],
+  "exclude": [
+    "venv",
+    ".venv",
+    "**/__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+    "docs",
+    "backups",
+    "logs",
+    "results",
+    "cache"
+  ],
+  "typeCheckingMode": "basic",
+  "reportMissingModuleSource": "none",
+  "reportMissingTypeStubs": "none"
+}
