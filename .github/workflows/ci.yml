@@ -48,6 +48,7 @@ jobs:
 
       - name: Build Cython extensions
         run: |
+          pip install cython numpy
           python setup.py build_ext --inplace
 
       - name: Lint (ruff)
