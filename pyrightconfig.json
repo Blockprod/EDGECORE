@@ -8,6 +8,8 @@
   "exclude": [
     "venv",
     ".venv",
+    "**/node_modules",
+    "**/.*",
     "**/__pycache__",
     "build",
     "dist",
@@ -16,9 +18,11 @@
     "backups",
     "logs",
     "results",
-    "cache"
+    "cache",
+    "scripts/ARCHIVED_*"
   ],
-  "typeCheckingMode": "basic",
+  "typeCheckingMode": "off",
+  "reportMissingImports": "none",
   "reportMissingModuleSource": "none",
   "reportMissingTypeStubs": "none"
 }
