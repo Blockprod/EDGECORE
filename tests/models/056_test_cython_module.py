@@ -40,7 +40,7 @@ class TestCythonModuleAvailability:
         if not compiled_files:
             if not CYTHON_AVAILABLE:
                 pytest.skip(
-                    f"Cython not compiled — run: python setup.py build_ext --inplace"
+                    "Cython not compiled — run: python setup.py build_ext --inplace"
                 )
             assert False, (
                 "Cython module not compiled! Expected cointegration_fast.cp*.pyd/.so "
