@@ -208,18 +208,27 @@ class TestDataCaching:
         loader = DataLoader()
 
         dates = pd.date_range('2023-01-03', periods=2, freq='B')
-        mock_df = pd.DataFrame({
-            'Open': [150.0, 151.0],
-            'High': [152.0, 153.0],
-            'Low': [149.0, 150.0],
-            'Close': [151.0, 152.0],
-            'Volume': [40000000, 41000000],
-        }, index=dates)
+        # DataLoader.load_ibkr_data uses IBGatewaySync and expects bar objects,
+        # not a DataFrame — patch the correct class with the correct return type.
+        bars = []
+        for date, (open_, high, low, close, volume) in zip(
+            dates,
+            [(150.0, 152.0, 149.0, 151.0, 40000000),
+             (151.0, 153.0, 150.0, 152.0, 41000000)],
+        ):
+            bar = MagicMock()
+            bar.date = date.strftime('%Y%m%d')
+            bar.open = open_
+            bar.high = high
+            bar.low = low
+            bar.close = close
+            bar.volume = volume
+            bars.append(bar)
 
-        with patch('execution.ibkr_engine.IBKRExecutionEngine') as mock_engine_cls:
-            mock_engine = MagicMock()
-            mock_engine_cls.return_value = mock_engine
-            mock_engine.get_historical_data.return_value = mock_df
+        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+            mock_gw = MagicMock()
+            mock_gw_cls.return_value = mock_gw
+            mock_gw.get_historical_data.return_value = bars
 
             df1 = loader.load_ibkr_data('MSFT')
             df2 = loader.load_ibkr_data('MSFT')

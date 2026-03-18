@@ -94,7 +94,7 @@ class KellySizer:
 
         b = avg_w / avg_l
         kelly = (p * b - q) / b
-        return max(kelly, 0.0)
+        return float(max(kelly, 0.0))
 
     def compute_allocation(
         self,

@@ -150,7 +150,7 @@ class RiskFacade:
                        quantity: float, side: str) -> None:
         self.risk_engine.register_entry(symbol_pair, entry_price, quantity, side)
 
-    def register_exit(self, symbol_pair: str, exit_price: float, pnl: float):
+    def register_exit(self, symbol_pair: str, exit_price: float, pnl: float) -> Optional[object]:
         return self.risk_engine.register_exit(symbol_pair, exit_price, pnl)
 
     def mark_to_market(self, prices: Dict[str, float]) -> None:

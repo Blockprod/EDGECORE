@@ -1,6 +1,6 @@
 ﻿from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 import numpy as np
 from structlog import get_logger
@@ -344,7 +344,7 @@ class RiskEngine:
             recovered_positions, recovered_equity_history = self.audit_trail.recover_state()
             
             if recovered_positions:
-                self.positions = recovered_positions
+                self.positions = cast(Dict[str, Position], recovered_positions)
                 logger.warning(
                     "positions_recovered_from_trail",
                     count=len(recovered_positions),
@@ -360,7 +360,7 @@ class RiskEngine:
                     last_equity=self.current_equity
                 )
             
-            return recovered_positions
+            return cast(Dict[str, Position], recovered_positions)
         
         except Exception as e:
             logger.error("audit_trail_recovery_failed", error=str(e))
@@ -493,7 +493,7 @@ class RiskEngine:
                 threshold=vol_threshold
             )
         
-        return is_normal
+        return bool(is_normal)
     
     def reset_daily_stats(self) -> None:
         """Reset daily counters (call at market open)."""

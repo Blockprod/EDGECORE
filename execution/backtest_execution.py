@@ -26,6 +26,7 @@ from common.types import (
     SlippageModel,
     Symbol,
 )
+from typing import Literal, cast
 
 
 @dataclass
@@ -183,12 +184,12 @@ class PartialFillHandler:
     """Handles partial fill scenarios in backtest."""
 
     fill_simulation: FillSimulation = field(
-        default_factory=lambda: {
+        default_factory=lambda: cast(FillSimulation, {
             "base_volume_bps": 100,  # 1% base
             "market_volume": 1000000.0,
             "max_fill_pct": 10.0,
             "partial_fill_probability": 0.1,
-        }
+        })
     )
 
     def determine_fill_quantity(
@@ -311,7 +312,7 @@ class BacktestExecutor:
         return ExecutionResult(
             order_id=order_id,
             symbol=symbol,
-            side=side,
+            side=cast(Literal["buy", "sell"], side),
             submitted_price=order_price,
             executed_price=execution_price,
             requested_quantity=quantity,

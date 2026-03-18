@@ -27,21 +27,29 @@ class TestCythonModuleAvailability:
     """Test that Cython module is properly compiled and available."""
     
     def test_cython_pyd_file_exists(self):
-        """Verify the compiled Cython .pyd file exists on disk."""
-        # Look for the compiled Cython module
-        models_dir = Path("models")
-        
-        # On Windows, Cython compiles to .pyd files
-        pyd_files = list(models_dir.glob("cointegration_fast*.pyd"))
-        
-        assert len(pyd_files) > 0, (
-            "Cython module not compiled! Expected cointegration_fast.cp*.pyd "
-            "in models/ directory. Run: python setup.py build_ext --inplace"
+        """Verify the compiled Cython extension file exists on disk."""
+        # Resolve models/ relative to this test file (avoids cwd dependency)
+        models_dir = Path(__file__).parent.parent.parent / "models"
+
+        # Windows: .pyd — Linux/macOS: .so
+        compiled_files = (
+            list(models_dir.glob("cointegration_fast*.pyd")) +
+            list(models_dir.glob("cointegration_fast*.so"))
         )
-        
+
+        if not compiled_files:
+            if not CYTHON_AVAILABLE:
+                pytest.skip(
+                    f"Cython not compiled — run: python setup.py build_ext --inplace"
+                )
+            assert False, (
+                "Cython module not compiled! Expected cointegration_fast.cp*.pyd/.so "
+                "in models/ directory. Run: python setup.py build_ext --inplace"
+            )
+
         # Verify the file is readable
-        assert pyd_files[0].exists()
-        assert pyd_files[0].stat().st_size > 0
+        assert compiled_files[0].exists()
+        assert compiled_files[0].stat().st_size > 0
     
     def test_cython_module_importable(self):
         """Verify the Cython module can be imported directly."""

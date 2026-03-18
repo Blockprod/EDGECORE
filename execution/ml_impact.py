@@ -46,7 +46,7 @@ class NeuralNetworkModel:
     output_mean: float = 0.0
     output_std: float = 1.0
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize weights if not provided."""
         if self.W1 is None:
             # Initialize with better variance scaling
@@ -298,7 +298,7 @@ class MLImpactPredictor:
         
         total_impact = (impact + spread_adjustment + vol_adjustment) * urgency_factor
         
-        return min(max(total_impact, 0.1), 100.0)
+        return float(min(max(total_impact, 0.1), 100.0))
     
     def train_on_data(
         self,

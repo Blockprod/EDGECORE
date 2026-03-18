@@ -142,7 +142,7 @@ class BorrowChecker:
 
         short_sym = sym2 if side == "long" else sym1
         _, fee = self.check_shortable(short_sym, side="short")
-        return fee
+        return float(fee)
 
     def update_live_data(
         self,

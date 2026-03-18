@@ -12,7 +12,7 @@ import asyncio
 import os
 import random
 import time
-from typing import Dict
+from typing import Any, Dict, Optional
 
 import pandas as pd
 
@@ -65,8 +65,8 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         self.client_id = client_id if client_id is not None else int(os.getenv("IBKR_CLIENT_ID", "1"))
         self.readonly = readonly
         self.timeout = timeout
-        self._ib = None  # ib_insync.IB instance (lazy)
-        self._order_map: Dict[str, object] = {}
+        self._ib: Optional[Any] = None  # ib_insync.IB instance (lazy)
+        self._order_map: Dict[str, Any] = {}
         self._persisted_order_ids: Dict[str, int] = {}  # order_id ÔåÆ IB permId
         self._consecutive_failures = 0
         self._max_consecutive_failures = 5  # circuit breaker threshold
@@ -226,16 +226,17 @@ class IBKRExecutionEngine(BaseExecutionEngine):
     )
 
     @retry_with_backoff(policy=_ORDER_RETRY_POLICY)
-    def _place_order_with_retry(self, order: Order):
+    def _place_order_with_retry(self, order: Order) -> Any:
         """Place a single order via ib_insync, retried on transient errors."""
         from ib_insync import LimitOrder, MarketOrder, Stock
 
-        # Enforce IBKR rate limit (50 req/s hard cap ÔåÆ 45/s sustained)
+        # Enforce IBKR rate limit (50 req/s hard cap → 45/s sustained)
         _ibkr_rate_limiter.acquire()
 
         contract = Stock(order.symbol, 'SMART', 'USD')
         action = 'BUY' if order.side == OrderSide.BUY else 'SELL'
 
+        ib_order: Any
         if order.limit_price:
             ib_order = LimitOrder(action, order.quantity, order.limit_price)
         else:

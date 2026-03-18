@@ -13,7 +13,7 @@ import math
 import random
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Literal, Optional, cast
 
 from common.types import (
     LiquidityMetrics,
@@ -32,13 +32,13 @@ class OrderBookSimulator:
     """Simulates realistic order book for trading simulation."""
 
     config: BookSimulationConfig = field(
-        default_factory=lambda: {
+        default_factory=lambda: cast(BookSimulationConfig, {
             "symbols": [],
             "bid_ask_spread_bps": 5.0,
             "depth_mode": "medium",
             "volatility_factor": 1.0,
             "realism_level": "realistic",
-        }
+        })
     )
 
     def __post_init__(self) -> None:
@@ -335,7 +335,7 @@ class OrderBookSimulator:
             price = levels[0]["price"] if levels else 0
 
         # Random update type
-        update_type = random.choice(["trade", "add", "cancel", "modify"])
+        update_type = cast(Literal["trade", "add", "cancel", "modify"], random.choice(["trade", "add", "cancel", "modify"]))
 
         # Random quantity
         quantity = random.uniform(10, 100)
@@ -344,7 +344,7 @@ class OrderBookSimulator:
             symbol=order_book["symbol"],
             timestamp=timestamp,
             update_type=update_type,
-            side=side,
+            side=cast(Literal["bid", "ask"], side),
             price=price,
             quantity=quantity,
             order_count=random.randint(1, 5),

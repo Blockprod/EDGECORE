@@ -13,7 +13,7 @@ import os
 import threading
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -41,8 +41,8 @@ class ShutdownManager:
             data_dir: Directory for trading_enabled file
         """
         # Instance-level state (not shared across instances)
-        self._shutdown_flag = False
-        self._shutdown_reason = None
+        self._shutdown_flag: bool = False
+        self._shutdown_reason: Optional[str] = None
         
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -71,13 +71,13 @@ class ShutdownManager:
     
     def _register_signal_handlers(self) -> None:
         """Register OS signal handlers for graceful shutdown."""
-        def _sigint_handler(signum, frame):
+        def _sigint_handler(signum: int, frame: Any) -> None:
             self.request_shutdown(f"SIGINT (Ctrl+C) - pid={os.getpid()}")
         
-        def _sigterm_handler(signum, frame):
+        def _sigterm_handler(signum: int, frame: Any) -> None:
             self.request_shutdown(f"SIGTERM (system kill) - pid={os.getpid()}")
         
-        def _sigusr1_handler(signum, frame):
+        def _sigusr1_handler(signum: int, frame: Any) -> None:
             self.request_shutdown(f"SIGUSR1 (user signal) - pid={os.getpid()}")
         
         try:

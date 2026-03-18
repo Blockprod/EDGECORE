@@ -10,6 +10,7 @@ import logging
 import os
 import threading
 import time
+from typing import Any, List, Optional
 
 from ibapi.client import EClient
 from ibapi.contract import Contract
@@ -28,53 +29,53 @@ _ibkr_rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
 
 
 class IBWrapper(EWrapper):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self._lock = threading.RLock()  # A-03: protège l'accès concurrent msg-thread / thread principal
-        self.current_time = None
-        self.contract_details = []
+        self.current_time: Optional[int] = None
+        self.contract_details: List[Any] = []
         self.contract_details_done = False
-        self.historical_data = []
+        self.historical_data: List[Any] = []
         self.historical_data_done = False
-        self.fundamental_data = None
+        self.fundamental_data: Optional[str] = None
         self.fundamental_data_done = False
-        self.error_msg = None
+        self.error_msg: Optional[tuple] = None
         self.shortable_shares = -1.0          # A-08: mis à jour par tickGeneric tick 236
         self.shortable_shares_received = False  # A-08: flag de complétion
 
-    def currentTime(self, time_: int):
+    def currentTime(self, time_: int) -> None:
         with self._lock:
             self.current_time = time_
 
-    def contractDetails(self, reqId, contractDetails):
+    def contractDetails(self, reqId: int, contractDetails: Any) -> None:
         with self._lock:
             self.contract_details.append(contractDetails)
 
-    def contractDetailsEnd(self, reqId):
+    def contractDetailsEnd(self, reqId: int) -> None:
         with self._lock:
             self.contract_details_done = True
 
-    def historicalData(self, reqId, bar):
+    def historicalData(self, reqId: int, bar: Any) -> None:
         with self._lock:
             self.historical_data.append(bar)
 
-    def historicalDataEnd(self, reqId, start, end):
+    def historicalDataEnd(self, reqId: int, start: str, end: str) -> None:
         with self._lock:
             self.historical_data_done = True
 
-    def fundamentalData(self, reqId, data):
+    def fundamentalData(self, reqId: int, data: str) -> None:
         with self._lock:
             self.fundamental_data = data
             self.fundamental_data_done = True
 
-    def tickGeneric(self, reqId: int, tickType: int, value: float):
+    def tickGeneric(self, reqId: int, tickType: int, value: float) -> None:
         """A-08: Capture tick type 236 (shortable shares) from reqMktData snapshot."""
         with self._lock:
             if tickType == 236:
                 self.shortable_shares = value
                 self.shortable_shares_received = True
 
-    def error(self, reqId, errorCode, errorString, *args):
+    def error(self, reqId: int, errorCode: int, errorString: str, *args: Any) -> None:
         with self._lock:
             self.error_msg = (reqId, errorCode, errorString)
         # Error codes 2104, 2106, 2158 are informational - not real errors
@@ -90,7 +91,7 @@ class IBGatewaySync:
     - Gestion des erreurs
     - Utilisation synchrone (recommandee par IBKR)
     """
-    def __init__(self, host="127.0.0.1", port=None, client_id=1, timeout=30):
+    def __init__(self, host: str = "127.0.0.1", port: Optional[int] = None, client_id: int = 1, timeout: int = 30) -> None:
         self.host = host
         self.port = port if port is not None else int(os.getenv("IBKR_PORT", "4002"))
         self.client_id = client_id
@@ -99,7 +100,7 @@ class IBGatewaySync:
         self._lock = threading.Lock()
         self._req_id_lock = threading.Lock()  # A-06: protège _req_id_counter contre les accès concurrents
         self.connected = False
-        self._msg_thread = None  # message processing thread
+        self._msg_thread: Optional[threading.Thread] = None  # message processing thread
         self._req_id_counter = 10  # start at 10; incremented before each request
         self.wrapper = IBWrapper()
         self.client = EClient(self.wrapper)
@@ -110,7 +111,7 @@ class IBGatewaySync:
             self._req_id_counter += 1
             return self._req_id_counter
 
-    def connect(self):
+    def connect(self) -> bool:
         with self._lock:
             if not self.connected:
                 try:
@@ -130,7 +131,7 @@ class IBGatewaySync:
                     self.connected = False
             return self.connected
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         with self._lock:
             if self.connected:
                 self.client.disconnect()
@@ -138,10 +139,10 @@ class IBGatewaySync:
                 self._msg_thread = None
                 logger.info("[IBGatewaySync] Deconnecte.")
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         return self.connected
 
-    def get_current_time(self):
+    def get_current_time(self) -> Optional[int]:
         if not self.connect():
             return None
         self.wrapper.current_time = None
@@ -156,7 +157,7 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return self.wrapper.current_time
 
-    def get_contract_details(self, symbol, secType="STK", exchange="SMART", currency="USD"):
+    def get_contract_details(self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD") -> Optional[List[Any]]:
         if not self.connect():
             return None
         self.wrapper.contract_details = []
@@ -176,7 +177,7 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return list(self.wrapper.contract_details)
 
-    def get_historical_data(self, symbol, duration="1 Y", bar_size="1 day", what_to_show="TRADES"):
+    def get_historical_data(self, symbol: str, duration: str = "1 Y", bar_size: str = "1 day", what_to_show: str = "TRADES") -> Optional[List[Any]]:
         if not self.connect():
             return None
         # Use a unique, incrementing reqId for every request.
@@ -231,7 +232,7 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return list(self.wrapper.historical_data)
 
-    def get_shortable_shares(self, symbol, secType="STK", exchange="SMART", currency="USD"):
+    def get_shortable_shares(self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD") -> float:
         """Query shortable share availability via reqMktData (generic tick 236).
 
         Returns the number of shortable shares, or -1 on failure/timeout.
@@ -271,7 +272,7 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return self.wrapper.shortable_shares
 
-    def get_earnings_calendar(self, symbol, secType="STK", exchange="SMART", currency="USD"):
+    def get_earnings_calendar(self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD") -> Optional[str]:
         """Retrieve earnings calendar via reqFundamentalData(CalendarReport).
 
         Requires IBKR market data subscription.  Returns raw XML string

@@ -425,9 +425,10 @@ class OrderLifecycleManager:
         Returns:
             Dict with count statistics by status
         """
+        by_status: Dict[str, int] = {}
         stats = {
             "total_orders": len(self.orders),
-            "by_status": {},
+            "by_status": by_status,
             "stale_count": 0,
             "expired_count": 0
         }
@@ -437,9 +438,9 @@ class OrderLifecycleManager:
         # either representation.
         for status in OrderStatus:
             count = sum(1 for o in self.orders.values() if o.status == status)
-            stats["by_status"][status.value] = count
+            by_status[status.value] = count
             # also expose lowercase key (e.g. "FILLED" and "filled")
-            stats["by_status"][status.value.lower()] = count
+            by_status[status.value.lower()] = count
         
         # Count stale and expired
         stale = self.get_stale_orders(60.0)

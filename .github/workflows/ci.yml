@@ -12,6 +12,9 @@ on:
     branches:
       - main
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   tests:
     name: Run tests
@@ -23,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,7 +34,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Cache pip
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -42,6 +45,10 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           # Install package in editable mode if present
           python -m pip install -e . || true
+
+      - name: Build Cython extensions
+        run: |
+          python setup.py build_ext --inplace
 
       - name: Lint (ruff)
         run: |

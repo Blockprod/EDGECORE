@@ -236,7 +236,7 @@ def _get_default_volume_profile(n_bars: int = 78) -> np.ndarray:
     profile = 1.0 + 1.5 * np.exp(-10 * t) + 2.0 * np.exp(-10 * (1 - t))
     profile /= profile.sum()
     _DEFAULT_VOLUME_PROFILE = profile
-    return profile
+    return np.asarray(profile, dtype=float)
 
 
 class VWAPExecutor:

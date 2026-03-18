@@ -440,7 +440,7 @@ class PaperTradingMode(ExecutionMode):
 class LiveTradingMode(ExecutionMode):
     """Live trading mode - real API execution with safety guards."""
     
-    def __init__(self, context: ExecutionContext, api_client=None, initial_equity: float = 100000.0):
+    def __init__(self, context: ExecutionContext, api_client: Any = None, initial_equity: float = 100000.0):
         """Initialize live trading mode."""
         super().__init__(context)
         self.api_client = api_client
@@ -507,7 +507,7 @@ class LiveTradingMode(ExecutionMode):
                 quantity=quantity,
                 order_type=order_type
             )
-            return order_id
+            return str(order_id)
         except Exception as e:
             self.api_error_count += 1
             self.logger.error(
@@ -590,7 +590,7 @@ class LiveTradingMode(ExecutionMode):
             return OrderStatus.FAILED
         
         try:
-            status = self.api_client.get_order_status(order_id)
+            status = OrderStatus(self.api_client.get_order_status(order_id))
             self.context.update_order_status(order_id, status)
             return status
         except Exception as e:
@@ -660,7 +660,7 @@ class LiveTradingMode(ExecutionMode):
         try:
             equity = self.api_client.get_equity()
             self.context.equity = equity
-            return equity
+            return float(equity)
         except Exception as e:
             self.logger.error("get_account_equity_failed", error=str(e))
             return self.context.equity
@@ -817,7 +817,7 @@ class BacktestMode(ExecutionMode):
 class ExecutionEngine:
     """Unified execution engine using pluggable mode."""
     
-    def __init__(self, mode: ModeType, api_client=None):
+    def __init__(self, mode: ModeType, api_client: Any = None) -> None:
         """
         Initialize execution engine.
         
@@ -828,14 +828,16 @@ class ExecutionEngine:
         self.context = ExecutionContext(mode=mode)
         
         # Create mode-specific executor
+        executor: ExecutionMode
         if mode == ModeType.PAPER:
-            self.executor = PaperTradingMode(self.context)
+            executor = PaperTradingMode(self.context)
         elif mode == ModeType.LIVE:
-            self.executor = LiveTradingMode(self.context, api_client)
+            executor = LiveTradingMode(self.context, api_client)
         elif mode == ModeType.BACKTEST:
-            self.executor = BacktestMode(self.context)
+            executor = BacktestMode(self.context)
         else:
             raise ValueError(f"Unknown mode: {mode}")
+        self.executor: ExecutionMode = executor
         
         self.logger = logger.bind(mode=mode.value)
     

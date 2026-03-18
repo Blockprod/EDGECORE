@@ -38,7 +38,7 @@ class Order:
     filled_price: float = 0.0
     status: OrderStatus = OrderStatus.PENDING
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.created_at is None:
             self.created_at = datetime.now(timezone.utc)
 

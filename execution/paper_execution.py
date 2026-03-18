@@ -4,12 +4,12 @@ Fully decoupled from IBKRExecutionEngine ÔÇö no live broker connection needed
 Maintains an in-memory order book, positions, and balance for simulation.
 """
 
-from typing import Dict
+from typing import Dict, cast
 from datetime import datetime
 from structlog import get_logger
 from execution.backtest_execution import SlippageCalculator, CommissionCalculator
 from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
-from common.types import SlippageModel, CommissionType
+from common.types import SlippageModel, CommissionType, SlippageConfig, CommissionConfig
 
 logger = get_logger(__name__)
 
@@ -46,20 +46,19 @@ class PaperExecutionEngine(BaseExecutionEngine):
         # Convert string slippage model to enum
         slippage_model_enum = self._parse_slippage_model(slippage_model)
 
-        # Slippage configuration
-        self.slippage_config = {
+        self.slippage_config: SlippageConfig = cast(SlippageConfig, {
             'model': slippage_model_enum,
             'fixed_bps': fixed_bps,
             'adaptive_multiplier': 2.0,
             'max_slippage_bps': 50.0,
-        }
+        })
         self.slippage_calc = SlippageCalculator(self.slippage_config)
 
         # Commission configuration
-        self.commission_config = {
+        self.commission_config: CommissionConfig = cast(CommissionConfig, {
             'type': CommissionType.PERCENT,
             'percent': commission_pct,
-        }
+        })
         self.commission_calc = CommissionCalculator(self.commission_config)
 
         logger.info(
@@ -120,10 +119,11 @@ class PaperExecutionEngine(BaseExecutionEngine):
         commission = self.commission_calc.calculate(trade_value)
 
         # Final price (commission baked in)
+        commission_pct = float(self.commission_config.get('percent', 0.0) or 0.0)
         if order.side == OrderSide.BUY:
-            final_price = slippage_price * (1 + self.commission_config['percent'] / 100)
+            final_price = slippage_price * (1 + commission_pct / 100)
         else:
-            final_price = slippage_price * (1 - self.commission_config['percent'] / 100)
+            final_price = slippage_price * (1 - commission_pct / 100)
 
         cost = final_price * order.quantity
         if order.side == OrderSide.BUY:

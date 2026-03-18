@@ -9,6 +9,10 @@ Usage:
 from setuptools import setup, find_packages, Extension
 from Cython.Build import cythonize
 import numpy as np
+import sys
+
+# Platform-appropriate optimization flag
+_extra_compile_args = ['/O2'] if sys.platform == 'win32' else ['-O2']
 
 # Define Cython extensions
 ext_modules = [
@@ -16,7 +20,7 @@ ext_modules = [
         name='models.cointegration_fast',
         sources=['models/cointegration_fast.pyx'],
         include_dirs=[np.get_include()],
-        extra_compile_args=['/O2'],  # Windows MSVC optimization
+        extra_compile_args=_extra_compile_args,
         language='c',
     )
 ]

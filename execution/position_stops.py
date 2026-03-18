@@ -9,7 +9,7 @@ Provides:
 - Breakeven protection logic
 """
 
-from typing import Dict, Optional, Tuple, List
+from typing import Any, Dict, Optional, Tuple, List
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from structlog import get_logger
@@ -45,7 +45,7 @@ class PositionStop:
     min_price: Optional[Price] = None
     last_update: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate and initialize stop configuration."""
         if self.side not in ["long", "short"]:
             raise ValueError(f"Invalid side: {self.side}")
@@ -65,7 +65,7 @@ class PositionStop:
             take_profit=self.take_profit_price
         )
     
-    def update(self, current_price: Price) -> Dict[str, any]:
+    def update(self, current_price: Price) -> Dict[str, Any]:
         """
         Update stops based on current price.
         
@@ -328,7 +328,7 @@ class PositionStop:
 class PositionStopManager:
     """Manages stops for multiple positions."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize stop manager."""
         self.positions: Dict[PositionID, PositionStop] = {}
         logger.info("position_stop_manager_initialized")

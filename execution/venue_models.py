@@ -173,7 +173,7 @@ class IBKRSmartVenueModel(VenueModelBase):
         # Add spread adjustment
         impact_bps += bid_ask_spread_bps * 0.3
         
-        return min(impact_bps, 30.0)
+        return float(min(impact_bps, 30.0))
     
     def estimate_fill_time(
         self,
@@ -290,7 +290,7 @@ class NasdaqVenueModel(VenueModelBase):
         # Add spread component
         impact_bps += bid_ask_spread_bps * 0.3
         
-        return min(impact_bps, 30.0)
+        return float(min(impact_bps, 30.0))
     
     def estimate_fill_time(
         self,
@@ -346,7 +346,7 @@ class NYSEVenueModel(VenueModelBase):
         impact_bps = 1.2 * (participation_rate ** 1.3)
         impact_bps += bid_ask_spread_bps * 0.35
         
-        return min(impact_bps, 35.0)
+        return float(min(impact_bps, 35.0))
     
     def estimate_fill_time(
         self,
@@ -394,7 +394,7 @@ class CEXVenueModel(VenueModelBase):
     ) -> float:
         participation = order_size_usd / max(market_volume_24h, 1.0)
         impact = 2.0 * (participation ** 0.9) + bid_ask_spread_bps * 0.5
-        return max(0.0, min(impact, 200.0))
+        return float(max(0.0, min(impact, 200.0)))
 
     def estimate_fill_time(self, order_size_usd: float, market_volume_24h: float, order_aggressiveness: Literal["passive", "normal", "aggressive"]) -> float:
         if order_aggressiveness == "aggressive":
@@ -429,7 +429,7 @@ class DEXVenueModel(VenueModelBase):
         # AMM impact scales non-linearly (simulated as power law)
         participation = order_size_usd / max(market_volume_24h, 1.0)
         impact = 10.0 * (participation ** 0.6) + bid_ask_spread_bps * 0.8
-        return max(0.0, min(impact, 500.0))
+        return float(max(0.0, min(impact, 500.0)))
 
     def estimate_fill_time(self, order_size_usd: float, market_volume_24h: float, order_aggressiveness: Literal["passive", "normal", "aggressive"]) -> float:
         if order_aggressiveness == "aggressive":
@@ -474,4 +474,4 @@ def get_venue_model(venue: VenueType) -> VenueModelBase:
     
     model_class = models.get(venue, IBKRSmartVenueModel)
     logger.info(f"Using {model_class.__name__} for venue {venue}")
-    return model_class()
+    return model_class()  # type: ignore[abstract]
