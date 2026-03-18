@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+      - lfs-migration-preview
+      - fix/**
+      - feat/**
+      - chore/**
   pull_request:
     branches:
       - main
