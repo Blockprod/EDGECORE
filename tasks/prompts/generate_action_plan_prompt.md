@@ -8,8 +8,9 @@ fichier:ligne) et affiche-les numérotés.
 
 Demande : "Quel(s) audit(s) utiliser ? [TOUS] ou [1][2]..."
 
-Puis génère à la racine du projet :
-PLAN_ACTION_[NOM_PROJET]_[DATE].md
+Puis génère dans :
+tasks/plans/PLAN_ACTION_[NOM_PROJET]_[DATE].md
+Crée le dossier tasks/plans/ s'il n'existe pas.
 
 ─────────────────────────────────────────────
 STRUCTURE OBLIGATOIRE DU FICHIER
@@ -47,6 +48,6 @@ RÈGLES
 - Fichier compatible avec execute_corrections_prompt.md
 
 Confirme dans le chat uniquement :
-"✅ PLAN_ACTION_[PROJET]_[DATE].md créé
+"✅ tasks/plans/PLAN_ACTION_[PROJET]_[DATE].md créé
  🔴 X · 🟠 X · 🟡 X · Effort : X jours
- 👉 Lance execute_corrections_prompt.md pour démarrer."
+ 👉 Lance tasks/prompts/execute_corrections_prompt.md pour démarrer."

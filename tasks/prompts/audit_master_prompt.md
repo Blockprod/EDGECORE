@@ -27,14 +27,12 @@ ET PRODUIRE CET AUDIT DANS UN FICHIER MARKDOWN UNIQUE.
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
 ─────────────────────────────────────────────
-Crée un fichier nommé exactement :
-  AUDIT_TECHNIQUE_EDGECORE.md
-
-Place ce fichier à la racine du projet.
-Le fichier doit contenir l'audit complet structuré ci-dessous.
-Aucune réponse dans le chat, sauf un message très court
-confirmant la création du fichier et le nombre de problèmes
-identifiés par sévérité (🔴 X · 🟠 X · 🟡 X).
+Crée le fichier :
+  tasks/audits/audit_master_edgecore.md
+Crée le dossier tasks/audits/ s'il n'existe pas.
+Aucune réponse dans le chat, sauf :
+"✅ tasks/audits/audit_master_edgecore.md créé
+ 🔴 X · 🟠 X · 🟡 X"
 
 ─────────────────────────────────────────────
 CONTEXTE PROJET — LIS CES MODULES EN PRIORITÉ
