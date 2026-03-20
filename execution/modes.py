@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from structlog import get_logger
 import threading
+from execution.base import OrderStatus
 
 logger = get_logger(__name__)
 
@@ -25,16 +26,6 @@ class ModeType(str, Enum):
     PAPER = "paper"
     LIVE = "live"
     BACKTEST = "backtest"
-
-
-class OrderStatus(str, Enum):
-    """Order lifecycle states ÔÇö delegates to execution.base.OrderStatus values."""
-    PENDING = "PENDING"
-    SUBMITTED = "SUBMITTED"
-    FILLED = "FILLED"
-    PARTIALLY_FILLED = "PARTIALLY_FILLED"
-    CANCELLED = "CANCELLED"
-    FAILED = "FAILED"
 
 
 @dataclass
