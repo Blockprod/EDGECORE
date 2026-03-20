@@ -297,12 +297,12 @@ def main() -> int:
     print(f"[update_lessons] Score : {score}/4 — {reason}")
 
     if score < 2 and not args.force:
-        print("[update_lessons] Score insuffisant → aucune leçon ajoutée.")
+        print("[update_lessons] Score insuffisant -> aucune lecon ajoutee.")
         return 0
 
     # 3. Vérifie les doublons
     if is_already_covered(msg) and not args.force:
-        print("[update_lessons] Leçon probablement déjà couverte → skip.")
+        print("[update_lessons] Lecon probablement deja couverte -> skip.")
         return 0
 
     # 4. Détecte un anti-pattern dans le diff
