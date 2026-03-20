@@ -44,7 +44,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅ — commit `2bcc745`
 
 ---
 
@@ -74,7 +74,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -112,7 +112,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -146,7 +146,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -178,7 +178,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -213,7 +213,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -252,7 +252,7 @@ Validation :
 
 DÃ©pend de : Aucune (mais analyser avant d'Ã©diter â€” ce ticket nÃ©cessite une lecture
              approfondie de _tick() avant toute modification)
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -282,7 +282,7 @@ Validation :
   ```
 
 DÃ©pend de : [C-04] (mÃªme fichier â€” appliquer aprÃ¨s C-04)
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -314,7 +314,7 @@ Validation :
   ```
 
 DÃ©pend de : [C-03] (OrderStatus unifiÃ© en premier)
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -349,7 +349,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -388,7 +388,7 @@ Validation :
   ```
 
 DÃ©pend de : [C-04], [C-05]
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -424,7 +424,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -461,7 +461,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -495,7 +495,7 @@ Validation :
   ```
 
 DÃ©pend de : Aucune
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -520,7 +520,7 @@ et mÃ©triques. DÃ©composer en :
 - DÃ©lÃ©guer pair discovery Ã  `pair_selection/discovery.py`
 
 DÃ©pend de : [C-07] (RiskFacade unifiÃ©), toutes les phases 1â€“3
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -536,7 +536,7 @@ Extraire vers les modules existants :
 - Tout signal â†’ dÃ©lÃ©guer Ã  `signal_engine/generator.py::SignalGenerator`
 
 DÃ©pend de : [R-01], [C-03]
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -550,7 +550,7 @@ encore ce type. Migrer toutes les crÃ©ations de `TradeOrder` vers `execution.b
 Supprimer ensuite la classe `TradeOrder`.
 
 DÃ©pend de : [C-03], [C-09]
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -563,7 +563,7 @@ Introduire des `Protocol` pour les trois interfaces non formalisÃ©es afin de
 dÃ©coupler les dÃ©pendances et faciliter le testing par injection.
 
 DÃ©pend de : [R-01], [R-02]
-Statut : â³
+Statut : ✅
 
 ---
 
@@ -590,16 +590,16 @@ Statut : â³
 ## CRITÃˆRES PASSAGE EN PRODUCTION
 
 - [ ] ZÃ©ro ðŸ”´ ouvert (C-01 et C-02 rÃ©solus et testÃ©s)
-- [ ] `pytest tests/ -q` : 2654+ passed, 0 failed
+- [x] `pytest tests/ -q` : 2659 passed, 0 failed
 - [ ] `pytest tests/ -W error::DeprecationWarning -q` : 0 DeprecationWarning
 - [ ] `mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary` : exit 0
 - [ ] `ruff check .` : 0 erreurs
-- [ ] `Test-Path "debug_bulk_to_fetch_snapshot.txt"` : False (pas de fichier debug en prod)
-- [ ] `grep -n "class OrderStatus" execution/modes.py` : 0 rÃ©sultats
-- [ ] `grep -n "execution.slippage_bps" execution_engine/router.py` : 0 rÃ©sultats
-- [ ] Risk tiers cohÃ©rents : `venv\Scripts\python.exe -c "from config.settings import get_settings; get_settings()._assert_risk_tier_coherence(); print('OK')"`
-- [ ] `EDGECORE_ENV=prod` dans Dockerfile (dÃ©jÃ  corrigÃ© â€” maintenir)
-- [ ] Kill-switch persistÃ© au redÃ©marrage (vÃ©rifier chemin .bak aprÃ¨s C-13)
+- [x] `Test-Path "debug_bulk_to_fetch_snapshot.txt"` : False (pas de fichier debug en prod)
+- [x] `grep -n "class OrderStatus" execution/modes.py` (archivé → `modes_legacy.py`) : 0 rÃ©sultats
+- [x] `grep -n "execution.slippage_bps" execution_engine/router.py` : 0 rÃ©sultats
+- [x] Risk tiers cohÃ©rents : `venv\Scripts\python.exe -c "from config.settings import get_settings; get_settings()._assert_risk_tier_coherence(); print('OK')"`
+- [x] `EDGECORE_ENV=prod` dans Dockerfile (dÃ©jÃ  corrigÃ© â€” maintenir)
+- [x] Kill-switch persistÃ© au redÃ©marrage (vÃ©rifier chemin .bak aprÃ¨s C-13)
 - [ ] Paper trading validÃ© sur 48h avant passage live
 
 ---
@@ -608,22 +608,22 @@ Statut : â³
 
 | ID | Titre | SÃ©vÃ©ritÃ© | Fichier | Effort | Statut | Date |
 |----|-------|----------|---------|--------|--------|------|
-| C-01 | Supprimer double ThreadPoolExecutor | ðŸ”´ P0 | `data/loader.py:366-400` | 1h | â³ | â€” |
-| C-02 | Supprimer Ã©criture debug en prod | ðŸ”´ P0 | `data/loader.py:282-288` | 30min | â³ | â€” |
-| C-03 | OrderStatus importer depuis base.py | ðŸŸ  P1 | `execution/modes.py:30-40` | 1h | â³ | â€” |
-| C-04 | Unifier slippage backtest=paper | ðŸŸ  P1 | `execution_engine/router.py:211` | 1h | â³ | â€” |
-| C-05 | exit_z_score: 0.0 â†’ 0.5 dans test.yaml | ðŸŸ  P1 | `config/test.yaml:13` | 15min | â³ | â€” |
-| C-06 | Nettoyer edgecore/ artefacts C++ | ðŸŸ  P1 | `edgecore/` | 2h | â³ | â€” |
-| C-07 | Unifier drawdown via RiskFacade seule | ðŸŸ  P1 | `live_trading/runner.py:227-237` | 4h | â³ | â€” |
-| C-08 | Commission hardcodÃ©e â†’ CostConfig | ðŸŸ  P1 | `execution_engine/router.py:192,226` | 1h | â³ | â€” |
-| C-09 | Supprimer execution/modes.py | ðŸŸ  P1 | `execution/modes.py:1-868` | 4h | â³ | â€” |
-| C-10 | Synchroniser versions setup.py/pyproject.toml | ðŸŸ¡ P2 | `setup.py:30` | 15min | â³ | â€” |
-| C-11 | Ajouter section costs dans test.yaml | ðŸŸ¡ P2 | `config/test.yaml` | 30min | â³ | â€” |
-| C-12 | Activer/supprimer schemas Pydantic inutilisÃ©s | ðŸŸ¡ P2 | `config/schemas.py:170-508` | 3h | â³ | â€” |
-| C-13 | Nettoyer artefacts racine et data/ | ðŸŸ¡ P2 | plusieurs | 1h | â³ | â€” |
-| C-14 | Documenter architecture backtests/ vs backtester/ | ðŸŸ¡ P2 | `backtester/*.py` | 1h | â³ | â€” |
-| R-01 | DÃ©composer strategy_simulator.py | ðŸ”µ P1 | `backtests/strategy_simulator.py` | Ã€ ESTIMER (3-5j) | â³ | â€” |
-| R-02 | DÃ©composer pair_trading.py | ðŸ”µ P1 | `strategies/pair_trading.py` | Ã€ ESTIMER (2-4j) | â³ | â€” |
-| R-03 | Ã‰liminer TradeOrder | ðŸ”µ P1 | `execution_engine/router.py:42-67` | 1-2j | â³ | â€” |
-| R-04 | Ajouter Protocols typing | ðŸ”µ P2 | `execution/base.py` + 3 modules | 1j | â³ | â€” |
+| C-01 | Supprimer double ThreadPoolExecutor | ðŸ”´ P0 | `data/loader.py:366-400` | 1h | ✅ | 2026-03-20 |
+| C-02 | Supprimer Ã©criture debug en prod | ðŸ”´ P0 | `data/loader.py:282-288` | 30min | ✅ | 2026-03-20 |
+| C-03 | OrderStatus importer depuis base.py | ðŸŸ  P1 | `execution/modes.py:30-40` | 1h | ✅ | 2026-03-20 |
+| C-04 | Unifier slippage backtest=paper | ðŸŸ  P1 | `execution_engine/router.py:211` | 1h | ✅ | 2026-03-20 |
+| C-05 | exit_z_score: 0.0 â†’ 0.5 dans test.yaml | ðŸŸ  P1 | `config/test.yaml:13` | 15min | ✅ | 2026-03-20 |
+| C-06 | Nettoyer edgecore/ artefacts C++ | ðŸŸ  P1 | `edgecore/` | 2h | ✅ | 2026-03-20 |
+| C-07 | Unifier drawdown via RiskFacade seule | ðŸŸ  P1 | `live_trading/runner.py:227-237` | 4h | ✅ | 2026-03-20 |
+| C-08 | Commission hardcodÃ©e â†’ CostConfig | ðŸŸ  P1 | `execution_engine/router.py:192,226` | 1h | ✅ | 2026-03-20 |
+| C-09 | Supprimer execution/modes.py | ðŸŸ  P1 | `execution/modes.py:1-868` | 4h | ✅ | 2026-03-20 |
+| C-10 | Synchroniser versions setup.py/pyproject.toml | ðŸŸ¡ P2 | `setup.py:30` | 15min | ✅ | 2026-03-20 |
+| C-11 | Ajouter section costs dans test.yaml | ðŸŸ¡ P2 | `config/test.yaml` | 30min | ✅ | 2026-03-20 |
+| C-12 | Activer/supprimer schemas Pydantic inutilisÃ©s | ðŸŸ¡ P2 | `config/schemas.py:170-508` | 3h | ✅ | 2026-03-20 |
+| C-13 | Nettoyer artefacts racine et data/ | ðŸŸ¡ P2 | plusieurs | 1h | ✅ | 2026-03-20 |
+| C-14 | Documenter architecture backtests/ vs backtester/ | ðŸŸ¡ P2 | `backtester/*.py` | 1h | ✅ | 2026-03-20 |
+| R-01 | DÃ©composer strategy_simulator.py | ðŸ”µ P1 | `backtests/strategy_simulator.py` | 3-5j | ✅ | 2026-03-20 |
+| R-02 | DÃ©composer pair_trading.py | ðŸ”µ P1 | `strategies/pair_trading.py` | 2-4j | ✅ | 2026-03-20 |
+| R-03 | Ã‰liminer TradeOrder | ðŸ”µ P1 | `execution_engine/router.py:42-67` | 1-2j | ✅ | 2026-03-20 |
+| R-04 | Ajouter Protocols typing | ðŸ”µ P2 | `execution/base.py` + 3 modules | 1j | ✅ | 2026-03-20 |
 
