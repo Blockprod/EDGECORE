@@ -277,15 +277,7 @@ class DataLoader:
             )
             return results
 
-        # Debug snapshot: write the to_fetch list types/reprs to disk for troubleshooting
-        try:
-            with open("debug_bulk_to_fetch_snapshot.txt", "w", encoding="utf-8") as df:
-                df.write("idx\ttype\trepr\tsymbol\n")
-                for i, sym in enumerate(to_fetch[:500]):
-                    df.write(f"{i}\t{type(sym).__name__}\t{repr(sym)}\t{str(sym)}\n")
-        except Exception:
-            pass
-
+        logger.debug("bulk_load_to_fetch_snapshot", count=len(to_fetch), first_five=[str(s) for s in to_fetch[:5]])
         logger.info(
             "bulk_load_starting",
             cached=len(results),
@@ -364,18 +356,6 @@ class DataLoader:
             to_fetch[i::max_workers] for i in range(max_workers)
         ]
         completed = 0
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)
-            }
-            for future in as_completed(futures):
-                worker_results = future.result()
-                for sym, df in worker_results.items():
-                    completed += 1
-                    # ...existing code...
-
-        completed = 0
-        # Use only chunked worker logic (each worker gets a unique client_id)
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
                 executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)
