@@ -8,7 +8,8 @@ modele: claude-sonnet-4.6
 
 # PLAN D'ACTION â€” EDGECORE â€” 2026-03-20
 Sources : `tasks/audits/audit_structural_edgecore.md`
-Total : ðŸ”´ 2 Â· ðŸŸ  7 Â· ðŸŸ¡ 5 Â· ðŸ”µ 4 Â· Effort estimÃ© : 12â€“18 jours
+Total : 🔴 2 · 🟠 7 · 🟡 7 · 🔵 4 · Effort estimé : 12–18 jours + 2h
+*(C-15 et C-16 ajoutés le 2026-03-20 — items S-13 et S-18 initialement non capturés)*
 
 ---
 
@@ -498,7 +499,63 @@ DÃ©pend de : Aucune
 Statut : ✅
 
 ---
+### [C-15] Supprimer import research/ depuis scripts/phase4_validation.py
 
+Fichier : `scripts/phase4_validation.py:379`
+
+Problème : `scripts/phase4_validation.py:379` contient `from research.pair_discovery import CointegrationAnalyzer`.
+La règle absolue interdit tout import depuis `research/` hors du module lui-même
+et de `examples/`. Ce script de validation peut être appelé depuis la CI,
+créant une dépendance involontaire prod→research.
+
+Correction :
+  1. Lire `scripts/phase4_validation.py` autour de la ligne 379.
+  2. Remplacer `from research.pair_discovery import CointegrationAnalyzer`
+     par l'import canonique depuis `pair_selection/discovery.py` ou `models/cointegration.py`.
+  3. Adapter les appels pour utiliser l'API de production.
+
+Validation :
+  ```powershell
+  grep -n "from research" scripts/phase4_validation.py
+  # Attendu : 0 résultats
+  venv\Scripts\python.exe -m pytest tests/ -x -q
+  # Attendu : 2659+ passed, 0 failed
+  ```
+
+Dépend de : Aucune
+Statut : ⏳
+
+---
+
+### [C-16] Clarifier le rôle de config/config.yaml (chargé ou supprimé)
+
+Fichier : `config/config.yaml`
+
+Problème : `config/config.yaml` existe mais n'est jamais chargé par `Settings._load_yaml()`.
+Seuls `dev.yaml`, `test.yaml`, `prod.yaml` sont chargés. Un développeur qui modifie
+`config.yaml` voit ses changements silencieusement ignorés.
+
+Correction :
+  Option A (recommandée) : renommer en `config/config.yaml.example` ou déplacer
+    dans `docs/archived/`. Ajouter un commentaire dans `Settings._load_yaml()`.
+  Option B : charger `config.yaml` comme base defaults puis y appliquer `{env}.yaml`
+    par dessus (cascade deep-merge).
+
+Validation :
+  ```powershell
+  venv\Scripts\python.exe -c "
+  import os; os.environ['EDGECORE_ENV']='dev'
+  from config.settings import get_settings; s=get_settings()
+  s._assert_risk_tier_coherence(); print('OK')
+  "
+  venv\Scripts\python.exe -m pytest tests/ -x -q
+  # Attendu : 2659+ passed, 0 failed
+  ```
+
+Dépend de : Aucune
+Statut : ⏳
+
+---
 ## PHASE 4 â€” REFACTORING MAJEUR ðŸ”µ (post-corrections critiques)
 
 Ces items sont des restructurations profondes. Ã€ planifier sÃ©parÃ©ment aprÃ¨s
@@ -626,4 +683,5 @@ Statut : ✅
 | R-02 | DÃ©composer pair_trading.py | ðŸ”µ P1 | `strategies/pair_trading.py` | 2-4j | ✅ | 2026-03-20 |
 | R-03 | Ã‰liminer TradeOrder | ðŸ”µ P1 | `execution_engine/router.py:42-67` | 1-2j | ✅ | 2026-03-20 |
 | R-04 | Ajouter Protocols typing | ðŸ”µ P2 | `execution/base.py` + 3 modules | 1j | ✅ | 2026-03-20 |
-
+| C-15 | Supprimer import research/ depuis scripts/ | 🟠 P2 | `scripts/phase4_validation.py:379` | 1h | ⏳ | — |
+| C-16 | Clarifier rôle config/config.yaml | 🟡 P3 | `config/config.yaml` | 30min | ⏳ | — |
