@@ -6,5 +6,5 @@ PYTHON="$REPO_ROOT/venv/Scripts/python.exe"
 SCRIPT="$REPO_ROOT/scripts/update_lessons.py"
 
 if [ -f "$PYTHON" ] && [ -f "$SCRIPT" ]; then
-    "$PYTHON" "$SCRIPT" 2>&1 || true
+    PYTHONIOENCODING=utf-8 "$PYTHON" "$SCRIPT" 2>&1 || true
 fi

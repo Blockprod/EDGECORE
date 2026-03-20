@@ -23,6 +23,12 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Force UTF-8 stdout/stderr regardless of Windows console encoding (cp1252).
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 # ─── Chemins ─────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.parent
 LESSONS_FILE = ROOT / "tasks" / "lessons.md"
