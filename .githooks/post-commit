@@ -1,0 +1,10 @@
+#!/bin/sh
+# EDGECORE — auto-update tasks/lessons.md after each commit
+# Ne fait rien si le script n'existe pas ou si Python n'est pas disponible.
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+PYTHON="$REPO_ROOT/venv/Scripts/python.exe"
+SCRIPT="$REPO_ROOT/scripts/update_lessons.py"
+
+if [ -f "$PYTHON" ] && [ -f "$SCRIPT" ]; then
+    "$PYTHON" "$SCRIPT" 2>&1 || true
+fi

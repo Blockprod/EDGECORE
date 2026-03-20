@@ -238,3 +238,27 @@ Commandes disponibles à tout moment :
   STOP  → sauvegarde l'état et arrête
   PLAN  → affiche les corrections restantes
   STATUS → affiche le tableau de progression
+
+─────────────────────────────────────────────
+ÉTAPE FINALE — CAPTURE DE LEÇONS
+─────────────────────────────────────────────
+Après la dernière correction validée et committée,
+vérifie si des anti-patterns ont été corrigés durant
+cette session. Si oui, ajoute une entrée dans
+tasks/lessons.md (le hook post-commit le fait aussi
+automatiquement, mais une revue manuelle est plus riche).
+
+Format d'entrée :
+## L-XX · [Titre court]
+
+**Contexte** : [ce qui était fait / pourquoi l'erreur s'est glissée]
+**Erreur** : [le problème découvert]
+**Règle** : [la règle à ne plus enfreindre]
+**Ref** : [fichiers:lignes] — commit [hash]
+
+---
+
+NE PAS ajouter de leçon si :
+- Corrections purement documentaires (markdown only)
+- La leçon existe déjà dans lessons.md (vérifier par grep)
+- La correction n'apprend rien de nouveau (renommage trivial)
