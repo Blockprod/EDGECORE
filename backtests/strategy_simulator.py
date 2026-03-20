@@ -21,6 +21,8 @@ from structlog import get_logger
 
 from backtests.cost_model import CostModel
 from backtests.metrics import BacktestMetrics, set_trading_days
+from backtests.order_book import SimulatedOrderBook
+from backtests.simulation_loop import OOSTracker
 from data.event_filter import EventFilter
 from execution.algo_executor import AlgoConfig, AlgoType, TWAPExecutor
 from execution.borrow_check import BorrowChecker
@@ -281,7 +283,7 @@ class StrategyBacktestSimulator:
         logger.info("annualisation_set", trading_days=_ann_bars, bars_per_day=self.bars_per_day)
 
         # Portfolio tracking
-        positions: Dict[str, dict] = {}
+        positions = SimulatedOrderBook()
         portfolio_values: List[float] = [self.initial_capital]
         daily_returns: List[float] = []
         trades_pnl: List[float] = []          # round-trip P&L per closed trade
@@ -324,17 +326,8 @@ class StrategyBacktestSimulator:
         # training window (bars before oos_start_date) but only collects
         # performance metrics for the OOS period.  This gives proper
         # walk-forward statistics without look-ahead bias.
-        _oos_start_bar_idx = None
-        _oos_trade_start_idx = None   # set once we enter the OOS window
-        oos_daily_returns: list = []
-        if oos_start_date is not None:
-            _oos_ts = pd.Timestamp(oos_start_date)
-            _oos_candidates = [
-                i for i, ts in enumerate(prices_df.index)
-                if pd.Timestamp(ts) >= _oos_ts
-            ]
-            if _oos_candidates:
-                _oos_start_bar_idx = max(lookback_min, _oos_candidates[0])
+        oos_tracker = OOSTracker(oos_start_date)
+        oos_tracker.initialize(prices_df, lookback_min)
 
         from tqdm import tqdm
         print("[BACKTEST] D├®marrage du backtest principal...")
@@ -380,10 +373,7 @@ class StrategyBacktestSimulator:
                 dr = fc_pnl / portfolio_values[-1] if portfolio_values[-1] > 0 else 0.0
                 daily_returns.append(dr)
                 portfolio_values.append(new_val)
-                if _oos_start_bar_idx is not None and bar_idx >= _oos_start_bar_idx:
-                    if _oos_trade_start_idx is None:
-                        _oos_trade_start_idx = len(trades_pnl)
-                    oos_daily_returns.append(dr)
+                oos_tracker.record(bar_idx, len(trades_pnl), dr)
                 prev_unrealised_total = 0.0
                 # Feed VaR monitor even during halt
                 self.var_monitor.update(dr)
@@ -391,11 +381,7 @@ class StrategyBacktestSimulator:
             elif _dd_action.close_fraction > 0:
                 # Tier 2: close a fraction of positions (weakest first by P&L)
                 _n_to_close = max(1, int(len(positions) * _dd_action.close_fraction))
-                _sorted_positions = sorted(
-                    positions.keys(),
-                    key=lambda pk: self._unrealized_pnl(positions[pk], prices_df, bar_idx),
-                )
-                for pk in _sorted_positions[:_n_to_close]:
+                for pk in positions.weakest_positions(prices_df, bar_idx, _n_to_close):
                     pc = positions.pop(pk)
                     cpnl, tpnl = self._close_position(pc, prices_df, bar_idx)
                     realized_pnl += cpnl
@@ -773,10 +759,8 @@ class StrategyBacktestSimulator:
                             * self.leverage_multiplier
                         )
 
-                    # Phase 4 ÔÇô Portfolio heat enforcement
-                    current_heat = self._compute_portfolio_heat(
-                        positions, portfolio_values[-1]
-                    )
+                    # Phase 4 — Portfolio heat enforcement
+                    current_heat = positions.portfolio_heat(portfolio_values[-1])
                     if current_heat + (notional / portfolio_values[-1] if portfolio_values[-1] > 0 else 0) > self.max_portfolio_heat:
                         logger.debug(
                             "entry_rejected_portfolio_heat",
@@ -1264,10 +1248,7 @@ class StrategyBacktestSimulator:
             portfolio_values.append(new_value)
 
             # ---- OOS tracking for walk-forward -------------------------
-            if _oos_start_bar_idx is not None and bar_idx >= _oos_start_bar_idx:
-                if _oos_trade_start_idx is None:
-                    _oos_trade_start_idx = len(trades_pnl)
-                oos_daily_returns.append(daily_ret)
+            oos_tracker.record(bar_idx, len(trades_pnl), daily_ret)
 
             # ---- Phase 2.3: Feed VaR monitor with daily return ----
             self.var_monitor.update(daily_ret)
@@ -1301,20 +1282,19 @@ class StrategyBacktestSimulator:
                 daily_returns.append(daily_ret)
                 portfolio_values.append(portfolio_values[-1] + fc_realized)
                 # Force-close bar is always in OOS (it's the last bar)
-                if _oos_start_bar_idx is not None:
-                    oos_daily_returns.append(daily_ret)
+                oos_tracker.record(len(prices_df) - 1, len(trades_pnl), daily_ret)
 
         # ---- Build metrics ------------------------------------------
         # When oos_start_date was supplied, compute metrics on OOS window only.
-        if _oos_start_bar_idx is not None and oos_daily_returns:
+        if oos_tracker.start_bar_idx is not None and oos_tracker.daily_returns:
             _oos_trades = (
-                trades_pnl[_oos_trade_start_idx:]
-                if _oos_trade_start_idx is not None
+                trades_pnl[oos_tracker.trade_start_idx:]
+                if oos_tracker.trade_start_idx is not None
                 else []
             )
-            _metrics_returns = pd.Series(oos_daily_returns)
+            _metrics_returns = pd.Series(oos_tracker.daily_returns)
             _metrics_trades = _oos_trades
-            _period_start = str(prices_df.index[_oos_start_bar_idx])[:10]
+            _period_start = str(prices_df.index[oos_tracker.start_bar_idx])[:10]
             _period_end   = str(prices_df.index[-1])[:10]
         else:
             _metrics_returns = (
@@ -1441,24 +1421,6 @@ class StrategyBacktestSimulator:
                 score += 0.25
 
         return 0.5 + score  # Range [0.5, 1.5]
-
-    def _unrealized_pnl(
-        self, pos: dict, prices_df: pd.DataFrame, bar_idx: int
-    ) -> float:
-        """Compute unrealized P&L for a position at bar_idx."""
-        sym1, sym2 = pos["sym1"], pos["sym2"]
-        cur_p1 = prices_df[sym1].iloc[bar_idx]
-        cur_p2 = prices_df[sym2].iloc[bar_idx]
-        ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
-        _n1 = pos.get("notional_1", pos["notional"] / 2.0)
-        _n2 = pos.get("notional_2", pos["notional"] / 2.0)
-        if pos["side"] == "long":
-            r1 = (cur_p1 - ep1) / ep1 if ep1 else 0
-            r2 = (ep2 - cur_p2) / ep2 if ep2 else 0
-        else:
-            r1 = (ep1 - cur_p1) / ep1 if ep1 else 0
-            r2 = (cur_p2 - ep2) / ep2 if ep2 else 0
-        return _n1 * r1 + _n2 * r2
 
     def _close_position(
         self,
@@ -1687,37 +1649,6 @@ class StrategyBacktestSimulator:
             return cls._ADV_MEGA_CAP
         # All v31h symbols are large-cap at minimum
         return cls._ADV_LARGE_CAP
-
-    @staticmethod
-    def _unrealized_pnl(pos: dict, prices_df: pd.DataFrame, bar_idx: int) -> float:
-        """Return mark-to-market unrealised P&L for a single position."""
-        sym1, sym2 = pos["sym1"], pos["sym2"]
-        cur_p1 = prices_df[sym1].iloc[bar_idx]
-        cur_p2 = prices_df[sym2].iloc[bar_idx]
-        ep1, ep2 = pos["entry_price_1"], pos["entry_price_2"]
-        n1 = pos.get("notional_1", pos["notional"] / 2.0)
-        n2 = pos.get("notional_2", pos["notional"] / 2.0)
-        if pos["side"] == "long":
-            r1 = (cur_p1 - ep1) / ep1 if ep1 else 0.0
-            r2 = (ep2 - cur_p2) / ep2 if ep2 else 0.0
-        else:
-            r1 = (ep1 - cur_p1) / ep1 if ep1 else 0.0
-            r2 = (cur_p2 - ep2) / ep2 if ep2 else 0.0
-        return n1 * r1 + n2 * r2
-
-    @staticmethod
-    def _compute_portfolio_heat(
-        positions: Dict[str, dict],
-        portfolio_value: float,
-    ) -> float:
-        """Compute current portfolio heat (sum of position notionals / equity).
-
-        A value of 0.20 means 20% of the portfolio is exposed.
-        """
-        if portfolio_value <= 0 or not positions:
-            return 0.0
-        total_notional = sum(p["notional"] for p in positions.values())
-        return total_notional / portfolio_value
 
     def _compute_sector_exposure(
         self,
