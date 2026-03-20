@@ -1,4 +1,4 @@
-﻿from typing import Any, Dict, Optional
+﻿from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -545,3 +545,44 @@ def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> Optional[i
     if hl is None:
         return None
     return int(np.round(hl))
+
+
+def is_cointegration_stable(
+    sym1: str,
+    sym2: str,
+    price_data,
+    windows: Optional[List[int]] = None,
+    threshold: float = 0.8,
+) -> bool:
+    """
+    Check cointegration stability for a pair over multiple rolling windows.
+
+    Returns ``True`` if the pair is cointegrated in at least *threshold*
+    fraction of the rolling windows tested.
+
+    Args:
+        sym1: First symbol name (column in *price_data*).
+        sym2: Second symbol name (column in *price_data*).
+        price_data: Mapping / DataFrame of price series keyed by symbol.
+        windows: Rolling window sizes in bars. Defaults to ``[60, 120, 180]``.
+        threshold: Minimum fraction of windows that must show cointegration.
+
+    Returns:
+        ``True`` if sufficiently stable, ``False`` otherwise.
+    """
+    if windows is None:
+        windows = [60, 120, 180]
+    stable_count = 0
+    total = 0
+    for win in windows:
+        if len(price_data[sym1]) < win or len(price_data[sym2]) < win:
+            continue
+        y = price_data[sym1].tail(win)
+        x = price_data[sym2].tail(win)
+        result = engle_granger_test(y, x, apply_bonferroni=False, check_integration_order=False)
+        if result.get("is_cointegrated", False):
+            stable_count += 1
+        total += 1
+    if total == 0:
+        return False
+    return stable_count / total >= threshold

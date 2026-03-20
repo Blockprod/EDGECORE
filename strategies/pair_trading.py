@@ -10,7 +10,7 @@ from statsmodels.tsa.stattools import adfuller
 from structlog import get_logger
 
 from config.settings import get_settings
-from models.cointegration import engle_granger_test, half_life_mean_reversion, verify_integration_order
+from models.cointegration import engle_granger_test, half_life_mean_reversion, is_cointegration_stable, verify_integration_order
 from models.cointegration import newey_west_consensus as _newey_west_consensus
 from models.spread import SpreadModel
 from signal_engine.combiner import SignalCombiner, SignalSource
@@ -22,6 +22,7 @@ from signal_engine.ou_signal import OUSignalGenerator
 from signal_engine.sentiment import SentimentSignal
 from signal_engine.vol_signal import VolatilityRegimeSignal
 from strategies.base import BaseStrategy, Signal
+from strategies.trade_book import StrategyTradeBook
 
 logger = get_logger(__name__)
 
@@ -42,28 +43,6 @@ class PairTradingStrategy(BaseStrategy):
     """
 
     @staticmethod
-    def is_cointegration_stable(sym1, sym2, price_data, windows=[60, 120, 180], threshold=0.8):
-        """
-        Check cointegration stability for a pair over multiple rolling windows.
-        Returns True if cointegration holds in >= threshold fraction of windows.
-        """
-        from models.cointegration import engle_granger_test
-        stable_count = 0
-        total = 0
-        for win in windows:
-            if len(price_data[sym1]) < win or len(price_data[sym2]) < win:
-                continue
-            y = price_data[sym1].tail(win)
-            x = price_data[sym2].tail(win)
-            result = engle_granger_test(y, x, apply_bonferroni=False, check_integration_order=False)
-            if result.get('is_cointegrated', False):
-                stable_count += 1
-            total += 1
-        if total == 0:
-            return False
-        return stable_count / total >= threshold
-
-    @staticmethod
     def _cfg_val(config, name: str, default):
         """Safe config accessor ÔÇô returns *default* when the attribute is absent
         or is a mock auto-attribute (MagicMock)."""
@@ -75,7 +54,7 @@ class PairTradingStrategy(BaseStrategy):
     def __init__(self, clock: Optional[ClockFn] = None):
         self.config = get_settings().strategy
         self.spread_models: Dict[str, SpreadModel] = {}
-        self.active_trades: Dict[str, dict] = {}
+        self.active_trades = StrategyTradeBook()
         self.historical_spreads: Dict[str, pd.Series] = {}
         self.use_cache: bool = True
 
@@ -683,7 +662,7 @@ class PairTradingStrategy(BaseStrategy):
         stability_threshold = 0.8
         stable_pairs = []
         for sym1, sym2, pvalue, hl in cointegrated_pairs:
-            if self.is_cointegration_stable(sym1, sym2, price_data, windows=stability_windows, threshold=stability_threshold):
+            if is_cointegration_stable(sym1, sym2, price_data, windows=stability_windows, threshold=stability_threshold):
                 stable_pairs.append((sym1, sym2, pvalue, hl))
             else:
                 logger.info("pair_stability_failed", pair=f"{sym1}_{sym2}", windows=stability_windows, threshold=stability_threshold)
@@ -1195,5 +1174,5 @@ class PairTradingStrategy(BaseStrategy):
         return {
             'active_trades': len(self.active_trades),
             'pairs_monitored': len(self.spread_models),
-            'active_trade_details': self.active_trades
+            'active_trade_details': self.active_trades.as_dict()
         }
