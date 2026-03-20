@@ -1,7 +1,7 @@
 ﻿from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, Dict
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
 from datetime import datetime, timezone
 
 class OrderSide(Enum):
@@ -79,3 +79,68 @@ class BaseExecutionEngine(ABC):
     def get_account_balance(self) -> float:
         """Get current account balance."""
         pass
+
+
+# ---------------------------------------------------------------------------
+# Structural sub-typing Protocols (PEP 544)
+# Enables testing via injection without inheriting from concrete classes.
+# ---------------------------------------------------------------------------
+
+@runtime_checkable
+class SignalGeneratorProtocol(Protocol):
+    """Structural interface for signal generators.
+
+    Any object with a ``generate()`` method matching this signature satisfies
+    the protocol — no inheritance required.  Enables mock injection in tests.
+    """
+
+    def generate(
+        self,
+        market_data: Any,
+        active_pairs: List[Any],
+        active_positions: Dict[str, Any],
+    ) -> List[Any]:
+        """Generate trading signals from market data."""
+        ...
+
+
+@runtime_checkable
+class AllocatorProtocol(Protocol):
+    """Structural interface for position allocators."""
+
+    def allocate(
+        self,
+        pair_key: str,
+        signal_strength: float,
+        spread_vol: float,
+        half_life: float,
+        win_rate: float,
+        avg_win_loss_ratio: float,
+    ) -> Any:
+        """Compute position size for a pair signal."""
+        ...
+
+    def release(self, pair_key: str) -> None:
+        """Release allocation for a closed pair."""
+        ...
+
+    def update_equity(self, equity: float) -> None:
+        """Update current equity for heat calculations."""
+        ...
+
+
+@runtime_checkable
+class DataLoaderProtocol(Protocol):
+    """Structural interface for market data loaders."""
+
+    def bulk_load(
+        self,
+        symbols: List[str],
+        timeframe: str,
+        limit: int,
+        max_workers: int,
+        use_cache: bool,
+        rate_limiter: Any,
+    ) -> Dict[str, Any]:
+        """Load OHLCV data for a list of symbols."""
+        ...
