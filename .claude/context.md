@@ -160,10 +160,10 @@ exit_threshold:  float = 0.2
 
 ## Dettes techniques connues (ne pas aggraver)
 
-| ID | Localisation | Description | Fix requis |
-|----|-------------|-------------|-----------|
-| B5-01 | `Dockerfile:34`, `docker-compose.yml:11` | `EDGECORE_ENV=production` → fallback `dev.yaml` silencieux | Changer en `prod` |
-| B5-02 | `execution_engine/router.py:162,189` | `slippage = 2.0` hardcodé, ignore `CostConfig` | Lire `get_settings().costs` |
-| B2-01 | `execution_engine/router.py:37` | `TradeOrder` duplique `Order` de `execution/base.py` | Unifier |
-| B2-02 | `live_trading/runner.py:224-231` | `PositionRiskManager` + `PortfolioRiskManager` + `KillSwitch` + `RiskFacade` instanciés séparément | `RiskFacade` devrait tout contenir |
-| B4-05 | `backtester/` | Pas de `__init__.py` — pas importable | Créer `__init__.py` |
+| ID | Localisation | Description | Statut |
+|----|-------------|-------------|--------|
+| B5-01 | `Dockerfile:37`, `docker-compose.yml:11` | `EDGECORE_ENV=production` → fallback `dev.yaml` silencieux | ✅ CORRIGÉ — `prod` (2026-03-20) |
+| B5-02 | `execution_engine/router.py:162,189` | `slippage = 2.0` hardcodé, ignore `CostConfig` | ⚠️ OUVERT — lire `get_settings().costs` |
+| B2-01 | `execution_engine/router.py:37` | `TradeOrder` duplique `Order` de `execution/base.py` | ⚠️ OUVERT — unifier |
+| B2-02 | `live_trading/runner.py:224-231` | `PositionRiskManager` + `PortfolioRiskManager` + `KillSwitch` + `RiskFacade` instanciés séparément | ⚠️ OUVERT — `RiskFacade` devrait tout contenir |
+| B4-05 | `backtester/` | Pas de `__init__.py` — pas importable | ✅ CORRIGÉ — `__init__.py` créé (2026-03-20) |

@@ -123,7 +123,7 @@ from execution_engine.router import TradeOrder  # doublon B2-01
 ```powershell
 # Baseline complète (doit passer)
 venv\Scripts\python.exe -m pytest tests/ -q
-# Attendu : 2654 passed, 0 failed, 0 skipped
+# Attendu : 2659 passed, 0 failed, 0 skipped
 
 # Vérification DeprecationWarning utcnow
 venv\Scripts\python.exe -m pytest tests/ -W error::DeprecationWarning -q

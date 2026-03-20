@@ -5,7 +5,7 @@
 1. **Sécurité & correctness** — jamais de régression silencieuse
 2. **Cohérence risk tiers** — T1 ≤ T2 ≤ T3 (10% ≤ 15% ≤ 20%)
 3. **Zéro DeprecationWarning** — `datetime.now(timezone.utc)` partout
-4. **Tests verts** — 2654 passed, 0 skipped, 0 failed (baseline)
+4. **Tests verts** — 2659 passed, 0 skipped, 0 failed (baseline)
 5. **Config centralisée** — toujours `get_settings()`, jamais hardcoder
 6. **Logging structuré** — `structlog`, jamais `print()`
 
@@ -96,7 +96,7 @@ HISTORICAL_DATA_ERRORS = {162, 200, 354}
 6. **Validation finale** :
    ```powershell
    venv\Scripts\python.exe -m pytest tests/ -q
-   # Résultat attendu : 2654 passed, 0 failed, 0 skipped
+   # Résultat attendu : 2659 passed, 0 failed, 0 skipped
    ```
 
 ---
