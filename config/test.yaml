@@ -10,7 +10,7 @@ market:
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
-  exit_z_score: 0.0
+  exit_z_score: 0.5
   min_correlation: 0.7
   max_half_life: 60
   use_kalman: true

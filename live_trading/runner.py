@@ -637,14 +637,20 @@ class LiveTradingRunner:
                         logger.info("live_trading_signal_blocked_position_risk", pair=sig.pair_key)
                         continue
 
-                # 4b. Portfolio-level risk check
-                if self._portfolio_risk:
-                    portfolio_ok = self._portfolio_risk.check(
-                        positions=self._positions,
-                        new_signal=sig,
+                # 4b. Portfolio-level risk check via RiskFacade (unified drawdown + kill-switch gate)
+                if self._risk_facade:
+                    current_eq = (
+                        self._router.get_account_balance()
+                        if self._router else self.config.initial_capital
                     )
-                    if not portfolio_ok:
-                        logger.info("live_trading_signal_blocked_portfolio_risk", pair=sig.pair_key)
+                    facade_ok, facade_reason = self._risk_facade.can_enter_trade(
+                        symbol_pair=sig.pair_key,
+                        position_size=0.0,
+                        current_equity=current_eq,
+                        volatility=0.0,
+                    )
+                    if not facade_ok:
+                        logger.info("live_trading_signal_blocked_risk_facade", pair=sig.pair_key, reason=facade_reason)
                         continue
 
                 # 4c. Size the position via allocator

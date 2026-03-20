@@ -189,7 +189,7 @@ class ExecutionRouter:
             requested_qty=order.quantity,
             filled_qty=order.quantity,
             fill_price=price * (1 + slippage / 10_000 if side_str == "buy" else 1 - slippage / 10_000),
-            commission=order.quantity * price * 0.00005,  # ~0.5 bps
+            commission=order.quantity * price * get_settings().costs.commission_pct,
             slippage_bps=slippage,
         )
 
@@ -208,7 +208,7 @@ class ExecutionRouter:
         side_str = side.value.lower() if hasattr(side, 'value') else str(side).lower()
         price = order.limit_price or 0.0
         from config.settings import get_settings
-        slippage = get_settings().execution.slippage_bps
+        slippage = get_settings().costs.slippage_bps
 
         # A-02: record immediate fill for paper orders
         order_id = getattr(order, 'order_id', None)
@@ -223,7 +223,7 @@ class ExecutionRouter:
             requested_qty=order.quantity,
             filled_qty=order.quantity,
             fill_price=price * (1 + slippage / 10_000 if side_str == "buy" else 1 - slippage / 10_000),
-            commission=order.quantity * price * 0.00005,
+            commission=order.quantity * price * get_settings().costs.commission_pct,
             slippage_bps=slippage,
         )
 
