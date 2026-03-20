@@ -325,45 +325,10 @@ tasks/
     └── PLAN_ACTION_EDGECORE_2026-03-17.md
 ```
 
-Lance cet audit sur le workspace.
-```
-
----
-
-### Exécution d'un plan File Engineering
-
-**Prompt** : `tasks/execute_corrections_prompt.md`
-**Mode**   : Agent
-**Modèle** : Sonnet 4.6
-**Lit**    : tout plan .md détecté dans le workspace
-```
-#file:tasks/execute_corrections_prompt.md
-Démarre l'exécution du plan disponible dans ce workspace.
-```
-
----
-
-## STRUCTURE COMPLÈTE DU DOSSIER TASKS
-```
-tasks/
-├── WORKFLOW.md                       ← ce fichier
-│
-├── audit_master_prompt.md            ← ÉTAPE 1
-├── generate_action_plan_prompt.md    ← ÉTAPE 2
-├── execute_corrections_prompt.md     ← ÉTAPE 3
-│
-├── audit_technical_prompt.md         ← audits spécialisés
-├── audit_strategic_prompt.md
-├── audit_structural_prompt.md
-├── audit_ai_driven_prompt.md
-├── audit_email_alerts_prompt.md
-│
-└── audit_structural_checklist.md     ← suivi corrections
-```
-
 ---
 
 ## RÈGLE D'OR
+
 ```
 Ne jamais lancer ÉTAPE 3 sans avoir
 validé le plan de l'ÉTAPE 2 manuellement.
