@@ -1,12 +1,14 @@
 ﻿# ============================================================================
-# EDGECORE ÔÇö Unified Configuration
+# EDGECORE — Reference Configuration (FICHIER DE RÉFÉRENCE UNIQUEMENT)
 # ============================================================================
-# Master configuration for the EDGECORE statistical arbitrage system.
-# Market: US Equities via Interactive Brokers
-# Annualisation: 252 trading days
+# ⚠️  CE FICHIER N'EST PAS CHARGÉ PAR Settings._load_yaml().
 #
-# Environment-specific overrides can be placed in dev.yaml / prod.yaml / test.yaml
-# and will be merged on top of this base config.
+# Settings charge uniquement : dev.yaml / test.yaml / prod.yaml
+# (sélection via la variable d'environnement EDGECORE_ENV).
+#
+# Ce fichier sert de référence documentaire listant tous les paramètres
+# disponibles avec leurs valeurs par défaut.
+# Pour modifier la config runtime, éditer le fichier {env}.yaml approprié.
 # ============================================================================
 
 # --------------------------------------------------------------------------

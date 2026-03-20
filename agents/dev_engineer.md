@@ -110,11 +110,12 @@ RETRY_DELAYS      = [5, 15, 30]   # secondes + ±30% jitter
 
 ### Hiérarchie de surcharge
 ```
-config/config.yaml   → defaults tous envs
-config/dev.yaml      → EDGECORE_ENV=dev
-config/test.yaml     → EDGECORE_ENV=test
-config/prod.yaml     → EDGECORE_ENV=prod
+config/config.yaml   → ⚠️ NON CHARGÉ — référence documentaire uniquement
+config/dev.yaml      → EDGECORE_ENV=dev  (fichier runtime actif)
+config/test.yaml     → EDGECORE_ENV=test (fichier runtime actif)
+config/prod.yaml     → EDGECORE_ENV=prod (fichier runtime actif)
 ```
+Settings._load_yaml() charge UNIQUEMENT {env}.yaml — jamais config.yaml.
 
 **ATTENTION** : `EDGECORE_ENV=production` → tombe sur `dev.yaml` silencieusement (B5-01).
 

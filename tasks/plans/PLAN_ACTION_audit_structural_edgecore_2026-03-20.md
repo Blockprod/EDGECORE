@@ -683,5 +683,5 @@ Statut : ✅
 | R-02 | DÃ©composer pair_trading.py | ðŸ”µ P1 | `strategies/pair_trading.py` | 2-4j | ✅ | 2026-03-20 |
 | R-03 | Ã‰liminer TradeOrder | ðŸ”µ P1 | `execution_engine/router.py:42-67` | 1-2j | ✅ | 2026-03-20 |
 | R-04 | Ajouter Protocols typing | ðŸ”µ P2 | `execution/base.py` + 3 modules | 1j | ✅ | 2026-03-20 |
-| C-15 | Supprimer import research/ depuis scripts/ | 🟠 P2 | `scripts/phase4_validation.py:379` | 1h | ⏳ | — |
-| C-16 | Clarifier rôle config/config.yaml | 🟡 P3 | `config/config.yaml` | 30min | ⏳ | — |
+| C-15 | Supprimer import research/ depuis scripts/ | 🟠 P2 | `scripts/phase4_validation.py:379` | 1h | ✅ | 2026-03-20 |
+| C-16 | Clarifier rôle config/config.yaml | 🟡 P3 | `config/config.yaml` | 30min | ✅ | 2026-03-20 |

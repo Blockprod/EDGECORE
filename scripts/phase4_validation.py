@@ -376,7 +376,7 @@ class Phase4Validator:
         # Will be measured during live trading
         # For now, verify pair discovery module exists
         try:
-            from research.pair_discovery import CointegrationAnalyzer
+            from pair_selection.discovery import PairDiscoveryEngine  # noqa: F401
             return True
         except ImportError:
             return False

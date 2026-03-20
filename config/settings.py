@@ -252,6 +252,8 @@ class Settings:
             logger.warning("invalid_environment", env=self.env, valid=valid_envs)
             self.env = "dev"
         
+        # Valid config files: dev.yaml | test.yaml | prod.yaml (selected by EDGECORE_ENV).
+        # config/config.yaml is a reference document ONLY — never loaded at runtime.
         config_path = Path(__file__).parent / f"{self.env}.yaml"
         
         self.strategy = StrategyConfig()
