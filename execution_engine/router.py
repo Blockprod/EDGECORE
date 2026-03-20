@@ -22,6 +22,7 @@ from typing import Dict, List, Optional
 
 from structlog import get_logger
 
+from execution.base import Order, OrderSide
 from execution.rate_limiter import TokenBucketRateLimiter
 
 logger = get_logger(__name__)
@@ -32,36 +33,6 @@ class ExecutionMode(Enum):
     BACKTEST = "backtest"
     PAPER = "paper"
     LIVE = "live"
-
-
-@dataclass
-class TradeOrder:
-    """Typed order submitted to the execution router.
-
-    .. deprecated::
-        Use ``execution.base.Order`` instead.  ``TradeOrder`` is a legacy
-        duplicate (B2-01) that will be removed in a future release.
-        Migrate callers to ``execution.base.Order`` with ``pair_key`` stored
-        in the ``metadata`` dict.
-    """
-    pair_key: str
-    symbol: str
-    side: str           # "buy" or "sell"
-    quantity: float
-    limit_price: Optional[float] = None
-    order_type: str = "market"
-    metadata: Dict = field(default_factory=dict)
-
-    def __post_init__(self) -> None:
-        import warnings
-        warnings.warn(
-            "TradeOrder is deprecated (B2-01). Use execution.base.Order instead.",
-            DeprecationWarning,
-            stacklevel=3,
-        )
-
-    def __repr__(self) -> str:
-        return f"Order({self.symbol} {self.side} {self.quantity:.2f} @{self.limit_price or 'MKT'})"
 
 
 @dataclass
@@ -131,7 +102,7 @@ class ExecutionRouter:
     # Order submission
     # ------------------------------------------------------------------
 
-    def submit_order(self, order: TradeOrder) -> TradeExecution:
+    def submit_order(self, order: Order) -> TradeExecution:
         """
         Submit an order to the active execution backend.
 
@@ -172,10 +143,7 @@ class ExecutionRouter:
     # ------------------------------------------------------------------
 
     def _simulate_fill(self, order) -> TradeExecution:
-        """Backtest mode: instant fill at limit price with cost model.
-
-        Accepts both ``execution.base.Order`` and the legacy ``TradeOrder``.
-        """
+        """Backtest mode: instant fill at limit price with cost model."""
         from config.settings import get_settings
         price = order.limit_price or 0.0
         slippage = get_settings().costs.slippage_bps
@@ -194,18 +162,13 @@ class ExecutionRouter:
         )
 
     def _paper_fill(self, order) -> TradeExecution:
-        """Paper mode: uses PaperExecutionEngine for realistic simulation.
-
-        Accepts both TradeOrder and execution.base.Order objects.
-        """
+        """Paper mode: uses PaperExecutionEngine for realistic simulation."""
         if self._paper_engine is None:
             from execution.paper_execution import PaperExecutionEngine
             self._paper_engine = PaperExecutionEngine()
 
-        # Resolve fields compatible with both TradeOrder and execution.base.Order
-        pair_key = getattr(order, 'pair_key', None) or getattr(order, 'symbol', '')
-        side = order.side
-        side_str = side.value.lower() if hasattr(side, 'value') else str(side).lower()
+        pair_key = getattr(order, 'pair_key', order.metadata.get('pair_key', order.symbol) if hasattr(order, 'metadata') else order.symbol)
+        side_str = order.side.value.lower() if hasattr(order.side, 'value') else str(order.side).lower()
         price = order.limit_price or 0.0
         from config.settings import get_settings
         slippage = get_settings().costs.slippage_bps
@@ -231,7 +194,6 @@ class ExecutionRouter:
         """
         Live mode: submits to Interactive Brokers via IBKRExecutionEngine.
 
-        Accepts both TradeOrder and execution.base.Order objects.
         Connects lazily, submits the order, waits for fill confirmation,
         and returns a TradeExecution with actual fill data.
         """
@@ -246,18 +208,17 @@ class ExecutionRouter:
 
         # Build an Order compatible with IBKRExecutionEngine.
         # Reuse the caller's order_id if available (A-02: enables fill-confirmation tracking).
-        from execution.base import Order as IBKROrder, OrderSide, OrderStatus
+        from execution.base import OrderStatus
         from uuid import uuid4
 
-        side = order.side
-        side_str = side.value.lower() if hasattr(side, 'value') else str(side).lower()
+        side_str = order.side.value.lower() if hasattr(order.side, 'value') else str(order.side).lower()
         ibkr_side = OrderSide.BUY if side_str == 'buy' else OrderSide.SELL
 
         # Preserve the caller's order_id so _pending_orders can be keyed on it
         original_order_id = getattr(order, 'order_id', None) or str(uuid4())
-        pair_key = getattr(order, 'pair_key', None) or getattr(order, 'symbol', '')
+        pair_key = order.metadata.get('pair_key', order.symbol) if hasattr(order, 'metadata') else order.symbol
 
-        ibkr_order = IBKROrder(
+        ibkr_order = Order(
             order_id=original_order_id,
             symbol=order.symbol,
             side=ibkr_side,
