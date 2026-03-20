@@ -1,4 +1,8 @@
-﻿import warnings
+﻿# Internal implementation — external callers SHOULD use backtester.runner.BacktestEngine
+# instead of importing from this module directly.
+# Internal implementation — external callers SHOULD use backtester.runner.BacktestEngine
+# instead of importing from this module directly.
+import warnings
 
 import numpy as np
 import pandas as pd

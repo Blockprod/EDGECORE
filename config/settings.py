@@ -301,7 +301,11 @@ class Settings:
     def _validate_config(self) -> None:
         """Validate loaded configuration using Pydantic schemas."""
         try:
-            from config.schemas import RiskConfigSchema, StrategyConfigSchema
+            from config.schemas import (
+                RiskConfigSchema, StrategyConfigSchema,
+                ExecutionConfigSchema, DataSourceConfigSchema,
+                AlerterConfigSchema, BacktestConfigSchema,
+            )
             # Validate risk config
             RiskConfigSchema(
                 max_drawdown_pct=self.risk.max_drawdown_pct * 100,  # schema expects 0-100
@@ -313,6 +317,20 @@ class Settings:
                 exit_z_score=self.strategy.exit_z_score,
                 entry_z_min_spread=self.strategy.entry_z_min_spread,
                 short_sizing_multiplier=self.strategy.short_sizing_multiplier,
+            )
+            # Validate execution engine constraints
+            ExecutionConfigSchema()
+            # Validate data source defaults
+            DataSourceConfigSchema()
+            # Validate alerter defaults
+            AlerterConfigSchema()
+            # Validate backtest date range and costs
+            BacktestConfigSchema(
+                start_date=self.backtest.start_date,
+                end_date=self.backtest.end_date,
+                initial_equity=self.backtest.initial_capital,
+                slippage_pct=self.costs.slippage_bps / 100,      # bps → percent
+                commission_pct=self.costs.commission_pct * 100,   # fraction → percent
             )
             logger.debug("config_validation_passed")
         except ImportError:

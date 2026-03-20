@@ -27,7 +27,7 @@ ext_modules = [
 
 setup(
     name='edgecore',
-    version='0.1.0',
+    version='1.0.0',
     description='Statistical Arbitrage Trading System - Python/Cython Hybrid',
     author='EDGECORE Team',
     packages=find_packages(),

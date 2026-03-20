@@ -48,3 +48,12 @@ backtest:
   commission_bps: 2.0
   walk_forward_periods: 4
   out_of_sample_ratio: 0.2
+
+costs:
+  slippage_bps: 3.0
+  commission_pct: 0.00035
+  maker_fee_bps: 1.5
+  taker_fee_bps: 2.0
+  borrowing_cost_annual: 0.005
+  max_slippage_bps: 50.0
+  slippage_model: "fixed_bps"
