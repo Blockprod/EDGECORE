@@ -2,7 +2,8 @@
 modele: sonnet-4.6
 mode: agent
 contexte: codebase
-derniere_revision: 2026-03-17
+produit: tasks/audits/audit_master_edgecore.md
+derniere_revision: 2026-03-20
 ---
 
 #codebase
@@ -10,6 +11,29 @@ derniere_revision: 2026-03-17
 Tu es un Lead Software Architect senior spécialisé en systèmes
 de trading quantitatifs, finance algorithmique et systèmes
 distribués critiques.
+
+─────────────────────────────────────────────
+ÉTAPE 0 — VÉRIFICATION PRÉALABLE (OBLIGATOIRE)
+─────────────────────────────────────────────
+Vérifie si ce fichier existe déjà dans :
+  tasks/audits/audit_master_edgecore.md
+
+Si trouvé, affiche :
+"⚠️ Audit existant détecté :
+ Fichier : tasks/audits/audit_master_edgecore.md
+ Date    : [date de dernière modification]
+ Lignes  : [nombre approximatif]
+
+ [NOUVEAU]  → audit complet (écrase l'existant)
+ [MÀJOUR]   → compléter sections manquantes
+              sans écraser ce qui est correct
+ [ANNULER]  → abandonner
+
+ Réponds NOUVEAU / MÀJOUR / ANNULER"
+
+Si absent → démarrer directement sans confirmation :
+"✅ Aucun audit existant détecté.
+ Démarrage de l'audit complet..."
 
 Tu maîtrises :
 - Architectures low-latency et event-driven
@@ -254,7 +278,13 @@ FORMAT
 - Zéro blabla
 - Pas de code sauf pour illustrer un point critique réel
 - Tableau de synthèse en fin de chaque section majeure
-- Fichier produit directement à la racine du projet
-```
 
----
+─────────────────────────────────────────────
+SORTIE OBLIGATOIRE
+─────────────────────────────────────────────
+Crée le fichier :
+  tasks/audits/audit_master_edgecore.md
+Crée le dossier tasks/audits/ s'il n'existe pas.
+Aucune réponse dans le chat, sauf :
+"✅ tasks/audits/audit_master_edgecore.md créé
+ 🔴 X · 🟠 X · 🟡 X"

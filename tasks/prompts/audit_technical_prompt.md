@@ -1,8 +1,35 @@
+---
+modele: sonnet-4.6
+mode: agent
+contexte: codebase
+produit: tasks/audits/audit_technical_edgecore.md
+derniere_revision: 2026-03-20
+---
+
 #codebase
 
 Tu es un Senior Security Engineer et Python Expert spécialisé
 en systèmes de trading institutionnel. Tu réalises un audit
 EXCLUSIVEMENT technique et sécurité sur le projet EDGECORE.
+
+─────────────────────────────────────────────
+ÉTAPE 0 — VÉRIFICATION PRÉALABLE (OBLIGATOIRE)
+─────────────────────────────────────────────
+Vérifie si ce fichier existe déjà dans :
+  tasks/audits/audit_technical_edgecore.md
+
+Si trouvé, affiche :
+"⚠️ Audit technique existant détecté :
+ Fichier : tasks/audits/audit_technical_edgecore.md
+ Date    : [date modification]
+ Lignes  : [nombre approximatif]
+
+ [NOUVEAU]  → audit complet (écrase l'existant)
+ [MÀJOUR]   → compléter sections manquantes
+ [ANNULER]  → abandonner"
+
+Si absent → démarrer directement :
+"✅ Aucun audit technique existant. Démarrage..."
 
 ─────────────────────────────────────────────
 CONTEXTE PROJET
@@ -232,3 +259,30 @@ Format : ## BLOC X pour chaque section,
 tableaux Markdown, bloc structuré
 Problème / Preuve / Impact / Correction
 pour chaque anomalie identifiée.
+
+─────────────────────────────────────────────
+SORTIE OBLIGATOIRE
+─────────────────────────────────────────────
+Crée le fichier :
+  tasks/audits/audit_technical_edgecore.md
+Crée le dossier tasks/audits/ s'il n'existe pas.
+
+Structure du fichier :
+## BLOC 1 — SÉCURITÉ CREDENTIALS
+## BLOC 2 — ROBUSTESSE IBKR
+## BLOC 3 — THREAD-SAFETY
+## BLOC 4 — PERSISTANCE
+## BLOC 5 — TESTS ET CI/CD
+## SYNTHÈSE
+
+Tableau synthèse :
+| ID | Bloc | Description | Fichier:Ligne |
+| Sévérité | Impact | Effort |
+
+Sévérité P0/P1/P2/P3.
+Top 3 risques avant tout déploiement réel.
+Points forts à conserver.
+
+Confirme dans le chat :
+"✅ tasks/audits/audit_technical_edgecore.md créé
+ 🔴 X · 🟠 X · 🟡 X"

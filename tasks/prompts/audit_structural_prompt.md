@@ -1,8 +1,35 @@
+---
+modele: sonnet-4.6
+mode: agent
+contexte: codebase
+produit: tasks/audits/audit_structural_edgecore.md
+derniere_revision: 2026-03-20
+---
+
 #codebase
 
 Tu es un Software Architect spécialisé en systèmes financiers
 modulaires et AI-Driven Repository Engineering.
 Tu réalises un audit EXCLUSIVEMENT structurel sur EDGECORE.
+
+─────────────────────────────────────────────
+ÉTAPE 0 — VÉRIFICATION PRÉALABLE (OBLIGATOIRE)
+─────────────────────────────────────────────
+Vérifie si ce fichier existe déjà dans :
+  tasks/audits/audit_structural_edgecore.md
+
+Si trouvé, affiche :
+"⚠️ Audit structurel existant détecté :
+ Fichier : tasks/audits/audit_structural_edgecore.md
+ Date    : [date modification]
+ Lignes  : [nombre approximatif]
+
+ [NOUVEAU]  → audit complet (écrase l'existant)
+ [MÀJOUR]   → compléter sections manquantes
+ [ANNULER]  → abandonner"
+
+Si absent → démarrer directement :
+"✅ Aucun audit structurel existant. Démarrage..."
 
 ─────────────────────────────────────────────
 PÉRIMÈTRE STRICT
@@ -85,3 +112,32 @@ Schéma textuel du pipeline réel.
 Graphe des dépendances entre les 9 modules publics.
 Top 3 problèmes structurels qui bloquent la scalabilité.
 Points solides à conserver.
+
+─────────────────────────────────────────────
+SORTIE OBLIGATOIRE
+─────────────────────────────────────────────
+Crée le fichier :
+  tasks/audits/audit_structural_edgecore.md
+Crée le dossier tasks/audits/ s'il n'existe pas.
+
+Structure du fichier :
+## BLOC 1 — PIPELINE RÉEL
+## BLOC 2 — DOUBLONS FONCTIONNELS
+## BLOC 3 — SÉPARATION DES RESPONSABILITÉS
+## BLOC 4 — DETTE TECHNIQUE
+## BLOC 5 — CONFIGURATION ET ENVIRONNEMENTS
+## SYNTHÈSE
+
+Tableau synthèse :
+| ID | Bloc | Problème | Fichier:Ligne |
+| Sévérité | Impact | Effort |
+
+Sévérité P0/P1/P2/P3.
+Schéma textuel du pipeline réel.
+Graphe des dépendances entre les 9 modules publics.
+Top 3 problèmes structurels bloquants.
+Points solides à conserver.
+
+Confirme dans le chat :
+"✅ tasks/audits/audit_structural_edgecore.md créé
+ 🔴 X · 🟠 X · 🟡 X"
