@@ -15,7 +15,6 @@ from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
 
-from execution.modes import ExecutionEngine, ModeType, ExecutionContext
 from data.loader import DataLoader
 from data.validators import OHLCVValidator, EquityValidator
 from monitoring.alerter import AlertManager
@@ -228,50 +227,6 @@ def independent_pair():
 
 
 # ============================================================================
-# EXECUTION ENGINE FIXTURES
-# ============================================================================
-
-@pytest.fixture
-def paper_engine():
-    """Paper trading execution engine."""
-    engine = ExecutionEngine(mode=ModeType.PAPER)
-    engine.context.equity = 100000.0
-    engine.context.cash = 100000.0
-    return engine
-
-
-@pytest.fixture
-def backtest_engine():
-    """Backtest execution engine."""
-    engine = ExecutionEngine(mode=ModeType.BACKTEST)
-    engine.context.equity = 100000.0
-    engine.context.cash = 100000.0
-    return engine
-
-
-@pytest.fixture
-def live_engine_mock():
-    """Mock live trading engine (for testing without real broker)."""
-    engine = ExecutionEngine(mode=ModeType.LIVE)
-    engine.context.equity = 100000.0
-    engine.context.cash = 100000.0
-    
-    # Mock the API client
-    engine.executor.api_client = MagicMock()
-    engine.executor.api_client.submit_order = MagicMock(
-        return_value="mock_order_123"
-    )
-    
-    return engine
-
-
-@pytest.fixture
-def execution_context():
-    """Bare execution context for testing."""
-    return ExecutionContext()
-
-
-# ============================================================================
 # VALIDATOR FIXTURES
 # ============================================================================
 
@@ -351,9 +306,9 @@ def temp_data_dir(tmp_path):
 
 
 def create_sample_position(symbol="AAPL", quantity=1.0, entry_price=50000.0):
-    """Helper to create sample position."""
-    from execution.modes import Position
-    
+    """Helper to create sample position. NOTE: modes_legacy.Position — C-09 pending full migration."""
+    from execution.modes_legacy import Position
+
     return Position(
         symbol=symbol,
         quantity=quantity,

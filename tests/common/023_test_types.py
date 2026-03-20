@@ -184,9 +184,9 @@ class TestTypeHints:
         assert hasattr(circuit_breaker.CircuitBreaker, '__init__')
     
     def test_execution_modes_module_types(self):
-        """Test execution modes module has type hints."""
-        from execution import modes
-        
+        """Test execution modes module has type hints. C-09: archived as modes_legacy."""
+        from execution import modes_legacy as modes
+
         # Check main classes exist
         assert hasattr(modes, 'ExecutionEngine')
         assert hasattr(modes, 'ExecutionContext')

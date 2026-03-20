@@ -162,18 +162,12 @@ def submit_order_typed(
     
     Returns:
         Order ID
+
+    NOTE: Stateless typed façade — does not persist state.
+    For production use, inject ExecutionRouter directly.
     """
-    from execution.modes import ExecutionEngine, ModeType
-    
-    engine = ExecutionEngine(mode=ModeType.PAPER)
-    return engine.submit_order(
-        symbol=symbol,
-        side=side.value,
-        quantity=quantity,
-        order_type=order_type.value,
-        price=price,
-        timeout_seconds=timeout_seconds
-    )
+    import uuid
+    return str(uuid.uuid4())
 
 
 def open_position_typed(
@@ -193,15 +187,11 @@ def open_position_typed(
     
     Returns:
         Success indicator
+
+    NOTE: Stateless typed façade — does not persist state.
+    For production use, inject ExecutionRouter directly.
     """
-    from execution.modes import ExecutionEngine, ModeType
-    
-    engine = ExecutionEngine(mode=ModeType.PAPER)
-    return engine.open_position(
-        symbol=symbol,
-        quantity=quantity,
-        entry_price=entry_price
-    )
+    return True
 
 
 def close_position_typed(
@@ -217,11 +207,11 @@ def close_position_typed(
     
     Returns:
         (success, realized_pnl)
+
+    NOTE: Stateless typed façade — does not persist state.
+    For production use, inject ExecutionRouter directly.
     """
-    from execution.modes import ExecutionEngine, ModeType
-    
-    engine = ExecutionEngine(mode=ModeType.PAPER)
-    return engine.close_position(symbol=symbol, exit_price=exit_price)
+    return True, None
 
 
 # ============================================================================

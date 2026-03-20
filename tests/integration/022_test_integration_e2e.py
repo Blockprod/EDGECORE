@@ -16,7 +16,7 @@ import numpy as np
 from models.cointegration import engle_granger_test
 from models.spread import SpreadModel
 from risk.engine import RiskEngine
-from execution.modes import ExecutionEngine, ModeType
+from execution.modes_legacy import ExecutionEngine, ModeType  # C-09: archived, tests pending migration
 from data.validators import OHLCVValidator
 from monitoring.alerter import AlertManager
 from config.schemas import FullConfigSchema

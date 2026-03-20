@@ -1,12 +1,19 @@
 ﻿"""
-Unified execution engine with pluggable execution modes.
+ARCHIVED — legacy parallel execution architecture (C-09).
 
-Abstracts execution differences (paper/live/backtest) through:
-- ExecutionContext: Shared state for all modes
-- ExecutionMode abstract base: Interface for mode-specific logic
-- Mode-specific implementations: Paper, Live, Backtest
+This module has been superseded by:
+  - execution/base.py   — Order, OrderStatus, BaseExecutionEngine
+  - execution_engine/router.py — ExecutionRouter (canonical execution path)
 
-This eliminates code duplication and makes adding new modes easy.
+DO NOT use this module in new production code.
+Imports in tests remain until full migration is complete.
+
+Original docstring:
+    Unified execution engine with pluggable execution modes.
+    Abstracts execution differences (paper/live/backtest) through:
+    - ExecutionContext: Shared state for all modes
+    - ExecutionMode abstract base: Interface for mode-specific logic
+    - Mode-specific implementations: Paper, Live, Backtest
 """
 
 from abc import ABC, abstractmethod

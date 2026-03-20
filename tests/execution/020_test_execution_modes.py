@@ -14,7 +14,9 @@ Covers:
 import pytest
 from datetime import datetime, timezone
 
-from execution.modes import (
+# C-09: execution/modes.py renamed to modes_legacy.py (archived).
+# This test file covers the legacy architecture; pending migration to ExecutionRouter.
+from execution.modes_legacy import (
     ModeType,
     OrderStatus,
     Order,

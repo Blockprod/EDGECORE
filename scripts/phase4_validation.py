@@ -263,7 +263,7 @@ class Phase4Validator:
         """Verify live trading hard stops are implemented."""
         logger.info("reliability_check", check="hard_stops")
         try:
-            from execution.modes import LiveTradingMode
+            from execution.modes_legacy import LiveTradingMode  # C-09: archived
             import inspect
             
             # Check LiveTradingMode has hard stop implementation
@@ -387,7 +387,7 @@ class Phase4Validator:
         # Will be measured during paper trading
         # Latency tracking implemented in execution/modes.py
         try:
-            from execution.modes import ExecutionMode
+            from execution.modes_legacy import ExecutionMode  # C-09: archived
             return True
         except ImportError:
             return False
