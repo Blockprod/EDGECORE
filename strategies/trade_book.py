@@ -110,5 +110,9 @@ class StrategyTradeBook:
     def __bool__(self) -> bool:
         return bool(self._trades)
 
+    def clear(self) -> None:
+        """Remove all active trades (backward-compatible with dict.clear())."""
+        self._trades.clear()
+
 
 __all__ = ["StrategyTradeBook"]

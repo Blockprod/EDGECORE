@@ -589,11 +589,11 @@ Statut : ✅
 
 ## CRITÃˆRES PASSAGE EN PRODUCTION
 
-- [ ] ZÃ©ro ðŸ”´ ouvert (C-01 et C-02 rÃ©solus et testÃ©s)
+- [x] Zéro 🔴 ouvert (C-01 et C-02 rÃ©solus et testÃ©s)
 - [x] `pytest tests/ -q` : 2659 passed, 0 failed
-- [ ] `pytest tests/ -W error::DeprecationWarning -q` : 0 DeprecationWarning
-- [ ] `mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary` : exit 0
-- [ ] `ruff check .` : 0 erreurs
+- [x] `pytest tests/ -W error::DeprecationWarning -q` : 0 DeprecationWarning
+- [x] `mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary` : exit 0
+- [x] `ruff check .` : 0 erreurs
 - [x] `Test-Path "debug_bulk_to_fetch_snapshot.txt"` : False (pas de fichier debug en prod)
 - [x] `grep -n "class OrderStatus" execution/modes.py` (archivé → `modes_legacy.py`) : 0 rÃ©sultats
 - [x] `grep -n "execution.slippage_bps" execution_engine/router.py` : 0 rÃ©sultats
