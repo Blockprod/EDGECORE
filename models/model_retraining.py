@@ -35,7 +35,7 @@ Example:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -220,7 +220,7 @@ class ModelRetrainingManager:
         cointegrated_count = 0
 
         # Filter data to lookback window
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.discovery_lookback_days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=self.discovery_lookback_days)
         if isinstance(price_data.index, pd.DatetimeIndex):
             cutoff_ts = pd.Timestamp(cutoff_date)
             if price_data.index.tz is None:
@@ -297,7 +297,7 @@ class ModelRetrainingManager:
         reestimated = {}
 
         # Filter data to lookback window
-        cutoff_date = datetime.now(timezone.utc) - timedelta(days=self.discovery_lookback_days)
+        cutoff_date = datetime.now(UTC) - timedelta(days=self.discovery_lookback_days)
         if isinstance(price_data.index, pd.DatetimeIndex):
             cutoff_ts = pd.Timestamp(cutoff_date)
             if price_data.index.tz is None:
@@ -340,12 +340,12 @@ class ModelRetrainingManager:
                         metadata.current_p_value = p_value
                         metadata.hedge_ratio_drift = drift
                         metadata.reestimation_count += 1
-                        metadata.last_reestimate_date = datetime.now(timezone.utc)
+                        metadata.last_reestimate_date = datetime.now(UTC)
 
                         # Check if still valid
                         if p_value >= self.cointegration_threshold:
                             metadata.is_valid = False
-                            metadata.metadata["invalidated_date"] = datetime.now(timezone.utc).isoformat()
+                            metadata.metadata["invalidated_date"] = datetime.now(UTC).isoformat()
                             metadata.metadata["invalidation_reason"] = (
                                 f"p_value {p_value:.4f} > threshold {self.cointegration_threshold}"
                             )

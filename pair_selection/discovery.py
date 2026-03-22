@@ -42,9 +42,11 @@ logger = get_logger(__name__)
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CointegratedPair:
     """Result of a successful cointegration screen."""
+
     symbol_1: str
     symbol_2: str
     pvalue: float
@@ -66,6 +68,7 @@ class CointegratedPair:
 @dataclass
 class DiscoveryConfig:
     """Configuration for pair discovery."""
+
     min_correlation: float = 0.7
     max_half_life: int = 60
     lookback_window: int = 252
@@ -82,6 +85,7 @@ class DiscoveryConfig:
 # ---------------------------------------------------------------------------
 # Engine
 # ---------------------------------------------------------------------------
+
 
 class PairDiscoveryEngine:
     """
@@ -147,8 +151,7 @@ class PairDiscoveryEngine:
             List of CointegratedPair results sorted by half-life.
         """
         warnings.warn(
-            "PairDiscoveryEngine.discover() is deprecated. "
-            "Use PairTradingStrategy.find_cointegrated_pairs() instead.",
+            "PairDiscoveryEngine.discover() is deprecated. Use PairTradingStrategy.find_cointegrated_pairs() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -166,9 +169,7 @@ class PairDiscoveryEngine:
         # Generate pairs if not provided
         if candidate_pairs is None:
             candidate_pairs = [
-                (symbols[i], symbols[j])
-                for i in range(len(symbols))
-                for j in range(i + 1, len(symbols))
+                (symbols[i], symbols[j]) for i in range(len(symbols)) for j in range(i + 1, len(symbols))
             ]
 
         if not candidate_pairs:
@@ -189,13 +190,10 @@ class PairDiscoveryEngine:
             condensed = dist[np.triu_indices(len(symbols), k=1)]
             Z = linkage(condensed, method="ward")
             labels = fcluster(Z, t=0.5, criterion="distance")
-            sym_cluster = dict(zip(symbols, labels.tolist()))
+            sym_cluster = dict(zip(symbols, labels.tolist(), strict=False))
 
             pre_count = len(candidate_pairs)
-            candidate_pairs = [
-                (s1, s2) for s1, s2 in candidate_pairs
-                if sym_cluster.get(s1) == sym_cluster.get(s2)
-            ]
+            candidate_pairs = [(s1, s2) for s1, s2 in candidate_pairs if sym_cluster.get(s1) == sym_cluster.get(s2)]
             logger.info(
                 "clustering_filter_applied",
                 before=pre_count,
@@ -337,6 +335,7 @@ class PairDiscoveryEngine:
             return None
         try:
             import json
+
             with open(path) as f:
                 raw = json.load(f)
             pairs = [
@@ -361,6 +360,7 @@ class PairDiscoveryEngine:
         try:
             import json
             import shutil
+
             path = self._cache_path()
             tmp = path.with_suffix(".tmp")
             raw = [
@@ -388,6 +388,7 @@ class PairDiscoveryEngine:
     def clear_cache(self) -> None:
         """Delete cached pair data."""
         import shutil
+
         if self._cache_dir.exists():
             shutil.rmtree(self._cache_dir)
             self._cache_dir.mkdir(parents=True, exist_ok=True)
