@@ -13,7 +13,6 @@ Two responsibilities:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -60,9 +59,9 @@ class FactorModel:
         beta = fm.portfolio_beta(positions, prices_df, bar_idx, portfolio_value)
     """
 
-    def __init__(self, config: Optional[FactorModelConfig] = None):
+    def __init__(self, config: FactorModelConfig | None = None):
         self.config = config or FactorModelConfig()
-        self._beta_cache: Dict[str, float] = {}
+        self._beta_cache: dict[str, float] = {}
         self._bars_since_estimate: int = 0
         logger.info(
             "factor_model_initialized",
@@ -76,7 +75,7 @@ class FactorModel:
         prices_df: pd.DataFrame,
         symbol: str,
         bar_idx: int,
-    ) -> Optional[float]:
+    ) -> float | None:
         """Estimate rolling beta of *symbol* to the benchmark.
 
         Uses OLS: R_sym = alpha + beta * R_bench + eps
@@ -87,8 +86,8 @@ class FactorModel:
             return None
 
         start = max(0, bar_idx - self.config.lookback)
-        sym_prices = prices_df[symbol].iloc[start:bar_idx + 1]
-        bench_prices = prices_df[bench_col].iloc[start:bar_idx + 1]
+        sym_prices = prices_df[symbol].iloc[start : bar_idx + 1]
+        bench_prices = prices_df[bench_col].iloc[start : bar_idx + 1]
 
         if len(sym_prices) < self.config.min_observations:
             return None
@@ -163,11 +162,11 @@ class FactorModel:
 
     def portfolio_beta(
         self,
-        positions: Dict[str, dict],
+        positions: dict[str, dict],
         prices_df: pd.DataFrame,
         bar_idx: int,
         portfolio_value: float,
-    ) -> Tuple[float, bool]:
+    ) -> tuple[float, bool]:
         """Compute the aggregate portfolio beta and check if within limits.
 
         Each position contributes: beta_sym * (notional_sym / portfolio_value).
@@ -183,20 +182,18 @@ class FactorModel:
             return 0.0, True
 
         total_beta = 0.0
-        for _pair_key, pos in positions.items():
+        for pair_key, pos in positions.items():
             sym1, sym2 = pos["sym1"], pos["sym2"]
             not_per_leg = pos["notional"] / 2.0
 
-            beta1 = self._beta_cache.get(sym1) or self.estimate_beta(
-                prices_df, sym1, bar_idx
-            )
-            beta2 = self._beta_cache.get(sym2) or self.estimate_beta(
-                prices_df, sym2, bar_idx
-            )
+            beta1 = self._beta_cache.get(sym1) or self.estimate_beta(prices_df, sym1, bar_idx)
+            beta2 = self._beta_cache.get(sym2) or self.estimate_beta(prices_df, sym2, bar_idx)
 
             if beta1 is None:
+                logger.debug("beta_fallback", pair=pair_key, symbol=sym1, default=1.0)
                 beta1 = 1.0
             if beta2 is None:
+                logger.debug("beta_fallback", pair=pair_key, symbol=sym2, default=1.0)
                 beta2 = 1.0
 
             w1 = not_per_leg / portfolio_value
@@ -219,7 +216,7 @@ class FactorModel:
 
         return float(total_beta), is_neutral
 
-    def get_cached_betas(self) -> Dict[str, float]:
+    def get_cached_betas(self) -> dict[str, float]:
         """Return the current beta cache for diagnostics."""
         return dict(self._beta_cache)
 

@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Optional, Tuple
 
 from structlog import get_logger
 
@@ -73,13 +72,13 @@ class PortfolioRiskManager:
     def __init__(
         self,
         initial_equity: float = 100_000.0,
-        config: Optional[PortfolioRiskConfig] = None,
+        config: PortfolioRiskConfig | None = None,
     ):
         self.config = config or PortfolioRiskConfig()
         self._initial_equity = initial_equity
         self._current_equity = initial_equity
         self._peak_equity = initial_equity
-        self._equity_history: List[float] = [initial_equity]
+        self._equity_history: list[float] = [initial_equity]
 
         # Daily tracking
         self._daily_loss: float = 0.0
@@ -157,7 +156,7 @@ class PortfolioRiskManager:
     def can_open_position(
         self,
         position_risk_pct: float = 0.0,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Check whether a new position can be opened.
 

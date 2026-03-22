@@ -27,7 +27,6 @@ concentrated drawdowns from correlated mean-reversion failures.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -69,9 +68,9 @@ class SpreadCorrelationGuard:
         guard.remove_spread("AAPL_MSFT")
     """
 
-    def __init__(self, config: Optional[SpreadCorrelationConfig] = None):
+    def __init__(self, config: SpreadCorrelationConfig | None = None):
         self.config = config or SpreadCorrelationConfig()
-        self._spreads: Dict[str, pd.Series] = {}
+        self._spreads: dict[str, pd.Series] = {}
         logger.info(
             "spread_correlation_guard_initialized",
             max_correlation=self.config.max_correlation,
@@ -99,7 +98,7 @@ class SpreadCorrelationGuard:
         self,
         candidate_key: str,
         candidate_spread: pd.Series,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Decide whether *candidate_key* may enter.
 
         Args:
@@ -162,7 +161,7 @@ class SpreadCorrelationGuard:
         self,
         s1: pd.Series,
         s2: pd.Series,
-    ) -> Optional[float]:
+    ) -> float | None:
         """Pearson correlation over the overlapping tail.
 
         Returns ``None`` if fewer than ``min_overlap_bars`` observations

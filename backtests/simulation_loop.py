@@ -20,7 +20,6 @@ LoopState
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 import pandas as pd
 
@@ -45,11 +44,11 @@ class OOSTracker:
         # Post-run: use tracker.daily_returns, tracker.start_bar_idx, etc.
     """
 
-    oos_start_date: Optional[str] = None
+    oos_start_date: str | None = None
 
-    _start_bar_idx: Optional[int] = field(default=None, init=False, repr=False)
-    _trade_start_idx: Optional[int] = field(default=None, init=False, repr=False)
-    daily_returns: List[float] = field(default_factory=list, init=False)
+    _start_bar_idx: int | None = field(default=None, init=False, repr=False)
+    _trade_start_idx: int | None = field(default=None, init=False, repr=False)
+    daily_returns: list[float] = field(default_factory=list, init=False)
 
     def initialize(self, prices_df: pd.DataFrame, lookback_min: int) -> None:
         """Locate the first OOS bar index from the price DataFrame.
@@ -63,10 +62,7 @@ class OOSTracker:
         if self.oos_start_date is None:
             return
         _ts = pd.Timestamp(self.oos_start_date)
-        candidates = [
-            i for i, ts in enumerate(prices_df.index)
-            if pd.Timestamp(ts) >= _ts
-        ]
+        candidates = [i for i, ts in enumerate(prices_df.index) if pd.Timestamp(ts) >= _ts]
         if candidates:
             self._start_bar_idx = max(lookback_min, candidates[0])
 
@@ -96,12 +92,12 @@ class OOSTracker:
     # ------------------------------------------------------------------
 
     @property
-    def start_bar_idx(self) -> Optional[int]:
+    def start_bar_idx(self) -> int | None:
         """Index of the first OOS bar, or ``None`` when OOS is disabled."""
         return self._start_bar_idx
 
     @property
-    def trade_start_idx(self) -> Optional[int]:
+    def trade_start_idx(self) -> int | None:
         """Index into ``trades_pnl`` at which OOS trades begin, or ``None``."""
         return self._trade_start_idx
 
@@ -123,9 +119,9 @@ class LoopState:
 
     initial_capital: float
 
-    portfolio_values: List[float] = field(init=False)
-    daily_returns: List[float] = field(default_factory=list, init=False)
-    trades_pnl: List[float] = field(default_factory=list, init=False)
+    portfolio_values: list[float] = field(init=False)
+    daily_returns: list[float] = field(default_factory=list, init=False)
+    trades_pnl: list[float] = field(default_factory=list, init=False)
 
     def __post_init__(self) -> None:
         self.portfolio_values = [self.initial_capital]

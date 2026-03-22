@@ -14,15 +14,15 @@ Coverage:
 """
 
 import time
+
 import numpy as np
 import pandas as pd
 
 from models.cointegration import (
-    verify_integration_order,
     engle_granger_test,
     engle_granger_test_cpp_optimized,
+    verify_integration_order,
 )
-
 
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 # Helpers

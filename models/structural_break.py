@@ -38,7 +38,7 @@ Performance: CUSUM on 252 obs Ôëê 2-5 ms.  Acceptable bar-by-bar.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Tuple, Dict, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -78,7 +78,7 @@ class StructuralBreakDetector:
     checks to catch both abrupt and gradual breakdowns.
     """
 
-    def __init__(self, config: Optional[StructuralBreakConfig] = None):
+    def __init__(self, config: StructuralBreakConfig | None = None):
         self.config = config or StructuralBreakConfig()
         logger.info(
             "structural_break_detector_initialized",
@@ -89,9 +89,9 @@ class StructuralBreakDetector:
     def check(
         self,
         residuals: pd.Series,
-        y: Optional[pd.Series] = None,
-        x: Optional[pd.Series] = None,
-    ) -> Tuple[bool, Dict[str, Any]]:
+        y: pd.Series | None = None,
+        x: pd.Series | None = None,
+    ) -> tuple[bool, dict[str, Any]]:
         """Run structural break tests on cointegration residuals.
 
         Args:
@@ -108,7 +108,7 @@ class StructuralBreakDetector:
             * ``details`` dict with sub-test results.
         """
         n = len(residuals)
-        details: Dict[str, Any] = {
+        details: dict[str, Any] = {
             "n_observations": n,
             "cusum_break": False,
             "beta_break": False,
@@ -149,9 +149,9 @@ class StructuralBreakDetector:
 
     def _cusum_test(
         self, residuals: pd.Series,
-        y: Optional[pd.Series] = None,
-        x: Optional[pd.Series] = None,
-    ) -> Tuple[bool, float, float]:
+        y: pd.Series | None = None,
+        x: pd.Series | None = None,
+    ) -> tuple[bool, float, float]:
         """Compute the CUSUM statistic using proper recursive residuals.
 
         When *y* and *x* are provided the test uses genuine one-step-ahead
@@ -233,7 +233,7 @@ class StructuralBreakDetector:
 
     def _beta_stability(
         self, y: pd.Series, x: pd.Series
-    ) -> Tuple[bool, Optional[float]]:
+    ) -> tuple[bool, float | None]:
         """Check whether recent ╬▓ diverges from full-sample ╬▓.
 
         Estimates ╬▓ on the full sample and on the last ``beta_window``
@@ -277,7 +277,7 @@ class StructuralBreakDetector:
 
     def check_from_prices(
         self, y: pd.Series, x: pd.Series
-    ) -> Tuple[bool, Dict[str, Any]]:
+    ) -> tuple[bool, dict[str, Any]]:
         """Run structural break detection directly from price series.
 
         Estimates the cointegration regression internally and tests the

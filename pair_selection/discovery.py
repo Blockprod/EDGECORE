@@ -22,7 +22,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import pandas as pd
 from structlog import get_logger
@@ -30,6 +29,8 @@ from structlog import get_logger
 from models.cointegration import (
     engle_granger_test,
     half_life_mean_reversion,
+)
+from models.cointegration import (
     newey_west_consensus as _nw_consensus,
 )
 from models.johansen import JohansenCointegrationTest
@@ -57,7 +58,7 @@ class CointegratedPair:
     def pair_key(self) -> str:
         return f"{self.symbol_1}_{self.symbol_2}"
 
-    def as_tuple(self) -> Tuple[str, str, float, float]:
+    def as_tuple(self) -> tuple[str, str, float, float]:
         """Legacy tuple format for backward compatibility."""
         return (self.symbol_1, self.symbol_2, self.pvalue, self.half_life)
 
@@ -74,7 +75,8 @@ class DiscoveryConfig:
     newey_west_consensus: bool = True
     cache_dir: str = "cache/pairs"
     cache_ttl_hours: int = 12
-    num_workers: Optional[int] = None
+    num_workers: int | None = None
+    use_clustering: bool = False  # C-08: restrict pairs to same Ward cluster
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +103,7 @@ class PairDiscoveryEngine:
             print(p.pair_key, p.half_life)
     """
 
-    def __init__(self, config: Optional[DiscoveryConfig] = None):
+    def __init__(self, config: DiscoveryConfig | None = None):
         self.config = config or DiscoveryConfig()
         self._cache_dir = Path(self.config.cache_dir)
         self._cache_dir.mkdir(parents=True, exist_ok=True)
@@ -122,10 +124,10 @@ class PairDiscoveryEngine:
     def discover(
         self,
         price_data: pd.DataFrame,
-        candidate_pairs: Optional[List[Tuple[str, str]]] = None,
+        candidate_pairs: list[tuple[str, str]] | None = None,
         use_cache: bool = True,
-        lookback: Optional[int] = None,
-    ) -> List[CointegratedPair]:
+        lookback: int | None = None,
+    ) -> list[CointegratedPair]:
         """
         Run the full pair discovery pipeline.
 
@@ -173,6 +175,38 @@ class PairDiscoveryEngine:
             logger.warning("no_candidate_pairs")
             return []
 
+        # C-08: Optional hierarchical clustering — restrict pairs to same Ward cluster.
+        # Disabled by default (use_clustering=False) to preserve existing behaviour.
+        if self.config.use_clustering and len(symbols) >= 3:
+            import numpy as np
+            from scipy.cluster.hierarchy import fcluster, linkage
+
+            corr = data.corr().abs().fillna(0.0)
+            dist = 1.0 - corr.values
+            np.clip(dist, 0.0, None, out=dist)  # guard floating-point negatives
+            np.fill_diagonal(dist, 0.0)
+            # Condensed distance matrix (upper triangle)
+            condensed = dist[np.triu_indices(len(symbols), k=1)]
+            Z = linkage(condensed, method="ward")
+            labels = fcluster(Z, t=0.5, criterion="distance")
+            sym_cluster = dict(zip(symbols, labels.tolist()))
+
+            pre_count = len(candidate_pairs)
+            candidate_pairs = [
+                (s1, s2) for s1, s2 in candidate_pairs
+                if sym_cluster.get(s1) == sym_cluster.get(s2)
+            ]
+            logger.info(
+                "clustering_filter_applied",
+                before=pre_count,
+                after=len(candidate_pairs),
+                filtered=pre_count - len(candidate_pairs),
+            )
+
+        if not candidate_pairs:
+            logger.warning("no_candidate_pairs_after_clustering")
+            return []
+
         # Bonferroni-adjusted significance level
         n_tests = len(candidate_pairs)
         alpha = self.config.significance_level
@@ -195,7 +229,7 @@ class PairDiscoveryEngine:
             bonferroni_alpha=f"{alpha:.2e}",
         )
 
-        results: List[CointegratedPair] = []
+        results: list[CointegratedPair] = []
         try:
             with ThreadPoolExecutor(max_workers=n_workers) as pool:
                 raw = list(pool.map(self._test_single_pair, args_list))
@@ -226,8 +260,8 @@ class PairDiscoveryEngine:
 
     def _test_single_pair(
         self,
-        args: Tuple,
-    ) -> Optional[CointegratedPair]:
+        args: tuple,
+    ) -> CointegratedPair | None:
         """Test cointegration for one pair (worker function)."""
         sym1, sym2, series1, series2, alpha = args
 
@@ -293,7 +327,7 @@ class PairDiscoveryEngine:
     def _cache_path(self) -> Path:
         return self._cache_dir / "discovered_pairs.json"
 
-    def _load_cache(self) -> Optional[List[CointegratedPair]]:
+    def _load_cache(self) -> list[CointegratedPair] | None:
         path = self._cache_path()
         if not path.exists():
             return None
@@ -303,7 +337,7 @@ class PairDiscoveryEngine:
             return None
         try:
             import json
-            with open(path, "r") as f:
+            with open(path) as f:
                 raw = json.load(f)
             pairs = [
                 CointegratedPair(
@@ -323,7 +357,7 @@ class PairDiscoveryEngine:
             logger.warning("pair_cache_load_failed", error=str(exc))
             return None
 
-    def _save_cache(self, pairs: List[CointegratedPair]) -> None:
+    def _save_cache(self, pairs: list[CointegratedPair]) -> None:
         try:
             import json
             import shutil

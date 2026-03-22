@@ -19,10 +19,10 @@ Usage::
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
 from structlog import get_logger
 
 from backtests.cost_model import CostModel
@@ -35,14 +35,16 @@ logger = get_logger(__name__)
 # Data classes
 # ======================================================================
 
+
 @dataclass
 class Order:
     """Represents a single-leg order submitted to the simulated book."""
+
     pair_key: str
     symbol: str
-    side: str         # "buy" or "sell"
-    notional: float   # desired USD notional
-    price: float      # reference market price (close)
+    side: str  # "buy" or "sell"
+    notional: float  # desired USD notional
+    price: float  # reference market price (close)
 
     def __repr__(self) -> str:
         return f"Order({self.symbol} {self.side} ${self.notional:.0f} @{self.price:.4f})"
@@ -51,11 +53,12 @@ class Order:
 @dataclass
 class MarketState:
     """Snapshot of per-symbol market conditions at a single bar."""
+
     close: float
-    prev_close: Optional[float] = None
+    prev_close: float | None = None
     volume_24h: float = 1e9
-    high: Optional[float] = None
-    low: Optional[float] = None
+    high: float | None = None
+    low: float | None = None
 
     @property
     def gap_pct(self) -> float:
@@ -68,6 +71,7 @@ class MarketState:
 @dataclass
 class Fill:
     """Result of executing an *Order* through the simulated book."""
+
     pair_key: str
     symbol: str
     side: str
@@ -76,7 +80,7 @@ class Fill:
     fill_price: float
     slippage_bps: float
     is_partial: bool
-    execution_cost: float     # total fee + slippage in USD
+    execution_cost: float  # total fee + slippage in USD
     market_impact_bps: float
 
     @property
@@ -89,6 +93,7 @@ class Fill:
 # ======================================================================
 # EventDrivenBacktester
 # ======================================================================
+
 
 class EventDrivenBacktester:
     """
@@ -123,7 +128,7 @@ class EventDrivenBacktester:
 
     def __init__(
         self,
-        cost_model: Optional[CostModel] = None,
+        cost_model: CostModel | None = None,
         initial_capital: float = 100_000.0,
         book_depth_pct: float = 0.02,
         max_participation_rate: float = 0.05,
@@ -175,18 +180,18 @@ class EventDrivenBacktester:
         impact_bps = self.market_impact_coeff * np.sqrt(participation) * 10_000
         impact_factor = impact_bps / 10_000
         if order.side == "buy":
-            effective_price *= (1 + impact_factor)
+            effective_price *= 1 + impact_factor
         else:
-            effective_price *= (1 - impact_factor)
+            effective_price *= 1 - impact_factor
 
         # 4. Gap slippage
         gap_pct = market.gap_pct
         if gap_pct > 0.01:
             gap_extra = gap_pct * self.gap_slippage_multiplier
             if order.side == "buy":
-                effective_price *= (1 + gap_extra)
+                effective_price *= 1 + gap_extra
             else:
-                effective_price *= (1 - gap_extra)
+                effective_price *= 1 - gap_extra
 
         # Compute slippage in bps
         if mid > 0:
@@ -220,8 +225,8 @@ class EventDrivenBacktester:
     def run(
         self,
         prices_df: pd.DataFrame,
-        volume_df: Optional[pd.DataFrame] = None,
-        fixed_pairs: Optional[List[Tuple[str, str, float, float]]] = None,
+        volume_df: pd.DataFrame | None = None,
+        fixed_pairs: list[tuple[str, str, float, float]] | None = None,
         allocation_per_pair_pct: float = 2.0,
     ) -> BacktestMetrics:
         """
@@ -249,10 +254,10 @@ class EventDrivenBacktester:
         strategy.disable_cache()
 
         capital = self.initial_capital
-        positions: Dict[str, dict] = {}
-        portfolio_values: List[float] = [capital]
-        daily_returns: List[float] = []
-        trades_pnl: List[float] = []
+        positions: dict[str, dict] = {}
+        portfolio_values: list[float] = [capital]
+        daily_returns: list[float] = []
+        trades_pnl: list[float] = []
         total_costs: float = 0.0
 
         lookback_min = max(60, strategy.config.lookback_window)
@@ -271,7 +276,7 @@ class EventDrivenBacktester:
             )
 
         for bar_idx in range(lookback_min, len(prices_df)):
-            window = prices_df.iloc[:bar_idx + 1]
+            window = prices_df.iloc[: bar_idx + 1]
             current_bar = prices_df.iloc[bar_idx]
             prev_bar = prices_df.iloc[bar_idx - 1] if bar_idx > 0 else None
 
@@ -309,12 +314,8 @@ class EventDrivenBacktester:
                     buy_ms = ms1 if buy_sym == sym1 else ms2
                     sell_ms = ms2 if sell_sym == sym2 else ms1
 
-                    fill_buy = self.simulate_fill(
-                        Order(pair_key, buy_sym, "buy", alloc, buy_ms.close), buy_ms
-                    )
-                    fill_sell = self.simulate_fill(
-                        Order(pair_key, sell_sym, "sell", alloc, sell_ms.close), sell_ms
-                    )
+                    fill_buy = self.simulate_fill(Order(pair_key, buy_sym, "buy", alloc, buy_ms.close), buy_ms)
+                    fill_sell = self.simulate_fill(Order(pair_key, sell_sym, "sell", alloc, sell_ms.close), sell_ms)
 
                     entry_cost = fill_buy.execution_cost + fill_sell.execution_cost
                     total_costs += entry_cost
@@ -384,7 +385,7 @@ class EventDrivenBacktester:
                     holding_days = bar_idx - pos["entry_bar"]
                     hold_cost = self.cost_model.holding_cost(pos["notional"], holding_days)
                     fund_cost = self.cost_model.funding_cost(pos["notional"], holding_days)
-                    net_pnl -= (hold_cost + fund_cost)
+                    net_pnl -= hold_cost + fund_cost
                     total_costs += hold_cost + fund_cost
 
                     trades_pnl.append(net_pnl)
@@ -401,9 +402,7 @@ class EventDrivenBacktester:
 
             portfolio_values.append(capital)
             if len(portfolio_values) >= 2 and portfolio_values[-2] > 0:
-                daily_returns.append(
-                    (portfolio_values[-1] - portfolio_values[-2]) / portfolio_values[-2]
-                )
+                daily_returns.append((portfolio_values[-1] - portfolio_values[-2]) / portfolio_values[-2])
 
         # ---- Build metrics via from_returns ----
         returns_series = pd.Series(daily_returns, dtype=float)
@@ -437,10 +436,10 @@ class EventDrivenBacktester:
     def _market_state(
         symbol: str,
         current_bar: pd.Series,
-        prev_bar: Optional[pd.Series],
-        volume_df: Optional[pd.DataFrame],
+        prev_bar: pd.Series | None,
+        volume_df: pd.DataFrame | None,
         bar_idx: int,
-    ) -> Optional[MarketState]:
+    ) -> MarketState | None:
         """Build a *MarketState* for *symbol* from bar data."""
         if symbol not in current_bar.index:
             return None
@@ -451,9 +450,7 @@ class EventDrivenBacktester:
             vol = float(volume_df.iloc[bar_idx][symbol])
         return MarketState(close=close, prev_close=prev_close, volume_24h=vol)
 
-    def _participation_rate(
-        self, notional: float, price: float, volume_24h: float
-    ) -> float:
+    def _participation_rate(self, notional: float, price: float, volume_24h: float) -> float:
         """Order size as fraction of daily volume (in base units)."""
         if price <= 0 or volume_24h <= 0:
             return 1.0  # worst-case

@@ -8,13 +8,11 @@ Tests for SpreadHalfLifeEstimator:
 - Edge cases
 """
 
-import pytest
 import numpy as np
 import pandas as pd
-from models.half_life_estimator import (
-    SpreadHalfLifeEstimator,
-    estimate_half_life
-)
+import pytest
+
+from models.half_life_estimator import SpreadHalfLifeEstimator, estimate_half_life
 
 
 class TestOUProcessHalfLife:

@@ -19,10 +19,20 @@
     "logs",
     "results",
     "cache",
-    "scripts/ARCHIVED_*"
+    "research",
+    "scripts/ARCHIVED_*",
+    "ARCHIVED_*"
   ],
-  "typeCheckingMode": "off",
-  "reportMissingImports": "none",
+
+  "typeCheckingMode": "basic",
+
+  "reportMissingImports": "warning",
   "reportMissingModuleSource": "none",
-  "reportMissingTypeStubs": "none"
+  "reportMissingTypeStubs": "none",
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportDuplicateImport": "warning",
+  "reportUndefinedVariable": "error",
+  "reportReturnType": "warning",
+  "reportAssertAlwaysTrue": "warning"
 }

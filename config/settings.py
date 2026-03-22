@@ -1,8 +1,8 @@
 ﻿import os
-import yaml
-from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List
+from pathlib import Path
+
+import yaml
 from dotenv import load_dotenv
 from structlog import get_logger
 
@@ -10,12 +10,14 @@ load_dotenv()
 
 logger = get_logger(__name__)
 
+
 @dataclass
 class StrategyConfig:
     """Pair trading strategy parameters."""
+
     lookback_window: int = 252  # Days for cointegration
     entry_z_score: float = 2.0  # Entry threshold (P0: raised from 1.0)
-    exit_z_score: float = 0.5   # Exit threshold (was 0.0 ÔÇö unreachable in float)
+    exit_z_score: float = 0.5  # Exit threshold (was 0.0 ÔÇö unreachable in float)
     entry_z_min_spread: float = 0.50  # Min absolute spread ($) to filter micro-deviations
     short_sizing_multiplier: float = 0.50  # Sizing multiplier for shorts in TRENDING/NEUTRAL regime (P1 fix)
     disable_shorts_in_bull_trend: bool = False  # If True, block all shorts in TRENDING regime
@@ -32,27 +34,29 @@ class StrategyConfig:
     emergency_vol_threshold_sigma: float = 3.0  # Sprint 2.2: Emergency reestimate if spread vol > N¤â
     instant_transition_percentile: float = 99.0  # Sprint 2.2: Instant regime transition for extreme vol
     # Sprint 3.5: Adaptive cache TTL by regime (hours)
-    cache_ttl_high_vol: int = 2    # HIGH regime -> frequent re-discovery
+    cache_ttl_high_vol: int = 2  # HIGH regime -> frequent re-discovery
     # Sprint 4.1: Johansen double-screening confirmation
     johansen_confirmation: bool = True  # Confirm EG pairs with Johansen test
     # Sprint 4.3: Newey-West HAC consensus
     newey_west_consensus: bool = True  # Require OLS + HAC agreement for cointegration
     cache_ttl_normal_vol: int = 12  # NORMAL regime -> moderate TTL
-    cache_ttl_low_vol: int = 24     # LOW regime -> stable, long TTL
+    cache_ttl_low_vol: int = 24  # LOW regime -> stable, long TTL
     # Sprint 4.4: Self-contained internal risk limits (defense in depth)
-    internal_max_positions: int = 50       # Let simulator's portfolio-heat / risk-engine control position count
-    internal_max_drawdown_pct: float = 0.20  # 20% strategy-internal DD breaker (Tier 3: after RiskConfig 10% and KillSwitch 15%)
-    internal_max_daily_trades: int = 200   # Generous limit ÔÇö backtest runs all bars in one real-world day
+    internal_max_positions: int = 50  # Let simulator's portfolio-heat / risk-engine control position count
+    internal_max_drawdown_pct: float = (
+        0.20  # 20% strategy-internal DD breaker (Tier 3: after RiskConfig 10% and KillSwitch 15%)
+    )
+    internal_max_daily_trades: int = 200  # Generous limit ÔÇö backtest runs all bars in one real-world day
     # Sprint 4.6: Rolling leg correlation monitoring
-    leg_correlation_window: int = 30          # Rolling window (bars) for recent correlation
+    leg_correlation_window: int = 30  # Rolling window (bars) for recent correlation
     leg_correlation_decay_threshold: float = 0.3  # Sweet spot ÔÇö proven by backtest optimization
     # Multi-lookback discovery: additional lookback windows (union with primary)
-    additional_lookback_windows: List[int] = field(default_factory=list)
+    additional_lookback_windows: list[int] = field(default_factory=list)
     # Z-score based stop-loss (complements PnL stop ÔÇö more natural for stat-arb)
     z_score_stop: float = 3.5  # Close position if |z| > this threshold
     # ÔöÇÔöÇ Multi-Timeframe configuration ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # Timeframes for cointegration analysis (default: daily + weekly)
-    timeframes: List[str] = field(default_factory=lambda: ["D", "W"])
+    timeframes: list[str] = field(default_factory=lambda: ["D", "W"])
     # Require weekly cointegration confirmation for pair entry
     weekly_confirmation: bool = True
     # Weight of weekly cointegration in composite MTF score (0.0-1.0)
@@ -63,31 +67,44 @@ class StrategyConfig:
     weekly_lookback_bars: int = 104
     # Minimum absolute weekly z-score to allow entry
     weekly_zscore_entry_gate: float = 1.0
+    # FDR (False Discovery Rate) q-level for multiple testing correction
+    fdr_q_level: float = 0.20  # Benjamini-Hochberg q-level (relaxed default)
+    # C-07: Periodic model retraining interval (bars = trading days)
+    retraining_interval_bars: int = 14  # Re-estimate hedge ratios every 2 weeks by default
+
 
 @dataclass
 class ScannerConfig:
     """Dynamic universe scanner configuration."""
-    min_market_cap_usd: float = 500_000_000     # $500M minimum
-    min_avg_volume_usd: float = 5_000_000       # $5M daily volume
-    min_price: float = 5.0                       # exclude penny stocks
-    exchanges: List[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
+
+    min_market_cap_usd: float = 500_000_000  # $500M minimum
+    min_avg_volume_usd: float = 5_000_000  # $5M daily volume
+    min_price: float = 5.0  # exclude penny stocks
+    exchanges: list[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
     cache_ttl_hours: int = 24
     ibkr_validation_workers: int = 5
     ibkr_batch_size: int = 50
-    scan_enabled: bool = False                   # Enable dynamic scanning
-    scan_schedule_cron: str = "0 5 * * 1-5"      # Mon-Fri 5am UTC
+    scan_enabled: bool = False  # Enable dynamic scanning
+    scan_schedule_cron: str = "0 5 * * 1-5"  # Mon-Fri 5am UTC
+
 
 @dataclass
 class TradingUniverseConfig:
     """Trading universe configuration (which symbols to trade)."""
-    symbols: list = field(default_factory=lambda: [
-        "AAPL", "MSFT",  # Default: US equities if config not available
-    ])
+
+    symbols: list = field(
+        default_factory=lambda: [
+            "AAPL",
+            "MSFT",  # Default: US equities if config not available
+        ]
+    )
     max_leverage: float = 2.0  # Max leverage for the universe
+
 
 @dataclass
 class RiskConfig:
     """Risk management parameters."""
+
     max_risk_per_trade: float = 0.005  # 0.5% of equity
     max_concurrent_positions: int = 10
     max_daily_loss_pct: float = 0.02  # 2% daily loss kill-switch
@@ -100,21 +117,24 @@ class RiskConfig:
     max_sector_weight: float = 0.40  # Max 40% of positions in a single sector
     spread_correlation_max: float = 0.40  # Max |¤ü| between spreads (R-6)
 
+
 @dataclass
 class CostConfig:
     """Centralised transaction cost model ÔÇö single source of truth.
-    
+
     All execution modules (backtest, paper, live) MUST read from this config
     instead of maintaining their own hardcoded defaults.  Values calibrated
     for US equities via IBKR.
     """
-    slippage_bps: float = 3.0           # Base slippage (adaptive on top)
-    commission_pct: float = 0.00035     # IBKR US equity commission (0.035%)
-    maker_fee_bps: float = 1.5          # Exchange maker rebate/fee
-    taker_fee_bps: float = 2.0          # Exchange taker fee
+
+    slippage_bps: float = 3.0  # Base slippage (adaptive on top)
+    commission_pct: float = 0.00035  # IBKR US equity commission (0.035%)
+    maker_fee_bps: float = 1.5  # Exchange maker rebate/fee
+    taker_fee_bps: float = 2.0  # Exchange taker fee
     borrowing_cost_annual: float = 0.005  # Short-borrow GC rate (0.5%)
-    max_slippage_bps: float = 50.0      # Hard cap on adaptive slippage
-    slippage_model: str = "adaptive"    # fixed_bps | adaptive | volume_based
+    max_slippage_bps: float = 50.0  # Hard cap on adaptive slippage
+    slippage_model: str = "adaptive"  # fixed_bps | adaptive | volume_based
+
 
 @dataclass
 class TradingConfig:
@@ -123,20 +143,23 @@ class TradingConfig:
     All values formerly hardcoded in main.py are centralised here
     so they can be overridden per-environment via YAML.
     """
-    max_loop_iterations: int = 100           # Max trading-loop iterations
-    max_consecutive_errors: int = 10         # Halt after N consecutive failures
-    data_max_age_hours: float = 99999.0      # Max staleness for OHLCV validation
-    max_allocation_pct: float = 0.20         # Max single-pair allocation (20%)
-    equity_tolerance_pct: float = 0.01       # Reconciler equity tolerance (%)
+
+    max_loop_iterations: int = 100  # Max trading-loop iterations
+    max_consecutive_errors: int = 10  # Halt after N consecutive failures
+    data_max_age_hours: float = 99999.0  # Max staleness for OHLCV validation
+    max_allocation_pct: float = 0.20  # Max single-pair allocation (20%)
+    equity_tolerance_pct: float = 0.01  # Reconciler equity tolerance (%)
     reconciliation_divergence_pct: float = 0.10  # Alert threshold for periodic recon
-    fallback_spread_vol: float = 0.02        # Fallback spread-vol if < 10 bars
-    min_order_quantity: float = 1.0          # Floor on order quantity (shares)
-    limit_price_offset_pct: float = 0.01     # Limit price = market * (1 - offset)
+    fallback_spread_vol: float = 0.02  # Fallback spread-vol if < 10 bars
+    min_order_quantity: float = 1.0  # Floor on order quantity (shares)
+    limit_price_offset_pct: float = 0.01  # Limit price = market * (1 - offset)
+
 
 @dataclass
 class ExecutionConfig:
     """Execution layer parameters."""
-    engine: str = "ibkr"      # ibkr (Interactive Brokers)
+
+    engine: str = "ibkr"  # ibkr (Interactive Brokers)
     timeout_seconds: int = 30
     max_retries: int = 3
     slippage_bps: float = 2.0  # Basis points
@@ -146,9 +169,11 @@ class ExecutionConfig:
     paper_slippage_model: str = "fixed_bps"  # fixed_bps, adaptive, volume_based
     paper_commission_pct: float = 0.005  # Commission percentage (0.005% Ôëê $0.005/share IBKR)
 
+
 @dataclass
 class BacktestConfig:
     """Backtesting parameters."""
+
     start_date: str = "2018-01-01"  # 8 years of US equity history
     end_date: str = "2026-01-01"
     initial_capital: float = 100000.0
@@ -156,9 +181,11 @@ class BacktestConfig:
     walk_forward_periods: int = 4
     out_of_sample_ratio: float = 0.2
 
+
 @dataclass
 class SecretsConfig:
     """Secrets management and rotation parameters."""
+
     rotation_interval_days: int = 90  # Rotate API keys every 90 days
     rotation_time_utc: str = "02:00"  # 2 AM UTC for rotation
     auto_load_from_env: bool = True  # Auto-load secrets from environment
@@ -173,9 +200,10 @@ class BlacklistConfig:
     Tracks consecutive losses per pair and blocks re-entry for a
     configurable cooldown period.
     """
-    enabled: bool = True                     # Enable/disable blacklist
-    max_consecutive_losses: int = 2          # Losses before blacklisting
-    cooldown_days: int = 30                  # Calendar days of cooldown
+
+    enabled: bool = True  # Enable/disable blacklist
+    max_consecutive_losses: int = 2  # Losses before blacklisting
+    cooldown_days: int = 30  # Calendar days of cooldown
 
 
 @dataclass
@@ -185,11 +213,14 @@ class SignalCombinerConfig:
     Controls the weighted combination of multiple alpha sources
     into a single composite entry/exit score.
     """
-    enabled: bool = True               # Enable/disable signal combiner
-    zscore_weight: float = 0.70       # Weight for z-score signal
-    momentum_weight: float = 0.30     # Weight for momentum signal
-    entry_threshold: float = 0.6      # Composite score threshold for entry
-    exit_threshold: float = 0.2       # Composite score threshold for exit
+
+    enabled: bool = True  # Enable/disable signal combiner
+    zscore_weight: float = 0.70  # Weight for z-score signal
+    momentum_weight: float = 0.30  # Weight for momentum signal
+    entry_threshold: float = 0.6  # Composite score threshold for entry
+    exit_threshold: float = 0.2  # Composite score threshold for exit
+    ml_combiner_shadow_mode: bool = True  # True=log ML predictions only; False=gate signals
+    use_markov_regime: bool = False  # True=use MarkovRegimeDetector (HMM) instead of RegimeDetector
 
 
 @dataclass
@@ -199,11 +230,12 @@ class MomentumConfig:
     Computes cross-sectional relative strength between pair legs
     and adjusts signal strength accordingly.
     """
-    enabled: bool = True               # Enable/disable momentum overlay
-    lookback: int = 20                 # Rolling return window (bars)
-    weight: float = 0.30              # Momentum weight in composite score
-    min_strength: float = 0.30        # Floor for contra-momentum signals
-    max_boost: float = 1.0            # Cap for momentum-confirmed signals
+
+    enabled: bool = True  # Enable/disable momentum overlay
+    lookback: int = 20  # Rolling return window (bars)
+    weight: float = 0.30  # Momentum weight in composite score
+    min_strength: float = 0.30  # Floor for contra-momentum signals
+    max_boost: float = 1.0  # Cap for momentum-confirmed signals
 
 
 @dataclass
@@ -213,49 +245,45 @@ class RegimeConfig:
     Controls the SPY-based trend & volatility regime detector.
     v30: detects bull vs bear trends for per-side entry gating.
     """
-    enabled: bool = True                 # Enable/disable regime filter
-    ma_fast: int = 50                    # Fast moving average (days)
-    ma_slow: int = 200                   # Slow moving average (days)
-    vol_threshold: float = 0.18          # Annualized realized vol threshold
-    vol_window: int = 20                 # Rolling window for realized vol
-    neutral_band_pct: float = 0.02       # MA spread % to distinguish NEUTRAL
-    trend_favorable_sizing: float = 0.80 # Sizing for favorable side in trends
-    neutral_sizing: float = 0.65         # Sizing for both sides in NEUTRAL
+
+    enabled: bool = True  # Enable/disable regime filter
+    ma_fast: int = 50  # Fast moving average (days)
+    ma_slow: int = 200  # Slow moving average (days)
+    vol_threshold: float = 0.18  # Annualized realized vol threshold
+    vol_window: int = 20  # Rolling window for realized vol
+    neutral_band_pct: float = 0.02  # MA spread % to distinguish NEUTRAL
+    trend_favorable_sizing: float = 0.80  # Sizing for favorable side in trends
+    neutral_sizing: float = 0.65  # Sizing for both sides in NEUTRAL
 
 
 class Settings:
     """Global configuration manager."""
-    
+
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
-    
+
     def __init__(self):
         if self._initialized:
             return
-        
+
         # Support multiple environment variable names: EDGECORE_ENV, ENVIRONMENT, ENV
-        self.env = (
-            os.getenv("EDGECORE_ENV") or 
-            os.getenv("ENVIRONMENT") or 
-            os.getenv("ENV") or 
-            "dev"
-        ).lower()
-        
+        self.env = (os.getenv("EDGECORE_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or "dev").lower()
+
         # Validate environment
         valid_envs = ["dev", "test", "prod"]
         if self.env not in valid_envs:
             logger.warning("invalid_environment", env=self.env, valid=valid_envs)
             self.env = "dev"
-        
+
         # Valid config files: dev.yaml | test.yaml | prod.yaml (selected by EDGECORE_ENV).
         # config/config.yaml is a reference document ONLY — never loaded at runtime.
         config_path = Path(__file__).parent / f"{self.env}.yaml"
-        
+
         self.strategy = StrategyConfig()
         self.trading_universe = TradingUniverseConfig()
         self.risk = RiskConfig()
@@ -270,44 +298,48 @@ class Settings:
         self.signal_combiner = SignalCombinerConfig()
         self.pair_blacklist = BlacklistConfig()
         self.raw_config = {}
-        
+
         if config_path.exists():
             logger.info("loading_config", env=self.env, path=str(config_path))
             self._load_yaml(config_path)
         else:
             logger.warning("config_not_found", env=self.env, path=str(config_path))
-        
+
         # Validate configuration using Pydantic schemas
         self._validate_config()
-        
+
         # Safety check: prevent live trading unless explicitly enabled
         if not self.execution.use_sandbox:
             if os.getenv("ENABLE_LIVE_TRADING") != "true":
                 logger.warning("LIVE_TRADING_DISABLED_BY_DEFAULT")
                 self.execution.use_sandbox = True  # Force sandbox mode
                 logger.info("sandbox_mode_forced", reason="ENABLE_LIVE_TRADING env var not set")
-        
+
         logger.info(
             "config_loaded",
             env=self.env,
             num_symbols=len(self.trading_universe.symbols),
-            initial_capital=self.execution.initial_capital
+            initial_capital=self.execution.initial_capital,
         )
-        
+
         # R-3: Assert risk-threshold tier coherence
         # Tier 1 (RiskConfig) < Tier 2 (KillSwitch) < Tier 3 (Strategy internal)
         self._assert_risk_tier_coherence()
-        
+
         self._initialized = True
-    
+
     def _validate_config(self) -> None:
         """Validate loaded configuration using Pydantic schemas."""
         try:
             from config.schemas import (
-                RiskConfigSchema, StrategyConfigSchema,
-                ExecutionConfigSchema, DataSourceConfigSchema,
-                AlerterConfigSchema, BacktestConfigSchema,
+                AlerterConfigSchema,
+                BacktestConfigSchema,
+                DataSourceConfigSchema,
+                ExecutionConfigSchema,
+                RiskConfigSchema,
+                StrategyConfigSchema,
             )
+
             # Validate risk config
             RiskConfigSchema(
                 max_drawdown_pct=self.risk.max_drawdown_pct * 100,  # schema expects 0-100
@@ -331,8 +363,8 @@ class Settings:
                 start_date=self.backtest.start_date,
                 end_date=self.backtest.end_date,
                 initial_equity=self.backtest.initial_capital,
-                slippage_pct=self.costs.slippage_bps / 100,      # bps → percent
-                commission_pct=self.costs.commission_pct * 100,   # fraction → percent
+                slippage_pct=self.costs.slippage_bps / 100,  # bps → percent
+                commission_pct=self.costs.commission_pct * 100,  # fraction → percent
             )
             logger.debug("config_validation_passed")
         except ImportError:
@@ -348,12 +380,12 @@ class Settings:
         Violation means a tighter tier fires after a looser one, which is
         confusing at best and dangerous at worst.
         """
-        tier1_dd = self.risk.max_drawdown_pct              # e.g. 0.10
+        tier1_dd = self.risk.max_drawdown_pct  # e.g. 0.10
         tier3_dd = self.strategy.internal_max_drawdown_pct  # e.g. 0.20 (fraction)
 
         # KillSwitch tier (Tier 2) lives in raw_config YAML, not in a dataclass
-        ks = (self.raw_config.get('risk', {}) or {}).get('kill_switch', {}) or {}
-        tier2_dd = ks.get('max_drawdown_pct', 0.15)        # default 0.15
+        ks = (self.raw_config.get("risk", {}) or {}).get("kill_switch", {}) or {}
+        tier2_dd = ks.get("max_drawdown_pct", 0.15)  # default 0.15
 
         # Normalise: config stores as fraction, strategy stores as fraction
         # but if tier3 was given as >1 interpret as percent
@@ -379,17 +411,30 @@ class Settings:
 
     def _load_yaml(self, path: Path) -> None:
         """Load configuration from YAML file."""
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, encoding="utf-8") as f:
             config = yaml.safe_load(f) or {}
-        
+
         self.raw_config = config
-        
+
         # F-8: Reject unknown top-level YAML sections
         _KNOWN_SECTIONS = {
-            'market', 'strategy', 'trading_universe', 'risk', 'execution',
-            'backtest', 'secrets', 'scanner', 'costs', 'trading',
-            'portfolio', 'validation', 'monitoring', 'regime',
-            'momentum', 'signal_combiner', 'pair_blacklist',
+            "market",
+            "strategy",
+            "trading_universe",
+            "risk",
+            "execution",
+            "backtest",
+            "secrets",
+            "scanner",
+            "costs",
+            "trading",
+            "portfolio",
+            "validation",
+            "monitoring",
+            "regime",
+            "momentum",
+            "signal_combiner",
+            "pair_blacklist",
         }
         unknown_sections = set(config.keys()) - _KNOWN_SECTIONS
         if unknown_sections:
@@ -402,48 +447,49 @@ class Settings:
                 f"Unknown top-level config section(s): {sorted(unknown_sections)}. "
                 f"Valid sections: {sorted(_KNOWN_SECTIONS)}"
             )
-        
-        if 'strategy' in config:
-            self._apply_section(self.strategy, config['strategy'], 'strategy')
-        
-        if 'trading_universe' in config:
+
+        if "strategy" in config:
+            self._apply_section(self.strategy, config["strategy"], "strategy")
+
+        if "trading_universe" in config:
             # F-8: Use _apply_section for strict validation (was manual)
-            self._apply_section(self.trading_universe, config['trading_universe'], 'trading_universe')
-        
-        if 'risk' in config:
-            self._apply_section(self.risk, config['risk'], 'risk')
-        
-        if 'execution' in config:
-            self._apply_section(self.execution, config['execution'], 'execution')
-        
-        if 'backtest' in config:
-            self._apply_section(self.backtest, config['backtest'], 'backtest')
-        
-        if 'secrets' in config:
-            self._apply_section(self.secrets, config['secrets'], 'secrets')
+            self._apply_section(self.trading_universe, config["trading_universe"], "trading_universe")
 
-        if 'scanner' in config:
-            self._apply_section(self.scanner, config['scanner'], 'scanner')
+        if "risk" in config:
+            self._apply_section(self.risk, config["risk"], "risk")
 
-        if 'trading' in config:
-            self._apply_section(self.trading, config['trading'], 'trading')
+        if "execution" in config:
+            self._apply_section(self.execution, config["execution"], "execution")
 
-        if 'regime' in config:
-            self._apply_section(self.regime, config['regime'], 'regime')
+        if "backtest" in config:
+            self._apply_section(self.backtest, config["backtest"], "backtest")
 
-        if 'momentum' in config:
-            self._apply_section(self.momentum, config['momentum'], 'momentum')
+        if "secrets" in config:
+            self._apply_section(self.secrets, config["secrets"], "secrets")
 
-        if 'signal_combiner' in config:
-            self._apply_section(self.signal_combiner, config['signal_combiner'], 'signal_combiner')
+        if "scanner" in config:
+            self._apply_section(self.scanner, config["scanner"], "scanner")
 
-        if 'pair_blacklist' in config:
-            self._apply_section(self.pair_blacklist, config['pair_blacklist'], 'pair_blacklist')
+        if "trading" in config:
+            self._apply_section(self.trading, config["trading"], "trading")
+
+        if "regime" in config:
+            self._apply_section(self.regime, config["regime"], "regime")
+
+        if "momentum" in config:
+            self._apply_section(self.momentum, config["momentum"], "momentum")
+
+        if "signal_combiner" in config:
+            self._apply_section(self.signal_combiner, config["signal_combiner"], "signal_combiner")
+
+        if "pair_blacklist" in config:
+            self._apply_section(self.pair_blacklist, config["pair_blacklist"], "pair_blacklist")
 
     @staticmethod
     def _apply_section(target, mapping: dict, section_name: str) -> None:
         """Apply YAML key-values to a dataclass, rejecting unknown keys."""
         from dataclasses import fields as dc_fields
+
         known = {f.name for f in dc_fields(target)}
         for key, value in mapping.items():
             if key in known:
@@ -455,18 +501,15 @@ class Settings:
                     key=key,
                     hint=f"Valid keys: {sorted(known)}",
                 )
-                raise ValueError(
-                    f"Unknown config key '{key}' in section '{section_name}'. "
-                    f"Valid keys: {sorted(known)}"
-                )
-    
-    def reload_symbols(self, symbols: List[str] = None) -> None:
+                raise ValueError(f"Unknown config key '{key}' in section '{section_name}'. Valid keys: {sorted(known)}")
+
+    def reload_symbols(self, symbols: list[str] | None = None) -> None:
         """
         Hot-reload trading symbols without restarting the application.
-        
+
         Args:
             symbols: List of symbols to use. If None, reload from config file.
-        
+
         Examples:
             settings = get_settings()
             # Reload from YAML file
@@ -482,38 +525,38 @@ class Settings:
                 "symbols_reloaded_manual",
                 old_count=len(old_symbols),
                 new_count=len(symbols),
-                symbols=symbols[:5]  # Log first 5 for clarity
+                symbols=symbols[:5],  # Log first 5 for clarity
             )
         else:
             # Reload from YAML file
             config_path = Path(__file__).parent / f"{self.env}.yaml"
             if config_path.exists():
                 old_symbols = self.trading_universe.symbols.copy()
-                with open(config_path, 'r', encoding='utf-8') as f:
+                with open(config_path, encoding="utf-8") as f:
                     config = yaml.safe_load(f) or {}
-                
-                if 'trading_universe' in config and 'symbols' in config['trading_universe']:
-                    self.trading_universe.symbols = config['trading_universe']['symbols']
+
+                if "trading_universe" in config and "symbols" in config["trading_universe"]:
+                    self.trading_universe.symbols = config["trading_universe"]["symbols"]
                     logger.info(
                         "symbols_reloaded_from_config",
                         env=self.env,
                         old_count=len(old_symbols),
                         new_count=len(self.trading_universe.symbols),
-                        symbols=self.trading_universe.symbols[:5]  # Log first 5
+                        symbols=self.trading_universe.symbols[:5],  # Log first 5
                     )
                 else:
                     logger.warning("no_symbols_in_config", path=str(config_path))
             else:
                 logger.error("config_file_not_found", path=str(config_path))
-    
-    def get_symbols_for_env(self) -> List[str]:
+
+    def get_symbols_for_env(self) -> list[str]:
         """Get current trading symbols for active environment."""
         return self.trading_universe.symbols
-    
+
     def switch_environment(self, env: str) -> None:
         """
         Switch to a different environment (dev, test, prod).
-        
+
         Args:
             env: Environment name (dev, test, or prod)
         """
@@ -521,22 +564,20 @@ class Settings:
         if env not in valid_envs:
             logger.warning("invalid_environment_switch", env=env, valid=valid_envs)
             return
-        
+
         old_env = self.env
         self.env = env
         config_path = Path(__file__).parent / f"{self.env}.yaml"
-        
+
         if config_path.exists():
             self._load_yaml(config_path)
             logger.info(
-                "environment_switched",
-                old_env=old_env,
-                new_env=env,
-                num_symbols=len(self.trading_universe.symbols)
+                "environment_switched", old_env=old_env, new_env=env, num_symbols=len(self.trading_universe.symbols)
             )
         else:
             logger.error("config_file_not_found", path=str(config_path))
             self.env = old_env  # Revert on error
+
 
 def get_settings() -> Settings:
     """Get global settings singleton."""

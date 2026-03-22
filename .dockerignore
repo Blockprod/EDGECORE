@@ -1,0 +1,50 @@
+# Credentials — jamais dans l'image Docker
+.env
+.env.local
+
+# Fichiers de persistence temporaires
+*.bak
+*.tmp
+
+# Données runtime (audit trail, kill switch state, cache)
+data/
+logs/
+cache/
+results/
+backups/
+
+# Git
+.git/
+.gitignore
+
+# Tests (non nécessaires en production)
+tests/
+.pytest_cache/
+
+# Python compilé / artefacts build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+build/
+dist/
+*.egg-info/
+
+# Environnements virtuels locaux
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers de dev locaux
+tasks/
+docs/
+research/
+scripts/
+backups/

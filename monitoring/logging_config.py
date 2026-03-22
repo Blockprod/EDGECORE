@@ -15,14 +15,12 @@ import logging
 import logging.handlers
 import os
 import threading
+import time
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional
+from datetime import UTC, datetime
 from functools import wraps
-import time
-
+from pathlib import Path
 
 # Global context storage (thread-local)
 _context = threading.local()
@@ -34,23 +32,23 @@ class ContextFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         """Add context to the log record."""
         # Add request ID
-        record.request_id = getattr(_context, 'request_id', 'NO_REQUEST')
-        
+        record.request_id = getattr(_context, "request_id", "NO_REQUEST")
+
         # Add user info
-        record.user = getattr(_context, 'user', 'SYSTEM')
-        
+        record.user = getattr(_context, "user", "SYSTEM")
+
         # Add action
-        record.action = getattr(_context, 'action', 'UNKNOWN')
-        
+        record.action = getattr(_context, "action", "UNKNOWN")
+
         # Add correlation ID for distributed tracing
-        record.correlation_id = getattr(_context, 'correlation_id', None)
-        
+        record.correlation_id = getattr(_context, "correlation_id", None)
+
         # Add service info
-        record.service = getattr(_context, 'service', 'trading-engine')
-        
+        record.service = getattr(_context, "service", "trading-engine")
+
         # Add environment
-        record.environment = os.getenv('ENVIRONMENT', 'development')
-        
+        record.environment = os.getenv("ENVIRONMENT", "development")
+
         return True
 
 
@@ -60,34 +58,37 @@ class JSONFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         """Format log record as JSON."""
         log_data = {
-            'timestamp': datetime.now(timezone.utc).isoformat(),
-            'level': record.levelname,
-            'logger': record.name,
-            'message': record.getMessage(),
-            'request_id': getattr(record, 'request_id', 'NO_REQUEST'),
-            'user': getattr(record, 'user', 'SYSTEM'),
-            'action': getattr(record, 'action', 'UNKNOWN'),
-            'correlation_id': getattr(record, 'correlation_id', None),
-            'service': getattr(record, 'service', 'trading-engine'),
-            'environment': getattr(record, 'environment', 'development'),
+            "timestamp": datetime.now(UTC).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "request_id": getattr(record, "request_id", "NO_REQUEST"),
+            "user": getattr(record, "user", "SYSTEM"),
+            "action": getattr(record, "action", "UNKNOWN"),
+            "correlation_id": getattr(record, "correlation_id", None),
+            "service": getattr(record, "service", "trading-engine"),
+            "environment": getattr(record, "environment", "development"),
         }
 
         # Add exception info if present
         if record.exc_info:
-            log_data['exception'] = self.formatException(record.exc_info)
-            log_data['exception_type'] = record.exc_info[0].__name__
+            exc_type = record.exc_info[0]
+            if exc_type:
+                log_data["exception_type"] = exc_type.__name__
+                # Add full traceback
+                import traceback
 
-        # Add custom fields
-        if hasattr(record, 'extra_fields'):
-            log_data['extra'] = record.extra_fields
+                log_data["exception"] = "".join(traceback.format_exception(*record.exc_info))
 
-        # Add performance metrics if present
-        if hasattr(record, 'duration_ms'):
-            log_data['duration_ms'] = record.duration_ms
-        if hasattr(record, 'tokens_used'):
-            log_data['tokens_used'] = record.tokens_used
-        if hasattr(record, 'cache_hit'):
-            log_data['cache_hit'] = record.cache_hit
+        # Add custom fields with special handling for extra_fields
+        extra_fields = getattr(record, "extra_fields", None)
+        if extra_fields is not None:
+            log_data["extra"] = extra_fields
+
+        # Add other custom fields
+        for field in ["duration_ms", "tokens_used", "cache_hit"]:
+            if hasattr(record, field):
+                log_data[field] = getattr(record, field)
 
         return json.dumps(log_data, default=str)
 
@@ -106,12 +107,12 @@ class RotatingJSONHandler(logging.handlers.TimedRotatingFileHandler):
 
 
 def setup_logging(
-    log_dir: str = 'logs',
+    log_dir: str = "logs",
     level: int = logging.INFO,
     console_level: int = logging.WARNING,
     max_bytes: int = 10 * 1024 * 1024,  # 10MB
     backup_count: int = 7,
-    json_format: bool = True
+    json_format: bool = True,
 ) -> logging.Logger:
     """
     Configure production logging with rotation and context.
@@ -149,20 +150,13 @@ def setup_logging(
     if json_format:
         console_formatter = JSONFormatter()
     else:
-        console_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - '
-            '[%(request_id)s] - %(message)s'
-        )
+        console_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s")
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
 
     # File handler with rotation
     file_handler = RotatingJSONHandler(
-        filename=os.path.join(log_dir, 'trading.log'),
-        when='midnight',
-        interval=1,
-        backupCount=backup_count,
-        utc=True
+        filename=os.path.join(log_dir, "trading.log"), when="midnight", interval=1, backupCount=backup_count, utc=True
     )
     file_handler.setLevel(level)
     file_handler.addFilter(context_filter)
@@ -170,68 +164,59 @@ def setup_logging(
     if json_format:
         file_formatter = JSONFormatter()
     else:
-        file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - '
-            '[%(request_id)s] - %(message)s'
-        )
+        file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s")
     file_handler.setFormatter(file_formatter)
     root_logger.addHandler(file_handler)
 
     # API-specific log file
     api_handler = RotatingJSONHandler(
-        filename=os.path.join(log_dir, 'api.log'),
-        when='midnight',
-        interval=1,
-        backupCount=backup_count,
-        utc=True
+        filename=os.path.join(log_dir, "api.log"), when="midnight", interval=1, backupCount=backup_count, utc=True
     )
     api_handler.setLevel(logging.INFO)
     api_handler.addFilter(context_filter)
-    api_handler.setFormatter(JSONFormatter() if json_format else logging.Formatter(
-        '%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s'
-    ))
-    logging.getLogger('monitoring.api').addHandler(api_handler)
+    api_handler.setFormatter(
+        JSONFormatter()
+        if json_format
+        else logging.Formatter("%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s")
+    )
+    logging.getLogger("monitoring.api").addHandler(api_handler)
 
     # Risk-specific log file
     risk_handler = RotatingJSONHandler(
-        filename=os.path.join(log_dir, 'risk.log'),
-        when='midnight',
-        interval=1,
-        backupCount=backup_count,
-        utc=True
+        filename=os.path.join(log_dir, "risk.log"), when="midnight", interval=1, backupCount=backup_count, utc=True
     )
     risk_handler.setLevel(logging.DEBUG)
     risk_handler.addFilter(context_filter)
-    risk_handler.setFormatter(JSONFormatter() if json_format else logging.Formatter(
-        '%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s'
-    ))
-    logging.getLogger('risk').addHandler(risk_handler)
+    risk_handler.setFormatter(
+        JSONFormatter()
+        if json_format
+        else logging.Formatter("%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s")
+    )
+    logging.getLogger("risk").addHandler(risk_handler)
 
     # Execution-specific log file
     execution_handler = RotatingJSONHandler(
-        filename=os.path.join(log_dir, 'execution.log'),
-        when='midnight',
-        interval=1,
-        backupCount=backup_count,
-        utc=True
+        filename=os.path.join(log_dir, "execution.log"), when="midnight", interval=1, backupCount=backup_count, utc=True
     )
     execution_handler.setLevel(logging.DEBUG)
     execution_handler.addFilter(context_filter)
-    execution_handler.setFormatter(JSONFormatter() if json_format else logging.Formatter(
-        '%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s'
-    ))
-    logging.getLogger('execution').addHandler(execution_handler)
+    execution_handler.setFormatter(
+        JSONFormatter()
+        if json_format
+        else logging.Formatter("%(asctime)s - %(levelname)s - [%(request_id)s] - %(message)s")
+    )
+    logging.getLogger("execution").addHandler(execution_handler)
 
     return root_logger
 
 
 @contextmanager
 def log_context(
-    request_id: Optional[str] = None,
-    user: str = 'SYSTEM',
-    action: str = 'UNKNOWN',
-    correlation_id: Optional[str] = None,
-    service: str = 'trading-engine'
+    request_id: str | None = None,
+    user: str = "SYSTEM",
+    action: str = "UNKNOWN",
+    correlation_id: str | None = None,
+    service: str = "trading-engine",
 ):
     """
     Context manager for logging context.
@@ -248,11 +233,11 @@ def log_context(
             logger.info('Placing order...')
     """
     # Store old values
-    old_request_id = getattr(_context, 'request_id', None)
-    old_user = getattr(_context, 'user', None)
-    old_action = getattr(_context, 'action', None)
-    old_correlation_id = getattr(_context, 'correlation_id', None)
-    old_service = getattr(_context, 'service', None)
+    old_request_id = getattr(_context, "request_id", None)
+    old_user = getattr(_context, "user", None)
+    old_action = getattr(_context, "action", None)
+    old_correlation_id = getattr(_context, "correlation_id", None)
+    old_service = getattr(_context, "service", None)
 
     try:
         # Set new values
@@ -269,35 +254,35 @@ def log_context(
         if old_request_id is not None:
             _context.request_id = old_request_id
         else:
-            delattr(_context, 'request_id') if hasattr(_context, 'request_id') else None
+            delattr(_context, "request_id") if hasattr(_context, "request_id") else None
 
         if old_user is not None:
             _context.user = old_user
         else:
-            delattr(_context, 'user') if hasattr(_context, 'user') else None
+            delattr(_context, "user") if hasattr(_context, "user") else None
 
         if old_action is not None:
             _context.action = old_action
         else:
-            delattr(_context, 'action') if hasattr(_context, 'action') else None
+            delattr(_context, "action") if hasattr(_context, "action") else None
 
         if old_correlation_id is not None:
             _context.correlation_id = old_correlation_id
         else:
-            delattr(_context, 'correlation_id') if hasattr(_context, 'correlation_id') else None
+            delattr(_context, "correlation_id") if hasattr(_context, "correlation_id") else None
 
         if old_service is not None:
             _context.service = old_service
         else:
-            delattr(_context, 'service') if hasattr(_context, 'service') else None
+            delattr(_context, "service") if hasattr(_context, "service") else None
 
 
 def set_context(
-    request_id: Optional[str] = None,
-    user: Optional[str] = None,
-    action: Optional[str] = None,
-    correlation_id: Optional[str] = None,
-    service: Optional[str] = None
+    request_id: str | None = None,
+    user: str | None = None,
+    action: str | None = None,
+    correlation_id: str | None = None,
+    service: str | None = None,
 ):
     """
     Set logging context without context manager.
@@ -323,7 +308,7 @@ def set_context(
 
 def clear_context():
     """Clear all logging context."""
-    for attr in ['request_id', 'user', 'action', 'correlation_id', 'service']:
+    for attr in ["request_id", "user", "action", "correlation_id", "service"]:
         if hasattr(_context, attr):
             delattr(_context, attr)
 
@@ -338,13 +323,7 @@ def log_performance(logger: logging.Logger, duration_ms: float, **extra_fields):
         **extra_fields: Additional fields to log
     """
     record = logging.LogRecord(
-        name=logger.name,
-        level=logging.INFO,
-        pathname='',
-        lineno=0,
-        msg='Performance metrics',
-        args=(),
-        exc_info=None
+        name=logger.name, level=logging.INFO, pathname="", lineno=0, msg="Performance metrics", args=(), exc_info=None
     )
     record.duration_ms = duration_ms
     record.extra_fields = extra_fields
@@ -358,7 +337,7 @@ def log_with_metrics(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logger.debug(f'Starting {func.__name__}')
+        logger.debug(f"Starting {func.__name__}")
         start_time = time.time()
 
         try:
@@ -368,24 +347,21 @@ def log_with_metrics(func):
             record = logging.LogRecord(
                 name=logger.name,
                 level=logging.DEBUG,
-                pathname='',
+                pathname="",
                 lineno=0,
-                msg=f'Completed {func.__name__}',
+                msg=f"Completed {func.__name__}",
                 args=(),
-                exc_info=None
+                exc_info=None,
             )
             record.duration_ms = duration_ms
-            record.extra_fields = {'result_type': type(result).__name__}
+            record.extra_fields = {"result_type": type(result).__name__}
 
             logger.handle(record)
             return result
 
         except Exception:
             duration_ms = (time.time() - start_time) * 1000
-            logger.exception(
-                f'Error in {func.__name__} after {duration_ms:.2f}ms',
-                exc_info=True
-            )
+            logger.exception(f"Error in {func.__name__} after {duration_ms:.2f}ms", exc_info=True)
             raise
 
     return wrapper
@@ -401,10 +377,7 @@ _logging_initialized = False
 
 
 def initialize_logging(
-    log_dir: str = 'logs',
-    level: int = logging.INFO,
-    console_level: int = logging.WARNING,
-    json_format: bool = True
+    log_dir: str = "logs", level: int = logging.INFO, console_level: int = logging.WARNING, json_format: bool = True
 ) -> logging.Logger:
     """
     Initialize logging system (idempotent).
@@ -421,12 +394,7 @@ def initialize_logging(
     global _logging_initialized
 
     if not _logging_initialized:
-        setup_logging(
-            log_dir=log_dir,
-            level=level,
-            console_level=console_level,
-            json_format=json_format
-        )
+        setup_logging(log_dir=log_dir, level=level, console_level=console_level, json_format=json_format)
         _logging_initialized = True
 
     return logging.getLogger()

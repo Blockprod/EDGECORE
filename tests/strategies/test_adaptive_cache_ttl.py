@@ -15,15 +15,16 @@ Tests:
 - Config values are respected when present
 """
 
-import os
 import json
-import numpy as np
-import pandas as pd
+import os
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from strategies.pair_trading import PairTradingStrategy
+import numpy as np
+import pandas as pd
+
 from models.regime_detector import VolatilityRegime
+from strategies.pair_trading import PairTradingStrategy
 
 
 class TestGetCacheTtlHours:

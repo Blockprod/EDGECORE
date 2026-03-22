@@ -1,12 +1,11 @@
 ﻿"""Tests for Flask dashboard API endpoints."""
 
-import pytest
-from unittest.mock import Mock
 import json
+from unittest.mock import Mock
 
-from monitoring.api import (
-    create_app, initialize_dashboard_api, get_dashboard_app
-)
+import pytest
+
+from monitoring.api import create_app, get_dashboard_app, initialize_dashboard_api
 from monitoring.dashboard import DashboardGenerator
 
 
@@ -17,7 +16,7 @@ class TestCreateApp:
         """Test creating Flask app without dashboard."""
         app = create_app(dashboard=None)
         assert app is not None
-        assert app.config['JSON_SORT_KEYS'] is False
+        assert app.config["JSON_SORT_KEYS"] is False
 
     def test_create_app_with_dashboard(self):
         """Test creating Flask app with dashboard."""
@@ -32,10 +31,10 @@ class TestCreateApp:
 
         # Check routes exist
         routes = [str(rule) for rule in app.url_map.iter_rules()]
-        assert '/api/dashboard' in routes
-        assert '/api/dashboard/system' in routes
-        assert '/api/dashboard/risk' in routes
-        assert '/health' in routes
+        assert "/api/dashboard" in routes
+        assert "/api/dashboard/system" in routes
+        assert "/api/dashboard/risk" in routes
+        assert "/health" in routes
 
 
 class TestHealthCheckEndpoint:
@@ -46,7 +45,7 @@ class TestHealthCheckEndpoint:
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/health')
+        response = client.get("/health")
         assert response.status_code == 200
 
     def test_health_check_returns_json(self):
@@ -54,11 +53,11 @@ class TestHealthCheckEndpoint:
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/health')
+        response = client.get("/health")
         data = json.loads(response.data)
-        assert 'status' in data
-        assert data['status'] == 'healthy'
-        assert 'timestamp' in data
+        assert "status" in data
+        assert data["status"] == "healthy"
+        assert "timestamp" in data
 
 
 class TestDashboardEndpoint:
@@ -69,7 +68,7 @@ class TestDashboardEndpoint:
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/api/dashboard')
+        response = client.get("/api/dashboard")
         assert response.status_code == 503
 
     def test_dashboard_returns_200_with_valid_data(self):
@@ -78,7 +77,7 @@ class TestDashboardEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard')
+        response = client.get("/api/dashboard")
         assert response.status_code == 200
 
     def test_dashboard_returns_json_structure(self):
@@ -87,15 +86,15 @@ class TestDashboardEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard')
+        response = client.get("/api/dashboard")
         data = json.loads(response.data)
 
         # Check expected fields (actual structure from DashboardGenerator)
-        assert 'system' in data
-        assert 'risk' in data
-        assert 'positions' in data
-        assert 'orders' in data
-        assert 'performance' in data
+        assert "system" in data
+        assert "risk" in data
+        assert "positions" in data
+        assert "orders" in data
+        assert "performance" in data
 
     def test_dashboard_endpoint_error_handling(self):
         """Test dashboard endpoint handles errors gracefully."""
@@ -105,10 +104,10 @@ class TestDashboardEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard')
+        response = client.get("/api/dashboard")
         assert response.status_code == 500
         data = json.loads(response.data)
-        assert 'error' in data
+        assert "error" in data
 
 
 class TestSystemStatusEndpoint:
@@ -120,7 +119,7 @@ class TestSystemStatusEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/system')
+        response = client.get("/api/dashboard/system")
         assert response.status_code == 200
 
     def test_system_status_returns_required_fields(self):
@@ -129,21 +128,21 @@ class TestSystemStatusEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/system')
+        response = client.get("/api/dashboard/system")
         data = json.loads(response.data)
 
-        assert 'uptime_seconds' in data
-        assert 'memory_mb' in data
-        assert 'cpu_percent' in data
-        assert 'pid' in data
-        assert 'mode' in data
+        assert "uptime_seconds" in data
+        assert "memory_mb" in data
+        assert "cpu_percent" in data
+        assert "pid" in data
+        assert "mode" in data
 
     def test_system_status_without_dashboard_returns_503(self):
         """Test system endpoint returns 503 without dashboard."""
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/system')
+        response = client.get("/api/dashboard/system")
         assert response.status_code == 503
 
 
@@ -156,7 +155,7 @@ class TestRiskMetricsEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/risk')
+        response = client.get("/api/dashboard/risk")
         assert response.status_code == 200
 
     def test_risk_metrics_returns_fields(self):
@@ -165,14 +164,14 @@ class TestRiskMetricsEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/risk')
+        response = client.get("/api/dashboard/risk")
         data = json.loads(response.data)
 
         # Risk metrics returns enabled flag when engine not initialized
-        assert 'enabled' in data
+        assert "enabled" in data
         # When no risk engine, should have message
-        if not data.get('enabled', False):
-            assert 'message' in data or 'enabled' in data
+        if not data.get("enabled", False):
+            assert "message" in data or "enabled" in data
 
     def test_risk_metrics_error_handling(self):
         """Test risk metrics endpoint handles errors."""
@@ -182,7 +181,7 @@ class TestRiskMetricsEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/risk')
+        response = client.get("/api/dashboard/risk")
         assert response.status_code == 500
 
 
@@ -195,7 +194,7 @@ class TestPositionsEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/positions')
+        response = client.get("/api/dashboard/positions")
         assert response.status_code == 200
 
     def test_positions_returns_list_structure(self):
@@ -204,13 +203,13 @@ class TestPositionsEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/positions')
+        response = client.get("/api/dashboard/positions")
         data = json.loads(response.data)
 
-        assert 'positions' in data
-        assert 'count' in data
-        assert isinstance(data['positions'], list)
-        assert data['count'] == len(data['positions'])
+        assert "positions" in data
+        assert "count" in data
+        assert isinstance(data["positions"], list)
+        assert data["count"] == len(data["positions"])
 
     def test_positions_with_empty_list(self):
         """Test positions endpoint with no positions."""
@@ -218,11 +217,11 @@ class TestPositionsEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/positions')
+        response = client.get("/api/dashboard/positions")
         data = json.loads(response.data)
 
-        assert data['count'] == 0
-        assert len(data['positions']) == 0
+        assert data["count"] == 0
+        assert len(data["positions"]) == 0
 
 
 class TestOrdersEndpoint:
@@ -234,7 +233,7 @@ class TestOrdersEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/orders')
+        response = client.get("/api/dashboard/orders")
         assert response.status_code == 200
 
     def test_orders_returns_json(self):
@@ -243,7 +242,7 @@ class TestOrdersEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/orders')
+        response = client.get("/api/dashboard/orders")
         data = json.loads(response.data)
 
         assert data is not None
@@ -259,7 +258,7 @@ class TestPerformanceEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/performance')
+        response = client.get("/api/dashboard/performance")
         assert response.status_code == 200
 
     def test_performance_returns_metrics(self):
@@ -268,14 +267,14 @@ class TestPerformanceEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/performance')
+        response = client.get("/api/dashboard/performance")
         data = json.loads(response.data)
 
         # Performance returns enabled flag
-        assert 'enabled' in data
+        assert "enabled" in data
         # May contain metric fields if engine available
-        if data.get('enabled', False):
-            assert 'total_return_pct' in data or 'sharpe_ratio' in data
+        if data.get("enabled", False):
+            assert "total_return_pct" in data or "sharpe_ratio" in data
 
 
 class TestStatusEndpoint:
@@ -287,7 +286,7 @@ class TestStatusEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/status')
+        response = client.get("/api/dashboard/status")
         assert response.status_code == 200
 
     def test_status_returns_status_data(self):
@@ -296,19 +295,19 @@ class TestStatusEndpoint:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/status')
+        response = client.get("/api/dashboard/status")
         data = json.loads(response.data)
 
         # Status contains engine availability and mode
-        assert 'execution_engine_available' in data or 'risk_engine_available' in data
-        assert 'timestamp' in data
+        assert "execution_engine_available" in data or "risk_engine_available" in data
+        assert "timestamp" in data
 
     def test_status_without_dashboard_returns_503(self):
         """Test status endpoint returns 503 without dashboard."""
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/status')
+        response = client.get("/api/dashboard/status")
         assert response.status_code == 503
 
 
@@ -322,7 +321,7 @@ class TestHttpMethods:
         client = app.test_client()
 
         # Flask allows GET only, so POST will return 405
-        response = client.post('/api/dashboard')
+        response = client.post("/api/dashboard")
         assert response.status_code == 405
 
     def test_dashboard_put_not_allowed(self):
@@ -331,7 +330,7 @@ class TestHttpMethods:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.put('/api/dashboard')
+        response = client.put("/api/dashboard")
         assert response.status_code == 405
 
     def test_dashboard_delete_not_allowed(self):
@@ -340,7 +339,7 @@ class TestHttpMethods:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.delete('/api/dashboard')
+        response = client.delete("/api/dashboard")
         assert response.status_code == 405
 
 
@@ -352,7 +351,7 @@ class TestNotFoundHandling:
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/api/invalid/endpoint')
+        response = client.get("/api/invalid/endpoint")
         assert response.status_code == 404
 
     def test_404_error_returns_json(self):
@@ -360,12 +359,12 @@ class TestNotFoundHandling:
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/api/nonexistent')
+        response = client.get("/api/nonexistent")
         data = json.loads(response.data)
 
-        assert 'error' in data
-        assert 'available_endpoints' in data
-        assert isinstance(data['available_endpoints'], list)
+        assert "error" in data
+        assert "available_endpoints" in data
+        assert isinstance(data["available_endpoints"], list)
 
 
 class TestInitializeDashboardApi:
@@ -377,7 +376,7 @@ class TestInitializeDashboardApi:
         app = initialize_dashboard_api(dashboard)
 
         assert app is not None
-        assert hasattr(app, 'test_client')
+        assert hasattr(app, "test_client")
 
     def test_initialize_dashboard_api_sets_global(self):
         """Test initialize_dashboard_api sets global app."""
@@ -405,14 +404,14 @@ class TestMultipleEndpointsSequential:
         client = app.test_client()
 
         endpoints = [
-            '/api/dashboard',
-            '/api/dashboard/system',
-            '/api/dashboard/risk',
-            '/api/dashboard/positions',
-            '/api/dashboard/orders',
-            '/api/dashboard/performance',
-            '/api/dashboard/status',
-            '/health'
+            "/api/dashboard",
+            "/api/dashboard/system",
+            "/api/dashboard/risk",
+            "/api/dashboard/positions",
+            "/api/dashboard/orders",
+            "/api/dashboard/performance",
+            "/api/dashboard/status",
+            "/health",
         ]
 
         for endpoint in endpoints:
@@ -426,7 +425,7 @@ class TestMultipleEndpointsSequential:
         client = app.test_client()
 
         for _ in range(10):
-            response = client.get('/api/dashboard')
+            response = client.get("/api/dashboard")
             assert response.status_code == 200
 
 
@@ -439,7 +438,7 @@ class TestResponseTimestamp:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        client.get('/api/dashboard')
+        client.get("/api/dashboard")
         # Dashboard endpoint doesn't include timestamp in all responses
         # but individual components may
 
@@ -448,10 +447,10 @@ class TestResponseTimestamp:
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/health')
+        response = client.get("/health")
         data = json.loads(response.data)
 
-        assert 'timestamp' in data
+        assert "timestamp" in data
 
     def test_status_response_has_timestamp(self):
         """Test status response includes timestamp."""
@@ -459,10 +458,10 @@ class TestResponseTimestamp:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/status')
+        response = client.get("/api/dashboard/status")
         data = json.loads(response.data)
 
-        assert 'timestamp' in data
+        assert "timestamp" in data
 
 
 class TestJsonContentType:
@@ -474,17 +473,17 @@ class TestJsonContentType:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard')
+        response = client.get("/api/dashboard")
         assert response.content_type is not None
-        assert 'json' in response.content_type.lower() or response.status_code == 503
+        assert "json" in response.content_type.lower() or response.status_code == 503
 
     def test_health_returns_json_content_type(self):
         """Test health endpoint returns JSON content type."""
         app = create_app(dashboard=None)
         client = app.test_client()
 
-        response = client.get('/health')
-        assert 'json' in response.content_type.lower()
+        response = client.get("/health")
+        assert "json" in response.content_type.lower()
 
 
 class TestDataIntegrity:
@@ -496,12 +495,12 @@ class TestDataIntegrity:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/positions')
+        response = client.get("/api/dashboard/positions")
         data = json.loads(response.data)
 
         assert isinstance(data, dict)
-        assert isinstance(data['positions'], list)
-        assert isinstance(data['count'], int)
+        assert isinstance(data["positions"], list)
+        assert isinstance(data["count"], int)
 
     def test_orders_data_valid(self):
         """Test orders data is valid and complete."""
@@ -509,7 +508,7 @@ class TestDataIntegrity:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/orders')
+        response = client.get("/api/dashboard/orders")
         data = json.loads(response.data)
 
         assert isinstance(data, dict)
@@ -520,14 +519,14 @@ class TestDataIntegrity:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-        response = client.get('/api/dashboard/risk')
+        response = client.get("/api/dashboard/risk")
         data = json.loads(response.data)
 
         assert isinstance(data, dict)
         # Values should be numbers or null
-        for key, value in data.items():
+        for _key, value in data.items():
             assert value is None or isinstance(value, (int, float, str))
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

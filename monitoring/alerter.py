@@ -9,12 +9,13 @@ Provides:
 - Integration hooks for external services (Slack, email, etc)
 """
 
-from typing import Dict, List, Optional, Any, Callable
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from structlog import get_logger
-from enum import Enum
 import json
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from enum import Enum
+from typing import Any, Callable
+
+from structlog import get_logger
 
 logger = get_logger(__name__)
 
@@ -47,24 +48,24 @@ class Alert:
     category: AlertCategory
     title: str
     message: str
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    data: Dict[str, Any] = field(default_factory=dict)
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[str] = None
-    resolved_at: Optional[datetime] = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    data: dict[str, Any] = field(default_factory=dict)
+    acknowledged_at: datetime | None = None
+    acknowledged_by: str | None = None
+    resolved_at: datetime | None = None
     
     def __post_init__(self):
         if self.timestamp.tzinfo is None:
-            self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
+            self.timestamp = self.timestamp.replace(tzinfo=UTC)
 
     def acknowledge(self, username: str = "system") -> None:
         """Mark alert as acknowledged."""
-        self.acknowledged_at = datetime.now(timezone.utc)
+        self.acknowledged_at = datetime.now(UTC)
         self.acknowledged_by = username
     
     def resolve(self) -> None:
         """Mark alert as resolved."""
-        self.resolved_at = datetime.now(timezone.utc)
+        self.resolved_at = datetime.now(UTC)
     
     def is_acknowledged(self) -> bool:
         """Check if alert has been acknowledged."""
@@ -76,9 +77,9 @@ class Alert:
     
     def age_seconds(self) -> float:
         """Get alert age in seconds."""
-        return (datetime.now(timezone.utc) - self.timestamp).total_seconds()
+        return (datetime.now(UTC) - self.timestamp).total_seconds()
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert alert to dictionary."""
         return {
             "alert_id": self.alert_id,
@@ -119,12 +120,12 @@ class AlertManager:
             raise ValueError(f"max_alert_history must be >= 100, got {max_alert_history}")
         
         self.max_alert_history = max_alert_history
-        self.alerts: Dict[str, Alert] = {}
+        self.alerts: dict[str, Alert] = {}
         self.alert_counter: int = 0
-        self.handlers: Dict[AlertSeverity, List[Callable]] = {
+        self.handlers: dict[AlertSeverity, list[Callable]] = {
             severity: [] for severity in AlertSeverity
         }
-        self.category_handlers: Dict[AlertCategory, List[Callable]] = {
+        self.category_handlers: dict[AlertCategory, list[Callable]] = {
             category: [] for category in AlertCategory
         }
         
@@ -136,7 +137,7 @@ class AlertManager:
         category: AlertCategory,
         title: str,
         message: str,
-        data: Optional[Dict[str, Any]] = None
+        data: dict[str, Any] | None = None
     ) -> Alert:
         """
         Create and dispatch a new alert.
@@ -161,7 +162,7 @@ class AlertManager:
             raise ValueError(f"Message must be 1-2000 chars, got: {message}")
         
         self.alert_counter += 1
-        alert_id = f"alert_{datetime.now(timezone.utc).timestamp()}_{self.alert_counter}"
+        alert_id = f"alert_{datetime.now(UTC).timestamp()}_{self.alert_counter}"
         
         alert = Alert(
             alert_id=alert_id,
@@ -313,9 +314,9 @@ class AlertManager:
     
     def get_active_alerts(
         self,
-        severity: Optional[AlertSeverity] = None,
-        category: Optional[AlertCategory] = None
-    ) -> List[Alert]:
+        severity: AlertSeverity | None = None,
+        category: AlertCategory | None = None
+    ) -> list[Alert]:
         """
         Get active (unresolved) alerts, optionally filtered.
         
@@ -336,15 +337,15 @@ class AlertManager:
         
         return sorted(active, key=lambda a: a.timestamp, reverse=True)
     
-    def get_unacknowledged_alerts(self) -> List[Alert]:
+    def get_unacknowledged_alerts(self) -> list[Alert]:
         """Get all unacknowledged alerts."""
         return [a for a in self.alerts.values() if not a.is_acknowledged()]
     
-    def get_critical_alerts(self) -> List[Alert]:
+    def get_critical_alerts(self) -> list[Alert]:
         """Get all unresolved critical-severity alerts."""
         return self.get_active_alerts(severity=AlertSeverity.CRITICAL)
     
-    def get_alert_statistics(self) -> Dict[str, Any]:
+    def get_alert_statistics(self) -> dict[str, Any]:
         """
         Get statistics on alerts.
         
@@ -380,7 +381,7 @@ class AlertManager:
         
         return stats
     
-    def get_dashboard_status(self) -> Dict[str, Any]:
+    def get_dashboard_status(self) -> dict[str, Any]:
         """
         Generate dashboard status JSON.
         
@@ -401,12 +402,12 @@ class AlertManager:
             overall_status = "OK"
         
         # Recent alerts (last 24 hours)
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        cutoff = datetime.now(UTC) - timedelta(hours=24)
         recent = [a for a in active if a.timestamp > cutoff]
         
         return {
             "overall_status": overall_status,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "active_alert_count": len(active),
             "critical_count": len(critical),
             "unacknowledged_count": len(self.get_unacknowledged_alerts()),
@@ -427,7 +428,7 @@ class AlertManager:
             
             logger.info("alerts_pruned", removed_count=to_remove)
     
-    def export_alerts_json(self, alert_ids: Optional[List[str]] = None) -> str:
+    def export_alerts_json(self, alert_ids: list[str] | None = None) -> str:
         """
         Export alerts as JSON for external systems.
         
@@ -453,7 +454,7 @@ def alert_equity_drop(
     current_equity: float,
     previous_equity: float,
     threshold_pct: float = 5.0
-) -> Optional[Alert]:
+) -> Alert | None:
     """
     Create alert for significant equity drop.
     
@@ -483,7 +484,7 @@ def alert_reconciliation_failure(
     alert_manager: AlertManager,
     divergence_count: int,
     equity_diff_pct: float
-) -> Optional[Alert]:
+) -> Alert | None:
     """
     Create alert for broker reconciliation failure.
     
@@ -512,7 +513,7 @@ def alert_position_limit_breach(
     alert_manager: AlertManager,
     current_positions: int,
     max_positions: int
-) -> Optional[Alert]:
+) -> Alert | None:
     """
     Create alert for position limit breach.
     

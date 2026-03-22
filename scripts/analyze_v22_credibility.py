@@ -5,7 +5,7 @@ import statistics
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-with open(os.path.join(_ROOT, 'results', 'bt_results_v22.txt'), 'r', encoding='utf-16-le', errors='replace') as f:
+with open(os.path.join(_ROOT, 'results', 'bt_results_v22.txt'), encoding='utf-16-le', errors='replace') as f:
     text = f.read()
 
 # 1. Year-by-year equity

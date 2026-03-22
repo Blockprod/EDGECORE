@@ -4,9 +4,10 @@ SpreadModel Integration Test (S3.2d - Integration).
 Test that SpreadModel correctly integrates half-life estimation.
 """
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+
 from models.spread import SpreadModel
 
 
@@ -17,7 +18,7 @@ class TestSpreadModelIntegration:
         """Test SpreadModel initializes successfully."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         model = SpreadModel(x, y)
         
@@ -30,7 +31,7 @@ class TestSpreadModelIntegration:
         """Test spread is computed correctly."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         model = SpreadModel(x, y)
         spread = model.compute_spread(x, y)
@@ -75,7 +76,7 @@ class TestSpreadModelIntegration:
         """Test get_model_info includes half-life."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         model = SpreadModel(x, y)
         info = model.get_model_info()
@@ -91,7 +92,7 @@ class TestSpreadModelIntegration:
         """Test SpreadModel works without pair_key."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         # Should work without pair_key
         model = SpreadModel(x, y)
@@ -103,7 +104,7 @@ class TestSpreadModelIntegration:
         """Test SpreadModel works without hedge_ratio_tracker."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         # Should work without tracker
         model = SpreadModel(x, y)
@@ -115,7 +116,7 @@ class TestSpreadModelIntegration:
         """Test Z-score with explicit looback overrides half-life."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         model = SpreadModel(x, y)
         spread = model.compute_spread(x, y)
@@ -130,7 +131,7 @@ class TestSpreadModelIntegration:
         """Test Z-score with explicit half-life."""
         np.random.seed(42)
         x = pd.Series(np.random.randn(100).cumsum())
-        y = pd.Series(1.5 * x.values + np.random.randn(100))
+        y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.randn(100))
         
         model = SpreadModel(x, y)
         spread = model.compute_spread(x, y)
@@ -170,7 +171,7 @@ class TestHalfLifeEstimationAccuracy:
         
         # Should estimate something reasonable
         if model.half_life is not None:
-            # Within ┬▒50% for noisy data
+            # Within -�50% for noisy data
             error_pct = abs(model.half_life - true_hl) / true_hl
             assert error_pct < 0.50
     
@@ -196,7 +197,7 @@ class TestSpreadHalfLifeNoneGuard:
         """When half_life is None, compute_z_score falls back to default lookback without crash."""
         np.random.seed(99)
         x = pd.Series(np.random.randn(200))
-        y = pd.Series(2 * x.values + np.random.randn(200))
+        y = pd.Series(2 * np.asarray(x, dtype=float) + np.random.randn(200))
         model = SpreadModel(x, y)
         # Force None to simulate failed estimation regardless of seed
         model.half_life = None
@@ -211,7 +212,7 @@ class TestSpreadHalfLifeNoneGuard:
         """Passing an explicit lookback must work even when half_life is None."""
         np.random.seed(99)
         x = pd.Series(np.random.randn(200))
-        y = pd.Series(2 * x.values + np.random.randn(200))
+        y = pd.Series(2 * np.asarray(x, dtype=float) + np.random.randn(200))
         model = SpreadModel(x, y)
         model.half_life = None
         spread = model.compute_spread(x, y)

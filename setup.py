@@ -6,10 +6,11 @@ Usage:
     python setup.py build_ext --inplace
 """
 
-from setuptools import setup, find_packages, Extension
-from Cython.Build import cythonize
-import numpy as np
 import sys
+
+import numpy as np
+from Cython.Build import cythonize
+from setuptools import Extension, find_packages, setup
 
 # Platform-appropriate optimization flag
 _extra_compile_args = ['/O2'] if sys.platform == 'win32' else ['-O2']
@@ -44,7 +45,7 @@ setup(
     install_requires=[
         'numpy>=1.20',
         'pandas>=1.3',
-        'Cython>=0.29',
+        'Cython>=3.0,<4.0',
     ],
     python_requires='>=3.9',
 )

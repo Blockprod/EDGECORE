@@ -8,21 +8,22 @@ Tests:
 - Integration with main.py data loading
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
+
+from common.error_handler import handle_error, with_error_handling
 from common.errors import (
-    ErrorCategory,
-    TradingError,
+    BrokerConnectionError,
+    ConfigError,
     DataError,
     DataValidationError,
-    BrokerConnectionError,
+    ErrorCategory,
     InsufficientBalanceError,
     StrategyError,
-    ConfigError,
-    classify_exception
+    TradingError,
+    classify_exception,
 )
-from common.error_handler import handle_error, with_error_handling
 
 
 class TestErrorTaxonomy:
@@ -288,8 +289,9 @@ class TestDataLoadingErrorHandling:
     
     def test_data_load_with_partial_failure(self):
         """Ô£ô Partial data load logs warning but succeeds."""
-        from main import _load_market_data_for_symbols
         import pandas as pd
+
+        from main import _load_market_data_for_symbols
         
         mock_loader = Mock()
         

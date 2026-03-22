@@ -43,7 +43,7 @@ def _load_symbols(yaml_file: str) -> list:
     path = CONFIG_DIR / yaml_file
     if not path.exists():
         pytest.skip(f"{yaml_file} not found")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         cfg = yaml.safe_load(f)
     return cfg.get("trading_universe", {}).get("symbols", [])
 

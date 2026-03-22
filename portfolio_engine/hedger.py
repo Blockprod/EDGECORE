@@ -12,14 +12,14 @@ genuine diversification, not just position-count diversification.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import pandas as pd
 from structlog import get_logger
 
-from risk.beta_neutral import BetaNeutralHedger, BetaNeutralConfig
-from risk.pca_spread_monitor import PCASpreadMonitor, PCASpreadConfig
-from risk.spread_correlation import SpreadCorrelationGuard, SpreadCorrelationConfig
+from risk.beta_neutral import BetaNeutralConfig, BetaNeutralHedger
+from risk.pca_spread_monitor import PCASpreadConfig, PCASpreadMonitor
+from risk.spread_correlation import SpreadCorrelationConfig, SpreadCorrelationGuard
 
 logger = get_logger(__name__)
 
@@ -91,7 +91,7 @@ class PortfolioHedger:
         self,
         pair_key: str,
         candidate_spread: pd.Series,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Check if a new pair would degrade portfolio diversification.
 
@@ -122,7 +122,7 @@ class PortfolioHedger:
         portfolio_returns: pd.Series,
         benchmark_returns: pd.Series,
         portfolio_value: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Compute benchmark hedge recommendation.
 
@@ -135,6 +135,6 @@ class PortfolioHedger:
             portfolio_value=portfolio_value,
         )
 
-    def get_beta(self) -> Optional[float]:
+    def get_beta(self) -> float | None:
         """Return the last estimated portfolio beta."""
         return self.beta_hedger._last_beta

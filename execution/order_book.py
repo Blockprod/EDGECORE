@@ -1,4 +1,4 @@
-﻿"""
+"""
 Realistic order book modeling for backtest execution.
 
 Simulates realistic market microstructure including:
@@ -12,10 +12,11 @@ Simulates realistic market microstructure including:
 import math
 import random
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Literal, Optional, cast
+from datetime import UTC, datetime
+from typing import Literal, cast
 
 from common.types import (
+    BookSimulationConfig,
     LiquidityMetrics,
     OrderBook,
     OrderBookLevel,
@@ -23,7 +24,6 @@ from common.types import (
     Price,
     Quantity,
     Symbol,
-    BookSimulationConfig,
 )
 
 
@@ -32,13 +32,16 @@ class OrderBookSimulator:
     """Simulates realistic order book for trading simulation."""
 
     config: BookSimulationConfig = field(
-        default_factory=lambda: cast(BookSimulationConfig, {
-            "symbols": [],
-            "bid_ask_spread_bps": 5.0,
-            "depth_mode": "medium",
-            "volatility_factor": 1.0,
-            "realism_level": "realistic",
-        })
+        default_factory=lambda: cast(
+            BookSimulationConfig,
+            {
+                "symbols": [],
+                "bid_ask_spread_bps": 5.0,
+                "depth_mode": "medium",
+                "volatility_factor": 1.0,
+                "realism_level": "realistic",
+            },
+        )
     )
 
     def __post_init__(self) -> None:
@@ -53,7 +56,7 @@ class OrderBookSimulator:
         symbol: Symbol,
         mid_price: Price,
         volatility: float,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
     ) -> OrderBook:
         """
         Create realistic order book snapshot.
@@ -68,7 +71,7 @@ class OrderBookSimulator:
             Realistic OrderBook snapshot
         """
         if timestamp is None:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         # Calculate bid-ask spread
         spread_bps = self._calculate_spread(volatility)
@@ -121,9 +124,7 @@ class OrderBookSimulator:
 
         return min(spread_bps, max_spread)
 
-    def _generate_bid_levels(
-        self, best_bid: Price, mid_price: Price, spread_bps: float
-    ) -> list[OrderBookLevel]:
+    def _generate_bid_levels(self, best_bid: Price, mid_price: Price, spread_bps: float) -> list[OrderBookLevel]:
         """Generate realistic bid levels."""
         levels: list[OrderBookLevel] = []
 
@@ -162,9 +163,7 @@ class OrderBookSimulator:
 
         return levels
 
-    def _generate_ask_levels(
-        self, best_ask: Price, mid_price: Price, spread_bps: float
-    ) -> list[OrderBookLevel]:
+    def _generate_ask_levels(self, best_ask: Price, mid_price: Price, spread_bps: float) -> list[OrderBookLevel]:
         """Generate realistic ask levels."""
         levels: list[OrderBookLevel] = []
 
@@ -252,9 +251,7 @@ class OrderBookSimulator:
 
         return avg_price, filled_qty, impact_bps
 
-    def calculate_liquidity_metrics(
-        self, order_book: OrderBook, mid_price: Price
-    ) -> LiquidityMetrics:
+    def calculate_liquidity_metrics(self, order_book: OrderBook, mid_price: Price) -> LiquidityMetrics:
         """
         Calculate liquidity metrics from order book.
 
@@ -277,9 +274,7 @@ class OrderBookSimulator:
 
         # Estimate market impact of 100 BPS order
         test_qty = mid_price * 100 / 10000  # 100 BPS notional
-        _, filled, impact = self.estimate_execution_price(
-            order_book, "buy", test_qty
-        )
+        _, _filled, impact = self.estimate_execution_price(order_book, "buy", test_qty)
 
         return LiquidityMetrics(
             symbol=order_book["symbol"],
@@ -292,9 +287,7 @@ class OrderBookSimulator:
             estimated_impact_100bps=impact,
         )
 
-    def _calculate_depth(
-        self, order_book: OrderBook, mid_price: Price, bps_width: float
-    ) -> float:
+    def _calculate_depth(self, order_book: OrderBook, mid_price: Price, bps_width: float) -> float:
         """Calculate volume within specified distance from mid price."""
         range_price = mid_price * (bps_width / 10000)
         low_price = mid_price - range_price / 2
@@ -312,9 +305,7 @@ class OrderBookSimulator:
 
         return volume
 
-    def generate_order_update(
-        self, order_book: OrderBook, side: str = "bid"
-    ) -> OrderBookUpdate:
+    def generate_order_update(self, order_book: OrderBook, side: str = "bid") -> OrderBookUpdate:
         """
         Generate realistic order book update.
 
@@ -325,8 +316,8 @@ class OrderBookSimulator:
         Returns:
             OrderBookUpdate simulating market activity
         """
-        timestamp = datetime.now(timezone.utc)
-        
+        timestamp = datetime.now(UTC)
+
         if side.lower() == "bid":
             levels = order_book["bid_levels"]
             price = levels[0]["price"] if levels else 0
@@ -335,7 +326,9 @@ class OrderBookSimulator:
             price = levels[0]["price"] if levels else 0
 
         # Random update type
-        update_type = cast(Literal["trade", "add", "cancel", "modify"], random.choice(["trade", "add", "cancel", "modify"]))
+        update_type = cast(
+            Literal["trade", "add", "cancel", "modify"], random.choice(["trade", "add", "cancel", "modify"])
+        )
 
         # Random quantity
         quantity = random.uniform(10, 100)

@@ -1,16 +1,17 @@
-﻿import pandas as pd
-from typing import Dict, List, Optional
-from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from structlog import get_logger
-from data.validators import OHLCVValidator, DataValidationError
 import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+
+import pandas as pd
+from structlog import get_logger
+
+from data.validators import DataValidationError, OHLCVValidator
 
 logger = get_logger(__name__)
 
 
 def load_price_data(
-    symbols: List[str],
+    symbols: list[str],
     timeframe: str = "1d",
     limit: int = 252,
 ) -> pd.DataFrame:
@@ -19,25 +20,26 @@ def load_price_data(
     Returns a DataFrame with columns = symbols, values = close prices.
     Uses IBGatewaySync (port 4002) with a single sequential connection.
     """
-    from execution.ibkr_engine import IBGatewaySync
     import time as _time
+
+    from execution.ibkr_engine import IBGatewaySync
 
     bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours"}
     bar_size = bar_size_map.get(timeframe, "1 day")
     duration = f"{max(1, limit // 252)} Y" if timeframe == "1d" else f"{limit} D"
 
-    engine = IBGatewaySync(
-        host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30
-    )
+    engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30)
     engine.connect()
 
-    frames: Dict[str, pd.Series] = {}
+    frames: dict[str, pd.Series] = {}
     try:
         for sym in symbols:
             try:
                 bars = engine.get_historical_data(
-                    symbol=sym, duration=duration,
-                    bar_size=bar_size, what_to_show="ADJUSTED_LAST",
+                    symbol=sym,
+                    duration=duration,
+                    bar_size=bar_size,
+                    what_to_show="ADJUSTED_LAST",
                 )
                 if bars:
                     s = pd.Series(
@@ -59,10 +61,12 @@ def load_price_data(
         return pd.DataFrame()
     return pd.DataFrame(frames).dropna(how="all")
 
+
 # Fixed pool of IBKR client IDs for data workers (cycles, never grows unbounded)
-_IBKR_CLIENT_ID_POOL = list(range(2001, 2009))  # 2001ÔÇô2008
+_IBKR_CLIENT_ID_POOL = list(range(2001, 2009))  # 2001���2008
 _ibkr_client_id_index = 0
 _ibkr_client_id_lock = threading.Lock()
+
 
 def _next_client_id() -> int:
     global _ibkr_client_id_index
@@ -71,22 +75,18 @@ def _next_client_id() -> int:
         _ibkr_client_id_index += 1
         return client_id
 
+
 class DataLoader:
     """Load and cache OHLCV data from multiple sources with validation."""
-    
-    def __init__(self, cache_dir: str = "data/cache", validator: Optional[OHLCVValidator] = None):
+
+    def __init__(self, cache_dir: str = "data/cache", validator: OHLCVValidator | None = None):
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         # PHASE 2 FEATURE 3: Inject validator (default to OHLCVValidator if not provided)
         self.validator = validator or OHLCVValidator()
-    
+
     def load_ibkr_data(
-        self,
-        symbol: str,
-        timeframe: str = "1d",
-        since: str = None,
-        limit: int = 252,
-        validate: bool = True
+        self, symbol: str, timeframe: str = "1d", since: str | None = None, limit: int = 252, validate: bool = True
     ) -> pd.DataFrame:
         """
         Load OHLCV data for a US equity symbol via Interactive Brokers.
@@ -136,33 +136,29 @@ class DataLoader:
             engine.connect()
             try:
                 bars = engine.get_historical_data(
-                    symbol=symbol,
-                    duration=duration,
-                    bar_size=bar_size,
-                    what_to_show="ADJUSTED_LAST"
+                    symbol=symbol, duration=duration, bar_size=bar_size, what_to_show="ADJUSTED_LAST"
                 )
                 if not bars:
                     df = pd.DataFrame()
                 else:
                     df = pd.DataFrame(
                         {
-                            'Open': [b.open for b in bars],
-                            'High': [b.high for b in bars],
-                            'Low': [b.low for b in bars],
-                            'Close': [b.close for b in bars],
-                            'Volume': [b.volume for b in bars],
+                            "Open": [b.open for b in bars],
+                            "High": [b.high for b in bars],
+                            "Low": [b.low for b in bars],
+                            "Close": [b.close for b in bars],
+                            "Volume": [b.volume for b in bars],
                         },
                         index=pd.DatetimeIndex([b.date for b in bars]),
                     )
-                    df.index.name = 'date'
+                    df.index.name = "date"
             finally:
                 engine.disconnect()
 
             if df is None or df.empty:
                 raise RuntimeError(f"No data returned from IBKR for {symbol}")
 
-            col_map = {"Open": "open", "High": "high", "Low": "low",
-                        "Close": "close", "Volume": "volume"}
+            col_map = {"Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"}
             df.rename(columns=col_map, inplace=True)
             expected_cols = ["open", "high", "low", "close", "volume"]
             df = df[[c for c in expected_cols if c in df.columns]].dropna()
@@ -174,7 +170,7 @@ class DataLoader:
                     symbol=str(symbol),
                     rows=len(df),
                     checks_passed=validation_result.checks_passed,
-                    checks_failed=validation_result.checks_failed
+                    checks_failed=validation_result.checks_failed,
                 )
             else:
                 logger.info("ibkr_data_loaded_no_validation", symbol=str(symbol), rows=len(df))
@@ -193,7 +189,7 @@ class DataLoader:
         df = pd.read_csv(filepath, index_col=0, parse_dates=True)
         logger.info("csv_loaded", filepath=filepath, rows=len(df))
         return df
-    
+
     def cache_data(self, df: pd.DataFrame, symbol: str, timeframe: str) -> None:
         """Cache DataFrame to disk."""
         # Defensive: ensure symbol is str
@@ -204,8 +200,8 @@ class DataLoader:
         cache_file = self.cache_dir / f"{symbol}_{timeframe}.parquet"
         df.to_parquet(cache_file)
         logger.info("data_cached", symbol=symbol, timeframe=timeframe, path=str(cache_file))
-    
-    def load_cached(self, symbol: str, timeframe: str) -> pd.DataFrame:
+
+    def load_cached(self, symbol: str, timeframe: str) -> pd.DataFrame | None:
         """Load cached data if available."""
         # Defensive: ensure symbol is str
         if isinstance(symbol, list):
@@ -226,13 +222,13 @@ class DataLoader:
 
     def bulk_load(
         self,
-        symbols: List[str],
+        symbols: list[str],
         timeframe: str = "1d",
         limit: int = 252 * 6,
         max_workers: int = 3,
         use_cache: bool = True,
         rate_limiter=None,
-    ) -> Dict[str, pd.DataFrame]:
+    ) -> dict[str, pd.DataFrame]:
         """
         Load OHLCV data for multiple symbols with caching and rate limiting.
 
@@ -248,10 +244,10 @@ class DataLoader:
             rate_limiter: Optional IBKRRateLimiter instance.
 
         Returns:
-            Dict mapping symbol ÔåÆ OHLCV DataFrame.
+            Dict mapping symbol ��� OHLCV DataFrame.
         """
-        results: Dict[str, pd.DataFrame] = {}
-        to_fetch: List[str] = []
+        results: dict[str, pd.DataFrame] = {}
+        to_fetch: list[str] = []
 
         # Phase 1: Load from cache
         if use_cache:
@@ -289,15 +285,19 @@ class DataLoader:
         # Phase 2: Fetch missing from IBKR with rate limiting
         # Persistent IBKR engine per worker
         from execution.ibkr_engine import IBKRExecutionEngine
-        def _worker(symbols: List[str], idx: int) -> Dict[str, Optional[pd.DataFrame]]:
+
+        def _worker(symbols: list[str], idx: int) -> dict[str, pd.DataFrame | None]:
             results = {}
             client_id = 1000 + idx
             logger.info("ibkr_worker_start", worker_idx=idx, client_id=client_id, symbol_count=len(symbols))
             engine = IBKRExecutionEngine(client_id=client_id)
             logger.info("ibkr_worker_engine_actual_client_id", worker_idx=idx, client_id=engine.client_id)
-            assert engine.client_id == client_id, f"Worker {idx}: IBKRExecutionEngine client_id mismatch! Got {engine.client_id}, expected {client_id}"
+            assert engine.client_id == client_id, (
+                f"Worker {idx}: IBKRExecutionEngine client_id mismatch! Got {engine.client_id}, expected {client_id}"
+            )
             logger.debug("ibkr_worker_client_id_assigned", worker_idx=idx, assigned=client_id, actual=engine.client_id)
             engine.connect()
+
             def _normalize_symbol(s):
                 # Flatten lists/tuples and coerce to a deterministic string
                 if isinstance(s, (list, tuple)):
@@ -319,7 +319,7 @@ class DataLoader:
                         rate_limiter.acquire("historical")
                     df = engine.get_historical_data(
                         symbol=norm_sym,
-                        duration=None,
+                        duration="11 Y",
                         bar_size="1 day",
                         what_to_show="ADJUSTED_LAST",
                     )
@@ -328,6 +328,7 @@ class DataLoader:
                     results[norm_sym] = df
                 except TypeError as tex:
                     import traceback as _tb
+
                     tb = _tb.format_exc()
                     logger.error(
                         "bulk_load_type_error",
@@ -340,6 +341,7 @@ class DataLoader:
                     results[norm_sym] = None
                 except Exception as exc:
                     import traceback as _tb
+
                     tb = _tb.format_exc()
                     logger.warning(
                         "bulk_load_symbol_failed",
@@ -352,14 +354,10 @@ class DataLoader:
             return results
 
         # Split symbols among workers
-        symbol_chunks = [
-            to_fetch[i::max_workers] for i in range(max_workers)
-        ]
+        symbol_chunks = [to_fetch[i::max_workers] for i in range(max_workers)]
         completed = 0
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)
-            }
+            futures = {executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)}
             for future in as_completed(futures):
                 worker_results = future.result()
                 for sym, df in worker_results.items():

@@ -25,18 +25,14 @@ Tests:
 import numpy as np
 import pandas as pd
 import pytest
-from typing import Tuple
 
-from models.kalman_hedge import KalmanHedgeRatio
 from models.adaptive_thresholds import DynamicSpreadModel
-
+from models.kalman_hedge import KalmanHedgeRatio
 
 # ÔôÇÔôÇÔôÇ Fixtures ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
 
-def _make_cointegrated_series(
-    n: int = 300, beta_true: float = 2.0, seed: int = 42
-) -> Tuple[pd.Series, pd.Series]:
+def _make_cointegrated_series(n: int = 300, beta_true: float = 2.0, seed: int = 42) -> tuple[pd.Series, pd.Series]:
     """Generate cointegrated series: y = beta_true * x + noise."""
     np.random.seed(seed)
     x = np.cumsum(np.random.randn(n) * 0.5) + 100
@@ -46,9 +42,8 @@ def _make_cointegrated_series(
 
 
 def _make_structural_break_series(
-    n: int = 300, beta_before: float = 2.0, beta_after: float = 3.0,
-    break_point: int = 150, seed: int = 42
-) -> Tuple[pd.Series, pd.Series]:
+    n: int = 300, beta_before: float = 2.0, beta_after: float = 3.0, break_point: int = 150, seed: int = 42
+) -> tuple[pd.Series, pd.Series]:
     """Generate series with a structural break in hedge ratio at break_point."""
     np.random.seed(seed)
     x = np.cumsum(np.random.randn(n) * 0.5) + 100
@@ -73,18 +68,14 @@ class TestKalmanHedgeRatioCore:
 
         # After 300 bars, ╬▓ should be within 5% of true ╬▓=2.0
         assert kf.beta is not None
-        assert abs(kf.beta - 2.0) < 0.10, (
-            f"Kalman ╬▓={kf.beta:.4f} should be near 2.0"
-        )
+        assert abs(kf.beta - 2.0) < 0.10, f"Kalman ╬▓={kf.beta:.4f} should be near 2.0"
 
     def test_structural_break_adaptation(self):
         """
         After structural break (╬▓: 2.0 Ôåô 3.0), Kalman should adapt
         within 20 bars of the break.
         """
-        y, x = _make_structural_break_series(
-            n=300, beta_before=2.0, beta_after=3.0, break_point=150
-        )
+        y, x = _make_structural_break_series(n=300, beta_before=2.0, beta_after=3.0, break_point=150)
         kf = KalmanHedgeRatio(delta=1e-3, ve=1e-3)  # Faster adaptation
         kf.run_filter(y, x)
 
@@ -92,26 +83,19 @@ class TestKalmanHedgeRatioCore:
         beta_at_170 = kf.beta_history[170]
         dist_to_new = abs(beta_at_170 - 3.0)
         dist_to_old = abs(beta_at_170 - 2.0)
-        assert dist_to_new < dist_to_old, (
-            f"╬▓ at bar 170 = {beta_at_170:.4f}: should be closer to 3.0 than 2.0"
-        )
+        assert dist_to_new < dist_to_old, f"╬▓ at bar 170 = {beta_at_170:.4f}: should be closer to 3.0 than 2.0"
 
         # Final ╬▓ should be close to 3.0
-        assert abs(kf.beta - 3.0) < 0.15, (
-            f"Final Kalman ╬▓={kf.beta:.4f} should be near 3.0"
-        )
+        assert kf.beta is not None
+        assert abs(kf.beta - 3.0) < 0.15, f"Final Kalman ╬▓={kf.beta:.4f} should be near 3.0"
 
     def test_innovation_breakdown_detection(self):
         """Structural break should trigger innovation spikes > 3¤â."""
-        y, x = _make_structural_break_series(
-            n=300, beta_before=2.0, beta_after=3.0, break_point=150
-        )
+        y, x = _make_structural_break_series(n=300, beta_before=2.0, beta_after=3.0, break_point=150)
         kf = KalmanHedgeRatio(delta=1e-5, ve=1e-3)  # Slow adaptation Ôåô larger innovations
         kf.run_filter(y, x)
 
-        assert kf.breakdown_count > 0, (
-            "Structural break should trigger at least one innovation > 3¤â"
-        )
+        assert kf.breakdown_count > 0, "Structural break should trigger at least one innovation > 3¤â"
 
     def test_is_breakdown_method(self):
         """is_breakdown() should reflect latest innovation."""
@@ -120,7 +104,7 @@ class TestKalmanHedgeRatioCore:
         np.random.seed(42)
         for _ in range(50):
             kf.update(100 + np.random.randn() * 0.1, 50 + np.random.randn() * 0.1)
-        
+
         # After stable data, no breakdown expected
         assert kf.is_breakdown() is False or True  # May or may not trigger
         # But we can verify the method doesn't crash and returns bool
@@ -136,14 +120,13 @@ class TestKalmanHedgeRatioCore:
         assert kf.P_history[0] == 1.0, "Initial P should be 1.0"
         # Steady-state P is now a 2D matrix [beta, alpha]; check beta variance (P[0,0])
         import numpy as np
+
         P = kf.P
-        if np.ndim(P) > 0:
+        if P is not None and np.ndim(P) > 0:
             # 2D state: check beta variance is small (alpha may remain larger)
-            assert P[0, 0] < 0.01, (
-                f"Steady-state P[0,0] (beta var)={P[0,0]:.8f} should be small for delta=1e-5"
-            )
+            assert P[0, 0] < 0.01, f"Steady-state P[0,0] (beta var)={P[0, 0]:.8f} should be small for delta=1e-5"
         else:
-            assert P < 0.01, (
+            assert P < 0.01, (  # type: ignore[operator]
                 f"Steady-state P={P:.8f} should be small for delta=1e-5"
             )
 
@@ -154,6 +137,7 @@ class TestKalmanHedgeRatioCore:
         kf.run_filter(y, x)
 
         lo, hi = kf.get_confidence_interval(z=1.96)
+        assert kf.beta is not None
         assert lo < kf.beta < hi
         assert hi - lo > 0  # CI has positive width
 
@@ -179,9 +163,15 @@ class TestKalmanHedgeRatioCore:
         diag = kf.get_diagnostics()
 
         expected_keys = {
-            "bars_processed", "current_beta", "current_P",
-            "beta_95_ci", "breakdown_count", "recent_breakdown_rate",
-            "delta", "ve", "innovation_threshold",
+            "bars_processed",
+            "current_beta",
+            "current_P",
+            "beta_95_ci",
+            "breakdown_count",
+            "recent_breakdown_rate",
+            "delta",
+            "ve",
+            "innovation_threshold",
         }
         assert expected_keys <= set(diag.keys())
         assert diag["bars_processed"] == 50
@@ -214,7 +204,7 @@ class TestKalmanValidation:
     def test_x_near_zero_handled(self):
         """x Ôëê 0 should not crash, returns reasonable values."""
         kf = KalmanHedgeRatio()
-        beta, spread, inn = kf.update(100.0, 1e-15)
+        beta, spread, _inn = kf.update(100.0, 1e-15)
         assert np.isfinite(beta)
         assert np.isfinite(spread)
 
@@ -263,9 +253,8 @@ class TestDynamicSpreadModelKalman:
         y, x = _make_cointegrated_series(n=300, beta_true=2.0)
         model = DynamicSpreadModel(y, x, use_kalman=True)
 
-        assert abs(model.beta - 2.0) < 0.10, (
-            f"Kalman ╬▓={model.beta:.4f} should be near 2.0"
-        )
+        assert model.beta is not None
+        assert abs(model.beta - 2.0) < 0.10, f"Kalman ╬▓={model.beta:.4f} should be near 2.0"
 
     def test_compute_spread_dispatches_to_kalman(self):
         """compute_spread should use Kalman when enabled."""
@@ -285,16 +274,12 @@ class TestDynamicSpreadModelKalman:
 
     def test_kalman_adapts_to_structural_break(self):
         """
-        For data with ╬▓ break, Kalman should produce smaller 
+        For data with ╬▓ break, Kalman should produce smaller
         post-break residual variance than OLS.
         """
-        y, x = _make_structural_break_series(
-            n=300, beta_before=2.0, beta_after=3.0, break_point=150
-        )
+        y, x = _make_structural_break_series(n=300, beta_before=2.0, beta_after=3.0, break_point=150)
         model_ols = DynamicSpreadModel(y, x, use_kalman=False)
-        model_kf = DynamicSpreadModel(
-            y, x, use_kalman=True, kalman_delta=1e-3
-        )
+        model_kf = DynamicSpreadModel(y, x, use_kalman=True, kalman_delta=1e-3)
 
         spread_ols = model_ols.compute_spread(y, x)
         spread_kf = model_kf.compute_spread(y, x)
@@ -304,8 +289,7 @@ class TestDynamicSpreadModelKalman:
         kf_post_std = spread_kf.iloc[170:].std()
 
         assert kf_post_std < ols_post_std, (
-            f"Kalman post-break std={kf_post_std:.4f} should be < "
-            f"OLS post-break std={ols_post_std:.4f}"
+            f"Kalman post-break std={kf_post_std:.4f} should be < OLS post-break std={ols_post_std:.4f}"
         )
 
     def test_backward_compatible_signals(self):
@@ -341,6 +325,8 @@ class TestKalmanSpreadComparison:
         model_kf = DynamicSpreadModel(y, x, use_kalman=True)
 
         # Both betas should be close to 2.0
+        assert model_ols.beta is not None
+        assert model_kf.beta is not None
         assert abs(model_ols.beta - 2.0) < 0.1
         assert abs(model_kf.beta - 2.0) < 0.1
 
@@ -361,14 +347,14 @@ class TestKalmanSpreadComparison:
         kf.run_filter(y_s, x_s)
 
         # Kalman's final ╬▓ should be close to 3.0
-        assert abs(kf.beta - 3.0) < 0.2, (
-            f"Kalman ╬▓={kf.beta:.4f} should track drift to 3.0"
-        )
+        assert kf.beta is not None
+        assert abs(kf.beta - 3.0) < 0.2, f"Kalman ╬▓={kf.beta:.4f} should track drift to 3.0"
 
         # OLS ╬▓ would be ~2.5 (average of 2.0 and 3.0)
         X = np.column_stack([np.ones(n), x])
         ols_beta = np.linalg.lstsq(X, y, rcond=None)[0][1]
         # Kalman should be closer to final true ╬▓ than OLS
+        assert kf.beta is not None
         assert abs(kf.beta - 3.0) < abs(ols_beta - 3.0), (
             f"Kalman ╬▓={kf.beta:.4f} should be closer to 3.0 than OLS ╬▓={ols_beta:.4f}"
         )

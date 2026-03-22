@@ -11,8 +11,6 @@ would create 50%+ AAPL concentration).
 
 from __future__ import annotations
 
-from typing import Dict, Optional, Tuple
-
 from structlog import get_logger
 
 from execution.concentration_limits import ConcentrationLimitManager
@@ -48,7 +46,7 @@ class ConcentrationManager:
         symbol2: str,
         side: str,
         notional: float = 1.0,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if a new position would breach concentration limits.
 
@@ -67,11 +65,11 @@ class ConcentrationManager:
         """Release concentration capacity on position exit."""
         self._inner.remove_position(pair_key)
 
-    def get_symbol_exposures(self) -> Dict:
+    def get_symbol_exposures(self) -> dict:
         """Return current per-symbol exposure map."""
         return dict(self._inner.symbol_exposures)
 
-    def most_concentrated_symbol(self) -> Optional[str]:
+    def most_concentrated_symbol(self) -> str | None:
         """Return symbol with highest gross exposure, or None."""
         exposures = self._inner.symbol_exposures
         if not exposures:

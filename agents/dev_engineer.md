@@ -46,7 +46,7 @@ venv\Scripts\python.exe setup.py build_ext --inplace
 ### Pattern d'import avec fallback
 ```python
 try:
-    from models.cointegration_fast import engle_granger_test_fast as engle_granger_test
+    from models.cointegration_fast import engle_granger_fast as engle_granger_test
 except ImportError:
     from models.cointegration import engle_granger_test
 ```

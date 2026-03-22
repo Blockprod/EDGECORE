@@ -1,27 +1,28 @@
 ﻿"""Flask API endpoints for EDGECORE dashboard."""
 
-from typing import Optional, Dict, Any, Tuple
-from flask import Flask, request
 from datetime import datetime
-import structlog
+from typing import Any
 
-from monitoring.dashboard import DashboardGenerator
+import structlog
+from flask import Flask, request
+
 from monitoring.api_security import (
-    require_rate_limit,
-    require_api_key,
     add_security_headers,
+    get_request_stats,
     log_api_call,
-    get_request_stats
+    require_api_key,
+    require_rate_limit,
 )
+from monitoring.dashboard import DashboardGenerator
 
 logger = structlog.get_logger(__name__)
 
 # Global dashboard instance
-_dashboard_instance: Optional[DashboardGenerator] = None
-_flask_app: Optional[Flask] = None
+_dashboard_instance: DashboardGenerator | None = None
+_flask_app: Flask | None = None
 
 
-def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
+def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
     """
     Create and configure Flask app for dashboard API.
 
@@ -38,7 +39,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @app.route('/health', methods=['GET'])
     @require_rate_limit
     @log_api_call
-    def health() -> Tuple[Dict[str, str], int]:
+    def health() -> tuple[dict[str, str], int]:
         """
         Health check endpoint (no auth required).
 
@@ -51,7 +52,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_dashboard() -> Tuple[Dict[str, Any], int]:
+    def api_dashboard() -> tuple[dict[str, Any], int]:
         """
         Get complete dashboard snapshot.
 
@@ -75,7 +76,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_system_status() -> Tuple[Dict[str, Any], int]:
+    def api_system_status() -> tuple[dict[str, Any], int]:
         """
         Get system status (uptime, mode, memory, CPU).
 
@@ -96,7 +97,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_risk_metrics() -> Tuple[Dict[str, Any], int]:
+    def api_risk_metrics() -> tuple[dict[str, Any], int]:
         """
         Get risk metrics (equity, drawdown, position limits).
 
@@ -117,7 +118,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_positions() -> Tuple[Dict[str, Any], int]:
+    def api_positions() -> tuple[dict[str, Any], int]:
         """
         Get open positions.
 
@@ -138,7 +139,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_orders() -> Tuple[Dict[str, Any], int]:
+    def api_orders() -> tuple[dict[str, Any], int]:
         """
         Get open orders.
 
@@ -159,7 +160,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_performance() -> Tuple[Dict[str, Any], int]:
+    def api_performance() -> tuple[dict[str, Any], int]:
         """
         Get performance metrics (returns, Sharpe, drawdown).
 
@@ -180,7 +181,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
     @require_rate_limit
     @require_api_key
     @log_api_call
-    def api_status() -> Tuple[Dict[str, Any], int]:
+    def api_status() -> tuple[dict[str, Any], int]:
         """
         Get dashboard generator status.
 
@@ -203,7 +204,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
 
     @app.route('/api/stats', methods=['GET'])
     @log_api_call
-    def api_stats() -> Tuple[Dict[str, Any], int]:
+    def api_stats() -> tuple[dict[str, Any], int]:
         """
         Get API request statistics (no auth required).
 
@@ -221,8 +222,9 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
         Returns Prometheus text format metrics for the trading system.
         No auth required ÔÇö intended for internal Prometheus scraping.
         """
-        from monitoring.metrics import SystemMetrics
         from flask import Response
+
+        from monitoring.metrics import SystemMetrics
 
         # Use global metrics instance if available, else default
         metrics = getattr(app, '_system_metrics', None) or SystemMetrics()
@@ -230,7 +232,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
         return Response(body, mimetype='text/plain; version=0.0.4; charset=utf-8')
 
     @app.errorhandler(404)
-    def not_found(error) -> Tuple[Dict[str, Any], int]:
+    def not_found(error) -> tuple[dict[str, Any], int]:
         """Handle 404 errors."""
         return {
             'error': 'Not found',
@@ -250,7 +252,7 @@ def create_app(dashboard: Optional[DashboardGenerator] = None) -> Flask:
         }, 404
 
     @app.errorhandler(500)
-    def internal_error(error) -> Tuple[Dict[str, Any], int]:
+    def internal_error(error) -> tuple[dict[str, Any], int]:
         """Handle 500 errors."""
         logger.error("internal_server_error", error=str(error))
         return {
@@ -289,7 +291,7 @@ def initialize_dashboard_api(dashboard: DashboardGenerator) -> Flask:
     return _flask_app
 
 
-def get_dashboard_app() -> Optional[Flask]:
+def get_dashboard_app() -> Flask | None:
     """
     Get the global Flask app instance.
 

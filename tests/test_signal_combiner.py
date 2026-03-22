@@ -16,7 +16,6 @@ import pytest
 
 from signal_engine.combiner import SignalCombiner, SignalSource
 
-
 # ---------------------------------------------------------------------------
 # TestSignalSource
 # ---------------------------------------------------------------------------

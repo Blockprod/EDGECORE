@@ -15,15 +15,15 @@ Why a dedicated module?
 
 from __future__ import annotations
 
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Iterator
 
 import pandas as pd
-
 
 # ---------------------------------------------------------------------------
 # Module-level P&L utilities (used by SimulatedOrderBook and importable
 # directly by other modules without creating an OrderBook instance).
 # ---------------------------------------------------------------------------
+
 
 def unrealized_pnl(pos: dict, prices_df: pd.DataFrame, bar_idx: int) -> float:
     """Return mark-to-market unrealised P&L for a single pair position.
@@ -55,6 +55,7 @@ def unrealized_pnl(pos: dict, prices_df: pd.DataFrame, bar_idx: int) -> float:
 # SimulatedOrderBook
 # ---------------------------------------------------------------------------
 
+
 class SimulatedOrderBook:
     """
     Tracks open pair positions for bar-by-bar backtest simulation.
@@ -73,7 +74,7 @@ class SimulatedOrderBook:
     """
 
     def __init__(self) -> None:
-        self._positions: Dict[str, dict] = {}
+        self._positions: dict[str, dict] = {}
 
     # ------------------------------------------------------------------
     # Semantic position lifecycle API
@@ -91,7 +92,7 @@ class SimulatedOrderBook:
         """
         return self._positions.pop(pair_key)
 
-    def get(self, pair_key: str) -> Optional[dict]:
+    def get(self, pair_key: str) -> dict | None:
         """Return a position without removing it, or ``None`` if absent."""
         return self._positions.get(pair_key)
 
@@ -99,9 +100,7 @@ class SimulatedOrderBook:
     # P&L utilities
     # ------------------------------------------------------------------
 
-    def position_unrealized_pnl(
-        self, pair_key: str, prices_df: pd.DataFrame, bar_idx: int
-    ) -> float:
+    def position_unrealized_pnl(self, pair_key: str, prices_df: pd.DataFrame, bar_idx: int) -> float:
         """Unrealised P&L for a single named position (0.0 if absent)."""
         pos = self._positions.get(pair_key)
         if pos is None:
@@ -125,7 +124,7 @@ class SimulatedOrderBook:
         prices_df: pd.DataFrame,
         bar_idx: int,
         n: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """Return pair keys of the *n* positions with the lowest unrealised P&L.
 
         Used by the drawdown-manager tier-2 handler to close the weakest
@@ -144,13 +143,13 @@ class SimulatedOrderBook:
         """Remove and return a position (backward-compatible alias for :meth:`close`)."""
         return self._positions.pop(pair_key)
 
-    def keys(self) -> List[str]:  # type: ignore[override]
+    def keys_list(self) -> list[str]:
         return list(self._positions.keys())
 
-    def values(self) -> List[dict]:  # type: ignore[override]
+    def values_list(self) -> list[dict]:
         return list(self._positions.values())
 
-    def items(self) -> List[Tuple[str, dict]]:  # type: ignore[override]
+    def items_list(self) -> list[tuple[str, dict]]:
         return list(self._positions.items())
 
     def __len__(self) -> int:

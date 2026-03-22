@@ -1,7 +1,7 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+
 
 class EventType(Enum):
     """Trading event taxonomy."""
@@ -21,11 +21,11 @@ class TradingEvent:
     timestamp: datetime
     symbol_pair: str
     position_size: float
-    entry_price: Optional[float] = None
-    exit_price: Optional[float] = None
-    z_score: Optional[float] = None
-    pnl: Optional[float] = None
-    reason: Optional[str] = None
+    entry_price: float | None = None
+    exit_price: float | None = None
+    z_score: float | None = None
+    pnl: float | None = None
+    reason: str | None = None
     
     def to_dict(self):
         """Convert event to dictionary for logging."""

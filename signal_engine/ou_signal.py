@@ -16,7 +16,6 @@ Phase 1, Etape 1.1.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -28,9 +27,10 @@ logger = get_logger(__name__)
 @dataclass
 class OUParams:
     """Estimated Ornstein-Uhlenbeck parameters."""
-    theta: float      # Mean-reversion speed (1/days)
-    mu: float         # Long-run mean
-    sigma: float      # Diffusion coefficient
+
+    theta: float  # Mean-reversion speed (1/days)
+    mu: float  # Long-run mean
+    sigma: float  # Diffusion coefficient
     half_life: float  # ln(2) / theta
 
 
@@ -68,7 +68,7 @@ class OUSignalGenerator:
         self.min_theta = min_theta
         self.max_score = max_score
 
-    def estimate_params(self, spread: pd.Series) -> Optional[OUParams]:
+    def estimate_params(self, spread: pd.Series) -> OUParams | None:
         """Estimate OU parameters from the spread series via AR(1) regression.
 
         Uses the last `self.lookback` observations.
@@ -80,16 +80,16 @@ class OUSignalGenerator:
         if len(s) < max(20, self.lookback // 2):
             return None
 
-        s = s.iloc[-self.lookback:]
+        s = s.iloc[-self.lookback :]
         x_lag = s.values[:-1]
-        dx = np.diff(s.values)
+        dx = np.diff(np.asarray(s, dtype=float))
 
         # OLS: dx = alpha + beta * x_lag
         n = len(dx)
         if n < 10:
             return None
 
-        x_mat = np.column_stack([np.ones(n), x_lag])
+        x_mat = np.column_stack([np.ones(n), np.asarray(x_lag, dtype=float)])
         try:
             coeffs, _, _, _ = np.linalg.lstsq(x_mat, dx, rcond=None)
         except np.linalg.LinAlgError:

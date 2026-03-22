@@ -4,6 +4,7 @@ Metrics and monitoring hooks for Prometheus compatibility.
 
 from dataclasses import dataclass
 
+
 @dataclass
 class SystemMetrics:
     """System-level trading metrics."""

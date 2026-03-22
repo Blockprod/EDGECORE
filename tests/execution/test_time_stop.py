@@ -10,17 +10,17 @@ Proves C-05 fix:
 Run: pytest tests/test_time_stop.py -v
 """
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
-from execution.time_stop import TimeStopManager, TimeStopConfig
 from backtests.strategy_simulator import StrategyBacktestSimulator
-
+from execution.time_stop import TimeStopConfig, TimeStopManager
 
 # ========================================================================
 # Unit tests ÔÇô TimeStopManager
 # ========================================================================
+
 
 class TestTimeStopManagerHoldingBars:
     """Verify max_holding_bars computation."""
@@ -85,7 +85,7 @@ class TestTimeStopShouldExit:
 
     def test_exit_past_limit(self):
         tsm = TimeStopManager()
-        should, reason = tsm.should_exit(holding_bars=50, half_life=15)
+        should, _reason = tsm.should_exit(holding_bars=50, half_life=15)
         assert should is True
 
     def test_no_exit_at_limit_minus_one(self):
@@ -96,7 +96,7 @@ class TestTimeStopShouldExit:
     def test_exit_at_cap(self):
         """half_life=40 Ôåô limit=60 (capped). holding_bars=60 Ôåô exit."""
         tsm = TimeStopManager()
-        should, reason = tsm.should_exit(holding_bars=60, half_life=40)
+        should, _reason = tsm.should_exit(holding_bars=60, half_life=40)
         assert should is True
 
     def test_exit_reason_contains_details(self):
@@ -109,6 +109,7 @@ class TestTimeStopShouldExit:
 # ========================================================================
 # Integration test ÔÇô Simulator + TimeStop
 # ========================================================================
+
 
 class TestSimulatorTimeStopIntegration:
     """Prove that the simulator force-closes positions at time stop."""

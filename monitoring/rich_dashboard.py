@@ -16,44 +16,44 @@ Features:
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any
 
+from rich import box
+from rich.align import Align
+from rich.columns import Columns
 from rich.console import Group
+from rich.padding import Padding
 from rich.panel import Panel
+from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
-from rich.columns import Columns
-from rich.align import Align
-from rich.rule import Rule
-from rich.padding import Padding
-from rich import box
 
 # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 # PALETTE ÔÇö Premium Gradient Colors
 # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-_C_PRIMARY   = "#00D9FF"   # Bright cyan - main accent
-_C_SECONDARY = "#7C3AED"   # Vibrant purple
-_C_ACCENT    = "#6366F1"   # Indigo
-_C_SUCCESS   = "#10B981"   # Emerald green
-_C_DANGER    = "#EF4444"   # Bright red
-_C_WARN      = "#F59E0B"   # Amber
-_C_INFO      = "#3B82F6"   # Blue
-_C_LIGHT     = "#F8FAFC"   # Near white
-_C_DARK      = "#0F172A"   # Dark slate
-_C_MUTE      = "#64748B"   # Slate grey
-_C_BORDER    = "#1E293B"   # Darker border
-_C_BG_LIGHT  = "#020617"   # Almost black background
+_C_PRIMARY = "#00D9FF"  # Bright cyan - main accent
+_C_SECONDARY = "#7C3AED"  # Vibrant purple
+_C_ACCENT = "#6366F1"  # Indigo
+_C_SUCCESS = "#10B981"  # Emerald green
+_C_DANGER = "#EF4444"  # Bright red
+_C_WARN = "#F59E0B"  # Amber
+_C_INFO = "#3B82F6"  # Blue
+_C_LIGHT = "#F8FAFC"  # Near white
+_C_DARK = "#0F172A"  # Dark slate
+_C_MUTE = "#64748B"  # Slate grey
+_C_BORDER = "#1E293B"  # Darker border
+_C_BG_LIGHT = "#020617"  # Almost black background
 
 # Semantic aliases (for readability)
-_C_DIM      = _C_MUTE          # Dimmed text
-_C_TITLE    = _C_LIGHT         # Panel titles
-_C_VAL      = _C_ACCENT        # Values/numbers
-_C_GREEN    = _C_SUCCESS       # Positive (green)
-_C_GREEN2   = "#34D399"        # Alt green
-_C_RED      = _C_DANGER        # Negative (red)
-_C_YELLOW   = _C_WARN          # Warning (yellow)
-_C_CYAN     = _C_PRIMARY       # Cyan highlights
-_C_BORDER2  = _C_MUTE          # Secondary border
+_C_DIM = _C_MUTE  # Dimmed text
+_C_TITLE = _C_LIGHT  # Panel titles
+_C_VAL = _C_ACCENT  # Values/numbers
+_C_GREEN = _C_SUCCESS  # Positive (green)
+_C_GREEN2 = "#34D399"  # Alt green
+_C_RED = _C_DANGER  # Negative (red)
+_C_YELLOW = _C_WARN  # Warning (yellow)
+_C_CYAN = _C_PRIMARY  # Cyan highlights
+_C_BORDER2 = _C_MUTE  # Secondary border
 
 
 def format_duration(seconds: float) -> str:
@@ -75,16 +75,16 @@ def sparkline(values: list, width: int = 26) -> str:
     if len(values) < 2:
         # Not enough data - show a simple line with hint
         return f"[{_C_DIM}]no history yet (waiting for ticks)[/{_C_DIM}]"
-    
+
     mn, mx = min(values), max(values)
     rng = mx - mn
-    
+
     # If all values are identical (flat), show a different pattern
     if rng < 0.01:
         # Show a flat sparkline or alternate
         flat_pattern = "ÔöÇ" * width
         return f"[{_C_YELLOW}]{flat_pattern}[/{_C_YELLOW}] [flat]"
-    
+
     # Normal sparkline with range
     step = max(1.0, len(values) / width)
     sampled = [values[min(int(i * step), len(values) - 1)] for i in range(width)]
@@ -97,21 +97,21 @@ def sparkline(values: list, width: int = 26) -> str:
     return f"[{trend_color}]{chars}[/{trend_color}]{pts}"
 
 
-SECTOR_COLORS: Dict[str, str] = {
-    "technology":       "#38BDF8",
-    "financials":       "#F59E0B",
-    "energy":           "#FB923C",
+SECTOR_COLORS: dict[str, str] = {
+    "technology": "#38BDF8",
+    "financials": "#F59E0B",
+    "energy": "#FB923C",
     "consumer_staples": "#86EFAC",
-    "industrials":      "#CBD5E1",
-    "utilities":        "#C084FC",
+    "industrials": "#CBD5E1",
+    "utilities": "#C084FC",
 }
-SECTOR_SHORT: Dict[str, str] = {
-    "technology":       "TECH",
-    "financials":       "FIN",
-    "energy":           "ENRG",
+SECTOR_SHORT: dict[str, str] = {
+    "technology": "TECH",
+    "financials": "FIN",
+    "energy": "ENRG",
     "consumer_staples": "CSTA",
-    "industrials":      "INDU",
-    "utilities":        "UTIL",
+    "industrials": "INDU",
+    "utilities": "UTIL",
 }
 
 
@@ -123,10 +123,10 @@ def build_dashboard(
     interval: int,
     status: str = "RUNNING",
     next_tick_in: float = 0,
-    sector_map: Optional[Dict[str, str]] = None,
+    sector_map: dict[str, str] | None = None,
 ) -> Group:
     """Build and return a Rich renderable for the live dashboard.
-    
+
     Args:
         runner: PaperTradingRunner or LiveTradingRunner instance
         tick_count: Number of ticks executed
@@ -136,65 +136,62 @@ def build_dashboard(
         status: Current status (RUNNING, COMPUTING, STOPPED, ERROR)
         next_tick_in: Seconds until next tick (if continuous mode)
         sector_map: Mapping of symbols to sectors
-        
+
     Returns:
         Rich Group containing all dashboard panels
     """
     if sector_map is None:
         sector_map = {}
-        
-    now    = datetime.now()
+
+    now = datetime.now()
     uptime = (now - start_time).total_seconds()
 
-    active_pairs    = getattr(runner, '_active_pairs', [])
-    positions       = getattr(runner, '_positions', {})
-    metrics         = getattr(runner, '_metrics', None)
+    active_pairs = getattr(runner, "_active_pairs", [])
+    positions = getattr(runner, "_positions", {})
+    metrics = getattr(runner, "_metrics", None)
     initial_capital = runner.config.initial_capital
-    equity_hist     = list(getattr(runner, '_equity_history', []))
-    data_loaded = getattr(runner, '_data_symbols_loaded', 0)
-    data_total  = getattr(runner, '_data_symbols_total', 0)
-    data_rows   = getattr(runner, '_data_load_rows', 0)
+    equity_hist = list(getattr(runner, "_equity_history", []))
+    data_loaded = getattr(runner, "_data_symbols_loaded", 0)
+    data_total = getattr(runner, "_data_symbols_total", 0)
+    data_rows = getattr(runner, "_data_load_rows", 0)
 
     equity = initial_capital
     if metrics:
-        raw_equity = getattr(metrics, 'equity', 0)
+        raw_equity = getattr(metrics, "equity", 0)
         if raw_equity > 0:
             equity = raw_equity
-    total_pnl     = equity - initial_capital
+    total_pnl = equity - initial_capital
     total_pnl_pct = (total_pnl / initial_capital * 100) if initial_capital > 0 else 0
-    max_dd        = getattr(metrics, 'max_drawdown', 0) * 100 if metrics else 0
-    trades_total  = getattr(metrics, 'trades_total', 0) if metrics else 0
-    winning       = getattr(metrics, 'winning_trades', 0) if metrics else 0
-    losing        = getattr(metrics, 'losing_trades', 0) if metrics else 0
-    win_rate      = (winning / trades_total * 100) if trades_total > 0 else 0.0
+    max_dd = getattr(metrics, "max_drawdown", 0) * 100 if metrics else 0
+    trades_total = getattr(metrics, "trades_total", 0) if metrics else 0
+    winning = getattr(metrics, "winning_trades", 0) if metrics else 0
+    losing = getattr(metrics, "losing_trades", 0) if metrics else 0
+    win_rate = (winning / trades_total * 100) if trades_total > 0 else 0.0
 
-    pnl_c    = _C_GREEN if total_pnl >= 0 else _C_RED
+    pnl_c = _C_GREEN if total_pnl >= 0 else _C_RED
     pnl_sign = "+" if total_pnl >= 0 else ""
-    dd_c     = _C_RED if max_dd > 10 else _C_YELLOW if max_dd > 3 else _C_GREEN2
-    wr_c     = _C_GREEN if win_rate >= 55 else _C_YELLOW if win_rate >= 45 else _C_RED
+    dd_c = _C_RED if max_dd > 10 else _C_YELLOW if max_dd > 3 else _C_GREEN2
+    wr_c = _C_GREEN if win_rate >= 55 else _C_YELLOW if win_rate >= 45 else _C_RED
 
     # ÔöÇÔöÇ Status config ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     _status_cfg = {
-        "RUNNING":      ("bold " + _C_GREEN,  "Ô¼ñ  RUNNING",      _C_BORDER),
-        "COMPUTING":    ("bold " + _C_YELLOW, "Ôùò  COMPUTINGÔÇª",   "#7A5800"),
+        "RUNNING": ("bold " + _C_GREEN, "Ô¼ñ  RUNNING", _C_BORDER),
+        "COMPUTING": ("bold " + _C_YELLOW, "Ôùò  COMPUTINGÔÇª", "#7A5800"),
         "INITIALIZING": ("bold " + _C_ACCENT, "Ôùë  INITIALIZING", "#0E3460"),
-        "STOPPED":      ("bold " + _C_RED,    "Ôù╝  STOPPED",      "#7B1C1C"),
-        "ERROR":        ("bold " + _C_RED,    "Ô£û  ERROR",        "#7B1C1C"),
+        "STOPPED": ("bold " + _C_RED, "Ôù╝  STOPPED", "#7B1C1C"),
+        "ERROR": ("bold " + _C_RED, "Ô£û  ERROR", "#7B1C1C"),
     }
-    st_style, st_label, border_color = _status_cfg.get(status, _status_cfg["RUNNING"])
+    st_style, st_label, _border_color = _status_cfg.get(status, _status_cfg["RUNNING"])
 
     # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
     # HEADER
     # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
     hdr = Table.grid(expand=True, padding=(0, 2))
-    hdr.add_column(justify="left",   ratio=3)
+    hdr.add_column(justify="left", ratio=3)
     hdr.add_column(justify="center", ratio=4)
-    hdr.add_column(justify="right",  ratio=3)
+    hdr.add_column(justify="right", ratio=3)
     hdr.add_row(
-        Text.from_markup(
-            f"[{_C_DIM}]{now:%Y-%m-%d}[/{_C_DIM}]"
-            f"  [bold {_C_VAL}]{now:%H:%M:%S}[/bold {_C_VAL}]"
-        ),
+        Text.from_markup(f"[{_C_DIM}]{now:%Y-%m-%d}[/{_C_DIM}]  [bold {_C_VAL}]{now:%H:%M:%S}[/bold {_C_VAL}]"),
         Text.from_markup(
             f"[bold yellow]ÔÜí[/bold yellow] "
             f"[bold white]EDGECORE[/bold white]"
@@ -217,36 +214,45 @@ def build_dashboard(
     st_tbl.add_column(style=_C_DIM, min_width=10)
     st_tbl.add_column(style=_C_VAL, min_width=28)
 
-    st_tbl.add_row("Started",
-        f"[{_C_DIM}]{start_time:%Y-%m-%d}  {start_time:%H:%M:%S}[/{_C_DIM}]")
-    st_tbl.add_row("Uptime",
-        f"[bold {_C_ACCENT}]{format_duration(uptime)}[/bold {_C_ACCENT}]")
-    st_tbl.add_row("Tick",
+    st_tbl.add_row("Started", f"[{_C_DIM}]{start_time:%Y-%m-%d}  {start_time:%H:%M:%S}[/{_C_DIM}]")
+    st_tbl.add_row("Uptime", f"[bold {_C_ACCENT}]{format_duration(uptime)}[/bold {_C_ACCENT}]")
+    st_tbl.add_row(
+        "Tick",
         f"[bold {_C_CYAN}]#{tick_count}[/bold {_C_CYAN}]"
-        + (f"   [{_C_DIM}]ÔÅ▒ {tick_elapsed:.1f}s[/{_C_DIM}]" if tick_elapsed > 0 else ""))
+        + (f"   [{_C_DIM}]ÔÅ▒ {tick_elapsed:.1f}s[/{_C_DIM}]" if tick_elapsed > 0 else ""),
+    )
 
     if tick_count == 0 or data_total == 0:
         data_cell = f"[{_C_DIM}]pendingÔÇª[/{_C_DIM}]"
     elif data_loaded == data_total:
-        data_cell = (f"[bold {_C_GREEN}]Ô£ô  {data_loaded}/{data_total}[/bold {_C_GREEN}]"
-                     f"  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]")
+        data_cell = (
+            f"[bold {_C_GREEN}]Ô£ô  {data_loaded}/{data_total}[/bold {_C_GREEN}]  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]"
+        )
     else:
-        data_cell = (f"[bold {_C_YELLOW}]ÔÜá  {data_loaded}/{data_total}[/bold {_C_YELLOW}]"
-                     f"  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]")
+        data_cell = (
+            f"[bold {_C_YELLOW}]ÔÜá  {data_loaded}/{data_total}[/bold {_C_YELLOW}]"
+            f"  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]"
+        )
     st_tbl.add_row("Data", Text.from_markup(data_cell))
 
     if next_tick_in > 0:
         next_time = now + timedelta(seconds=next_tick_in)
-        done  = max(0, interval - int(next_tick_in))
-        pct   = done / interval if interval > 0 else 0
+        done = max(0, interval - int(next_tick_in))
+        pct = done / interval if interval > 0 else 0
         bar_w = 22
         filled = int(pct * bar_w)
-        bar = (f"[{_C_ACCENT}]" + "Ôûê" * filled
-               + f"[/{_C_ACCENT}][{_C_DIM}]" + "Ôûæ" * (bar_w - filled)
-               + f"[/{_C_DIM}]  [{_C_DIM}]{pct * 100:.0f}%[/{_C_DIM}]")
-        st_tbl.add_row("Next tick",
+        bar = (
+            f"[{_C_ACCENT}]"
+            + "Ôûê" * filled
+            + f"[/{_C_ACCENT}][{_C_DIM}]"
+            + "Ôûæ" * (bar_w - filled)
+            + f"[/{_C_DIM}]  [{_C_DIM}]{pct * 100:.0f}%[/{_C_DIM}]"
+        )
+        st_tbl.add_row(
+            "Next tick",
             f"[bold {_C_VAL}]{next_time:%H:%M:%S}[/bold {_C_VAL}]"
-            f"  [{_C_DIM}]in {format_duration(next_tick_in)}[/{_C_DIM}]")
+            f"  [{_C_DIM}]in {format_duration(next_tick_in)}[/{_C_DIM}]",
+        )
         st_tbl.add_row("", Text.from_markup(bar))
     else:
         st_tbl.add_row("Interval", f"[{_C_VAL}]{format_duration(interval)}[/{_C_VAL}]")
@@ -286,13 +292,14 @@ def build_dashboard(
         return t
 
     mstrip.add_row(
-        _metric("CAPITAL",   f"${initial_capital:,.0f}",           _C_VAL),
-        _metric("MAX DD",    f"ÔêÆ{max_dd:.2f}%",                    dd_c),
-        _metric("TRADES",    f"{trades_total}  (W{winning}/L{losing})", _C_VAL),
+        _metric("CAPITAL", f"${initial_capital:,.0f}", _C_VAL),
+        _metric("MAX DD", f"ÔêÆ{max_dd:.2f}%", dd_c),
+        _metric("TRADES", f"{trades_total}  (W{winning}/L{losing})", _C_VAL),
     )
     if trades_total > 0:
         mstrip.add_row(
-            Text(""), Text(""),
+            Text(""),
+            Text(""),
             _metric("WIN RATE", f"{win_rate:.1f}%", wr_c),
         )
 
@@ -316,43 +323,48 @@ def build_dashboard(
     pairs_tbl = Table(
         box=box.MINIMAL_HEAVY_HEAD,
         header_style=f"bold {_C_TITLE}",
-        expand=True, show_edge=False,
+        expand=True,
+        show_edge=False,
         row_styles=["", "on #080F1A"],
     )
-    pairs_tbl.add_column("#",         style=_C_DIM, width=3)
-    pairs_tbl.add_column("Pair",      style=f"bold {_C_CYAN}", min_width=14)
-    pairs_tbl.add_column("Sector",    justify="center", min_width=6)
+    pairs_tbl.add_column("#", style=_C_DIM, width=3)
+    pairs_tbl.add_column("Pair", style=f"bold {_C_CYAN}", min_width=14)
+    pairs_tbl.add_column("Sector", justify="center", min_width=6)
     pairs_tbl.add_column("Half-Life", justify="center", min_width=10)
-    pairs_tbl.add_column("P-Value",   justify="right",  min_width=10)
-    pairs_tbl.add_column("Curr Z",    justify="right",  min_width=8)
-    pairs_tbl.add_column("Status",    justify="center", min_width=12)
+    pairs_tbl.add_column("P-Value", justify="right", min_width=10)
+    pairs_tbl.add_column("Curr Z", justify="right", min_width=8)
+    pairs_tbl.add_column("Status", justify="center", min_width=12)
 
     if active_pairs:
         for i, pair in enumerate(active_pairs, 1):
             if isinstance(pair, tuple) and len(pair) >= 2:
-                pair_key   = f"{pair[0]}_{pair[1]}"
-                pval_f     = pair[2] if len(pair) > 2 else None
-                hl_f       = pair[3] if len(pair) > 3 else None
-                pval_str   = f"{pval_f:.6f}" if pval_f is not None else "?"
-                hl_val     = f"{hl_f:.1f}d"  if hl_f   is not None else "?"
-                hl_c       = (_C_GREEN  if hl_f is not None and hl_f < 20
-                              else _C_YELLOW if hl_f is not None and hl_f < 60
-                              else _C_VAL)
+                pair_key = f"{pair[0]}_{pair[1]}"
+                pval_f = pair[2] if len(pair) > 2 else None
+                hl_f = pair[3] if len(pair) > 3 else None
+                pval_str = f"{pval_f:.6f}" if pval_f is not None else "?"
+                hl_val = f"{hl_f:.1f}d" if hl_f is not None else "?"
+                hl_c = (
+                    _C_GREEN
+                    if hl_f is not None and hl_f < 20
+                    else _C_YELLOW
+                    if hl_f is not None and hl_f < 60
+                    else _C_VAL
+                )
                 sym_sector = sector_map.get(pair[0], "")
-                sec_col    = SECTOR_COLORS.get(sym_sector, _C_DIM)
-                sec_short  = SECTOR_SHORT.get(sym_sector,
-                             sym_sector[:4].upper() if sym_sector else "ÔÇö")
-                pos_data   = positions.get(pair_key, {})
-                curr_z     = pos_data.get('current_z', None)
-                z_str      = f"{curr_z:+.2f}" if curr_z is not None else f"[{_C_DIM}]ÔÇö[/{_C_DIM}]"
+                sec_col = SECTOR_COLORS.get(sym_sector, _C_DIM)
+                sec_short = SECTOR_SHORT.get(sym_sector, sym_sector[:4].upper() if sym_sector else "ÔÇö")
+                pos_data = positions.get(pair_key, {})
+                curr_z = pos_data.get("current_z", None)
+                z_str = f"{curr_z:+.2f}" if curr_z is not None else f"[{_C_DIM}]ÔÇö[/{_C_DIM}]"
                 if pair_key in positions:
-                    side   = pos_data.get('side', '?')
-                    sc     = _C_GREEN if side == "LONG" else _C_RED
+                    side = pos_data.get("side", "?")
+                    sc = _C_GREEN if side == "LONG" else _C_RED
                     status_cell = Text.from_markup(f"[bold {sc}]Ô¼ñ {side}[/bold {sc}]")
                 else:
                     status_cell = Text.from_markup(f"[{_C_DIM}]Ôù» waiting[/{_C_DIM}]")
                 pairs_tbl.add_row(
-                    str(i), pair_key,
+                    str(i),
+                    pair_key,
                     Text.from_markup(f"[bold {sec_col}]{sec_short}[/bold {sec_col}]"),
                     f"[{hl_c}]{hl_val}[/{hl_c}]",
                     f"[{_C_ACCENT}]{pval_str}[/{_C_ACCENT}]",
@@ -360,14 +372,22 @@ def build_dashboard(
                     status_cell,
                 )
     else:
-        pairs_tbl.add_row("ÔÇö",
+        pairs_tbl.add_row(
+            "ÔÇö",
             Text.from_markup(f"[italic {_C_DIM}]none discovered yet[/italic {_C_DIM}]"),
-            "ÔÇö", "ÔÇö", "ÔÇö", "ÔÇö", "ÔÇö")
+            "ÔÇö",
+            "ÔÇö",
+            "ÔÇö",
+            "ÔÇö",
+            "ÔÇö",
+        )
 
     pairs_panel = Panel(
         pairs_tbl,
-        title=(f"[bold {_C_TITLE}]  COINTEGRATED PAIRS[/bold {_C_TITLE}]"
-               f"  [{_C_DIM}]{len(active_pairs)} active[/{_C_DIM}]  "),
+        title=(
+            f"[bold {_C_TITLE}]  COINTEGRATED PAIRS[/bold {_C_TITLE}]"
+            f"  [{_C_DIM}]{len(active_pairs)} active[/{_C_DIM}]  "
+        ),
         border_style=_C_PRIMARY,
         box=box.SQUARE_DOUBLE_HEAD,
         padding=(0, 1),
@@ -380,31 +400,32 @@ def build_dashboard(
         pos_tbl = Table(
             box=box.MINIMAL_HEAVY_HEAD,
             header_style=f"bold {_C_TITLE}",
-            expand=True, show_edge=False,
+            expand=True,
+            show_edge=False,
             row_styles=["", "on #080F1A"],
         )
-        pos_tbl.add_column("Pair",        style=f"bold {_C_CYAN}")
-        pos_tbl.add_column("Sector",      justify="center")
-        pos_tbl.add_column("Side",        justify="center")
-        pos_tbl.add_column("Qty",         justify="right")
-        pos_tbl.add_column("Entry Z",     justify="right")
-        pos_tbl.add_column("Curr Z",      justify="right")
+        pos_tbl.add_column("Pair", style=f"bold {_C_CYAN}")
+        pos_tbl.add_column("Sector", justify="center")
+        pos_tbl.add_column("Side", justify="center")
+        pos_tbl.add_column("Qty", justify="right")
+        pos_tbl.add_column("Entry Z", justify="right")
+        pos_tbl.add_column("Curr Z", justify="right")
         pos_tbl.add_column("Unreal. PnL", justify="right")
 
         for pair_key, pos in positions.items():
-            side       = pos.get('side', '?')
-            sc         = _C_GREEN if side == "LONG" else _C_RED
-            qty        = pos.get('quantity', 0)
-            entry_z    = pos.get('entry_z', 0.0)
-            current_z  = pos.get('current_z', 0.0)
-            pnl_pct    = pos.get('unrealized_pnl_pct', 0.0) * 100
-            pc         = _C_GREEN if pnl_pct >= 0 else _C_RED
-            sym_a      = pair_key.split("_")[0] if "_" in pair_key else pair_key
+            side = pos.get("side", "?")
+            sc = _C_GREEN if side == "LONG" else _C_RED
+            qty = pos.get("quantity", 0)
+            entry_z = pos.get("entry_z", 0.0)
+            current_z = pos.get("current_z", 0.0)
+            pnl_pct = pos.get("unrealized_pnl_pct", 0.0) * 100
+            pc = _C_GREEN if pnl_pct >= 0 else _C_RED
+            sym_a = pair_key.split("_")[0] if "_" in pair_key else pair_key
             sym_sector = sector_map.get(sym_a, "")
-            sec_col    = SECTOR_COLORS.get(sym_sector, _C_DIM)
-            sec_short  = SECTOR_SHORT.get(sym_sector, "ÔÇö")
-            bar_fill   = int(min(abs(pnl_pct) / 5.0, 1.0) * 8)
-            pnl_bar    = f"[{pc}]{'Ôûê' * bar_fill}{'Ôûæ' * (8 - bar_fill)}[/{pc}]"
+            sec_col = SECTOR_COLORS.get(sym_sector, _C_DIM)
+            sec_short = SECTOR_SHORT.get(sym_sector, "ÔÇö")
+            bar_fill = int(min(abs(pnl_pct) / 5.0, 1.0) * 8)
+            pnl_bar = f"[{pc}]{'Ôûê' * bar_fill}{'Ôûæ' * (8 - bar_fill)}[/{pc}]"
             pos_tbl.add_row(
                 pair_key,
                 Text.from_markup(f"[bold {sec_col}]{sec_short}[/bold {sec_col}]"),
@@ -412,23 +433,23 @@ def build_dashboard(
                 f"[{_C_VAL}]{qty}[/{_C_VAL}]",
                 f"[{_C_DIM}]{entry_z:+.3f}[/{_C_DIM}]",
                 f"[bold {_C_VAL}]{current_z:+.3f}[/bold {_C_VAL}]",
-                Text.from_markup(
-                    f"[bold {pc}]{pnl_pct:+.2f}%[/bold {pc}]  {pnl_bar}"),
+                Text.from_markup(f"[bold {pc}]{pnl_pct:+.2f}%[/bold {pc}]  {pnl_bar}"),
             )
         pos_content = pos_tbl
     else:
         pos_content = Padding(
-            Align.center(Text(
-                "No open positions  ÔÇö  waiting for signal",
-                style=f"italic {_C_DIM}",
-            )),
+            Align.center(
+                Text(
+                    "No open positions  ÔÇö  waiting for signal",
+                    style=f"italic {_C_DIM}",
+                )
+            ),
             pad=(1, 0),
         )
 
     positions_panel = Panel(
         pos_content,
-        title=(f"[bold {_C_TITLE}]  OPEN POSITIONS[/bold {_C_TITLE}]"
-               f"  [{_C_DIM}]{len(positions)} open[/{_C_DIM}]  "),
+        title=(f"[bold {_C_TITLE}]  OPEN POSITIONS[/bold {_C_TITLE}]  [{_C_DIM}]{len(positions)} open[/{_C_DIM}]  "),
         border_style=_C_PRIMARY,
         box=box.SQUARE_DOUBLE_HEAD,
         padding=(0, 1),

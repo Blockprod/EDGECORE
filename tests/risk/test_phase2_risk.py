@@ -12,17 +12,17 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from risk.factor_model import FactorModel, FactorModelConfig
-from risk.sector_exposure import SectorExposureMonitor, SectorExposureConfig
-from risk.var_monitor import VaRMonitor, VaRConfig
 from risk.drawdown_manager import (
-    DrawdownManager,
     DrawdownConfig,
+    DrawdownManager,
     DrawdownTier,
 )
-
+from risk.factor_model import FactorModel, FactorModelConfig
+from risk.sector_exposure import SectorExposureConfig, SectorExposureMonitor
+from risk.var_monitor import VaRConfig, VaRMonitor
 
 # ÔöÇÔöÇÔöÇ 2.1: FactorModel ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
 
 class TestFactorModel:
     """Per-pair beta-neutral weight computation."""
@@ -50,6 +50,8 @@ class TestFactorModel:
         beta_a = fm.estimate_beta(prices, "A", bar_idx=100)
         beta_b = fm.estimate_beta(prices, "B", bar_idx=100)
         # Both should be positive (move with market)
+        assert beta_a is not None
+        assert beta_b is not None
         assert beta_a > 0
         assert beta_b > 0
         # A has higher beta than B
@@ -71,20 +73,20 @@ class TestFactorModel:
         fm = FactorModel(FactorModelConfig(lookback=60, min_observations=30))
         positions = {
             "A_B": {
-                "sym1": "A", "sym2": "B", "side": "long",
-                "notional": 10000, "notional_1": 5000, "notional_2": 5000,
+                "sym1": "A",
+                "sym2": "B",
+                "side": "long",
+                "notional": 10000,
+                "notional_1": 5000,
+                "notional_2": 5000,
             }
         }
-        beta, is_neutral = fm.portfolio_beta(
-            positions, prices, bar_idx=100, portfolio_value=100000
-        )
+        beta, is_neutral = fm.portfolio_beta(positions, prices, bar_idx=100, portfolio_value=100000)
         assert isinstance(beta, float)
         assert isinstance(is_neutral, bool)
 
     def test_beta_values_shift_with_window(self, prices):
-        fm = FactorModel(FactorModelConfig(
-            lookback=60, min_observations=30, reestimate_interval=5
-        ))
+        fm = FactorModel(FactorModelConfig(lookback=60, min_observations=30, reestimate_interval=5))
         b1 = fm.estimate_beta(prices, "A", bar_idx=80)
         b2 = fm.estimate_beta(prices, "A", bar_idx=110)
         # Different windows ÔåÆ values may differ
@@ -94,17 +96,24 @@ class TestFactorModel:
 
 # ÔöÇÔöÇÔöÇ 2.2: SectorExposureMonitor ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
+
 class TestSectorExposureMonitor:
     """Sector concentration limit checks."""
 
     @pytest.fixture
     def monitor(self):
         sector_map = {
-            "AAPL": "Technology", "MSFT": "Technology", "GOOGL": "Technology",
-            "NVDA": "Technology", "AMD": "Technology",
-            "JPM": "Financials", "GS": "Financials",
-            "XOM": "Energy", "CVX": "Energy",
-            "KO": "Consumer", "PEP": "Consumer",
+            "AAPL": "Technology",
+            "MSFT": "Technology",
+            "GOOGL": "Technology",
+            "NVDA": "Technology",
+            "AMD": "Technology",
+            "JPM": "Financials",
+            "GS": "Financials",
+            "XOM": "Energy",
+            "CVX": "Energy",
+            "KO": "Consumer",
+            "PEP": "Consumer",
         }
         return SectorExposureMonitor(
             sector_map=sector_map,
@@ -139,7 +148,7 @@ class TestSectorExposureMonitor:
             "NVDA_PEP": {"sym1": "NVDA", "sym2": "PEP", "notional": 2000},
         }
         # 5th tech position ÔåÆ exceeds max_sector_positions=4
-        ok, reason = monitor.can_enter("AMD_JPM", 2000, 100000, positions)
+        ok, _reason = monitor.can_enter("AMD_JPM", 2000, 100000, positions)
         assert ok is False
 
     def test_allow_different_sector(self, monitor):
@@ -160,12 +169,13 @@ class TestSectorExposureMonitor:
 
 # ÔöÇÔöÇÔöÇ 2.3: VaRMonitor ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
+
 class TestVaRMonitor:
     """Rolling historical VaR/CVaR monitoring."""
 
     def test_insufficient_data_ok(self):
         vm = VaRMonitor(VaRConfig(min_observations=20))
-        ok, breach = vm.check_limit(100000)
+        ok, _breach = vm.check_limit(100000)
         assert ok is True  # not enough data ÔåÆ pass
 
     def test_var_after_feeding(self):
@@ -184,6 +194,8 @@ class TestVaRMonitor:
             vm.update(np.random.randn() * 0.01)
         var = vm.current_var()
         cvar = vm.current_cvar()
+        assert var is not None
+        assert cvar is not None
         assert cvar >= var  # CVaR >= VaR (deeper into the tail, higher positive loss)
 
     def test_check_limit_blocks_on_breach(self):
@@ -204,6 +216,7 @@ class TestVaRMonitor:
 
 
 # ÔöÇÔöÇÔöÇ 2.4: DrawdownManager ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
 
 class TestDrawdownManager:
     """Multi-tier drawdown response."""
@@ -241,9 +254,7 @@ class TestDrawdownManager:
         assert a2.tier == DrawdownTier.TIER_2
 
     def test_tier3_halt_and_cooldown(self):
-        dm = DrawdownManager(DrawdownConfig(
-            tier_3_pct=0.08, tier_3_cooldown_bars=3
-        ))
+        dm = DrawdownManager(DrawdownConfig(tier_3_pct=0.08, tier_3_cooldown_bars=3))
         action = dm.evaluate(91000, 100000)  # 9% DD
         assert action.tier == DrawdownTier.TIER_3
         assert action.is_halted is True

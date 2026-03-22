@@ -1,4 +1,4 @@
-﻿"""
+"""
 Type definitions for EDGECORE trading system.
 
 Provides:
@@ -8,30 +8,34 @@ Provides:
 - Protocol definitions for interfaces
 """
 
-from typing import TypedDict, Dict, List, Any, Literal
-from typing_extensions import NotRequired
 from datetime import datetime
 from enum import Enum
+from typing import Any, Literal, TypedDict
 
+from typing_extensions import NotRequired
 
 # ============================================================================
 # ENUMS
 # ============================================================================
 
+
 class OrderSide(Enum):
     """Order side (buy/sell)."""
+
     BUY = "buy"
     SELL = "sell"
 
 
 class OrderType(Enum):
     """Order type (market/limit)."""
+
     MARKET = "market"
     LIMIT = "limit"
 
 
 class OrderStatus(Enum):
-    """Order execution status ÔÇö aligned with execution.base.OrderStatus."""
+    """Order execution status ��� aligned with execution.base.OrderStatus."""
+
     PENDING = "PENDING"
     FILLED = "FILLED"
     PARTIAL = "PARTIAL"
@@ -41,6 +45,7 @@ class OrderStatus(Enum):
 
 class ExecutionMode(Enum):
     """Trading execution mode."""
+
     PAPER = "paper"
     LIVE = "live"
     BACKTEST = "backtest"
@@ -48,6 +53,7 @@ class ExecutionMode(Enum):
 
 class AlertSeverity(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -56,51 +62,58 @@ class AlertSeverity(Enum):
 
 class CircuitBreakerState(Enum):
     """Circuit breaker states."""
+
     CLOSED = "closed"  # Normal operation
-    OPEN = "open"      # Failing, blocked
+    OPEN = "open"  # Failing, blocked
     HALF_OPEN = "half_open"  # Testing recovery
 
 
 class StopType(Enum):
     """Position stop types."""
-    STOP_LOSS = "stop_loss"          # Absolute stop loss price
-    TAKE_PROFIT = "take_profit"      # Profit target price
+
+    STOP_LOSS = "stop_loss"  # Absolute stop loss price
+    TAKE_PROFIT = "take_profit"  # Profit target price
     TRAILING_STOP = "trailing_stop"  # Trailing stop follows price
 
 
 class FillType(Enum):
     """Order fill type."""
-    FULL = "full"              # Order completely filled
-    PARTIAL = "partial"        # Order partially filled
-    NONE = "none"              # No fill
+
+    FULL = "full"  # Order completely filled
+    PARTIAL = "partial"  # Order partially filled
+    NONE = "none"  # No fill
 
 
 class SlippageModel(Enum):
     """Slippage model type."""
-    FIXED_BPS = "fixed_bps"           # Fixed basis points
-    ADAPTIVE = "adaptive"              # Adaptive to volume
-    VOLUME_BASED = "volume_based"     # Based on order volume
+
+    FIXED_BPS = "fixed_bps"  # Fixed basis points
+    ADAPTIVE = "adaptive"  # Adaptive to volume
+    VOLUME_BASED = "volume_based"  # Based on order volume
 
 
 class CommissionType(Enum):
     """Commission calculation type."""
-    PERCENT = "percent"        # Percentage of trade value
-    FIXED = "fixed"            # Fixed amount per trade
+
+    PERCENT = "percent"  # Percentage of trade value
+    FIXED = "fixed"  # Fixed amount per trade
 
 
 class DepthMode(Enum):
     """Order book depth profile."""
-    SHALLOW = "shallow"      # Thin order book, wide spreads
-    MEDIUM = "medium"        # Normal liquidity
-    DEEP = "deep"            # Heavy liquidity, tight spreads
+
+    SHALLOW = "shallow"  # Thin order book, wide spreads
+    MEDIUM = "medium"  # Normal liquidity
+    DEEP = "deep"  # Heavy liquidity, tight spreads
 
 
 class VenueType(Enum):
     """Trading venue type."""
-    CME_FUTURES = "cme"               # CME futures
-    NASDAQ_EQUITIES = "nasdaq"        # US equities (Nasdaq)
-    NYSE_EQUITIES = "nyse"            # US equities (NYSE)
-    IBKR_SMART = "smart"             # IBKR Smart Routing (default)
+
+    CME_FUTURES = "cme"  # CME futures
+    NASDAQ_EQUITIES = "nasdaq"  # US equities (Nasdaq)
+    NYSE_EQUITIES = "nyse"  # US equities (NYSE)
+    IBKR_SMART = "smart"  # IBKR Smart Routing (default)
     CENTRALIZED_EXCHANGE = "centralized_exchange"
     DECENTRALIZED_EXCHANGE = "decentralized_exchange"
     CRYPTO_SPOT = "crypto_spot"
@@ -108,6 +121,7 @@ class VenueType(Enum):
 
 class TraceLevel(Enum):
     """Distributed trace verbosity."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -133,8 +147,10 @@ PositionID = str  # Unique position identifier
 # DATA STRUCTURE TYPEDDICTS
 # ============================================================================
 
+
 class OHLCVCandle(TypedDict):
     """OHLCV candlestick data."""
+
     open: Price
     high: Price
     low: Price
@@ -145,28 +161,31 @@ class OHLCVCandle(TypedDict):
 
 class SignalData(TypedDict):
     """Trading signal from strategy."""
+
     signal_type: Literal["entry", "exit"]
     symbol: Symbol
     z_score: float
     spread: float
     timestamp: datetime
     confidence: float  # 0-1 confidence
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class OrderRequest(TypedDict):
     """Request to submit an order."""
+
     symbol: Symbol
     side: OrderSide
     quantity: Quantity
     order_type: OrderType
     price: NotRequired[Price]  # Required for limit orders
     timeout_seconds: NotRequired[float]
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class OrderRecord(TypedDict):
     """Order execution record."""
+
     order_id: OrderID
     symbol: Symbol
     side: OrderSide
@@ -177,11 +196,12 @@ class OrderRecord(TypedDict):
     filled_price: NotRequired[Price]
     submitted_at: datetime
     filled_at: NotRequired[datetime]
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class PositionRecord(TypedDict):
     """Active trading position."""
+
     position_id: PositionID
     symbol: Symbol
     quantity: Quantity  # Can be negative for short
@@ -192,11 +212,12 @@ class PositionRecord(TypedDict):
     side: Literal["long", "short"]
     unrealized_pnl: PnL
     pnl_percent: float
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class AlertRecord(TypedDict):
     """Alert notification record."""
+
     alert_id: str
     severity: AlertSeverity
     category: str
@@ -205,11 +226,12 @@ class AlertRecord(TypedDict):
     timestamp: datetime
     acknowledged: bool
     resolved: bool
-    data: NotRequired[Dict[str, Any]]
+    data: NotRequired[dict[str, Any]]
 
 
 class TradeRecord(TypedDict):
     """Completed trade record."""
+
     trade_id: str
     symbol: Symbol
     entry_price: Price
@@ -220,11 +242,12 @@ class TradeRecord(TypedDict):
     realized_pnl: PnL
     pnl_percent: float
     duration_seconds: float
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class EquitySnapshot(TypedDict):
     """Portfolio equity at a point in time."""
+
     timestamp: datetime
     total_equity: Equity  # Cash + positions value
     cash: Equity  # Available cash
@@ -236,6 +259,7 @@ class EquitySnapshot(TypedDict):
 
 class RiskMetrics(TypedDict):
     """Risk assessment metrics."""
+
     current_equity: Equity
     available_cash: Equity
     positions_count: int
@@ -248,6 +272,7 @@ class RiskMetrics(TypedDict):
 
 class ConnectionStatus(TypedDict):
     """API connection status."""
+
     connected: bool
     timestamp: datetime
     last_heartbeat: datetime
@@ -257,6 +282,7 @@ class ConnectionStatus(TypedDict):
 
 class DataSourceConfig(TypedDict):
     """Data source configuration."""
+
     source_type: Literal["rest", "websocket"]
     interval_minutes: int
     lookback_hours: int
@@ -269,17 +295,20 @@ class DataSourceConfig(TypedDict):
 # VALIDATION RESULT TYPEDDICTS
 # ============================================================================
 
+
 class ValidationResult(TypedDict):
     """Result of data validation."""
+
     is_valid: bool
     checks_passed: int
     checks_failed: int
-    errors: List[str]
-    warnings: List[str]
+    errors: list[str]
+    warnings: list[str]
 
 
 class RiskCheckResult(TypedDict):
     """Result of risk check."""
+
     allowed: bool
     reason: NotRequired[str]
     risk_metrics: NotRequired[RiskMetrics]
@@ -287,19 +316,22 @@ class RiskCheckResult(TypedDict):
 
 class CointegrationResult(TypedDict):
     """Cointegration test result."""
+
     is_cointegrated: bool
     p_value: float
     test_statistic: float
-    critical_values: Dict[str, float]
+    critical_values: dict[str, float]
     beta: NotRequired[float]
 
 
 # ============================================================================
-# CIRCUIT BREAKER TYPEDDICTS  
+# CIRCUIT BREAKER TYPEDDICTS
 # ============================================================================
+
 
 class CircuitBreakerConfig(TypedDict):
     """Circuit breaker configuration."""
+
     failure_threshold: int
     timeout_seconds: float
     success_threshold: int
@@ -308,6 +340,7 @@ class CircuitBreakerConfig(TypedDict):
 
 class CircuitBreakerMetrics(TypedDict):
     """Circuit breaker state metrics."""
+
     state: CircuitBreakerState
     failure_count: int
     success_count: int
@@ -322,10 +355,12 @@ class CircuitBreakerMetrics(TypedDict):
 # POSITION STOPS TYPEDDICTS
 # ============================================================================
 
+
 class PositionStopConfig(TypedDict):
     """Configuration for position stop levels."""
-    stop_loss_price: NotRequired[Price]      # Absolute stop loss level
-    take_profit_price: NotRequired[Price]    # Profit target level
+
+    stop_loss_price: NotRequired[Price]  # Absolute stop loss level
+    take_profit_price: NotRequired[Price]  # Profit target level
     trailing_stop_percent: NotRequired[float]  # Trailing stop as percent
     trailing_stop_distance: NotRequired[Price]  # Trailing stop as absolute distance
     hard_exit_time_minutes: NotRequired[int]  # Maximum hold time in minutes
@@ -334,9 +369,10 @@ class PositionStopConfig(TypedDict):
 
 class PositionStopStatus(TypedDict):
     """Current stop status for a position."""
+
     position_id: PositionID
     symbol: Symbol
-    active_stops: List[str]  # List of active stop types
+    active_stops: list[str]  # List of active stop types
     stop_loss_price: NotRequired[Price]
     take_profit_price: NotRequired[Price]
     trailing_high: NotRequired[Price]  # Highest price for trailing stop
@@ -347,6 +383,7 @@ class PositionStopStatus(TypedDict):
 
 class PositionWithStops(TypedDict):
     """Position with stop information."""
+
     position_id: PositionID
     symbol: Symbol
     quantity: Quantity
@@ -364,60 +401,66 @@ class PositionWithStops(TypedDict):
 # BACKTEST REALISM TYPEDDICTS
 # ============================================================================
 
+
 class SlippageConfig(TypedDict):
     """Slippage configuration for realistic backtesting."""
+
     model: SlippageModel
-    fixed_bps: NotRequired[float]         # Fixed slippage in basis points
+    fixed_bps: NotRequired[float]  # Fixed slippage in basis points
     adaptive_multiplier: NotRequired[float]  # Multiplier for volume-based slippage
     max_slippage_bps: NotRequired[float]  # Maximum slippage cap
 
 
 class CommissionConfig(TypedDict):
     """Commission configuration for realistic backtesting."""
+
     type: CommissionType
-    percent: NotRequired[float]           # Commission as % of trade value
-    fixed_amount: NotRequired[float]      # Fixed commission per trade
-    min_commission: NotRequired[float]    # Minimum commission
-    max_commission: NotRequired[float]    # Maximum commission
+    percent: NotRequired[float]  # Commission as % of trade value
+    fixed_amount: NotRequired[float]  # Fixed commission per trade
+    min_commission: NotRequired[float]  # Minimum commission
+    max_commission: NotRequired[float]  # Maximum commission
 
 
 class ExecutionResult(TypedDict):
     """Result of order execution with realistic factors."""
+
     order_id: OrderID
     symbol: Symbol
-    side: Literal["buy", "sell"]               # Buy or sell side
-    submitted_price: Price              # Price at submission time
-    executed_price: Price               # Actual price after slippage
-    requested_quantity: Quantity        # Amount requested
-    filled_quantity: Quantity           # Amount actually filled
-    fill_type: FillType                # Full or partial
-    slippage_bps: float                # Slippage in basis points
-    slippage_amount: Price             # Slippage in currency
-    commission: float                  # Commission paid
-    net_proceeds: float                # After slippage and commission
-    execution_time: datetime           # When execution occurred
-    reason: NotRequired[str]           # Additional details
+    side: Literal["buy", "sell"]  # Buy or sell side
+    submitted_price: Price  # Price at submission time
+    executed_price: Price  # Actual price after slippage
+    requested_quantity: Quantity  # Amount requested
+    filled_quantity: Quantity  # Amount actually filled
+    fill_type: FillType  # Full or partial
+    slippage_bps: float  # Slippage in basis points
+    slippage_amount: Price  # Slippage in currency
+    commission: float  # Commission paid
+    net_proceeds: float  # After slippage and commission
+    execution_time: datetime  # When execution occurred
+    reason: NotRequired[str]  # Additional details
 
 
 class FillSimulation(TypedDict):
     """Fill simulation parameters for backtest."""
-    base_volume_bps: float             # Base order volume as % of market volume
-    market_volume: float               # Available market volume
-    max_fill_pct: float               # Maximum fill percentage (default 10%)
-    partial_fill_probability: float    # Chance of partial fill (0-1)
+
+    base_volume_bps: float  # Base order volume as % of market volume
+    market_volume: float  # Available market volume
+    max_fill_pct: float  # Maximum fill percentage (default 10%)
+    partial_fill_probability: float  # Chance of partial fill (0-1)
 
 
 class BacktestMetrics(TypedDict):
     """Backtest execution metrics with realistic factors."""
+
     total_trades: int
     winning_trades: int
     losing_trades: int
-    total_slippage: float             # Total slippage costs
-    total_commissions: float          # Total commissions paid
-    gross_pnl: float                  # PnL before costs
-    net_pnl: float                    # PnL after slippage and commission
-    slippage_impact_pct: float        # Slippage as % of gross PnL
-    commission_impact_pct: float      # Commission as % of gross PnL
+    total_slippage: float  # Total slippage costs
+    total_commissions: float  # Total commissions paid
+    gross_pnl: float  # PnL before costs
+    net_pnl: float  # PnL after slippage and commission
+    slippage_impact_pct: float  # Slippage as % of gross PnL
+    commission_impact_pct: float  # Commission as % of gross PnL
     sharpe_ratio: NotRequired[float]
     max_drawdown_pct: NotRequired[float]
     win_rate_pct: NotRequired[float]
@@ -426,6 +469,7 @@ class BacktestMetrics(TypedDict):
 
 class BacktestConfig(TypedDict):
     """Backtest configuration with realism settings."""
+
     start_date: str
     end_date: str
     initial_equity: Equity
@@ -438,8 +482,10 @@ class BacktestConfig(TypedDict):
 # ORDER BOOK TYPEDDICTS
 # ============================================================================
 
+
 class OrderBookLevel(TypedDict):
     """Single price level in order book."""
+
     price: Price
     quantity: Quantity
     order_count: int  # Number of orders at this level
@@ -447,10 +493,11 @@ class OrderBookLevel(TypedDict):
 
 class OrderBook(TypedDict):
     """Market order book snapshot."""
+
     symbol: Symbol
     timestamp: datetime
-    bid_levels: List[OrderBookLevel]  # Best bid first (sorted descending)
-    ask_levels: List[OrderBookLevel]  # Best ask first (sorted ascending)
+    bid_levels: list[OrderBookLevel]  # Best bid first (sorted descending)
+    ask_levels: list[OrderBookLevel]  # Best ask first (sorted ascending)
     bid_volume: float  # Total bid volume
     ask_volume: float  # Total ask volume
     bid_ask_spread_bps: float  # Spread in basis points
@@ -458,6 +505,7 @@ class OrderBook(TypedDict):
 
 class OrderBookUpdate(TypedDict):
     """Order book update event."""
+
     symbol: Symbol
     timestamp: datetime
     update_type: Literal["trade", "add", "cancel", "modify"]
@@ -469,6 +517,7 @@ class OrderBookUpdate(TypedDict):
 
 class LiquidityMetrics(TypedDict):
     """Liquidity analysis for a symbol."""
+
     symbol: Symbol
     timestamp: datetime
     bid_ask_spread: Price  # Absolute spread
@@ -481,7 +530,8 @@ class LiquidityMetrics(TypedDict):
 
 class BookSimulationConfig(TypedDict):
     """Configuration for order book simulation."""
-    symbols: List[Symbol]
+
+    symbols: list[Symbol]
     bid_ask_spread_bps: float  # Fixed spread or base spread
     depth_mode: Literal["shallow", "medium", "deep"]  # Book depth profile
     volatility_factor: float  # How spread adjusts with volatility (0.5-2.0)
@@ -492,8 +542,10 @@ class BookSimulationConfig(TypedDict):
 # MONTE CARLO TYPEDDICTS
 # ============================================================================
 
+
 class MonteCarloConfig(TypedDict):
     """Configuration for Monte Carlo order book simulation."""
+
     num_simulations: int  # Number of paths to simulate
     time_steps: int  # Steps per simulation
     price_drift_bps: float  # Expected drift in BPS per step
@@ -506,10 +558,11 @@ class MonteCarloConfig(TypedDict):
 
 class MonteCarloResult(TypedDict):
     """Results from Monte Carlo simulation."""
+
     symbol: Symbol
     num_simulations: int
-    price_paths: List[List[float]]  # [simulation][step]
-    volume_paths: List[List[float]]  # [simulation][step]
+    price_paths: list[list[float]]  # [simulation][step]
+    volume_paths: list[list[float]]  # [simulation][step]
     percentile_5: float  # 5th percentile price path
     percentile_25: float  # 25th percentile
     percentile_50: float  # Median
@@ -523,8 +576,10 @@ class MonteCarloResult(TypedDict):
 # VENUE-SPECIFIC TYPEDDICTS
 # ============================================================================
 
+
 class VenueCharacteristics(TypedDict):
     """Market characteristics for specific venue."""
+
     venue: VenueType
     name: str
     base_spread_bps: float  # Typical spread
@@ -540,6 +595,7 @@ class VenueCharacteristics(TypedDict):
 
 class VenueModel(TypedDict):
     """Venue-specific market model."""
+
     venue: VenueType
     characteristics: VenueCharacteristics
     spread_volatility_multiplier: float  # How spread responds to vol
@@ -552,8 +608,10 @@ class VenueModel(TypedDict):
 # DISTRIBUTED TRACING TYPEDDICTS
 # ============================================================================
 
+
 class TraceContext(TypedDict):
     """Distributed trace context."""
+
     trace_id: str  # Unique trace identifier
     span_id: str  # Current span identifier
     parent_span_id: NotRequired[str]  # Parent span for nesting
@@ -563,6 +621,7 @@ class TraceContext(TypedDict):
 
 class TraceSpan(TypedDict):
     """Individual trace span."""
+
     trace_id: str
     span_id: str
     parent_span_id: NotRequired[str]
@@ -571,13 +630,14 @@ class TraceSpan(TypedDict):
     end_time: NotRequired[datetime]
     duration_ms: NotRequired[float]
     status: Literal["UNSET", "OK", "ERROR"]
-    attributes: Dict[str, Any]  # Key-value metadata
-    events: NotRequired[List[Dict[str, Any]]]  # Log events
+    attributes: dict[str, Any]  # Key-value metadata
+    events: NotRequired[list[dict[str, Any]]]  # Log events
     level: TraceLevel
 
 
 class TraceMetrics(TypedDict):
     """Aggregated trace metrics."""
+
     service_name: str
     total_spans: int
     total_errors: int
@@ -585,15 +645,17 @@ class TraceMetrics(TypedDict):
     avg_span_duration_ms: float
     p95_span_duration_ms: float
     p99_span_duration_ms: float
-    most_common_operations: List[tuple[str, int]]  # (op_name, count)
+    most_common_operations: list[tuple[str, int]]  # (op_name, count)
 
 
 # ============================================================================
 # ML IMPACT PREDICTION TYPEDDICTS
 # ============================================================================
 
+
 class ImpactFeatures(TypedDict):
     """Features for ML impact prediction."""
+
     order_size_pct: float  # Order size as % of volume
     volatility_annual_pct: float  # Market volatility
     bid_ask_spread_bps: float  # Current bid-ask spread
@@ -606,20 +668,22 @@ class ImpactFeatures(TypedDict):
 
 class MLImpactPrediction(TypedDict):
     """ML-based market impact prediction."""
+
     features: ImpactFeatures
     predicted_impact_bps: float  # Mean prediction
     confidence_interval_lower: float  # 95% CI lower bound
     confidence_interval_upper: float  # 95% CI upper bound
     model_version: str  # Which model was used
     timestamp: datetime
-    feature_importance: Dict[str, float]  # SHAP or similar
+    feature_importance: dict[str, float]  # SHAP or similar
 
 
 class MLModelMetrics(TypedDict):
     """Performance metrics for ML impact model."""
+
     model_version: str
     training_samples: int
-    r_squared: float  # R┬▓ on test set
+    r_squared: float  # R-� on test set
     mean_absolute_error_bps: float  # MAE on test set
     mean_squared_error: float  # MSE
     is_production: bool
@@ -630,8 +694,10 @@ class MLModelMetrics(TypedDict):
 # REAL-TIME LATENCY TYPEDDICTS
 # ============================================================================
 
+
 class LatencyMeasurement(TypedDict):
     """Single latency measurement."""
+
     operation: str  # e.g., "order_submission", "data_fetch"
     component_source: str  # Which component initiated
     component_dest: str  # Which component received
@@ -642,6 +708,7 @@ class LatencyMeasurement(TypedDict):
 
 class LatencyMetrics(TypedDict):
     """Aggregated latency metrics for operation."""
+
     operation: str
     total_measurements: int
     min_ms: float
@@ -657,6 +724,7 @@ class LatencyMetrics(TypedDict):
 
 class LatencyBudget(TypedDict):
     """Latency budget for SLA."""
+
     operation: str
     p95_target_ms: float
     p99_target_ms: float
@@ -668,8 +736,10 @@ class LatencyBudget(TypedDict):
 # RETRY TYPEDDICTS
 # ============================================================================
 
+
 class RetryStats(TypedDict):
     """Retry attempt statistics."""
+
     function_name: str
     total_calls: int
     successful_calls: int
@@ -683,8 +753,10 @@ class RetryStats(TypedDict):
 # SECRETS TYPEDDICTS
 # ============================================================================
 
+
 class SecretMetadata(TypedDict):
     """Secret metadata tracking."""
+
     created_at: datetime
     last_accessed_at: datetime
     access_count: int
@@ -697,8 +769,10 @@ class SecretMetadata(TypedDict):
 # CONFIGURATION TYPEDDICTS
 # ============================================================================
 
+
 class RiskConfig(TypedDict):
     """Risk management configuration."""
+
     max_position_size: float
     max_portfolio_heat: float
     max_loss_per_trade: float
@@ -712,6 +786,7 @@ class RiskConfig(TypedDict):
 
 class StrategyConfig(TypedDict):
     """Strategy configuration."""
+
     min_spread_bps: float
     max_spread_bps: float
     fast_sma_periods: int
@@ -724,6 +799,7 @@ class StrategyConfig(TypedDict):
 
 class ExecutionConfig(TypedDict):
     """Execution configuration."""
+
     mode: ExecutionMode
     order_type: OrderType
     timeout_seconds: float
@@ -732,6 +808,7 @@ class ExecutionConfig(TypedDict):
 
 class DataSourceConfigDict(TypedDict):
     """Data source configuration."""
+
     feed_type: Literal["rest", "websocket"]
     ohlcv_interval_minutes: int
     lookback_hours: int
@@ -740,13 +817,15 @@ class DataSourceConfigDict(TypedDict):
 
 class AlerterConfig(TypedDict):
     """Alerter configuration."""
-    alert_modes: List[str]
+
+    alert_modes: list[str]
     deduplication_window_minutes: int
     rate_limit_per_hour: int
 
 
 class BacktestConfigSimple(TypedDict):
     """Backtest configuration (simple, flat fields)."""
+
     start_date: str
     end_date: str
     initial_equity: Equity
@@ -758,10 +837,12 @@ class BacktestConfigSimple(TypedDict):
 # RESPONSE TYPEDDICTS
 # ============================================================================
 
+
 class APIResponse(TypedDict):
     """API response structure."""
+
     success: bool
-    data: NotRequired[Dict[str, Any]]
+    data: NotRequired[dict[str, Any]]
     error: NotRequired[str]
     timestamp: datetime
     latency_ms: NotRequired[float]
@@ -769,29 +850,33 @@ class APIResponse(TypedDict):
 
 class HealthCheckResponse(TypedDict):
     """System health check response."""
+
     healthy: bool
     timestamp: datetime
-    components: Dict[str, bool]
-    metrics: NotRequired[Dict[str, Any]]
+    components: dict[str, bool]
+    metrics: NotRequired[dict[str, Any]]
 
 
 # ============================================================================
 # EVENT TYPEDDICTS
 # ============================================================================
 
+
 class TradeEvent(TypedDict):
     """Trade event for monitoring."""
+
     event_type: str
     symbol: Symbol
     quantity: Quantity
     price: Price
     timestamp: datetime
     pnl: NotRequired[PnL]
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class RiskAlertEvent(TypedDict):
     """Risk alert event."""
+
     event_type: str
     severity: AlertSeverity
     description: str
@@ -801,16 +886,20 @@ class RiskAlertEvent(TypedDict):
 
 class ConnectionEvent(TypedDict):
     """Connection status event."""
+
     event_type: Literal["connected", "disconnected", "reconnecting"]
     source: str
     timestamp: datetime
-    details: NotRequired[Dict[str, Any]]
+    details: NotRequired[dict[str, Any]]
 
 
 if __name__ == "__main__":
     import structlog as _structlog
+
     _log = _structlog.get_logger(__name__)
-    _log.info("common_types_loaded",
-              order_types=[t.name for t in OrderType],
-              execution_modes=[m.name for m in ExecutionMode],
-              circuit_breaker_states=[s.name for s in CircuitBreakerState])
+    _log.info(
+        "common_types_loaded",
+        order_types=[t.name for t in OrderType],
+        execution_modes=[m.name for m in ExecutionMode],
+        circuit_breaker_states=[s.name for s in CircuitBreakerState],
+    )

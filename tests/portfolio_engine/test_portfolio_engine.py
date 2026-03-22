@@ -12,17 +12,17 @@ import pandas as pd
 import pytest
 
 from portfolio_engine.allocator import (
+    AllocationResult,
     PortfolioAllocator,
     SizingMethod,
-    AllocationResult,
 )
 from portfolio_engine.concentration import ConcentrationManager
 from portfolio_engine.hedger import PortfolioHedger
 
-
 # ======================================================================
 # PortfolioAllocator
 # ======================================================================
+
 
 class TestPortfolioAllocatorEqualWeight:
     """Equal-weight sizing."""
@@ -128,12 +128,13 @@ class TestPortfolioAllocatorHeat:
 # ConcentrationManager
 # ======================================================================
 
+
 class TestConcentrationManager:
     """Per-symbol concentration enforcement."""
 
     def test_first_entry_allowed(self):
         cm = ConcentrationManager(max_concentration_pct=30.0)
-        ok, reason = cm.check_entry("AAPL_MSFT", "AAPL", "MSFT", "long")
+        ok, _reason = cm.check_entry("AAPL_MSFT", "AAPL", "MSFT", "long")
         assert ok
 
     def test_register_and_exit(self):
@@ -159,6 +160,7 @@ class TestConcentrationManager:
 # PortfolioHedger
 # ======================================================================
 
+
 class TestPortfolioHedger:
     """Diversification enforcement and beta hedging."""
 
@@ -183,7 +185,7 @@ class TestPortfolioHedger:
         h = PortfolioHedger(max_correlation=0.60)
         spread = self._random_spread()
         h.register_spread("P1", spread)
-        ok, reason = h.check_diversification("P2", spread)
+        ok, _reason = h.check_diversification("P2", spread)
         assert not ok
 
     def test_remove_spread(self):
@@ -236,6 +238,7 @@ class TestConcentrationBlock:
         """Adding many pairs with the same symbol eventually gets blocked."""
         # Use low AUM so that notional=10_000 quickly exceeds 30%
         from execution.concentration_limits import ConcentrationLimitManager
+
         inner = ConcentrationLimitManager(
             max_symbol_concentration_pct=30.0,
             portfolio_aum=100_000.0,
@@ -243,7 +246,7 @@ class TestConcentrationBlock:
         blocked_at = None
         for i in range(20):
             partner = f"SYM{i}"
-            ok, reason = inner.add_position(
+            ok, _reason = inner.add_position(
                 pair_key=f"AAA_{partner}",
                 symbol1="AAA",
                 symbol2=partner,
@@ -253,9 +256,7 @@ class TestConcentrationBlock:
             if not ok:
                 blocked_at = i
                 break
-        assert blocked_at is not None, (
-            "Concentration manager should block entry when symbol is overexposed"
-        )
+        assert blocked_at is not None, "Concentration manager should block entry when symbol is overexposed"
 
 
 class TestBetaHedgeDirection:
@@ -275,6 +276,4 @@ class TestBetaHedgeDirection:
             assert result["action"] in ("short", "sell", "hedge")
         if "notional" in result:
             # Negative notional = short hedge to offset positive beta
-            assert result["notional"] < 0, (
-                f"Expected negative (short) hedge, got {result['notional']}"
-            )
+            assert result["notional"] < 0, f"Expected negative (short) hedge, got {result['notional']}"

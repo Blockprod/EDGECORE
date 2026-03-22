@@ -6,12 +6,13 @@ Scenarios:
   3. pair_selection discovery cache: truncated .tmp → cache reload returns None gracefully.
   4. .bak file created before rename (A-10 regression guard).
 """
-import json
 
+import json
 
 # ---------------------------------------------------------------------------
 # 1. IBKRExecutionEngine order map — truncated .tmp
 # ---------------------------------------------------------------------------
+
 
 class TestOrderMapCrashRecovery:
     def test_truncated_tmp_does_not_corrupt_production_file(self, tmp_path):
@@ -74,6 +75,7 @@ class TestOrderMapCrashRecovery:
 # 2. KillSwitch _save_state — truncated .tmp
 # ---------------------------------------------------------------------------
 
+
 class TestKillSwitchCrashRecovery:
     def test_truncated_tmp_does_not_overwrite_state(self, tmp_path):
         """If crash happens after .tmp write but before rename, state file is intact."""
@@ -92,7 +94,7 @@ class TestKillSwitchCrashRecovery:
 
     def test_bak_created_for_kill_switch_state(self, tmp_path):
         """A-10: .bak must exist after a successful _save_state() call."""
-        from risk_engine.kill_switch import KillSwitch, KillReason
+        from risk_engine.kill_switch import KillReason, KillSwitch
 
         ks = KillSwitch.__new__(KillSwitch)
         ks._state_path = tmp_path / "kill_switch_state.json"
@@ -100,7 +102,7 @@ class TestKillSwitchCrashRecovery:
         ks._reason = KillReason("manual_activation")
         ks._message = ""
         ks._activated_at = None
-        ks._callbacks = []
+        ks._callbacks = []  # type: ignore[attr-defined]
 
         # Write an initial state so the file exists
         ks._save_state()
@@ -115,15 +117,24 @@ class TestKillSwitchCrashRecovery:
 # 3. PairDiscovery cache — truncated .tmp
 # ---------------------------------------------------------------------------
 
+
 class TestPairCacheCrashRecovery:
     def test_truncated_tmp_skip_does_not_corrupt_cache_file(self, tmp_path):
         """Truncated .tmp (crash before rename) leaves the cache intact."""
         cache_file = tmp_path / "discovered_pairs.json"
         tmp_file = tmp_path / "discovered_pairs.tmp"
 
-        good_cache = [{"symbol_1": "A", "symbol_2": "B", "pvalue": 0.01,
-                        "half_life": 12.5, "correlation": 0.85,
-                        "johansen_confirmed": True, "nw_consensus": True}]
+        good_cache = [
+            {
+                "symbol_1": "A",
+                "symbol_2": "B",
+                "pvalue": 0.01,
+                "half_life": 12.5,
+                "correlation": 0.85,
+                "johansen_confirmed": True,
+                "nw_consensus": True,
+            }
+        ]
         cache_file.write_text(json.dumps(good_cache))
 
         # Simulate crash — .tmp present but rename never ran
@@ -140,7 +151,7 @@ class TestPairCacheCrashRecovery:
 
         disc = PairDiscoveryEngine.__new__(PairDiscoveryEngine)
         disc._cache_dir = tmp_path
-        disc._max_cache_age_hours = 24
+        disc._max_cache_age_hours = 24  # type: ignore[attr-defined]
 
         result = disc._load_cache()
         assert result is None

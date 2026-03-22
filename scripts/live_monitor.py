@@ -33,7 +33,6 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -58,27 +57,38 @@ signal.signal(signal.SIGTERM, _signal_handler)
 def parse_args():
     parser = argparse.ArgumentParser(description="EDGECORE Live Monitor")
     parser.add_argument(
-        "--interval", type=int, default=30,
+        "--interval",
+        type=int,
+        default=30,
         help="Monitoring interval in seconds (default: 30)",
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Dry run mode ÔÇö no IBKR connection",
     )
     parser.add_argument(
-        "--pairs-file", type=str, default="cache/daily_scan_result.json",
+        "--pairs-file",
+        type=str,
+        default="cache/daily_scan_result.json",
         help="Path to daily scan results JSON",
     )
     parser.add_argument(
-        "--max-drawdown-pct", type=float, default=15.0,
+        "--max-drawdown-pct",
+        type=float,
+        default=15.0,
         help="Portfolio drawdown alert threshold (%%)",
     )
     parser.add_argument(
-        "--z-score-alert", type=float, default=3.0,
+        "--z-score-alert",
+        type=float,
+        default=3.0,
         help="Z-score threshold for position alerts",
     )
     parser.add_argument(
-        "--log-dir", type=str, default="logs/monitor",
+        "--log-dir",
+        type=str,
+        default="logs/monitor",
         help="Directory for monitoring logs",
     )
     return parser.parse_args()
@@ -109,9 +119,9 @@ class LiveMonitor:
         self.z_score_alert = z_score_alert
         self.dry_run = dry_run
         self._peak_equity = 0.0
-        self._alerts: List[Dict] = []
+        self._alerts: list[dict] = []
 
-    def load_active_pairs(self, pairs_file: str) -> List[Dict]:
+    def load_active_pairs(self, pairs_file: str) -> list[dict]:
         """Load discovered pairs from daily scan output."""
         path = Path(pairs_file)
         if not path.exists():
@@ -121,7 +131,7 @@ class LiveMonitor:
             data = json.load(f)
         return data.get("pairs", [])
 
-    def check_portfolio(self) -> Dict:
+    def check_portfolio(self) -> dict:
         """Check portfolio state from IBKR."""
         if self.dry_run:
             return {
@@ -133,16 +143,17 @@ class LiveMonitor:
 
         try:
             from execution.ibkr_engine import IBKRExecutionEngine
+
             engine = IBKRExecutionEngine()
             engine.connect()
             try:
                 balance = engine.get_account_balance()
                 positions = engine.get_positions()
                 return {
-                    "equity": balance.get("NetLiquidation", 0.0),
+                    "equity": balance,
                     "positions": len(positions) if positions else 0,
-                    "unrealized_pnl": balance.get("UnrealizedPnL", 0.0),
-                    "realized_pnl": balance.get("RealizedPnL", 0.0),
+                    "unrealized_pnl": 0.0,
+                    "realized_pnl": 0.0,
                 }
             finally:
                 engine.disconnect()
@@ -150,7 +161,7 @@ class LiveMonitor:
             logger.error("portfolio_check_failed", error=str(exc)[:100])
             return {"equity": 0, "positions": 0, "unrealized_pnl": 0, "realized_pnl": 0}
 
-    def check_drawdown(self, equity: float) -> Optional[Dict]:
+    def check_drawdown(self, equity: float) -> dict | None:
         """Check portfolio drawdown against limit."""
         if equity > self._peak_equity:
             self._peak_equity = equity
@@ -179,7 +190,7 @@ class LiveMonitor:
             return alert
         return None
 
-    def run_monitoring_cycle(self, pairs: List[Dict]) -> Dict:
+    def run_monitoring_cycle(self, pairs: list[dict]) -> dict:
         """Run one monitoring cycle."""
         portfolio = self.check_portfolio()
         dd_alert = self.check_drawdown(portfolio["equity"])

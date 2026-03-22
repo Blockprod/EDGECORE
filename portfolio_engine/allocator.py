@@ -13,9 +13,9 @@ across all open positions cannot exceed a configurable ceiling.
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
 
 from structlog import get_logger
 
@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 
 class SizingMethod(Enum):
     """Position sizing method."""
+
     EQUAL_WEIGHT = "equal_weight"
     VOLATILITY_INVERSE = "volatility_inverse"
     KELLY = "kelly"
@@ -33,11 +34,12 @@ class SizingMethod(Enum):
 @dataclass
 class AllocationResult:
     """Capital allocation recommendation for one pair."""
+
     pair_key: str
     notional: float
     fraction_of_equity: float
     sizing_method: SizingMethod
-    details: Dict[str, float]
+    details: dict[str, float]
 
 
 class PortfolioAllocator:
@@ -74,7 +76,8 @@ class PortfolioAllocator:
         self.max_portfolio_heat = max_portfolio_heat
 
         # Track current allocations
-        self._allocations: Dict[str, float] = {}
+        self._allocations: dict[str, float] = {}
+        self._lock = threading.Lock()  # T3-02: guard concurrent check-then-write on heat
 
         logger.info(
             "portfolio_allocator_initialized",
@@ -92,10 +95,10 @@ class PortfolioAllocator:
         self,
         pair_key: str,
         signal_strength: float = 1.0,
-        spread_vol: Optional[float] = None,
-        half_life: Optional[float] = None,
-        win_rate: Optional[float] = None,
-        avg_win_loss_ratio: Optional[float] = None,
+        spread_vol: float | None = None,
+        half_life: float | None = None,
+        win_rate: float | None = None,
+        avg_win_loss_ratio: float | None = None,
     ) -> AllocationResult:
         """
         Compute allocation for a single pair.
@@ -113,12 +116,9 @@ class PortfolioAllocator:
         """
         # Guard: equity must be positive to avoid silent zero-allocation
         if self.equity <= 0:
-            raise ValueError(
-                f"Cannot allocate with equity={self.equity:.2f}. "
-                "Equity must be positive."
-            )
+            raise ValueError(f"Cannot allocate with equity={self.equity:.2f}. Equity must be positive.")
 
-        details: Dict[str, float] = {}
+        details: dict[str, float] = {}
 
         if self.sizing_method == SizingMethod.EQUAL_WEIGHT:
             frac = min(1.0 / self.max_pairs, self.max_allocation_pct)
@@ -146,13 +146,14 @@ class PortfolioAllocator:
         else:
             frac = min(1.0 / self.max_pairs, self.max_allocation_pct)
 
-        # Portfolio heat check
-        current_heat = sum(self._allocations.values())
-        if current_heat + frac > self.max_portfolio_heat:
-            frac = max(0, self.max_portfolio_heat - current_heat)
+        # Portfolio heat check (T3-02: atomic under lock)
+        with self._lock:
+            current_heat = sum(self._allocations.values())
+            if current_heat + frac > self.max_portfolio_heat:
+                frac = max(0, self.max_portfolio_heat - current_heat)
 
-        notional = frac * self.equity
-        self._allocations[pair_key] = frac
+            notional = frac * self.equity
+            self._allocations[pair_key] = frac
 
         return AllocationResult(
             pair_key=pair_key,
@@ -164,7 +165,8 @@ class PortfolioAllocator:
 
     def release(self, pair_key: str) -> None:
         """Release allocation when a position is closed."""
-        self._allocations.pop(pair_key, None)
+        with self._lock:
+            self._allocations.pop(pair_key, None)
 
     def update_equity(self, equity: float) -> None:
         """Update equity for sizing calculations."""
@@ -176,8 +178,8 @@ class PortfolioAllocator:
 
     @staticmethod
     def _kelly_fraction(
-        win_rate: Optional[float],
-        wl_ratio: Optional[float],
+        win_rate: float | None,
+        wl_ratio: float | None,
     ) -> float:
         """
         Half-Kelly criterion: f* = (p * b - q) / b / 2
@@ -202,13 +204,16 @@ class PortfolioAllocator:
     @property
     def current_heat(self) -> float:
         """Total allocated fraction of equity."""
-        return sum(self._allocations.values())
+        with self._lock:
+            return sum(self._allocations.values())
 
     @property
     def available_capacity(self) -> float:
         """Remaining capacity before heat limit."""
-        return max(0, self.max_portfolio_heat - self.current_heat)
+        with self._lock:
+            return max(0, self.max_portfolio_heat - sum(self._allocations.values()))
 
     @property
-    def allocated_pairs(self) -> Dict[str, float]:
-        return dict(self._allocations)
+    def allocated_pairs(self) -> dict[str, float]:
+        with self._lock:
+            return dict(self._allocations)

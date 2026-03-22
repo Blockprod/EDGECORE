@@ -3,9 +3,11 @@
 Provides a minimal `CCXTExecutionEngine` implementation with `submit_order`
 to satisfy unit tests and avoid importing the full production engine.
 """
+
 from __future__ import annotations
+
 import uuid
-from typing import Dict, Any, Optional
+from typing import Any
 
 
 class CCXTExecutionEngine:
@@ -15,11 +17,13 @@ class CCXTExecutionEngine:
     tests expect (`submit_order`) and returns simple mock responses.
     """
 
-    def __init__(self, api_key: Optional[str] = None, secret: Optional[str] = None):
+    def __init__(self, api_key: str | None = None, secret: str | None = None):
         self.api_key = api_key
         self.secret = secret
 
-    def submit_order(self, symbol: str, side: str, amount: float, price: Optional[float] = None, order_type: str = "market") -> Dict[str, Any]:
+    def submit_order(
+        self, symbol: str, side: str, amount: float, price: float | None = None, order_type: str = "market"
+    ) -> dict[str, Any]:
         """Submit a mock order and return a synthetic order record.
 
         Tests only check that an order can be submitted and a dict-like
@@ -40,5 +44,5 @@ class CCXTExecutionEngine:
     def cancel_order(self, order_id: str) -> bool:
         return True
 
-    def get_order(self, order_id: str) -> Dict[str, Any]:
+    def get_order(self, order_id: str) -> dict[str, Any]:
         return {"id": order_id, "status": "open"}

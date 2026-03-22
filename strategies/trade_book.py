@@ -18,7 +18,7 @@ Why a dedicated module?
 
 from __future__ import annotations
 
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Iterator
 
 
 class StrategyTradeBook:
@@ -40,7 +40,7 @@ class StrategyTradeBook:
     """
 
     def __init__(self) -> None:
-        self._trades: Dict[str, dict] = {}
+        self._trades: dict[str, dict] = {}
 
     # ------------------------------------------------------------------
     # Semantic trade lifecycle API
@@ -50,7 +50,7 @@ class StrategyTradeBook:
         """Record a new active trade for *pair_key*."""
         self._trades[pair_key] = trade
 
-    def close(self, pair_key: str) -> Optional[dict]:
+    def close(self, pair_key: str) -> dict | None:
         """Remove and return the trade for *pair_key*, or ``None`` if absent."""
         return self._trades.pop(pair_key, None)
 
@@ -58,7 +58,7 @@ class StrategyTradeBook:
         """Return ``True`` if *pair_key* is currently tracked as an active trade."""
         return pair_key in self._trades
 
-    def as_dict(self) -> Dict[str, dict]:
+    def as_dict(self) -> dict[str, dict]:
         """Return a shallow copy of the underlying trade dictionary.
 
         Use this when you need a plain :class:`dict` (e.g. for JSON logging or
@@ -70,7 +70,7 @@ class StrategyTradeBook:
     # Backward-compatible dict interface
     # ------------------------------------------------------------------
 
-    def get(self, pair_key: str) -> Optional[dict]:
+    def get(self, pair_key: str) -> dict | None:
         """Return the trade dict for *pair_key* without removing it, or ``None``."""
         return self._trades.get(pair_key)
 
@@ -78,13 +78,13 @@ class StrategyTradeBook:
         """Remove *pair_key* if present, returning its value (or *default*)."""
         return self._trades.pop(pair_key, default)
 
-    def keys(self) -> List[str]:  # type: ignore[override]
+    def keys(self) -> list[str]:  # type: ignore[override]
         return list(self._trades.keys())
 
-    def values(self) -> List[dict]:  # type: ignore[override]
+    def values(self) -> list[dict]:  # type: ignore[override]
         return list(self._trades.values())
 
-    def items(self) -> List[Tuple[str, dict]]:  # type: ignore[override]
+    def items(self) -> list[tuple[str, dict]]:  # type: ignore[override]
         return list(self._trades.items())
 
     def __len__(self) -> int:

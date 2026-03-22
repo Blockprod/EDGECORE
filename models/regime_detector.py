@@ -20,12 +20,12 @@ Example:
             position_multiplier = 0.5
 """
 
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, List, Optional, Tuple
-from datetime import datetime
-import numpy as np
 from collections import deque
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+
+import numpy as np
 
 
 class VolatilityRegime(Enum):
@@ -66,7 +66,7 @@ class RegimeState:
     confidence: float = 1.0
     """Confidence in current regime classification (0-1)"""
     
-    volatility_history: List[float] = field(default_factory=list)
+    volatility_history: list[float] = field(default_factory=list)
     """Recent volatility values for trend analysis"""
 
 
@@ -125,21 +125,21 @@ class RegimeDetector:
         self.current_regime = VolatilityRegime.NORMAL
         self.current_regime_start_bar = 0
         self.bars_processed = 0
-        self.regime_transitions: List[Tuple[int, VolatilityRegime, VolatilityRegime]] = []
-        self.regime_change_signals: List[str] = []
+        self.regime_transitions: list[tuple[int, VolatilityRegime, VolatilityRegime]] = []
+        self.regime_change_signals: list[str] = []
         
         # Instant transition tracking
         self.instant_transition_count: int = 0
         
         # State history
-        self.state_history: List[RegimeState] = []
-        self.last_state: Optional[RegimeState] = None
+        self.state_history: list[RegimeState] = []
+        self.last_state: RegimeState | None = None
     
     def update(
         self,
         spread: float,
-        returns: Optional[float] = None,
-        date: Optional[datetime] = None
+        returns: float | None = None,
+        date: datetime | None = None
     ) -> RegimeState:
         """
         Update regime detector with new price/spread data.
@@ -330,7 +330,7 @@ class RegimeDetector:
         
         return max(0.0, min(1.0, confidence))
     
-    def get_position_multiplier(self, regime: Optional[VolatilityRegime] = None) -> float:
+    def get_position_multiplier(self, regime: VolatilityRegime | None = None) -> float:
         """
         Get position sizing multiplier based on regime volatility.
         
@@ -354,7 +354,7 @@ class RegimeDetector:
         else:  # NORMAL
             return 1.0
     
-    def get_entry_threshold_multiplier(self, regime: Optional[VolatilityRegime] = None) -> float:
+    def get_entry_threshold_multiplier(self, regime: VolatilityRegime | None = None) -> float:
         """
         Get z-score entry threshold multiplier based on regime.
         
@@ -376,7 +376,7 @@ class RegimeDetector:
         else:
             return 1.0
     
-    def get_exit_threshold_multiplier(self, regime: Optional[VolatilityRegime] = None) -> float:
+    def get_exit_threshold_multiplier(self, regime: VolatilityRegime | None = None) -> float:
         """
         Get z-score exit threshold multiplier based on regime.
         
@@ -398,7 +398,7 @@ class RegimeDetector:
         else:
             return 1.0
     
-    def get_regime_stats(self) -> Dict:
+    def get_regime_stats(self) -> dict:
         """Get summary statistics of regime history and volatility patterns."""
         if not self.state_history:
             return {

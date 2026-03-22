@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68.0", "wheel"]
+requires = ["setuptools>=68.0", "wheel", "Cython>=3.0,<4.0", "numpy>=1.24.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -23,7 +23,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.4.0", "pytest-cov>=4.1.0", "mypy>=1.8.0"]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.0.0",
+    "pyright>=1.1.400",
+    "ruff>=0.15.0",
+    "bandit>=1.7.0",
+    "mypy>=1.8.0",
+]
 
 [tool.mypy]
 python_version = "3.11"
@@ -89,21 +97,52 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-# Ignore minor/stylistic rules that don't affect correctness
-ignore = [
-    "E402",   # module-import-not-at-top-of-file (common in scripts)
-    "E501",   # line-too-long (handled by formatter)
-    "E722",   # bare-except (acceptable in resilient trading code)
-    "E741",   # ambiguous-variable-name (l, O, I)
-    "E721",   # type-comparison (use isinstance() - informational only)
-    "E731",   # lambda-assignment
-    "E712",   # true-false-comparison (== True)
+# Rules activées
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort (ordre des imports)
+    "UP",   # pyupgrade (syntaxe Python moderne)
+    "B",    # flake8-bugbear (bugs courants)
+    "C90",  # mccabe complexity
 ]
-# Rules to enforce
-select = ["F", "E"]
+ignore = [
+    "E402",   # module-import-not-at-top-of-file (scripts & __init__)
+    "E501",   # line-too-long (géré par formatter)
+    "E722",   # bare-except (acceptable en trading résilient)
+    "E741",   # ambiguous-variable-name (l, O, I)
+    "E721",   # type-comparison
+    "E731",   # lambda-assignment
+    "E712",   # true-false-comparison
+    "B006",   # mutable-default-argument (patterns de config trading)
+    "B007",   # unused-loop-control-variable
+    "B008",   # function-call-in-default-argument (Pydantic/dataclass)
+    "B023",   # function-in-loop (courant dans backtest loops)
+    "UP007",  # Optional[X] → X | Y (migration progressive)
+    "UP035",  # deprecated imports (migration progressive)
+    "C901",   # function-too-complex (code financier dense)
+]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/*" = ["F401"]
+"scripts/*" = ["F401", "I"]
 "tests/validation/*" = ["F401"]
-"tests/*" = ["F841"]
-"ARCHIVED_*/**" = ["F401"]
+"tests/*" = ["F841", "F401", "B017"]
+"ARCHIVED_*/**" = ["F401", "I", "UP", "B"]
+"**/__init__.py" = ["F401", "I"]  # re-exports légitimes
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "common", "data", "models", "signal_engine", "risk", "risk_engine", "execution", "execution_engine", "portfolio_engine", "universe", "pair_selection", "live_trading", "monitoring", "persistence", "backtests", "backtester"]
+split-on-trailing-comma = true
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15  # seuil adapté au code financier
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv", "build", "backups", "ARCHIVED_cpp_sources", "ARCHIVED_crypto", "docs", "research"]
+skips = [
+    "B101",  # assert_used — ok dans les gardes internes
+    "B311",  # random — numpy.random utilisé, pas random.random en crypto
+    "B608",  # SQL injection — pas de SQL direct, ORM uniquement
+]
+severity = "medium"  # ne reporter que medium+ en CI
+confidence = "medium"

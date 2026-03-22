@@ -13,14 +13,13 @@ Covers:
 import numpy as np
 import pandas as pd
 
+from backtests.cost_model import CostModel
 from backtests.event_driven import (
     EventDrivenBacktester,
-    Order,
-    MarketState,
     Fill,
+    MarketState,
+    Order,
 )
-from backtests.cost_model import CostModel
-
 
 # ===================================================================
 # Helpers

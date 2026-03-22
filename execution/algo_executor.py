@@ -1,14 +1,14 @@
 ﻿"""
-Phase 3.3 ÔÇö Algorithmic Execution (TWAP / VWAP).
+Phase 3.3 ��� Algorithmic Execution (TWAP / VWAP).
 
 Splits large orders into time-sliced child orders to reduce market
 impact.  Integrates with the existing ``BaseExecutionEngine`` for
 actual order submission.
 
 Two algorithms:
-1. **TWAP** ÔÇö Time-Weighted Average Price: equal-sized slices at
+1. **TWAP** ��� Time-Weighted Average Price: equal-sized slices at
    regular intervals.
-2. **VWAP** ÔÇö Volume-Weighted Average Price: slices weighted by
+2. **VWAP** ��� Volume-Weighted Average Price: slices weighted by
    historical intraday volume profile.
 
 Participation-rate constraint: each slice must not exceed
@@ -23,7 +23,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -35,6 +34,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
 
 class AlgoType(Enum):
     TWAP = "TWAP"
@@ -58,6 +58,7 @@ class AlgoConfig:
 # Slice results
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SliceFill:
     """Result of a single child order slice."""
@@ -66,7 +67,7 @@ class SliceFill:
     target_qty: float
     filled_qty: float
     fill_price: float
-    timestamp: Optional[pd.Timestamp] = None
+    timestamp: pd.Timestamp | None = None
     participation_rate: float = 0.0
 
 
@@ -80,7 +81,7 @@ class AlgoResult:
     total_target_qty: float
     total_filled_qty: float = 0.0
     avg_fill_price: float = 0.0
-    slices: List[SliceFill] = field(default_factory=list)
+    slices: list[SliceFill] = field(default_factory=list)
     estimated_impact_bps: float = 0.0
     status: str = "PENDING"  # PENDING, PARTIAL, FILLED, CANCELLED
 
@@ -88,6 +89,7 @@ class AlgoResult:
 # ---------------------------------------------------------------------------
 # TWAP Executor
 # ---------------------------------------------------------------------------
+
 
 class TWAPExecutor:
     """Time-Weighted Average Price execution algorithm.
@@ -111,7 +113,7 @@ class TWAPExecutor:
         )
     """
 
-    def __init__(self, config: Optional[AlgoConfig] = None):
+    def __init__(self, config: AlgoConfig | None = None):
         self.config = config or AlgoConfig(algo_type=AlgoType.TWAP)
 
     def simulate(
@@ -141,8 +143,8 @@ class TWAPExecutor:
         slice_qty = total_qty / n
 
         # Participation rate: compare slice qty to per-slice expected volume
-        # ADV / bars_per_day Ôëê per-bar volume
-        bars_per_day = 78  # 6.5h ├ù 12 bars/h
+        # ADV / bars_per_day ��� per-bar volume
+        bars_per_day = 78  # 6.5h +� 12 bars/h
         expected_bar_vol = adv / bars_per_day
         participation = slice_qty / expected_bar_vol if expected_bar_vol > 0 else 1.0
 
@@ -157,7 +159,7 @@ class TWAPExecutor:
                 participation=self.config.max_participation,
             )
 
-        slices: List[SliceFill] = []
+        slices: list[SliceFill] = []
         cumulative_qty = 0.0
         cumulative_cost = 0.0
 
@@ -177,13 +179,15 @@ class TWAPExecutor:
             else:
                 fill_price = current_price * (1 - impact_multiplier)
 
-            slices.append(SliceFill(
-                slice_idx=i,
-                target_qty=actual_qty,
-                filled_qty=actual_qty,
-                fill_price=fill_price,
-                participation_rate=participation,
-            ))
+            slices.append(
+                SliceFill(
+                    slice_idx=i,
+                    target_qty=actual_qty,
+                    filled_qty=actual_qty,
+                    fill_price=fill_price,
+                    participation_rate=participation,
+                )
+            )
 
             cumulative_qty += actual_qty
             cumulative_cost += actual_qty * fill_price
@@ -256,8 +260,8 @@ class VWAPExecutor:
 
     def __init__(
         self,
-        config: Optional[AlgoConfig] = None,
-        volume_profile: Optional[np.ndarray] = None,
+        config: AlgoConfig | None = None,
+        volume_profile: np.ndarray | None = None,
     ):
         self.config = config or AlgoConfig(algo_type=AlgoType.VWAP)
         self._custom_profile = volume_profile
@@ -274,10 +278,7 @@ class VWAPExecutor:
 
         # Resample profile to num_slices bins
         indices = np.linspace(0, 77, n + 1).astype(int)
-        profile = np.array([
-            full_profile[indices[i]:indices[i + 1]].sum()
-            for i in range(n)
-        ])
+        profile = np.array([full_profile[indices[i] : indices[i + 1]].sum() for i in range(n)])
         profile /= profile.sum()
         return profile
 
@@ -309,7 +310,7 @@ class VWAPExecutor:
         bars_per_day = 78
         expected_bar_vol = adv / bars_per_day
 
-        slices: List[SliceFill] = []
+        slices: list[SliceFill] = []
         cumulative_qty = 0.0
         cumulative_cost = 0.0
 
@@ -332,24 +333,22 @@ class VWAPExecutor:
             # Low-volume midday slices have higher impact per share
             vol_weight = profile[i] * n  # >1 means high volume period
             impact_scale = 1.0 / max(vol_weight, 0.3)  # Higher impact when volume is low
-            impact_multiplier = (
-                self.config.impact_bps * 1e-4
-                * impact_scale
-                * np.sqrt((i + 1) / n)
-            )
+            impact_multiplier = self.config.impact_bps * 1e-4 * impact_scale * np.sqrt((i + 1) / n)
 
             if side == "BUY":
                 fill_price = current_price * (1 + impact_multiplier)
             else:
                 fill_price = current_price * (1 - impact_multiplier)
 
-            slices.append(SliceFill(
-                slice_idx=i,
-                target_qty=actual_qty,
-                filled_qty=actual_qty,
-                fill_price=fill_price,
-                participation_rate=participation,
-            ))
+            slices.append(
+                SliceFill(
+                    slice_idx=i,
+                    target_qty=actual_qty,
+                    filled_qty=actual_qty,
+                    fill_price=fill_price,
+                    participation_rate=participation,
+                )
+            )
 
             cumulative_qty += actual_qty
             cumulative_cost += actual_qty * fill_price
@@ -385,9 +384,10 @@ class VWAPExecutor:
 # Convenience factory
 # ---------------------------------------------------------------------------
 
+
 def create_algo_executor(
     algo_type: str = "TWAP",
-    config: Optional[AlgoConfig] = None,
+    config: AlgoConfig | None = None,
 ) -> TWAPExecutor | VWAPExecutor:
     """Factory to create an algo executor by name.
 

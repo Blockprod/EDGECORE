@@ -6,11 +6,6 @@ import warnings
 
 import numpy as np
 import pandas as pd
-
-try:
-    import vectorbt as vbt
-except ImportError:
-    vbt = None  # vectorbt is optional; not used in the main pipeline
 from structlog import get_logger
 
 from backtests.metrics import BacktestMetrics
@@ -28,7 +23,7 @@ from backtests.cost_model import CostModel as _CostModel
 
 _LEGACY_COST_MODEL = _CostModel()
 COMMISSION_BPS = 10  # 10 basis points (0.1%) per side
-SLIPPAGE_BPS = 5    # 5 basis points (0.05%) per side
+SLIPPAGE_BPS = 5  # 5 basis points (0.05%) per side
 TOTAL_COST_BPS = COMMISSION_BPS + SLIPPAGE_BPS  # Applied per entry and exit
 TOTAL_COST_FACTOR = TOTAL_COST_BPS / 10000  # Convert to decimal: 30 bps = 0.003
 
@@ -39,13 +34,13 @@ def _generate_cointegrated_pair(
     base_price_1: float = 100,
     base_price_2: float = 200,
     correlation: float = 0.9,
-    seed: int = 42
+    seed: int = 42,
 ) -> pd.DataFrame:
     """
     Generate synthetic cointegrated price pair for backtesting.
-    
+
     Y Ôëê ╬▓*X + noise (cointegrated relationship)
-    
+
     Args:
         start_date: Start date string (YYYY-MM-DD)
         end_date: End date string (YYYY-MM-DD)
@@ -53,67 +48,65 @@ def _generate_cointegrated_pair(
         base_price_2: Base price for second series
         correlation: Correlation between series (0.0-1.0)
         seed: Random seed
-    
+
     Returns:
         DataFrame with two cointegrated price series
     """
     np.random.seed(seed)
-    
+
     # Generate dates
-    dates = pd.date_range(start_date, end_date, freq='D')
+    dates = pd.date_range(start_date, end_date, freq="D")
     n = len(dates)
-    
+
     # Generate base random walk (X)
     x_returns = np.random.normal(0.0005, 0.02, n)
     x_prices = base_price_1 * np.exp(np.cumsum(x_returns))
-    
+
     # Generate correlated random walk (Y = 2*X + noise)
     # This creates cointegration: ╬▓ Ôëê 2, error Ôëê noise
     noise = np.random.normal(0, 5, n)
     y_prices = 2 * x_prices + noise
-    
-    df = pd.DataFrame({
-        'Symbol1': x_prices,
-        'Symbol2': y_prices
-    }, index=dates)
-    
+
+    df = pd.DataFrame({"Symbol1": x_prices, "Symbol2": y_prices}, index=dates)
+
     logger.info(
         "cointegrated_pair_generated",
         periods=n,
         correlation=correlation,
         base_price_1=base_price_1,
-        base_price_2=base_price_2
+        base_price_2=base_price_2,
     )
-    
+
     return df
+
 
 class BacktestRunner:
     """Backtest runner with unified strategy simulator.
-    
+
     The preferred entry point is :meth:`run_unified` which delegates to
     ``StrategyBacktestSimulator`` (Sprint 1.1) ÔÇô zero logic duplication,
     no look-ahead bias, realistic cost model.
-    
+
     The legacy :meth:`run` method is kept for backward compatibility with
     existing tests but emits a ``DeprecationWarning``.
     """
-    
+
     def __init__(self):
         self.config = get_settings().backtest
         self.loader = DataLoader()
         self.strategy = PairTradingStrategy()
         self.results = None
-    
+
     def run_unified(
         self,
         symbols: list,
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         validate_data: bool = True,
         use_synthetic: bool = False,
         pair_rediscovery_interval: int = 5,
         pair_validation_interval: int = 1,
-        sector_map: dict = None,
+        sector_map: dict | None = None,
         allocation_per_pair_pct: float = 30.0,
         max_position_loss_pct: float = 0.10,
         max_portfolio_heat: float = 0.95,
@@ -123,7 +116,7 @@ class BacktestRunner:
         event_filter=None,
         borrow_checker=None,
         leverage_multiplier: float = 1.0,
-        oos_start_date: str = None,
+        oos_start_date: str | None = None,
         cost_model=None,
         momentum_filter=None,
     ) -> BacktestMetrics:
@@ -169,14 +162,13 @@ class BacktestRunner:
         )
 
         # --- Load data (reuse existing loader logic) ---
-        prices_df = self._load_prices(
-            symbols, start_date, end_date, validate_data, use_synthetic
-        )
+        prices_df = self._load_prices(symbols, start_date, end_date, validate_data, use_synthetic)
 
         # --- Resample to weekly if multi-timeframe requested ---
         weekly_prices = None
         if weekly_confirmation and not use_synthetic:
             from data.multi_timeframe import MultiTimeframeEngine
+
             mtf = MultiTimeframeEngine()
             weekly_prices = mtf.resample_to_weekly(prices_df)
             logger.info(
@@ -233,6 +225,7 @@ class BacktestRunner:
         import logging
 
         from tqdm import tqdm
+
         # Suppress info/warning logs from IBKR during validation
         logging.getLogger("execution.ibkr_engine").setLevel(logging.ERROR)
 
@@ -263,14 +256,14 @@ class BacktestRunner:
         import hashlib as _hashlib
         import os as _os
         import time as _time
+
         from execution.rate_limiter import TokenBucketRateLimiter as _TokenBucketRateLimiter
+
         _ibkr_rate_limiter = _TokenBucketRateLimiter(rate=45, burst=10)
 
         _cache_dir = _os.path.join("data", "cache", "prices")
         _os.makedirs(_cache_dir, exist_ok=True)
-        _cache_sig = _hashlib.md5(
-            ("|".join(sorted(symbols)) + start_date + end_date).encode()
-        ).hexdigest()[:12]
+        _cache_sig = _hashlib.md5(("|".join(sorted(symbols)) + start_date + end_date).encode()).hexdigest()[:12]
         _cache_path = _os.path.join(_cache_dir, f"daily_{_cache_sig}.parquet")
         _cache_max_age_days = 7
 
@@ -279,13 +272,14 @@ class BacktestRunner:
             if _age_days < _cache_max_age_days:
                 print(f"[IBKR Validation] Cache hit ({_age_days:.1f}d old) ÔÇö skipping IBKR data load.")
                 import pandas as _pd
+
                 _cached = _pd.read_parquet(_cache_path)
                 price_data = {col: _cached[col] for col in _cached.columns}
-                return _cached[(
-                    (_cached.index >= start_date) & (_cached.index <= end_date)
-                )] if len(_cached[(
-                    (_cached.index >= start_date) & (_cached.index <= end_date)
-                )]) > 0 else _cached.tail(252)
+                return (
+                    _cached[((_cached.index >= start_date) & (_cached.index <= end_date))]
+                    if len(_cached[((_cached.index >= start_date) & (_cached.index <= end_date))]) > 0
+                    else _cached.tail(252)
+                )
 
         # ÔöÇÔöÇ IBKR live load (no valid cache) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         # tqdm progress bar for sequential loading (single IBKR connection)
@@ -294,6 +288,7 @@ class BacktestRunner:
             # to avoid connection exhaustion on IB Gateway.
             # Timeout = 90s to allow HMDS to warm up after Gateway restart.
             from execution.ibkr_engine import IBGatewaySync
+
             engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=5000, timeout=90)
             engine.connect()
 
@@ -303,9 +298,7 @@ class BacktestRunner:
             # HMDS wake-up. If it times out, HMDS is genuinely unreachable and
             # the user must reconnect via IB Gateway ÔåÆ Help ÔåÆ Reconnect Data.
             print("[IBKR] V├®rification HMDS (donn├®es historiques)...")
-            _probe = engine.get_historical_data(
-                "SPY", duration="2 D", bar_size="1 day", what_to_show="TRADES"
-            )
+            _probe = engine.get_historical_data("SPY", duration="2 D", bar_size="1 day", what_to_show="TRADES")
             if not _probe:
                 raise RuntimeError(
                     "\n\n"
@@ -328,39 +321,43 @@ class BacktestRunner:
                         # Try ADJUSTED_LAST (dividend-adjusted) first; fall back to
                         # TRADES if HMDS is inactive (error 2107 / 30s timeout).
                         bars = engine.get_historical_data(
-                            symbol=sym, duration="11 Y",
-                            bar_size="1 day", what_to_show="ADJUSTED_LAST"
+                            symbol=sym, duration="11 Y", bar_size="1 day", what_to_show="ADJUSTED_LAST"
                         )
                         if not bars:
                             logger.warning("adjusted_last_failed_trying_trades", symbol=sym)
                             bars = engine.get_historical_data(
-                                symbol=sym, duration="11 Y",
-                                bar_size="1 day", what_to_show="TRADES"
+                                symbol=sym, duration="11 Y", bar_size="1 day", what_to_show="TRADES"
                             )
                         if bars:
                             import pandas as _pd
+
                             df = _pd.DataFrame(
-                                {'close': [b.close for b in bars]},
+                                {"close": [b.close for b in bars]},
                                 index=_pd.DatetimeIndex([b.date for b in bars]),
                             )
-                            df.index.name = 'date'
+                            df.index.name = "date"
                             if len(df) > 0:
-                                price_data[sym] = df['close']
-                                logger.info("ibkr_data_loaded_and_validated",
-                                            symbol=sym, rows=len(df),
-                                            checks_passed=12, checks_failed=0)
+                                price_data[sym] = df["close"]
+                                logger.info(
+                                    "ibkr_data_loaded_and_validated",
+                                    symbol=sym,
+                                    rows=len(df),
+                                    checks_passed=12,
+                                    checks_failed=0,
+                                )
                             else:
                                 failed_symbols.append((sym, "load_error", "Empty dataframe"))
                         else:
                             failed_symbols.append((sym, "load_error", f"No data returned from IBKR for {sym}"))
-                            logger.error("ibkr_data_load_failed", symbol=sym,
-                                        error=f"No data returned from IBKR for {sym}")
+                            logger.error(
+                                "ibkr_data_load_failed", symbol=sym, error=f"No data returned from IBKR for {sym}"
+                            )
                     except Exception as e:
                         import traceback as _tb
+
                         tb = _tb.format_exc()
                         failed_symbols.append((sym, "load_error", str(e)))
-                        logger.warning("load_error_trace", symbol=repr(sym),
-                                      error=str(e)[:200], traceback=tb[:2000])
+                        logger.warning("load_error_trace", symbol=repr(sym), error=str(e)[:200], traceback=tb[:2000])
                     pbar.update(1)
                     # Respect IBKR 50 req/s hard cap via token-bucket rate limiter.
                     _ibkr_rate_limiter.acquire()
@@ -378,9 +375,7 @@ class BacktestRunner:
             raise ValueError(f"No valid data loaded. Failed symbols: {failed_symbols}")
 
         prices_df = pd.DataFrame(price_data)
-        filtered = prices_df[
-            (prices_df.index >= start_date) & (prices_df.index <= end_date)
-        ]
+        filtered = prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)]
         if len(filtered) == 0:
             prices_df = prices_df.tail(252)
         else:
@@ -389,7 +384,9 @@ class BacktestRunner:
         # Save to disk cache for future runs (avoids IBKR re-fetch on same session)
         try:
             prices_df.to_parquet(_cache_path)
-            print(f"[IBKR Validation] Data cached to {_cache_path} ({len(prices_df)} rows, {len(prices_df.columns)} symbols)")
+            print(
+                f"[IBKR Validation] Data cached to {_cache_path} ({len(prices_df)} rows, {len(prices_df.columns)} symbols)"
+            )
         except Exception as _ce:
             logger.warning("price_cache_write_failed", error=str(_ce))
 
@@ -405,27 +402,22 @@ class BacktestRunner:
         symbols = list(prices_df.columns)
         try:
             for i, sym1 in enumerate(symbols):
-                for sym2 in symbols[i+1:]:
+                for sym2 in symbols[i + 1 :]:
                     series1 = prices_df[sym1]
                     series2 = prices_df[sym2]
                     # Test cointegration (Engle-Granger avec correction Bonferroni)
                     result = engle_granger_test_cpp_optimized(
-                        series1, series2,
-                        num_symbols=len(symbols),
-                        apply_bonferroni=True
+                        series1, series2, num_symbols=len(symbols), apply_bonferroni=True
                     )
-                    is_cointegrated = result['is_cointegrated']
-                    pvalue = result.get('pvalue', None)
+                    is_cointegrated = result["is_cointegrated"]
+                    pvalue = result.get("pvalue", None)
                     if is_cointegrated:
                         from models.cointegration import half_life_mean_reversion
-                        residuals_series = pd.Series(result['residuals'])
+
+                        residuals_series = pd.Series(result["residuals"])
                         hl = half_life_mean_reversion(residuals_series)
                         logger.debug(
-                            "cointegration_halflife_calculated",
-                            sym1=sym1,
-                            sym2=sym2,
-                            pvalue=pvalue,
-                            half_life=hl
+                            "cointegration_halflife_calculated", sym1=sym1, sym2=sym2, pvalue=pvalue, half_life=hl
                         )
                         hl_valid = (hl is None) or (hl > 0 and hl < 500)
                         if hl_valid:
@@ -435,28 +427,24 @@ class BacktestRunner:
                                 sym1=sym1,
                                 sym2=sym2,
                                 pvalue=pvalue,
-                                half_life=hl if hl else "calculated_as_None"
+                                half_life=hl if hl else "calculated_as_None",
                             )
         except Exception as e:
             logger.error("cointegration_test_failed", error=str(e))
         return cointegrated_pairs
-    
+
     def run(
         self,
         symbols: list,
-        start_date: str = None,
-        end_date: str = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
         validate_data: bool = True,
-        use_synthetic: bool = False
+        use_synthetic: bool = False,
     ) -> BacktestMetrics:
         # C-02: This method has confirmed look-ahead bias and is disabled.
         warnings.warn(
-            "BacktestRunner.run() has look-ahead bias (C-02). "
-            "Use run_unified() instead.",
+            "BacktestRunner.run() has look-ahead bias (C-02). Use run_unified() instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        raise NotImplementedError(
-            "BacktestRunner.run() removed (C-02: look-ahead bias). "
-            "Use run_unified() instead."
-        )
+        raise NotImplementedError("BacktestRunner.run() removed (C-02: look-ahead bias). Use run_unified() instead.")

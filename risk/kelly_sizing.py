@@ -20,7 +20,7 @@ Usage::
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -42,7 +42,7 @@ class KellySizerConfig:
 class KellySizer:
     """Fractional Kelly position sizer with institutional risk limits."""
 
-    def __init__(self, config: Optional[KellySizerConfig] = None):
+    def __init__(self, config: KellySizerConfig | None = None):
         self.config = config or KellySizerConfig()
         # Rolling trade history for adaptive Kelly
         self._trade_history: list = []
@@ -56,9 +56,9 @@ class KellySizer:
 
     def _compute_kelly_fraction(
         self,
-        win_rate: Optional[float] = None,
-        avg_win: Optional[float] = None,
-        avg_loss: Optional[float] = None,
+        win_rate: float | None = None,
+        avg_win: float | None = None,
+        avg_loss: float | None = None,
     ) -> float:
         """Compute raw Kelly fraction f* = (p*b - q) / b.
 
@@ -99,11 +99,11 @@ class KellySizer:
     def compute_allocation(
         self,
         current_equity: float,
-        win_rate: Optional[float] = None,
-        avg_win: Optional[float] = None,
-        avg_loss: Optional[float] = None,
-        sector: Optional[str] = None,
-        sector_exposure: Optional[Dict[str, float]] = None,
+        win_rate: float | None = None,
+        avg_win: float | None = None,
+        avg_loss: float | None = None,
+        sector: str | None = None,
+        sector_exposure: dict[str, float] | None = None,
         current_gross_exposure: float = 0.0,
     ) -> float:
         """Compute position allocation as % of equity.

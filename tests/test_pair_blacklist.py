@@ -15,8 +15,8 @@ from pathlib import Path
 
 from pair_selection.blacklist import PairBlacklist
 
-
 # ÔöÇÔöÇ Core blacklist logic ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
 
 class TestBlacklistCoreLoss:
     """Consecutive loss tracking and blacklisting."""
@@ -57,6 +57,7 @@ class TestBlacklistCoreLoss:
 
 # ÔöÇÔöÇ Cooldown expiry ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
+
 class TestBlacklistCooldown:
     """Pairs unblocked after cooldown expires."""
 
@@ -91,6 +92,7 @@ class TestBlacklistCooldown:
 
 # ÔöÇÔöÇ Multiple pairs ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
+
 class TestBlacklistMultiplePairs:
     """Each pair tracked independently."""
 
@@ -118,26 +120,24 @@ class TestBlacklistMultiplePairs:
 
 # ÔöÇÔöÇ Persistence ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
+
 class TestBlacklistPersistence:
     """JSON persistence survives reload."""
 
     def test_save_and_load(self, tmp_path):
         json_path = tmp_path / "blacklist.json"
-        bl = PairBlacklist(max_consecutive_losses=2, cooldown_days=30,
-                           persist_path=str(json_path))
+        bl = PairBlacklist(max_consecutive_losses=2, cooldown_days=30, persist_path=str(json_path))
         bl.record_outcome("A_B", pnl=-10.0, trade_date=date(2025, 1, 1))
         bl.record_outcome("A_B", pnl=-10.0, trade_date=date(2025, 1, 2))
         assert json_path.exists()
 
         # Reload from file
-        bl2 = PairBlacklist(max_consecutive_losses=2, cooldown_days=30,
-                            persist_path=str(json_path))
+        bl2 = PairBlacklist(max_consecutive_losses=2, cooldown_days=30, persist_path=str(json_path))
         assert bl2.is_blocked("A_B", date(2025, 1, 3)) is True
 
     def test_reset_clears_state(self, tmp_path):
         json_path = tmp_path / "blacklist.json"
-        bl = PairBlacklist(max_consecutive_losses=2, cooldown_days=30,
-                           persist_path=str(json_path))
+        bl = PairBlacklist(max_consecutive_losses=2, cooldown_days=30, persist_path=str(json_path))
         bl.record_outcome("A_B", pnl=-10.0, trade_date=date(2025, 1, 1))
         bl.record_outcome("A_B", pnl=-10.0, trade_date=date(2025, 1, 2))
         bl.reset()
@@ -146,6 +146,7 @@ class TestBlacklistPersistence:
 
 
 # ÔöÇÔöÇ Disabled mode ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
 
 class TestBlacklistDisabled:
     """When disabled, never blocks."""
@@ -164,11 +165,13 @@ class TestBlacklistDisabled:
 
 # ÔöÇÔöÇ Config integration ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
+
 class TestBlacklistConfig:
     """BlacklistConfig in settings.py and config.yaml."""
 
     def test_config_exists(self):
         from config.settings import BlacklistConfig
+
         cfg = BlacklistConfig()
         assert cfg.max_consecutive_losses == 2
         assert cfg.cooldown_days == 30
@@ -176,6 +179,7 @@ class TestBlacklistConfig:
 
     def test_yaml_has_section(self):
         import yaml
+
         cfg_path = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(cfg_path, encoding="utf-8") as f:
             raw = yaml.safe_load(f)
@@ -184,16 +188,18 @@ class TestBlacklistConfig:
         assert raw["pair_blacklist"]["cooldown_days"] == 7
 
     def test_settings_loads_blacklist(self):
-        from config.settings import get_settings, Settings
+        from config.settings import Settings, get_settings
+
         # Force reload
-        Settings._initialized = False
+        Settings._initialized = False  # type: ignore[attr-defined]
         Settings._instance = None
         s = get_settings()
-        assert hasattr(s, 'pair_blacklist')
+        assert hasattr(s, "pair_blacklist")
         assert s.pair_blacklist.max_consecutive_losses == 2
 
 
 # ÔöÇÔöÇ GE_RTX scenario ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
 
 class TestGERTXScenario:
     """Simulate the v27 GE_RTX case: 6 trades, 0 wins."""
@@ -217,10 +223,14 @@ class TestGERTXScenario:
         executed = 0
         # All 6 trades within 30-day window so cooldown doesn't expire
         trade_dates = [
-            date(2024, 3, 1), date(2024, 3, 5), date(2024, 3, 10),
-            date(2024, 3, 15), date(2024, 3, 20), date(2024, 3, 25),
+            date(2024, 3, 1),
+            date(2024, 3, 5),
+            date(2024, 3, 10),
+            date(2024, 3, 15),
+            date(2024, 3, 20),
+            date(2024, 3, 25),
         ]
-        for i, (pnl, d) in enumerate(zip(losses, trade_dates)):
+        for _i, (pnl, d) in enumerate(zip(losses, trade_dates, strict=False)):
             if not bl.is_blocked("GE_RTX", d):
                 executed += 1
                 bl.record_outcome("GE_RTX", pnl=pnl, trade_date=d)
@@ -228,6 +238,7 @@ class TestGERTXScenario:
 
 
 # ÔöÇÔöÇ Stats ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
 
 class TestBlacklistStats:
     """get_stats() returns monitoring-friendly data."""

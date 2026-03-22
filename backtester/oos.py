@@ -13,14 +13,16 @@ lose money in production.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 from structlog import get_logger
 
 from validation.oos_validator import (
-    OutOfSampleValidator,
     OOSValidationResult as _RawResult,
+)
+from validation.oos_validator import (
+    OutOfSampleValidator,
 )
 
 logger = get_logger(__name__)
@@ -29,24 +31,26 @@ logger = get_logger(__name__)
 @dataclass
 class OOSConfig:
     """Configuration for OOS validation."""
-    acceptance_threshold: float = 0.70    # 70% of pairs must validate
+
+    acceptance_threshold: float = 0.70  # 70% of pairs must validate
     half_life_drift_tolerance: float = 0.50  # max ┬▒50% HL drift
-    num_symbols: int = 50                    # for Bonferroni correction
-    oos_window_days: int = 21                # forward test window
+    num_symbols: int = 50  # for Bonferroni correction
+    oos_window_days: int = 21  # forward test window
 
 
 @dataclass
 class OOSReport:
     """Aggregated OOS validation report."""
+
     total_pairs: int
     passed_pairs: int
     failed_pairs: int
-    persistence_rate: float        # fraction of pairs that pass OOS
-    strategy_validated: bool       # True if persistence_rate >= threshold
-    per_pair_results: List[_RawResult] = field(default_factory=list)
+    persistence_rate: float  # fraction of pairs that pass OOS
+    strategy_validated: bool  # True if persistence_rate >= threshold
+    per_pair_results: list[_RawResult] = field(default_factory=list)
     config: OOSConfig = field(default_factory=OOSConfig)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         return {
             "total_pairs": self.total_pairs,
             "passed_pairs": self.passed_pairs,
@@ -77,7 +81,7 @@ class OOSValidationEngine:
             print("Strategy passes OOS validation")
     """
 
-    def __init__(self, config: Optional[OOSConfig] = None):
+    def __init__(self, config: OOSConfig | None = None):
         self.config = config or OOSConfig()
         self._validator = OutOfSampleValidator(
             oos_acceptance_threshold=self.config.acceptance_threshold,
@@ -87,7 +91,7 @@ class OOSValidationEngine:
 
     def validate(
         self,
-        pairs: List[tuple],
+        pairs: list[tuple],
         price_data: pd.DataFrame,
         split_date: str,
     ) -> OOSReport:
@@ -117,7 +121,7 @@ class OOSValidationEngine:
                 config=self.config,
             )
 
-        results: List[_RawResult] = []
+        results: list[_RawResult] = []
 
         for sym1, sym2 in pairs:
             if sym1 not in price_data.columns or sym2 not in price_data.columns:

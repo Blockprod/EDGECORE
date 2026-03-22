@@ -16,7 +16,6 @@ This module validates:
 
 import pytest
 
-
 # ÔöÇÔöÇ 1. Config defaults ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
 class TestDirectionalBiasConfigDefaults:
@@ -49,34 +48,38 @@ class TestDirectionalBiasYAML:
     """Verify config.yaml and dev.yaml contain the new parameters."""
 
     def test_config_yaml_has_short_sizing(self):
-        import yaml
         from pathlib import Path
+
+        import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
-        with open(p, "r", encoding="utf-8") as f:
+        with open(p, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["short_sizing_multiplier"] == 0.50
 
     def test_config_yaml_has_disable_shorts(self):
-        import yaml
         from pathlib import Path
+
+        import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
-        with open(p, "r", encoding="utf-8") as f:
+        with open(p, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["disable_shorts_in_bull_trend"] is False
 
     def test_dev_yaml_has_short_sizing(self):
-        import yaml
         from pathlib import Path
+
+        import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "dev.yaml"
-        with open(p, "r", encoding="utf-8") as f:
+        with open(p, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["short_sizing_multiplier"] == 0.50
 
     def test_dev_yaml_has_disable_shorts(self):
-        import yaml
         from pathlib import Path
+
+        import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "dev.yaml"
-        with open(p, "r", encoding="utf-8") as f:
+        with open(p, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["disable_shorts_in_bull_trend"] is False
 

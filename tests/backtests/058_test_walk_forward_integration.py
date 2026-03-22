@@ -1,11 +1,12 @@
 ﻿#!/usr/bin/env python
 """Integration tests for walk-forward backtest functionality."""
 
-import pytest
-import pandas as pd
 import numpy as np
-from backtests.walk_forward import split_walk_forward, WalkForwardBacktester
+import pandas as pd
+import pytest
+
 from backtests.runner import BacktestRunner
+from backtests.walk_forward import WalkForwardBacktester, split_walk_forward
 
 
 class TestSplitWalkForward:

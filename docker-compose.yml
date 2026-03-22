@@ -35,7 +35,7 @@ services:
     volumes:
       - ./logs:/app/logs
       - ./cache:/app/cache
-      - ./config:/app/config
+      - ./config:/app/config:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]

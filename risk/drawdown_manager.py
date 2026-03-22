@@ -14,7 +14,6 @@ is currently active and provides action recommendations.
 
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Optional
 
 from structlog import get_logger
 
@@ -92,7 +91,7 @@ class DrawdownManager:
             # skip all entries
     """
 
-    def __init__(self, config: Optional[DrawdownConfig] = None):
+    def __init__(self, config: DrawdownConfig | None = None):
         self.config = config or DrawdownConfig()
         self._current_tier = DrawdownTier.NORMAL
         self._cooldown_remaining: int = 0

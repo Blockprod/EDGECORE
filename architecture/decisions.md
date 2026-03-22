@@ -178,23 +178,17 @@ Déploiement via `docker-compose.yml` avec 6 services : trading-engine, redis, p
 - Health check `curl -f http://localhost:5000/health`
 - Secrets via variables d'environnement (jamais baked dans l'image)
 
-### Bug critique connu (B5-01) — NON CORRIGÉ
+### Bug B5-01 — ✅ CORRIGÉ (2026-03-20)
 ```dockerfile
-# ACTUEL (FAUX)
-ENV EDGECORE_ENV=production   # → tombe sur dev.yaml
-
-# CORRECT
+# Dockerfile:37
 ENV EDGECORE_ENV=prod
 ```
 ```yaml
-# docker-compose.yml ACTUEL (FAUX)
-ENVIRONMENT: production       # → ignoré si EDGECORE_ENV absent ET non dans ["dev","test","prod"]
-
-# CORRECT
+# docker-compose.yml:11
 EDGECORE_ENV: prod
 ```
 
-**Action requise** : corriger Dockerfile ligne 34 et docker-compose.yml ligne 11 avant tout déploiement production.
+**Vérification** : `Dockerfile:37` → `EDGECORE_ENV=prod` ✅ — `docker-compose.yml:11` → `EDGECORE_ENV: prod` ✅
 
 ---
 

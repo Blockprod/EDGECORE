@@ -3,6 +3,7 @@ Tests de concurrence pour LiveTradingRunner._positions
 Valide A-01 : threading.Lock sur _positions
 Valide A-02 : suppression de position uniquement après submit réussi
 """
+
 from __future__ import annotations
 
 import threading
@@ -23,13 +24,13 @@ def _make_runner() -> LiveTradingRunner:
     runner._kill_switch = None
     runner._portfolio_risk = None
     runner._position_risk = None
-    runner._trailing_stop = None
-    runner._time_stop = None
-    runner._partial_profit = None
-    runner._correlation_monitor = None
-    runner._shutdown_mgr = None
+    runner._trailing_stop = None  # type: ignore[assignment]
+    runner._time_stop = None  # type: ignore[assignment]
+    runner._partial_profit = None  # type: ignore[assignment]
+    runner._correlation_monitor = None  # type: ignore[assignment]
+    runner._shutdown_mgr = None  # type: ignore[assignment]
     runner._metrics = MagicMock()
-    runner._data_loader = None
+    runner._data_loader = None  # type: ignore[assignment]
     runner._allocator = None
     runner._email_alerter = None
     runner._slack_alerter = None
@@ -40,9 +41,7 @@ class TestPositionsLockExists:
     def test_lock_declared(self):
         """_positions_lock doit être présent dans __init__."""
         runner = _make_runner()
-        assert hasattr(runner, "_positions_lock"), (
-            "_positions_lock absent du __init__ — correction A-01 non appliquée"
-        )
+        assert hasattr(runner, "_positions_lock"), "_positions_lock absent du __init__ — correction A-01 non appliquée"
 
     def test_lock_is_threading_lock(self):
         """_positions_lock doit être un threading.Lock."""
@@ -148,10 +147,12 @@ class TestFillCheckBeforePositionRemoval:
         runner._router = mock_router
 
         # Simuler le bloc stop-exit tel qu'il existe dans _tick()
-        from execution.base import Order, OrderSide
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide
+
         pos = runner._positions[pair_key]
-        qty = pos.get('quantity', 0)
+        qty = pos.get("quantity", 0)
         close_side = OrderSide.SELL if qty > 0 else OrderSide.BUY
         close_order_id = str(uuid4())
         close_order = Order(
@@ -190,8 +191,10 @@ class TestFillCheckBeforePositionRemoval:
         mock_router.submit_order.return_value = MagicMock()  # succès
         runner._router = mock_router
 
-        from execution.base import Order, OrderSide
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide
+
         close_order_id = str(uuid4())
         close_order = Order(
             order_id=close_order_id,
@@ -229,9 +232,7 @@ class TestProcessFillConfirmations:
         runner = _make_runner()
         pair_key = "AAPL_MSFT"
         order_id = "order-fill-001"
-        runner._positions = {
-            pair_key: {"quantity": 10, "status": "pending_close", "close_order_id": order_id}
-        }
+        runner._positions = {pair_key: {"quantity": 10, "status": "pending_close", "close_order_id": order_id}}
         mock_router = MagicMock()
         mock_router.get_order_status.return_value = OrderStatus.FILLED
         runner._router = mock_router
@@ -247,9 +248,7 @@ class TestProcessFillConfirmations:
         runner = _make_runner()
         pair_key = "SPY_QQQ"
         order_id = "order-rej-002"
-        runner._positions = {
-            pair_key: {"quantity": 5, "status": "pending_close", "close_order_id": order_id}
-        }
+        runner._positions = {pair_key: {"quantity": 5, "status": "pending_close", "close_order_id": order_id}}
         mock_router = MagicMock()
         mock_router.get_order_status.return_value = OrderStatus.REJECTED
         runner._router = mock_router
@@ -273,9 +272,7 @@ class TestProcessFillConfirmations:
         runner = _make_runner()
         pair_key = "GLD_SLV"
         order_id = "order-can-003"
-        runner._positions = {
-            pair_key: {"quantity": 3, "status": "pending_close", "close_order_id": order_id}
-        }
+        runner._positions = {pair_key: {"quantity": 3, "status": "pending_close", "close_order_id": order_id}}
         mock_router = MagicMock()
         mock_router.get_order_status.return_value = OrderStatus.CANCELLED
         runner._router = mock_router
@@ -295,9 +292,7 @@ class TestProcessFillConfirmations:
         runner = _make_runner()
         pair_key = "TLT_IEF"
         order_id = "order-pend-004"
-        runner._positions = {
-            pair_key: {"quantity": 8, "status": "pending_close", "close_order_id": order_id}
-        }
+        runner._positions = {pair_key: {"quantity": 8, "status": "pending_close", "close_order_id": order_id}}
         mock_router = MagicMock()
         mock_router.get_order_status.return_value = OrderStatus.PENDING
         runner._router = mock_router
@@ -313,9 +308,7 @@ class TestProcessFillConfirmations:
     def test_no_router_skips_gracefully(self):
         """Sans router, _process_fill_confirmations ne doit pas lever."""
         runner = _make_runner()
-        runner._positions = {
-            "A_B": {"quantity": 1, "status": "pending_close", "close_order_id": "oid-x"}
-        }
+        runner._positions = {"A_B": {"quantity": 1, "status": "pending_close", "close_order_id": "oid-x"}}
         runner._router = None
 
         runner._process_fill_confirmations()  # ne doit pas lever

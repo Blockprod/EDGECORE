@@ -2,10 +2,11 @@
 
 import os
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from typing import Dict, List, Optional, Tuple
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Optional
+
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -14,13 +15,15 @@ logger = structlog.get_logger(__name__)
 class EmailAlerter:
     """Send critical trading alerts via SMTP email."""
 
-    def __init__(self, 
-                 smtp_server: str,
-                 smtp_port: int,
-                 sender_email: str,
-                 sender_password: str,
-                 recipient_emails: List[str],
-                 smtp_timeout_seconds: int = 10):
+    def __init__(
+        self,
+        smtp_server: str,
+        smtp_port: int,
+        sender_email: str,
+        sender_password: str,
+        recipient_emails: list[str],
+        smtp_timeout_seconds: int = 10,
+    ):
         """
         Initialize Email alerter with SMTP configuration.
 
@@ -43,10 +46,9 @@ class EmailAlerter:
         self.failure_count = 0
         # Set via alerter.trading_mode = "paper" | "live" | "backtest"
         # Overrides PROJECT_NAME env var when set
-        self.trading_mode: Optional[str] = None
+        self.trading_mode: str | None = None
 
-    def send_alert(self, level: str, title: str, message: str,
-                   data: Optional[Dict] = None) -> Tuple[bool, str]:
+    def send_alert(self, level: str, title: str, message: str, data: dict | None = None) -> tuple[bool, str]:
         """
         Send alert via email.
 
@@ -68,22 +70,21 @@ class EmailAlerter:
             return True, "Email alerter disabled"
 
         # Only send ERROR and CRITICAL via email (not INFO/WARNING spam)
-        if level not in ['ERROR', 'CRITICAL']:
-            logger.debug("EMAIL_ALERT_SKIPPED", level=level, 
-                        reason="only ERROR/CRITICAL sent via email")
+        if level not in ["ERROR", "CRITICAL"]:
+            logger.debug("EMAIL_ALERT_SKIPPED", level=level, reason="only ERROR/CRITICAL sent via email")
             return True, f"skipped ({level} not sent via email)"
 
         try:
             # Build email
-            msg = MIMEMultipart('text', 'plain')
-            msg['From'] = self.sender_email
-            msg['To'] = ', '.join(self.recipients)
+            msg = MIMEMultipart("text", "plain")
+            msg["From"] = self.sender_email
+            msg["To"] = ", ".join(self.recipients)
             base_name = os.environ.get("PROJECT_NAME", "EDGECORE")
             if self.trading_mode:
                 project = f"{base_name} ÔÇö {self.trading_mode.title()} Trading"
             else:
                 project = base_name
-            msg['Subject'] = f"[{project}] [{level}] {title}"
+            msg["Subject"] = f"[{project}] [{level}] {title}"
 
             # Build body
             body = f"""{project} ÔÇö Trading System Alert
@@ -118,8 +119,7 @@ Do not reply to this email.
             self._send_smtp(msg)
 
             self.send_count += 1
-            logger.info("EMAIL_ALERT_SENT", level=level, title=title, 
-                       recipients=len(self.recipients))
+            logger.info("EMAIL_ALERT_SENT", level=level, title=title, recipients=len(self.recipients))
             return True, "sent"
 
         except smtplib.SMTPException as e:
@@ -134,58 +134,51 @@ Do not reply to this email.
     def _send_smtp(self, msg: MIMEMultipart) -> None:
         """
         Send email via SMTP with TLS.
-        
+
         Raises:
             smtplib.SMTPException: On SMTP errors
             Exception: On other errors
         """
         try:
-            with smtplib.SMTP(self.smtp_server, self.smtp_port, 
-                             timeout=self.smtp_timeout) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=self.smtp_timeout) as server:
                 server.starttls()  # Start TLS encryption
                 server.login(self.sender_email, self.sender_password)
-                server.sendmail(
-                    self.sender_email,
-                    self.recipients,
-                    msg.as_string()
-                )
-        except smtplib.SMTPAuthenticationError:
-            raise smtplib.SMTPException("Authentication failed - check credentials")
-        except smtplib.SMTPConnectError:
-            raise smtplib.SMTPException("Connection failed - check hostname/port")
-        except smtplib.SMTPTimeoutError:
-            raise smtplib.SMTPException(f"Timeout - no response in {self.smtp_timeout}s")
+                server.sendmail(self.sender_email, self.recipients, msg.as_string())
+        except smtplib.SMTPAuthenticationError as e:
+            raise smtplib.SMTPException("Authentication failed - check credentials") from e
+        except smtplib.SMTPConnectError as e:
+            raise smtplib.SMTPException("Connection failed - check hostname/port") from e
+        except (smtplib.SMTPException, TimeoutError) as e:
+            raise smtplib.SMTPException(f"Timeout - no response in {self.smtp_timeout}s") from e
 
-    def send_critical_alert(self, title: str, message: str,
-                           context: Optional[Dict] = None) -> bool:
+    def send_critical_alert(self, title: str, message: str, context: dict | None = None) -> bool:
         """Send a critical alert (highest priority)."""
         data = context or {}
-        success, _ = self.send_alert('CRITICAL', title, message, data)
+        success, _ = self.send_alert("CRITICAL", title, message, data)
         return success
 
-    def send_error_alert(self, error_type: str, message: str,
-                        context: Optional[Dict] = None) -> bool:
+    def send_error_alert(self, error_type: str, message: str, context: dict | None = None) -> bool:
         """Send an error alert."""
         title = f"Error: {error_type}"
         data = context or {}
-        success, _ = self.send_alert('ERROR', title, message, data)
+        success, _ = self.send_alert("ERROR", title, message, data)
         return success
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         """Get alerter status for monitoring."""
         return {
-            'enabled': self.enabled,
-            'configured': bool(self.smtp_server and self.sender_email),
-            'recipients': len(self.recipients),
-            'send_count': self.send_count,
-            'failure_count': self.failure_count,
-            'recipient_list': self.recipients
+            "enabled": self.enabled,
+            "configured": bool(self.smtp_server and self.sender_email),
+            "recipients": len(self.recipients),
+            "send_count": self.send_count,
+            "failure_count": self.failure_count,
+            "recipient_list": self.recipients,
         }
 
-    def test_connection(self) -> Tuple[bool, str]:
+    def test_connection(self) -> tuple[bool, str]:
         """
         Test SMTP connection without sending an email.
-        
+
         Returns:
             Tuple of (success: bool, reason: str)
         """
@@ -193,8 +186,7 @@ Do not reply to this email.
             return False, "Email alerter not configured"
 
         try:
-            with smtplib.SMTP(self.smtp_server, self.smtp_port,
-                             timeout=self.smtp_timeout) as server:
+            with smtplib.SMTP(self.smtp_server, self.smtp_port, timeout=self.smtp_timeout) as server:
                 server.starttls()
                 server.login(self.sender_email, self.sender_password)
             logger.info("EMAIL_CONNECTION_TEST_PASSED")
@@ -207,17 +199,17 @@ Do not reply to this email.
             return False, str(e)[:100]
 
     @staticmethod
-    def from_env() -> Optional['EmailAlerter']:
+    def from_env() -> Optional["EmailAlerter"]:
         """
         Create EmailAlerter from environment variables.
-        
+
         Supported env vars (checks both legacy and current names):
             - SMTP_SERVER / EMAIL_SMTP_SERVER:  SMTP hostname
             - SMTP_PORT / EMAIL_SMTP_PORT:      SMTP port
             - SENDER_EMAIL / EMAIL_SMTP_USER:   Sender email address
             - GOOGLE_MAIL_PASSWORD / EMAIL_SMTP_PASS:  Sender password / app token
             - RECEIVER_EMAIL / EMAIL_RECIPIENTS: Comma-separated recipient emails
-        
+
         Returns:
             EmailAlerter instance or None if not configured
         """
@@ -230,29 +222,30 @@ Do not reply to this email.
         recipients_str = os.getenv("RECEIVER_EMAIL") or os.getenv("EMAIL_RECIPIENTS")
 
         if not all([smtp_server, smtp_port_str, sender_email, sender_password, recipients_str]):
-            logger.debug("EMAIL_NOT_CONFIGURED",
-                        missing=[
-                            "SMTP_SERVER" if not smtp_server else None,
-                            "SMTP_PORT" if not smtp_port_str else None,
-                            "SMTP_USER" if not sender_email else None,
-                            "SMTP_PASS" if not sender_password else None,
-                            "RECIPIENTS" if not recipients_str else None,
-                        ])
+            logger.debug(
+                "EMAIL_NOT_CONFIGURED",
+                missing=[
+                    "SMTP_SERVER" if not smtp_server else None,
+                    "SMTP_PORT" if not smtp_port_str else None,
+                    "SMTP_USER" if not sender_email else None,
+                    "SMTP_PASS" if not sender_password else None,
+                    "RECIPIENTS" if not recipients_str else None,
+                ],
+            )
             return None
 
         try:
-            smtp_port = int(smtp_port_str)
-            recipients = [e.strip() for e in recipients_str.split(",")]
+            smtp_port = int(smtp_port_str or "0")
+            recipients = [e.strip() for e in (recipients_str or "").split(",")]
 
             alerter = EmailAlerter(
-                smtp_server=smtp_server,
+                smtp_server=smtp_server or "",
                 smtp_port=smtp_port,
-                sender_email=sender_email,
-                sender_password=sender_password,
-                recipient_emails=recipients
+                sender_email=sender_email or "",
+                sender_password=sender_password or "",
+                recipient_emails=recipients,
             )
-            logger.info("EMAIL_ALERTER_INITIALIZED", 
-                       server=smtp_server, recipients=len(recipients))
+            logger.info("EMAIL_ALERTER_INITIALIZED", server=smtp_server, recipients=len(recipients))
             return alerter
 
         except ValueError:

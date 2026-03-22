@@ -18,11 +18,11 @@ Covers:
   11. Edge cases: zero historical, identical series, anti-correlated legs
 """
 
+from datetime import datetime
+from unittest.mock import MagicMock, patch
+
 import numpy as np
 import pandas as pd
-from unittest.mock import MagicMock, patch
-from datetime import datetime
-
 
 # ---------------------------------------------------------------------------
 # Helpers

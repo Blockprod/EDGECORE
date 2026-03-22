@@ -1,7 +1,9 @@
-﻿import pytest
-from unittest.mock import patch, MagicMock
-from main import run_paper_trading, run_live_trading
+﻿from unittest.mock import MagicMock, patch
+
+import pytest
+
 from config.settings import get_settings
+from main import run_live_trading, run_paper_trading
 
 
 class TestPaperTradingMode:
@@ -210,6 +212,7 @@ class TestMainModeSelection:
             mock_instance.run_unified.return_value = mock_metrics
             
             import sys
+
             from main import main
             
             # Capture output
@@ -230,6 +233,7 @@ class TestMainModeSelection:
         """Test that main.py correctly selects paper mode."""
         with patch('main.run_paper_trading') as mock_paper:
             import sys
+
             from main import main
             
             original_argv = sys.argv
@@ -248,6 +252,7 @@ class TestMainModeSelection:
         """Test that main.py correctly selects live mode."""
         with patch('main.run_live_trading') as mock_live:
             import sys
+
             from main import main
             
             original_argv = sys.argv

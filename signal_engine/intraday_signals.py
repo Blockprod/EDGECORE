@@ -15,7 +15,6 @@ Target: augment daily signals with intraday timing,
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -263,8 +262,8 @@ class IntradaySignalEngine:
         self,
         spread: pd.Series,
         bars_since_open: int = 0,
-        volume_a: Optional[pd.Series] = None,
-        volume_b: Optional[pd.Series] = None,
+        volume_a: pd.Series | None = None,
+        volume_b: pd.Series | None = None,
     ) -> IntradaySignalResult:
         """Compute composite intraday signal.
 

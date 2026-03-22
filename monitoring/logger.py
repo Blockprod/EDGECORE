@@ -1,7 +1,9 @@
-﻿import structlog
-import logging
-from pathlib import Path
+﻿import logging
 from datetime import datetime
+from pathlib import Path
+
+import structlog
+
 
 def setup_logger(name: str, log_level: str = "INFO", log_dir: str = "logs") -> structlog.BoundLogger:
     """

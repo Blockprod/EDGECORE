@@ -21,7 +21,6 @@ Usage:
 
 import numpy as np
 import pandas as pd
-from typing import Tuple, Optional, List
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -65,26 +64,26 @@ class KalmanHedgeRatio:
         self.r_smoothing = r_smoothing
 
         # State: [beta, intercept]
-        self.beta: Optional[float] = None
+        self.beta: float | None = None
         self.intercept: float = 0.0
         # 2x2 state covariance matrix
-        self.P: Optional[np.ndarray] = None
-        self.R: float = ve            # Observation noise variance (adaptive)
-        self.S: float = 0.0           # Innovation variance (for diagnostics)
+        self.P: np.ndarray | None = None
+        self.R: float = ve  # Observation noise variance (adaptive)
+        self.S: float = 0.0  # Innovation variance (for diagnostics)
         # State transition noise
         self.Q: np.ndarray = np.diag([delta, delta * 0.1])  # intercept changes slower
 
         # History
-        self.beta_history: List[float] = []
-        self.spread_history: List[float] = []
-        self.innovation_history: List[float] = []
-        self.P_history: List[float] = []
+        self.beta_history: list[float] = []
+        self.spread_history: list[float] = []
+        self.innovation_history: list[float] = []
+        self.P_history: list[float] = []
 
         # Breakdown tracking
         self.breakdown_count: int = 0
         self.bars_processed: int = 0
 
-    def update(self, y: float, x: float) -> Tuple[float, float, float]:
+    def update(self, y: float, x: float) -> tuple[float, float, float]:
         """
         Update hedge ratio with a new observation (y, x).
 
@@ -140,12 +139,12 @@ class KalmanHedgeRatio:
         self.P = P_pred - np.outer(K, H) @ P_pred
 
         # Ensure P stays positive semi-definite (numerical stability)
-        self.P = (self.P + self.P.T) / 2.0
-        np.fill_diagonal(self.P, np.maximum(np.diag(self.P), 1e-12))
+        self.P = (self.P + self.P.T) / 2.0  # type: ignore[operator]
+        np.fill_diagonal(self.P, np.maximum(np.diag(self.P), 1e-12))  # type: ignore[arg-type]
 
         # --- Adaptive R: exponential smoothing of squared innovation ---
         if self.r_smoothing > 0 and self.bars_processed > 5:
-            self.R = self.r_smoothing * self.R + (1 - self.r_smoothing) * (innovation ** 2)
+            self.R = float(self.r_smoothing * self.R + (1 - self.r_smoothing) * (innovation**2))
             self.R = max(self.R, 1e-12)  # floor
 
         # Spread for downstream use
@@ -169,12 +168,12 @@ class KalmanHedgeRatio:
         self.beta_history.append(self.beta)
         self.spread_history.append(spread)
         self.innovation_history.append(normalized_innovation)
-        self.P_history.append(float(self.P[0, 0]))
+        self.P_history.append(float(self.P[0, 0]) if self.P is not None else 0.0)  # type: ignore[index]
 
         self.bars_processed += 1
         return self.beta, spread, normalized_innovation
 
-    def get_confidence_interval(self, z: float = 1.96) -> Tuple[float, float]:
+    def get_confidence_interval(self, z: float = 1.96) -> tuple[float, float]:
         """
         Return (lower, upper) confidence interval for current ╬▓.
 
@@ -219,9 +218,7 @@ class KalmanHedgeRatio:
         if len(self.innovation_history) < 2:
             return 0.0
         recent = self.innovation_history[-window:]
-        return sum(
-            1 for inn in recent if abs(inn) > self.innovation_threshold
-        ) / len(recent)
+        return sum(1 for inn in recent if abs(inn) > self.innovation_threshold) / len(recent)
 
     def run_filter(
         self,
@@ -239,13 +236,11 @@ class KalmanHedgeRatio:
             DataFrame with columns: beta, spread, innovation, P
         """
         if len(y) != len(x):
-            raise ValueError(
-                f"y and x must have same length, got {len(y)} vs {len(x)}"
-            )
+            raise ValueError(f"y and x must have same length, got {len(y)} vs {len(x)}")
 
         # Reset state for a clean run
         self.beta = None
-        self.P = 0.0
+        self.P = None
         self.R = self.ve
         self.beta_history = []
         self.spread_history = []
@@ -254,7 +249,7 @@ class KalmanHedgeRatio:
         self.breakdown_count = 0
         self.bars_processed = 0
 
-        for y_val, x_val in zip(y.values, x.values):
+        for y_val, x_val in zip(y.values, x.values, strict=False):
             self.update(float(y_val), float(x_val))
 
         return pd.DataFrame(

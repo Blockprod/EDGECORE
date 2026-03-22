@@ -15,10 +15,9 @@ Strategy:
 import numpy as np
 import pandas as pd
 
-from backtests.strategy_simulator import StrategyBacktestSimulator
 from backtests.cost_model import CostModel, CostModelConfig
 from backtests.metrics import BacktestMetrics
-
+from backtests.strategy_simulator import StrategyBacktestSimulator
 
 # --------------------------------------------------------------------------
 # Helpers
@@ -146,8 +145,9 @@ class TestNoLookAheadBias:
 
     def test_legacy_run_emits_deprecation_warning(self):
         """BacktestRunner.run() must emit DeprecationWarning (C-02 label)."""
-        from backtests.runner import BacktestRunner
         import warnings
+
+        from backtests.runner import BacktestRunner
 
         runner = BacktestRunner()
         with warnings.catch_warnings(record=True) as caught:

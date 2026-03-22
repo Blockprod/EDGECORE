@@ -16,23 +16,23 @@ Cost components:
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
 class CostModelConfig:
     """Trading cost parameters for US equities via IBKR."""
-    maker_fee_bps: float = 1.5          # IBKR avg execution cost
-    taker_fee_bps: float = 2.0          # Taker + exchange fees
-    base_slippage_bps: float = 2.0      # Large-cap average bid-ask spread
+
+    maker_fee_bps: float = 1.5  # IBKR avg execution cost
+    taker_fee_bps: float = 2.0  # Taker + exchange fees
+    base_slippage_bps: float = 2.0  # Large-cap average bid-ask spread
     borrowing_cost_annual_pct: float = 0.5  # General collateral ETB rate
     include_borrowing: bool = True
     slippage_model: str = "almgren_chriss"  # "fixed", "volume_adaptive", or "almgren_chriss"
-    include_funding: bool = False         # Not applicable for equities
-    funding_rate_daily_bps: float = 0.0   # Not used for equities (kept for API compat)
+    include_funding: bool = False  # Not applicable for equities
+    funding_rate_daily_bps: float = 0.0  # Not used for equities (kept for API compat)
     # Almgren-Chriss market impact parameters
-    market_impact_eta: float = 0.05      # Temporary impact coefficient (calibrated v32j)
-    execution_delay_days: float = 0.01   # Execution delay in trading days (calibrated v32j)
+    market_impact_eta: float = 0.05  # Temporary impact coefficient (calibrated v32j)
+    execution_delay_days: float = 0.01  # Execution delay in trading days (calibrated v32j)
 
 
 class CostModel:
@@ -48,7 +48,7 @@ class CostModel:
         total = model.round_trip_cost(5000, holding_days=7)
     """
 
-    def __init__(self, config: Optional[CostModelConfig] = None):
+    def __init__(self, config: CostModelConfig | None = None):
         self.config = config or CostModelConfig()
 
     # ------------------------------------------------------------------
@@ -56,7 +56,9 @@ class CostModel:
     # ------------------------------------------------------------------
 
     def execution_cost_one_leg(
-        self, notional: float, volume_24h: float = 1e7,
+        self,
+        notional: float,
+        volume_24h: float = 1e7,
         sigma_daily: float = 0.02,
     ) -> float:
         """Cost for ONE transaction (one leg, one direction).
@@ -83,9 +85,8 @@ class CostModel:
         sigma_sym2: float = 0.02,
     ) -> float:
         """Cost to ENTER a pair trade (2 legs)."""
-        return (
-            self.execution_cost_one_leg(notional_per_leg, volume_24h_sym1, sigma_sym1)
-            + self.execution_cost_one_leg(notional_per_leg, volume_24h_sym2, sigma_sym2)
+        return self.execution_cost_one_leg(notional_per_leg, volume_24h_sym1, sigma_sym1) + self.execution_cost_one_leg(
+            notional_per_leg, volume_24h_sym2, sigma_sym2
         )
 
     def exit_cost(
@@ -99,20 +100,16 @@ class CostModel:
         """Cost to EXIT a pair trade (2 legs)."""
         return self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2, sigma_sym1, sigma_sym2)
 
-    def holding_cost(
-        self, notional_short_leg: float, holding_days: int
-    ) -> float:
+    def holding_cost(self, notional_short_leg: float, holding_days: int) -> float:
         """Borrowing cost for the short leg over *holding_days*."""
         if not self.config.include_borrowing or holding_days <= 0:
             return 0.0
         daily_rate = self.config.borrowing_cost_annual_pct / 100.0 / 365.0  # Calendar days
         return notional_short_leg * daily_rate * holding_days
 
-    def funding_cost(
-        self, notional_per_leg: float, holding_days: int
-    ) -> float:
+    def funding_cost(self, notional_per_leg: float, holding_days: int) -> float:
         """Financing cost for leveraged positions over *holding_days*.
-        
+
         Both legs may be subject to margin financing.
         Conservative approach: charge financing on both legs.
         """
@@ -148,8 +145,7 @@ class CostModel:
     # Internal
     # ------------------------------------------------------------------
 
-    def _slippage(self, order_size: float, volume_24h: float,
-                   sigma_daily: float = 0.02) -> float:
+    def _slippage(self, order_size: float, volume_24h: float, sigma_daily: float = 0.02) -> float:
         """Return slippage as a decimal fraction (not bps).
 
         Three models available:
@@ -176,7 +172,7 @@ class CostModel:
         # 2. Temporary market impact: ╬À ├ù ¤â ├ù ÔêÜ(Q/ADV)
         eta = self.config.market_impact_eta
         participation = order_size / volume_24h
-        market_impact = eta * sigma_daily * (participation ** 0.5)
+        market_impact = eta * sigma_daily * (participation**0.5)
 
         # 3. Timing cost: ¤â ├ù ÔêÜ(T_exec / 252)
         t_exec = self.config.execution_delay_days
@@ -189,6 +185,7 @@ class CostModel:
 # ======================================================================
 # Pre-built configurations for different markets
 # ======================================================================
+
 
 def equity_cost_config() -> CostModelConfig:
     """
@@ -211,14 +208,14 @@ def equity_cost_config() -> CostModelConfig:
       - Timing cost: half-day execution delay
     """
     return CostModelConfig(
-        maker_fee_bps=1.5,               # IBKR execution ~1.5 bps avg
-        taker_fee_bps=2.0,               # Taker + exchange fees
-        base_slippage_bps=2.0,           # Large-cap bid-ask spread
-        borrowing_cost_annual_pct=0.5,   # General collateral ETB rate
+        maker_fee_bps=1.5,  # IBKR execution ~1.5 bps avg
+        taker_fee_bps=2.0,  # Taker + exchange fees
+        base_slippage_bps=2.0,  # Large-cap bid-ask spread
+        borrowing_cost_annual_pct=0.5,  # General collateral ETB rate
         include_borrowing=True,
-        slippage_model="almgren_chriss", # Institutional 3-component model
-        funding_rate_daily_bps=0.0,      # Not applicable for equities
+        slippage_model="almgren_chriss",  # Institutional 3-component model
+        funding_rate_daily_bps=0.0,  # Not applicable for equities
         include_funding=False,
-        market_impact_eta=0.10,          # Temporary impact (mega-caps)
-        execution_delay_days=0.5,        # Half-day execution
+        market_impact_eta=0.10,  # Temporary impact (mega-caps)
+        execution_delay_days=0.5,  # Half-day execution
     )

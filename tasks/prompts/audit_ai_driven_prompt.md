@@ -198,7 +198,25 @@ Tableau final tenant compte de l'état des lieux :
 | 2 | .claude/rules.md | ❌/⚠️/✅ | Xmin | X% | [impact] |
 ...
 
-Affiche en conclusion :
-"✅ File Engineering terminé.
- Créés : [X] · Complétés : [X] · Mis à jour : [X]
+─────────────────────────────────────────────
+SORTIE OBLIGATOIRE
+─────────────────────────────────────────────
+Crée le fichier :
+  tasks/audits/audit_ai_driven_edgecore.md
+Crée le dossier tasks/audits/ s'il n'existe pas.
+
+Structure du fichier :
+## ÉTAT DES LIEUX — FICHIERS AI-DRIVEN
+## ÉTAPE 1 — NETTOYAGE PRÉALABLE
+## ÉTAPE 2 — ARBORESCENCE CIBLE
+## ÉTAPE 3 — FICHIERS CRÉÉS / MIS À JOUR
+## ÉTAPE 4 — PLAN DE MIGRATION PRIORISÉ
+## SYNTHÈSE
+
+Tableau synthèse :
+| Priorité | Fichier | Statut | Effort | % Auto | Impact session |
+
+Confirme dans le chat uniquement :
+"✅ tasks/audits/audit_ai_driven_edgecore.md créé
+ ✅ Créés : [X] · Complétés : [X] · Mis à jour : [X]
  Inchangés : [X] (déjà conformes)"

@@ -24,7 +24,6 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Dict
 
 from structlog import get_logger
 
@@ -124,7 +123,7 @@ class IBKRRateLimiter:
         self._last_historical = 0.0
 
         # Category-specific sliding windows
-        self._windows: Dict[str, _SlidingWindowCounter] = {
+        self._windows: dict[str, _SlidingWindowCounter] = {
             "message": _SlidingWindowCounter(
                 self.config.max_messages_per_second, 1.0
             ),
@@ -195,7 +194,7 @@ class IBKRRateLimiter:
 
         return total_wait
 
-    def stats(self) -> Dict[str, float | int]:
+    def stats(self) -> dict[str, float | int]:
         """Return rate limiter statistics."""
         return {
             "total_acquires": self._total_acquires,

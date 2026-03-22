@@ -18,7 +18,6 @@ Pair score = sym1_sentiment - sym2_sentiment.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -80,14 +79,14 @@ class SentimentSignal:
         self.smoothing = smoothing
 
         # symbol -> SentimentSnapshot
-        self._snapshots: Dict[str, SentimentSnapshot] = {}
+        self._snapshots: dict[str, SentimentSnapshot] = {}
         # symbol -> list of recent composite scores (for smoothing)
-        self._history: Dict[str, List[float]] = {}
+        self._history: dict[str, list[float]] = {}
 
     def update(
         self,
         prices_df: pd.DataFrame,
-        sector_map: Optional[Dict[str, str]] = None,
+        sector_map: dict[str, str] | None = None,
     ) -> None:
         """Update sentiment estimates from daily prices.
 
@@ -106,9 +105,9 @@ class SentimentSignal:
         universe_mean = recent_returns.mean(axis=1)  # daily cross-sectional mean
 
         # Pre-compute sector averages
-        sector_means: Dict[str, pd.Series] = {}
+        sector_means: dict[str, pd.Series] = {}
         if sector_map:
-            sectors_seen: Dict[str, list] = {}
+            sectors_seen: dict[str, list] = {}
             for sym, sec in sector_map.items():
                 if sym in recent_returns.columns:
                     sectors_seen.setdefault(sec, []).append(sym)
@@ -211,7 +210,7 @@ class SentimentSignal:
         diff = c1 - c2
         return float(np.clip(diff, -1.0, 1.0))
 
-    def get_snapshot(self, symbol: str) -> Optional[SentimentSnapshot]:
+    def get_snapshot(self, symbol: str) -> SentimentSnapshot | None:
         """Return the latest sentiment snapshot for a symbol."""
         return self._snapshots.get(symbol)
 

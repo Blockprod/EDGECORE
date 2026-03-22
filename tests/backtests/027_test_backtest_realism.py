@@ -8,7 +8,7 @@ Covers:
 - End-to-end order execution workflows
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -25,7 +25,6 @@ from execution.backtest_execution import (
     PartialFillHandler,
     SlippageCalculator,
 )
-
 
 # ============================================================================
 # SLIPPAGE CALCULATOR TESTS
@@ -88,7 +87,7 @@ class TestSlippageCalculator:
         calc = SlippageCalculator(config)
 
         # Order at market: base slippage only
-        slippage_bps, exec_price = calc.calculate(
+        slippage_bps, _exec_price = calc.calculate(
             order_price=100.0,
             market_price=100.0,
             order_quantity=100.0,
@@ -109,7 +108,7 @@ class TestSlippageCalculator:
         calc = SlippageCalculator(config)
 
         # Order away from market: extra slippage
-        slippage_bps, exec_price = calc.calculate(
+        slippage_bps, _exec_price = calc.calculate(
             order_price=105.0,  # 5% above market
             market_price=100.0,
             order_quantity=100.0,
@@ -131,7 +130,7 @@ class TestSlippageCalculator:
         calc = SlippageCalculator(config)
 
         # Order very far from market
-        slippage_bps, exec_price = calc.calculate(
+        slippage_bps, _exec_price = calc.calculate(
             order_price=120.0,  # 20% above market
             market_price=100.0,
             order_quantity=100.0,
@@ -153,7 +152,7 @@ class TestSlippageCalculator:
         calc = SlippageCalculator(config)
 
         # Small order: 0.01% of market volume (1 unit of 10,000)
-        slippage_bps, exec_price = calc.calculate(
+        slippage_bps, _exec_price = calc.calculate(
             order_price=100.0,
             market_price=100.0,
             order_quantity=1000.0,
@@ -175,7 +174,7 @@ class TestSlippageCalculator:
         calc = SlippageCalculator(config)
 
         # Large order: 1% of market volume
-        slippage_bps, exec_price = calc.calculate(
+        slippage_bps, _exec_price = calc.calculate(
             order_price=100.0,
             market_price=100.0,
             order_quantity=100_000.0,
@@ -325,7 +324,7 @@ class TestPartialFillHandler:
         """Test passive order gets smaller fills."""
         handler = PartialFillHandler()
 
-        filled_qty, fill_type = handler.determine_fill_quantity(
+        filled_qty, _fill_type = handler.determine_fill_quantity(
             requested_quantity=50000.0,
             market_volume=1000000.0,
             is_aggressive=False,  # Passive
@@ -355,7 +354,7 @@ class TestBacktestExecutor:
             order_price=150.0,
             market_price=150.0,
             market_volume=1000000.0,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         assert result["order_id"] == "ORD001"
@@ -378,7 +377,7 @@ class TestBacktestExecutor:
             order_price=150.0,
             market_price=150.0,
             market_volume=1000000.0,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         assert result["filled_quantity"] == 100.0
@@ -414,7 +413,7 @@ class TestBacktestExecutor:
             order_price=150.0,
             market_price=150.0,
             market_volume=1000000.0,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         assert result["slippage_bps"] == 10.0
@@ -448,7 +447,7 @@ class TestBacktestExecutor:
         results = executor.execute_multi_leg_order(
             order_id="PAIR001",
             legs=legs,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         assert len(results) == 2
@@ -473,7 +472,7 @@ class TestBacktestExecutor:
             order_price=100.0,
             market_price=100.0,
             market_volume=500000.0,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         # Verify all required fields present
@@ -502,7 +501,7 @@ class TestBacktestExecutor:
             order_price=100.0,
             market_price=100.0,
             market_volume=0.0,  # No market volume
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         # Should still execute with fallback slippage model
@@ -522,7 +521,7 @@ class TestBacktestExecutor:
             order_price=100.0,
             market_price=100.0,
             market_volume=1000000.0,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
         sell_result = executor.execute_order(
@@ -533,11 +532,11 @@ class TestBacktestExecutor:
             order_price=101.0,  # Profitable by $1
             market_price=101.0,
             market_volume=1000000.0,
-            execution_time=datetime.now(timezone.utc),
+            execution_time=datetime.now(UTC),
         )
 
-        # Total cost
-        -buy_result["net_proceeds"] + abs(sell_result["net_proceeds"])
+        # Total cost (for documentation only)
+        _ = -buy_result["net_proceeds"] + abs(sell_result["net_proceeds"])
         gross_profit = 100.0 * (101.0 - 100.0)
 
         # Actual profit reduced by slippage and commissions
@@ -623,7 +622,7 @@ class TestBacktestRealismIntegration:
                 order_price=price,
                 market_price=price,
                 market_volume=1000000.0,
-                execution_time=datetime.now(timezone.utc),
+                execution_time=datetime.now(UTC),
             )
 
             trades.append(result)

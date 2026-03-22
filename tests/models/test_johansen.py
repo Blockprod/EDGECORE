@@ -19,12 +19,12 @@ Tests:
    - Config flag disables Johansen confirmation
 """
 
-import numpy as np
-import pandas as pd
 from unittest.mock import patch
 
-from models.johansen import JohansenCointegrationTest, johansen_confirm_pair
+import numpy as np
+import pandas as pd
 
+from models.johansen import JohansenCointegrationTest, johansen_confirm_pair
 
 # ÔôÇÔôÇÔôÇ Fixtures ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
@@ -178,7 +178,7 @@ class TestJohansenCointegrationTest:
     def test_non_dataframe_rejected(self):
         """Non-DataFrame input should return error."""
         jt = JohansenCointegrationTest()
-        result = jt.test(np.random.randn(100, 2))
+        result = jt.test(np.random.randn(100, 2))  # type: ignore[arg-type]
 
         assert result["is_cointegrated"] is False
         assert result["error"] is not None
@@ -230,11 +230,13 @@ class TestDoubleScreeningIntegration:
 
         data = _make_cointegrated_pair(n=300)
         args = (
-            "SYM_Y", "SYM_X",
-            data["y"], data["x"],
-            0.5,   # min_corr
-            60,    # max_hl
-            2,     # num_symbols (lenient Bonferroni)
+            "SYM_Y",
+            "SYM_X",
+            data["y"],
+            data["x"],
+            0.5,  # min_corr
+            60,  # max_hl
+            2,  # num_symbols (lenient Bonferroni)
             True,  # johansen_confirm
         )
         result = PairTradingStrategy._test_pair_cointegration(args)
@@ -258,9 +260,13 @@ class TestDoubleScreeningIntegration:
         with patch("models.johansen.johansen_confirm_pair") as mock_joh:
             mock_joh.return_value = {"is_cointegrated": False, "rank": 0}
             args = (
-                "SYM_Y", "SYM_X",
-                data["y"], data["x"],
-                0.5, 60, 2,
+                "SYM_Y",
+                "SYM_X",
+                data["y"],
+                data["x"],
+                0.5,
+                60,
+                2,
                 True,  # johansen_confirm ON
             )
             result = PairTradingStrategy._test_pair_cointegration(args)
@@ -275,9 +281,13 @@ class TestDoubleScreeningIntegration:
 
         with patch("models.johansen.johansen_confirm_pair") as mock_joh:
             args = (
-                "SYM_Y", "SYM_X",
-                data["y"], data["x"],
-                0.5, 60, 2,
+                "SYM_Y",
+                "SYM_X",
+                data["y"],
+                data["x"],
+                0.5,
+                60,
+                2,
                 False,  # johansen_confirm OFF
             )
             PairTradingStrategy._test_pair_cointegration(args)
@@ -291,6 +301,7 @@ class TestConfigJohansenFlag:
     def test_default_johansen_confirmation_true(self):
         """Default config should have johansen_confirmation=True."""
         from config.settings import StrategyConfig
+
         config = StrategyConfig()
         assert config.johansen_confirmation is True
 
@@ -299,4 +310,4 @@ class TestConfigJohansenFlag:
         from strategies.pair_trading import PairTradingStrategy
 
         strategy = PairTradingStrategy()
-        assert hasattr(strategy.config, 'johansen_confirmation')
+        assert hasattr(strategy.config, "johansen_confirmation")

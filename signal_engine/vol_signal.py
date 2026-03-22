@@ -13,8 +13,6 @@ Phase 1, Etape 1.3.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -71,7 +69,7 @@ class VolatilityRegimeSignal:
         self.entry_threshold = entry_threshold
         self.exit_threshold = exit_threshold
 
-    def compute_vol_ratio(self, spread: pd.Series) -> Optional[float]:
+    def compute_vol_ratio(self, spread: pd.Series) -> float | None:
         """Compute the ratio of fast to slow spread volatility.
 
         Returns:

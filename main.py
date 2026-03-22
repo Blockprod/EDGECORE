@@ -8,39 +8,42 @@ Modes:
 """
 
 import argparse
-import sys
-import time
 import os
-import pandas as pd
+import sys
+import threading
+import time
 from datetime import datetime
-from typing import Dict, List
+from typing import Any
+
+import pandas as pd
 from structlog import get_logger
-from monitoring.logging_config import setup_logging as setup_production_logging
-from config.settings import get_settings
+
 from backtests.runner import BacktestRunner
-from data.loader import DataLoader
-from data.validators import OHLCVValidator
-from strategies.pair_trading import PairTradingStrategy
-from risk.engine import RiskEngine
-from execution.ibkr_engine import IBKRExecutionEngine
-from execution.paper_execution import PaperExecutionEngine
-from execution.base import Order, OrderSide
-from execution.reconciler import BrokerReconciler
-from execution.shutdown_manager import ShutdownManager
-from execution.order_lifecycle_integration import OrderLifecycleIntegration
 from common.errors import DataError, ErrorCategory
-from monitoring.slack_alerter import SlackAlerter
-from monitoring.email_alerter import EmailAlerter
-from monitoring.dashboard import DashboardGenerator
-from monitoring.api import initialize_dashboard_api
+from config.settings import get_settings
 from data.delisting_guard import DelistingGuard
 from data.liquidity_filter import LiquidityFilter
+from data.loader import DataLoader
+from data.validators import OHLCVValidator
+from execution.base import Order, OrderSide
+from execution.ibkr_engine import IBKRExecutionEngine
+from execution.order_lifecycle_integration import OrderLifecycleIntegration
+from execution.paper_execution import PaperExecutionEngine
+from execution.reconciler import BrokerReconciler
+from execution.shutdown_manager import ShutdownManager
+from monitoring.api import initialize_dashboard_api
+from monitoring.dashboard import DashboardGenerator
+from monitoring.email_alerter import EmailAlerter
+from monitoring.logging_config import setup_logging as setup_production_logging
+from monitoring.slack_alerter import SlackAlerter
 from portfolio_engine.allocator import PortfolioAllocator, SizingMethod
-import threading
+from risk.engine import RiskEngine
+from strategies.pair_trading import PairTradingStrategy
 
 # Load .env variables (SMTP, Slack, IBKR, etc.)
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass  # python-dotenv not installed ÔÇö rely on system env vars
@@ -53,98 +56,82 @@ except Exception:
 logger = get_logger("main")
 
 
-def _load_market_data_for_symbols(
-    symbols: List[str],
-    loader: DataLoader,
-    settings: any
-) -> Dict[str, pd.Series]:
+def _load_market_data_for_symbols(symbols: list[str], loader: DataLoader, settings: Any) -> dict[str, pd.Series]:
     """
     Load market data for all trading symbols with unified error handling.
-    
+
     Wrapped with @with_error_handling to provide automatic retries
     for transient errors and exponential backoff for API throttling.
-    
+
     Args:
         symbols: List of trading symbols (e.g., ['AAPL', 'MSFT'])
         loader: DataLoader instance
         settings: Settings configuration
-    
+
     Returns:
         Dictionary mapping symbol to price Series
-    
+
     Raises:
         DataError: If no valid price data can be loaded
     """
     prices = {}
     load_errors = []
-    
+
     for symbol in symbols:
         try:
-            df = loader.load_ibkr_data(
-                symbol,
-                timeframe='1h',
-                limit=100
-            )
-            
+            df = loader.load_ibkr_data(symbol, timeframe="1h", limit=100)
+
             if df is not None and len(df) > 0:
                 # Validate data quality including staleness
                 validation = OHLCVValidator(symbol).validate(
-                    df,
-                    max_age_hours=settings.trading.data_max_age_hours,
-                    raise_on_error=False
+                    df, max_age_hours=settings.trading.data_max_age_hours, raise_on_error=False
                 )
-                
+
                 if not validation.is_valid:
-                    logger.error("data_validation_failed",
-                                 symbol=symbol,
-                                 errors=validation.errors)
+                    logger.error("data_validation_failed", symbol=symbol, errors=validation.errors)
                     load_errors.append(symbol)
                     continue
-                
-                prices[symbol] = df['close']
+
+                prices[symbol] = df["close"]
                 logger.info("data_loaded", symbol=symbol, rows=len(df))
             else:
                 logger.warning("empty_data_returned", symbol=symbol)
                 load_errors.append(symbol)
-        
+
         except Exception as e:
             logger.error("data_load_failed_for_symbol", symbol=symbol, error=str(e))
             load_errors.append(symbol)
-    
+
     if not prices:
         error_msg = f"Failed to load any valid price data. Failed symbols: {load_errors}"
-        raise DataError(error_msg, ErrorCategory.RETRYABLE)
-    
+        raise DataError(error_msg, original_error=None)
+
     if load_errors:
         logger.warning(
             "partial_data_load_failure",
             loaded_symbols=list(prices.keys()),
             failed_symbols=load_errors,
-            partial_load=True
+            partial_load=True,
         )
-    
+
     return prices
 
 
-def _close_all_positions(
-    risk_engine: RiskEngine,
-    execution_engine,
-    positions_to_close: dict
-) -> None:
+def _close_all_positions(risk_engine: RiskEngine, execution_engine, positions_to_close: dict) -> None:
     """
     Close all open positions gracefully.
-    
+
     First cancels ALL pending orders at the broker to prevent
     stale limit orders from filling after a kill-switch halt.
     Then submits market/limit close orders for each open position.
-    
+
     Args:
         risk_engine: Risk engine with position tracking
         execution_engine: Execution engine for order submission
         positions_to_close: Dict of positions to close
     """
     # RISK-1: Cancel all pending orders at broker FIRST
-    if hasattr(execution_engine, 'cancel_all_pending'):
+    if hasattr(execution_engine, "cancel_all_pending"):
         try:
             cancelled = execution_engine.cancel_all_pending()
             logger.warning("pending_orders_cancelled_on_halt", count=cancelled)
@@ -154,13 +141,11 @@ def _close_all_positions(
     if not positions_to_close:
         logger.info("no_positions_to_close")
         return
-    
+
     logger.warning(
-        "closing_all_positions_on_shutdown",
-        count=len(positions_to_close),
-        symbols=list(positions_to_close.keys())
+        "closing_all_positions_on_shutdown", count=len(positions_to_close), symbols=list(positions_to_close.keys())
     )
-    
+
     for symbol_pair, position in list(positions_to_close.items()):
         try:
             # Create market close order (at current market, no limit)
@@ -169,9 +154,9 @@ def _close_all_positions(
                 symbol=symbol_pair,
                 side=OrderSide.SELL if position.side == "long" else OrderSide.BUY,
                 quantity=position.quantity,
-                limit_price=position.marked_price or position.entry_price  # Use marked price if available
+                limit_price=position.marked_price or position.entry_price,  # Use marked price if available
             )
-            
+
             try:
                 order_id = execution_engine.submit_order(order)
                 logger.info(
@@ -179,24 +164,20 @@ def _close_all_positions(
                     symbol=symbol_pair,
                     order_id=order_id,
                     quantity=position.quantity,
-                    side=order.side
+                    side=order.side,
                 )
             except Exception as e:
-                logger.error(
-                    "shutdown_position_close_failed",
-                    symbol=symbol_pair,
-                    error=str(e)
-                )
+                logger.error("shutdown_position_close_failed", symbol=symbol_pair, error=str(e))
         except Exception as e:
             logger.error("shutdown_position_preparation_failed", symbol=symbol_pair, error=str(e))
-    
+
     logger.info("all_positions_close_orders_submitted")
 
 
 def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None, mode="paper"):
     """
     Paper trading in sandbox mode (simulated trading with real market data).
-    
+
     Args:
         symbols: List of trading pairs to trade
         settings: Global settings object
@@ -205,7 +186,7 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
         mode: Trading mode ("paper" or "live")
     """
     logger.info("paper_trading_mode_starting", symbols=symbols)
-    
+
     # Filter symbols through DelistingGuard and LiquidityFilter
     delist_guard = DelistingGuard()
     liq_filter = LiquidityFilter()
@@ -221,16 +202,16 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
     if safe_symbols:
         logger.info("symbols_after_filtering", original=len(symbols), filtered=len(safe_symbols))
         symbols = safe_symbols
-    
+
     # Validate sandbox mode
     if not settings.execution.use_sandbox:
         logger.error("sandbox_not_enabled")
         raise ValueError("Paper trading requires sandbox mode. Set use_sandbox=True in config")
-    
+
     if settings.execution.engine != "ibkr":
         logger.error("invalid_engine_for_paper_trading", engine=settings.execution.engine)
         raise ValueError("Paper trading requires ibkr engine")
-    
+
     # Initialize trading components
     try:
         loader = DataLoader()
@@ -241,53 +222,84 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
         # Sector classification for US universe (mirrors config.yaml groupings)
         _SECTOR_MAP = {
             # Technology
-            "AAPL": "Tech", "MSFT": "Tech", "GOOGL": "Tech", "META": "Tech",
-            "NVDA": "Tech", "AMD": "Tech", "INTC": "Tech", "AVGO": "Tech",
-            "CRM": "Tech", "ADBE": "Tech",
+            "AAPL": "Tech",
+            "MSFT": "Tech",
+            "GOOGL": "Tech",
+            "META": "Tech",
+            "NVDA": "Tech",
+            "AMD": "Tech",
+            "INTC": "Tech",
+            "AVGO": "Tech",
+            "CRM": "Tech",
+            "ADBE": "Tech",
             # Financials
-            "JPM": "Financials", "BAC": "Financials", "GS": "Financials",
-            "MS": "Financials", "WFC": "Financials", "C": "Financials",
-            "BLK": "Financials", "SCHW": "Financials",
+            "JPM": "Financials",
+            "BAC": "Financials",
+            "GS": "Financials",
+            "MS": "Financials",
+            "WFC": "Financials",
+            "C": "Financials",
+            "BLK": "Financials",
+            "SCHW": "Financials",
             # Healthcare
-            "JNJ": "Healthcare", "PFE": "Healthcare", "UNH": "Healthcare",
-            "MRK": "Healthcare", "ABBV": "Healthcare", "LLY": "Healthcare",
-            "TMO": "Healthcare", "ABT": "Healthcare",
+            "JNJ": "Healthcare",
+            "PFE": "Healthcare",
+            "UNH": "Healthcare",
+            "MRK": "Healthcare",
+            "ABBV": "Healthcare",
+            "LLY": "Healthcare",
+            "TMO": "Healthcare",
+            "ABT": "Healthcare",
             # Consumer Staples
-            "KO": "Consumer", "PEP": "Consumer", "PG": "Consumer",
-            "CL": "Consumer", "WMT": "Consumer", "COST": "Consumer",
+            "KO": "Consumer",
+            "PEP": "Consumer",
+            "PG": "Consumer",
+            "CL": "Consumer",
+            "WMT": "Consumer",
+            "COST": "Consumer",
             # Energy
-            "XOM": "Energy", "CVX": "Energy", "COP": "Energy",
-            "SLB": "Energy", "EOG": "Energy",
+            "XOM": "Energy",
+            "CVX": "Energy",
+            "COP": "Energy",
+            "SLB": "Energy",
+            "EOG": "Energy",
             # Industrials
-            "CAT": "Industrials", "DE": "Industrials", "HON": "Industrials",
-            "GE": "Industrials", "RTX": "Industrials", "LMT": "Industrials",
+            "CAT": "Industrials",
+            "DE": "Industrials",
+            "HON": "Industrials",
+            "GE": "Industrials",
+            "RTX": "Industrials",
+            "LMT": "Industrials",
             # Utilities
-            "NEE": "Utilities", "DUK": "Utilities", "SO": "Utilities",
+            "NEE": "Utilities",
+            "DUK": "Utilities",
+            "SO": "Utilities",
         }
         risk_engine.sector_map = _SECTOR_MAP
-        
+
         # Use PaperExecutionEngine for realistic paper trading, IBKRExecutionEngine for live
         if mode == "paper":
             execution_engine = PaperExecutionEngine(
                 slippage_model=settings.costs.slippage_model,
                 fixed_bps=settings.costs.slippage_bps,
-                commission_pct=settings.costs.commission_pct * 100  # CostConfig stores as fraction, PaperEngine expects %
+                commission_pct=settings.costs.commission_pct
+                * 100,  # CostConfig stores as fraction, PaperEngine expects %
             )
         else:
             execution_engine = IBKRExecutionEngine()
-        
-        logger.info("paper_trading_initialized",
-                    sandbox=settings.execution.use_sandbox,
-                    engine=settings.execution.engine)
-        
+
+        logger.info(
+            "paper_trading_initialized", sandbox=settings.execution.use_sandbox, engine=settings.execution.engine
+        )
+
         # Initialize portfolio allocator for dynamic position sizing
         allocator = PortfolioAllocator(
             equity=settings.execution.initial_capital,
-            max_pairs=getattr(settings.risk, 'max_concurrent_positions', 10),
+            max_pairs=getattr(settings.risk, "max_concurrent_positions", 10),
             max_allocation_pct=settings.trading.max_allocation_pct,
             sizing_method=SizingMethod.VOLATILITY_INVERSE,
         )
-        
+
         # HOTFIX 1.1: Crash recovery - restore persisted state
         logger.info("attempting_state_recovery_from_audit_trail")
         try:
@@ -296,7 +308,7 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                 logger.warning(
                     "positions_recovered_from_previous_session",
                     count=len(recovered_positions),
-                    symbols=list(recovered_positions.keys())
+                    symbols=list(recovered_positions.keys()),
                 )
                 # Require manual verification or SKIP_CRASH_RECOVERY=true to continue
                 if os.getenv("SKIP_CRASH_RECOVERY") != "true":
@@ -311,33 +323,28 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
             if "Crash recovery aborted" in str(e):
                 raise
             logger.warning("recovered_state_loading_skipped", error=str(e))
-        
+
     except Exception as e:
         logger.error("paper_trading_initialization_failed", error=str(e))
         raise
-    
+
     # Initialize dashboard and Flask API for real-time monitoring
     try:
-        dashboard = DashboardGenerator(
-            risk_engine=risk_engine,
-            execution_engine=execution_engine,
-            mode=mode
-        )
+        dashboard = DashboardGenerator(risk_engine=risk_engine, execution_engine=execution_engine, mode=mode)
         dashboard_app = initialize_dashboard_api(dashboard)
-        
+
         # Start Flask API server in background thread
         api_host = os.getenv("DASHBOARD_API_HOST", "127.0.0.1")
         api_port = int(os.getenv("DASHBOARD_API_PORT", "5000"))
         api_thread = threading.Thread(
-            target=lambda: dashboard_app.run(host=api_host, port=api_port, debug=False, use_reloader=False),
-            daemon=True
+            target=lambda: dashboard_app.run(host=api_host, port=api_port, debug=False, use_reloader=False), daemon=True
         )
         api_thread.start()
         logger.info("dashboard_api_started", host=api_host, port=api_port)
     except Exception as e:
         logger.warning("dashboard_api_initialization_failed", error=str(e))
         # Continue anyway - API is optional
-    
+
     # Initialize broker reconciler (FEATURE 4: Reconciliation)
     reconciler = None
     try:
@@ -346,20 +353,20 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
             internal_positions={},  # Will be populated as trades enter
             equity_tolerance_pct=settings.trading.equity_tolerance_pct,
         )
-        
+
         # First reconciliation at startup
         broker_equity = execution_engine.get_account_balance()
-        
+
         # Skip reconciliation if broker returns 0 or invalid equity (paper trading)
         if broker_equity > 0:
             equity_ok, equity_diff_pct = reconciler.reconcile_equity(broker_equity)
-            
+
             if not equity_ok:
                 logger.critical(
                     "STARTUP_EQUITY_MISMATCH",
                     expected=settings.execution.initial_capital,
                     actual=broker_equity,
-                    diff_pct=equity_diff_pct
+                    diff_pct=equity_diff_pct,
                 )
                 if os.getenv("SKIP_RECONCILIATION_CHECK") != "true":
                     raise ValueError(
@@ -370,41 +377,39 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
             else:
                 logger.info("startup_reconciliation_passed", equity_match=True)
         else:
-            logger.warning("broker_returned_zero_equity", broker_equity=broker_equity,
-                          note="Skipping reconciliation - likely test/paper trading mode")
-            
+            logger.warning(
+                "broker_returned_zero_equity",
+                broker_equity=broker_equity,
+                note="Skipping reconciliation - likely test/paper trading mode",
+            )
+
     except Exception as e:
         logger.error("startup_reconciliation_failed", error=str(e))
         if os.getenv("SKIP_RECONCILIATION_CHECK") != "true":
             raise
-    
+
     # Initialize global shutdown manager (FEATURE 2: Kill-Switch)
     shutdown_mgr = ShutdownManager()
-    
+
     # Initialize order lifecycle manager (FEATURE 3: Order Timeout Protection)
     order_mgr = OrderLifecycleIntegration(
-        execution_engine=execution_engine,
-        timeout_seconds=settings.execution.timeout_seconds
+        execution_engine=execution_engine, timeout_seconds=settings.execution.timeout_seconds
     )
-    
+
     # Main trading loop
     attempt = 0
     max_attempts = settings.trading.max_loop_iterations
     consecutive_errors = 0
     max_consecutive_errors = settings.trading.max_consecutive_errors
-    
+
     try:
         while attempt < max_attempts:
             attempt += 1
-            
+
             # FEATURE 2: Check for shutdown request (signal or file-based)
             if shutdown_mgr.is_shutdown_requested():
                 shutdown_reason = shutdown_mgr.get_shutdown_reason() or "unknown reason"
-                logger.warning(
-                    "shutdown_signal_detected",
-                    reason=shutdown_reason,
-                    iteration=attempt
-                )
+                logger.warning("shutdown_signal_detected", reason=shutdown_reason, iteration=attempt)
                 # Alert: kill-switch / shutdown
                 for _alerter in (email_alerter, slack_alerter):
                     if _alerter:
@@ -420,9 +425,9 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                 # Close all open positions before exiting
                 _close_all_positions(risk_engine, execution_engine, risk_engine.positions)
                 break
-            
+
             logger.info("paper_trading_loop_iteration", iteration=attempt, max=max_attempts)
-            
+
             # FEATURE 4: Periodic reconciliation (every 10 iterations)
             if reconciler and attempt % 10 == 0:
                 try:
@@ -434,7 +439,7 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             iteration=attempt,
                             diff_pct=equity_diff_pct,
                             expected=reconciler.internal_equity,
-                            actual=broker_equity
+                            actual=broker_equity,
                         )
                         # Alert: reconciliation divergence
                         for _alerter in (email_alerter, slack_alerter):
@@ -453,16 +458,16 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                                     pass
                 except Exception as e:
                     logger.warning("periodic_reconciliation_failed", error=str(e))
-            
+
             # Load latest market data with PHASE 2 error handling
             try:
                 prices = _load_market_data_for_symbols(symbols, loader, settings)
                 logger.info("market_data_load_successful", symbols=list(prices.keys()))
-                
+
                 # Create price dataframe
                 prices_df = pd.DataFrame(prices)
                 logger.info("price_data_ready", symbols=list(prices.keys()), rows=len(prices_df))
-                
+
                 # FEATURE 5: Update position prices and check for stop-losses
                 for symbol, position in list(risk_engine.positions.items()):
                     try:
@@ -472,59 +477,62 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             position.marked_price = current_market_price
                     except (KeyError, IndexError):
                         logger.warning("position_price_update_failed", symbol=symbol)
-                
+
                 # Check for positions hitting stop-loss
                 stopped_positions = risk_engine.check_position_stops()
                 if stopped_positions:
                     for stopped_pos in stopped_positions:
                         logger.warning(
                             "position_stopped_out",
-                            symbol=stopped_pos['symbol'],
-                            reason=stopped_pos['reason'],
-                            pnl_pct=stopped_pos['pnl_pct']
+                            symbol=stopped_pos["symbol"],
+                            reason=stopped_pos["reason"],
+                            pnl_pct=stopped_pos["pnl_pct"],
                         )
                         try:
                             # Create close order
                             close_order = Order(
                                 order_id=f"stop_loss_{datetime.now().timestamp()}_{stopped_pos['symbol']}",
-                                symbol=stopped_pos['symbol'],
-                                side=OrderSide.SELL if stopped_pos['position_object'].side == "long" else OrderSide.BUY,
-                                quantity=stopped_pos['quantity'],
-                                limit_price=stopped_pos['current_price']
+                                symbol=stopped_pos["symbol"],
+                                side=OrderSide.SELL if stopped_pos["position_object"].side == "long" else OrderSide.BUY,
+                                quantity=stopped_pos["quantity"],
+                                limit_price=stopped_pos["current_price"],
                             )
-                            
+
                             order_id = execution_engine.submit_order(close_order)
                             logger.info(
                                 "stop_loss_order_submitted",
                                 order_id=order_id,
-                                symbol=stopped_pos['symbol'],
-                                reason=stopped_pos['reason']
+                                symbol=stopped_pos["symbol"],
+                                reason=stopped_pos["reason"],
                             )
-                            
+
                             # Remove from risk engine positions
-                            del risk_engine.positions[stopped_pos['symbol']]
-                            
+                            del risk_engine.positions[stopped_pos["symbol"]]
+
                         except Exception as e:
                             logger.error(
-                                "stop_loss_order_submission_failed",
-                                symbol=stopped_pos['symbol'],
-                                error=str(e)
+                                "stop_loss_order_submission_failed", symbol=stopped_pos["symbol"], error=str(e)
                             )
-                
+
                 # Generate trading signals
                 signals = strategy.generate_signals(prices_df)
                 logger.info("signals_generated", count=len(signals))
-                
+
                 # Process each signal
                 for i, signal in enumerate(signals):
-                    logger.info("processing_signal", signal_num=i+1, total=len(signals),
-                              pair=signal.symbol_pair, side=signal.side)
-                    
+                    logger.info(
+                        "processing_signal",
+                        signal_num=i + 1,
+                        total=len(signals),
+                        pair=signal.symbol_pair,
+                        side=signal.side,
+                    )
+
                     try:
                         # Get current account balance
                         equity = execution_engine.get_account_balance()
                         logger.info("account_balance_check", equity=equity)
-                        
+
                         # Compute realized spread volatility for this pair
                         pair_syms = signal.symbol_pair.split("_")
                         pair_vol = settings.trading.fallback_spread_vol  # fallback
@@ -546,17 +554,17 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
 
                         # Check if we can enter this trade
                         can_enter, reason = risk_engine.can_enter_trade(
-                            symbol=signal.symbol_pair,
+                            symbol_pair=signal.symbol_pair,
                             position_size=alloc.notional,
                             current_equity=equity,
                             volatility=pair_vol,
                         )
-                        
+
                         if not can_enter:
                             allocator.release(signal.symbol_pair)
                             logger.warning("trade_rejected_by_risk", pair=signal.symbol_pair, reason=reason)
                             continue
-                        
+
                         # Get current price
                         try:
                             current_price = prices_df[signal.symbol_pair].iloc[-1]
@@ -564,9 +572,13 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             allocator.release(signal.symbol_pair)
                             logger.warning("price_not_available", pair=signal.symbol_pair)
                             continue
-                        
+
                         # Compute quantity from allocated notional
-                        order_quantity = max(settings.trading.min_order_quantity, round(alloc.notional / current_price, 0)) if current_price > 0 else settings.trading.min_order_quantity
+                        order_quantity = (
+                            max(settings.trading.min_order_quantity, round(alloc.notional / current_price, 0))
+                            if current_price > 0
+                            else settings.trading.min_order_quantity
+                        )
 
                         # Create order
                         order = Order(
@@ -574,27 +586,30 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             symbol=signal.symbol_pair,
                             side=OrderSide.BUY if signal.side == "long" else OrderSide.SELL,
                             quantity=order_quantity,
-                            limit_price=current_price * (1.0 - settings.trading.limit_price_offset_pct)  # configurable offset
+                            limit_price=current_price
+                            * (1.0 - settings.trading.limit_price_offset_pct),  # configurable offset
                         )
-                        
+
                         # Submit order
                         try:
                             order_id = execution_engine.submit_order(order)
-                            logger.info("paper_order_submitted",
-                                      order_id=order_id,
-                                      pair=signal.symbol_pair,
-                                      side=signal.side,
-                                      quantity=order.quantity,
-                                      price=order.limit_price)
-                            
+                            logger.info(
+                                "paper_order_submitted",
+                                order_id=order_id,
+                                pair=signal.symbol_pair,
+                                side=signal.side,
+                                quantity=order.quantity,
+                                price=order.limit_price,
+                            )
+
                             # FEATURE 3: Track order for timeout protection
                             order_mgr.track_order(
                                 order_id=order_id,
                                 symbol=signal.symbol_pair,
                                 quantity=order.quantity,
-                                price=order.limit_price
+                                price=float(order.limit_price) if order.limit_price is not None else 0.0,
                             )
-                            
+
                         except Exception as e:
                             logger.error("order_submission_failed", pair=signal.symbol_pair, error=str(e))
                             # Alert: order submission failure
@@ -609,66 +624,58 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                                         )
                                     except Exception:
                                         pass
-                            
+
                     except Exception as e:
                         logger.error("signal_processing_error", pair=signal.symbol_pair, error=str(e))
                         continue
-                
+
                 # Log summary and wait before next iteration
-                logger.info("paper_trading_iteration_complete",
-                          attempt=attempt,
-                          signals_processed=len(signals),
-                          next_iteration_in_seconds=settings.execution.paper_trading_loop_interval_seconds)
-                
+                logger.info(
+                    "paper_trading_iteration_complete",
+                    attempt=attempt,
+                    signals_processed=len(signals),
+                    next_iteration_in_seconds=settings.execution.paper_trading_loop_interval_seconds,
+                )
+
                 # Reset consecutive error counter on successful iteration
                 consecutive_errors = 0
-                
+
                 # FEATURE 3: Check for timed-out orders and cancel them
                 try:
                     timed_out_count = order_mgr.process_timeouts()
                     if timed_out_count > 0:
-                        logger.warning("order_timeouts_detected_and_cancelled",
-                                     timed_out_count=timed_out_count)
+                        logger.warning("order_timeouts_detected_and_cancelled", timed_out_count=timed_out_count)
                 except Exception as e:
                     logger.error("order_timeout_processing_error", error=str(e))
-                
+
                 # Sleep before next iteration (configurable: dev=10s, prod=3600s)
                 time.sleep(settings.execution.paper_trading_loop_interval_seconds)
-                
+
             except KeyboardInterrupt:
                 logger.info("paper_trading_interrupted_by_user")
                 break
             except DataError as e:
                 # PHASE 2: Handle data errors with category-specific logic
                 consecutive_errors += 1
-                
+
                 if e.category == ErrorCategory.TRANSIENT:
                     # Transient errors (network): retry immediately next iteration
                     logger.warning(
-                        "data_error_transient",
-                        message=e.message,
-                        attempt=attempt,
-                        will_retry="next iteration"
+                        "data_error_transient", message=e.message, attempt=attempt, will_retry="next iteration"
                     )
                     time.sleep(1)  # Brief delay before retry
-                
+
                 elif e.category == ErrorCategory.RETRYABLE:
                     # Retryable errors (API throttle): exponential backoff
-                    backoff_seconds = min(2 ** consecutive_errors, 60)
+                    backoff_seconds = min(2**consecutive_errors, 60)
                     logger.warning(
-                        "data_error_retryable",
-                        message=e.message,
-                        attempt=attempt,
-                        backoff_seconds=backoff_seconds
+                        "data_error_retryable", message=e.message, attempt=attempt, backoff_seconds=backoff_seconds
                     )
                     time.sleep(backoff_seconds)
-                
+
                 else:
                     # Non-retryable or fatal: stop immediately
-                    logger.critical(
-                        "data_error_fatal_or_non_retryable",
-                        message=e.message
-                    )
+                    logger.critical("data_error_fatal_or_non_retryable", message=e.message)
                     # Alert: fatal data error
                     for _alerter in (email_alerter, slack_alerter):
                         if _alerter:
@@ -682,33 +689,27 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             except Exception:
                                 pass
                     break
-                
+
                 # Break if too many errors
                 if consecutive_errors >= max_consecutive_errors:
-                    logger.error(
-                        "data_errors_max_consecutive_exceeded",
-                        max_allowed=max_consecutive_errors
-                    )
+                    logger.error("data_errors_max_consecutive_exceeded", max_allowed=max_consecutive_errors)
                     break
-            
+
             except Exception as e:
                 consecutive_errors += 1
                 # Exponential backoff: 2^n seconds, capped at 60s
-                backoff_seconds = min(2 ** consecutive_errors, 60)
+                backoff_seconds = min(2**consecutive_errors, 60)
                 logger.error(
                     "paper_trading_loop_error",
                     attempt=attempt,
                     consecutive_errors=consecutive_errors,
                     backoff_seconds=backoff_seconds,
-                    error=str(e)
+                    error=str(e),
                 )
-                
+
                 # Break loop if too many consecutive errors
                 if consecutive_errors >= max_consecutive_errors:
-                    logger.error(
-                        "paper_trading_max_consecutive_errors_exceeded",
-                        max_allowed=max_consecutive_errors
-                    )
+                    logger.error("paper_trading_max_consecutive_errors_exceeded", max_allowed=max_consecutive_errors)
                     # Alert: max consecutive errors
                     for _alerter in (email_alerter, slack_alerter):
                         if _alerter:
@@ -725,14 +726,14 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             except Exception:
                                 pass
                     break
-                
+
                 # Apply exponential backoff before retry
                 logger.info("paper_trading_backoff", seconds=backoff_seconds)
                 time.sleep(backoff_seconds)
-        
+
         logger.info("paper_trading_completed", total_iterations=attempt)
         print("\n[OK] Paper trading session completed\n")
-        
+
     except KeyboardInterrupt:
         logger.info("paper_trading_stopped_by_user")
         print("\n[OK] Paper trading stopped\n")
@@ -742,7 +743,7 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
             shutdown_mgr.cleanup()
         except Exception as e:
             logger.error("shutdown_cleanup_failed", error=str(e))
-        
+
         # Save final equity snapshot for crash recovery
         try:
             risk_engine.save_equity_snapshot()
@@ -754,16 +755,16 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
 def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
     """
     Live trading on real exchange with real money.
-    
+
     EXTREME CAUTION: This trades with real money!
-    
+
     Args:
         symbols: List of trading pairs to trade
         settings: Global settings object
         slack_alerter: Optional SlackAlerter for sending Slack alerts
         email_alerter: Optional EmailAlerter for sending email alerts
     """
-    
+
     # Safety check: live trading must be explicitly enabled
     if os.getenv("ENABLE_LIVE_TRADING") != "true":
         logger.error("LIVE_TRADING_NOT_ENABLED")
@@ -771,59 +772,56 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
         print("To enable, set: export ENABLE_LIVE_TRADING=true")
         print("Then restart the system.\n")
         raise ValueError("Live trading requires ENABLE_LIVE_TRADING=true env var")
-    
+
     # Safety validation
     if settings.env != "prod":
         logger.warning("not_production_environment", env=settings.env)
-    
+
     if settings.execution.use_sandbox:
         logger.error("live_mode_with_sandbox_enabled")
         raise ValueError("Live trading cannot run with sandbox mode enabled")
-    
+
     if settings.execution.engine != "ibkr":
         logger.error("invalid_engine_for_live_trading", engine=settings.execution.engine)
         raise ValueError("Live trading requires ibkr engine")
-    
+
     # Display warning and require explicit confirmation
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("[!] LIVE TRADING ALERT - REAL MONEY AT RISK [!]")
-    print("="*70)
+    print("=" * 70)
     print("You are about to start LIVE TRADING with REAL MONEY")
     print(f"Trading Pairs: {', '.join(symbols)}")
     print(f"Engine: {settings.execution.engine}")
-    print(f"Risk per trade: {settings.risk.max_risk_per_trade*100:.2f}% of equity")
-    print(f"Daily loss limit: {settings.risk.max_daily_loss_pct*100:.2f}%")
+    print(f"Risk per trade: {settings.risk.max_risk_per_trade * 100:.2f}% of equity")
+    print(f"Daily loss limit: {settings.risk.max_daily_loss_pct * 100:.2f}%")
     print(f"Max concurrent positions: {settings.risk.max_concurrent_positions}")
-    print("="*70)
+    print("=" * 70)
     print("\nThis action is IRREVERSIBLE. Losses may occur.")
-    print("="*70 + "\n")
-    
+    print("=" * 70 + "\n")
+
     # Require explicit confirmation
     confirm = input("Type 'I UNDERSTAND THE RISKS' to proceed with live trading: ").strip()
-    
+
     if confirm != "I UNDERSTAND THE RISKS":
         logger.info("live_trading_cancelled_by_user")
         print("\nÔ£ô Live trading cancelled - no positions opened\n")
         return
-    
+
     # Final affirmation
     confirm2 = input("Enter your email address to confirm (or 'cancel'): ").strip()
-    
+
     if confirm2.lower() == "cancel" or not confirm2:
         logger.info("live_trading_cancelled_by_user")
         print("\nÔ£ô Live trading cancelled - no positions opened\n")
         return
-    
+
     # Log critical event
-    logger.critical("live_trading_starting",
-                   symbols=symbols,
-                   engine=settings.execution.engine,
-                   user_email=confirm2)
-    
-    print("\n" + "!"*70)
+    logger.critical("live_trading_starting", symbols=symbols, engine=settings.execution.engine, user_email=confirm2)
+
+    print("\n" + "!" * 70)
     print("LIVE TRADING NOW ACTIVE - REAL MONEY IS AT RISK")
-    print("!"*70 + "\n")
-    
+    print("!" * 70 + "\n")
+
     # Run identical trading logic as paper trading
     run_paper_trading(symbols, settings, slack_alerter, email_alerter, mode="live")
 
@@ -834,54 +832,49 @@ def main():
         "--mode",
         choices=["backtest", "paper", "live", "live-runner"],
         default="backtest",
-        help="Operating mode. 'live-runner' uses the production LiveTradingRunner."
+        help="Operating mode. 'live-runner' uses the production LiveTradingRunner.",
     )
     parser.add_argument(
         "--symbols",
         nargs="+",
         default=None,  # Will load from config if not provided
-        help="Trading pairs (if not provided, uses config/dev.yaml trading_universe.symbols)"
+        help="Trading pairs (if not provided, uses config/dev.yaml trading_universe.symbols)",
     )
-    parser.add_argument(
-        "--start-date",
-        default=None,
-        help="Backtest start date (YYYY-MM-DD)"
-    )
-    parser.add_argument(
-        "--end-date",
-        default=None,
-        help="Backtest end date (YYYY-MM-DD)"
-    )
-    
+    parser.add_argument("--start-date", default=None, help="Backtest start date (YYYY-MM-DD)")
+    parser.add_argument("--end-date", default=None, help="Backtest end date (YYYY-MM-DD)")
+
     args = parser.parse_args()
     settings = get_settings()
-    
+
     # If symbols not provided via CLI, use config
     if args.symbols is None:
         args.symbols = settings.trading_universe.symbols
         logger.info("using_symbols_from_config", num_symbols=len(args.symbols))
-    
+
     # Initialize alerters (optional - based on environment variables)
     # Slack: requires SLACK_WEBHOOK_URL
     slack_webhook = os.getenv("SLACK_WEBHOOK_URL")
     slack_alerter = SlackAlerter(webhook_url=slack_webhook) if slack_webhook else None
-    
-    # Email: requires EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_SMTP_USER, 
+
+    # Email: requires EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_SMTP_USER,
     #        EMAIL_SMTP_PASS, EMAIL_RECIPIENTS
     email_alerter = EmailAlerter.from_env()
-    
-    logger.info("edgecore_startup", 
-                mode=args.mode, 
-                env=settings.env, 
-                slack_enabled=slack_alerter is not None and slack_alerter.enabled,
-                email_enabled=email_alerter is not None and email_alerter.enabled)
-    
+
+    logger.info(
+        "edgecore_startup",
+        mode=args.mode,
+        env=settings.env,
+        slack_enabled=slack_alerter is not None and slack_alerter.enabled,
+        email_enabled=email_alerter is not None and email_alerter.enabled,
+    )
+
     # Start a minimal health-check HTTP server so Docker HEALTHCHECK
     # passes regardless of operating mode (backtest / paper / live).
     # In paper/live mode this is later superseded by the full dashboard API.
     if os.getenv("ENABLE_MONITORING", "").lower() in ("true", "1", "yes"):
         try:
             from flask import Flask as _Flask
+
             _health_app = _Flask("healthcheck")
 
             @_health_app.route("/health")
@@ -891,9 +884,7 @@ def main():
             _hc_host = os.getenv("DASHBOARD_API_HOST", "0.0.0.0")
             _hc_port = int(os.getenv("DASHBOARD_API_PORT", "5000"))
             _hc_thread = threading.Thread(
-                target=lambda: _health_app.run(
-                    host=_hc_host, port=_hc_port, debug=False, use_reloader=False
-                ),
+                target=lambda: _health_app.run(host=_hc_host, port=_hc_port, debug=False, use_reloader=False),
                 daemon=True,
             )
             _hc_thread.start()
@@ -906,17 +897,13 @@ def main():
             logger.info("backtest_mode_starting")
             runner = BacktestRunner()
             # Use run_unified() to avoid look-ahead bias present in legacy run()
-            metrics = runner.run_unified(
-                args.symbols,
-                start_date=args.start_date,
-                end_date=args.end_date
-            )
+            metrics = runner.run_unified(args.symbols, start_date=args.start_date, end_date=args.end_date)
             print(metrics.summary())
-            
+
         elif args.mode == "paper":
             logger.info("paper_trading_mode_selected")
             run_paper_trading(args.symbols, settings, slack_alerter, email_alerter)
-            
+
         elif args.mode == "live":
             logger.critical("live_trading_mode_selected", symbols=args.symbols)
             run_live_trading(args.symbols, settings, slack_alerter, email_alerter)
@@ -924,19 +911,18 @@ def main():
         elif args.mode == "live-runner":
             logger.info("live_runner_mode_selected", symbols=args.symbols)
             from live_trading.runner import LiveTradingRunner, TradingLoopConfig
+
             runner_cfg = TradingLoopConfig(
                 symbols=args.symbols,
-                bar_interval_seconds=getattr(
-                    settings.execution, 'paper_trading_loop_interval_seconds', 60
-                ),
+                bar_interval_seconds=getattr(settings.execution, "paper_trading_loop_interval_seconds", 60),
                 pair_rediscovery_hours=24,
-                max_positions=getattr(settings.risk, 'max_concurrent_positions', 10),
+                max_positions=getattr(settings.risk, "max_concurrent_positions", 10),
                 initial_capital=settings.execution.initial_capital,
                 mode="paper",
             )
             lt_runner = LiveTradingRunner(runner_cfg, email_alerter=email_alerter, slack_alerter=slack_alerter)
             lt_runner.start()
-            
+
     except Exception as e:
         logger.error("main_error", mode=args.mode, error=str(e))
         # Send critical alert to Slack and/or Email
@@ -945,7 +931,7 @@ def main():
                 slack_alerter.send_critical_alert(
                     title="EDGECORE System Error",
                     message=str(e),
-                    context={"mode": args.mode, "symbols": ", ".join(args.symbols)}
+                    context={"mode": args.mode, "symbols": ", ".join(args.symbols)},
                 )
             except Exception as alert_err:
                 logger.error("failed_to_send_slack_alert", error=str(alert_err))
@@ -954,12 +940,13 @@ def main():
                 email_alerter.send_critical_alert(
                     title="EDGECORE System Error",
                     message=str(e),
-                    context={"mode": args.mode, "symbols": ", ".join(args.symbols)}
+                    context={"mode": args.mode, "symbols": ", ".join(args.symbols)},
                 )
             except Exception as alert_err:
                 logger.error("failed_to_send_email_alert", error=str(alert_err))
         print(f"\nÔØî Error: {str(e)}\n")
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

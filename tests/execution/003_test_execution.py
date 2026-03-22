@@ -1,5 +1,7 @@
-﻿import pytest
-import os
+﻿import os
+
+import pytest
+
 from execution.ibkr_engine import IBGatewaySync
 
 

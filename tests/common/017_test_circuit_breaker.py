@@ -1,15 +1,17 @@
 ﻿"""Tests for circuit breaker pattern."""
 
-import pytest
 import time
+
+import pytest
+
 from common.circuit_breaker import (
     CircuitBreaker,
-    CircuitBreakerOpen,
-    CircuitBreakerState,
     CircuitBreakerConfig,
+    CircuitBreakerOpen,
     CircuitBreakerRegistry,
+    CircuitBreakerState,
     get_circuit_breaker,
-    reset_all_circuit_breakers
+    reset_all_circuit_breakers,
 )
 
 

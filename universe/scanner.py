@@ -27,7 +27,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from structlog import get_logger
 
@@ -42,7 +42,7 @@ SEC_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 # IBKR contractDetails.industry returns strings like "Computers",
 # "Semiconductors", "Regional Banks", etc.  We map these to our
 # standardized sector strings.
-IBKR_INDUSTRY_TO_SECTOR: Dict[str, str] = {
+IBKR_INDUSTRY_TO_SECTOR: dict[str, str] = {
     # Technology
     "Computers": "technology", "Semiconductors": "technology",
     "Software": "technology", "Internet": "technology",
@@ -128,7 +128,7 @@ IBKR_INDUSTRY_TO_SECTOR: Dict[str, str] = {
 }
 
 # US exchanges to keep from SEC EDGAR listing
-_VALID_EXCHANGES: Set[str] = {"NYSE", "NASDAQ", "Nasdaq", "Nyse", "AMEX", "Arca", "BATS"}
+_VALID_EXCHANGES: set[str] = {"NYSE", "NASDAQ", "Nasdaq", "Nyse", "AMEX", "Arca", "BATS"}
 
 
 @dataclass
@@ -146,7 +146,7 @@ class ScannedSymbol:
     ibkr_validated: bool = False
     last_updated: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "ticker": self.ticker,
             "company_name": self.company_name,
@@ -162,7 +162,7 @@ class ScannedSymbol:
         }
 
     @staticmethod
-    def from_dict(d: Dict[str, Any]) -> "ScannedSymbol":
+    def from_dict(d: dict[str, Any]) -> ScannedSymbol:
         return ScannedSymbol(**{k: v for k, v in d.items() if k in ScannedSymbol.__dataclass_fields__})
 
 
@@ -172,10 +172,10 @@ class ScannerConfig:
     min_market_cap_usd: float = 500_000_000    # $500M minimum
     min_avg_volume_usd: float = 5_000_000      # $5M daily volume
     min_price: float = 5.0                      # exclude penny stocks
-    exchanges: List[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
+    exchanges: list[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
     currency: str = "USD"
     country: str = "US"
-    sec_types: List[str] = field(default_factory=lambda: ["STK"])
+    sec_types: list[str] = field(default_factory=lambda: ["STK"])
     cache_file: str = "cache/universe/ibkr_universe.json"
     cache_ttl_hours: int = 24
     ibkr_validation_workers: int = 5
@@ -226,7 +226,7 @@ class IBKRUniverseScanner:
     # Phase 1: SEC EDGAR bootstrap
     # ==================================================================
 
-    def bootstrap_from_sec(self) -> List[ScannedSymbol]:
+    def bootstrap_from_sec(self) -> list[ScannedSymbol]:
         """
         Download the full US equity ticker list from SEC EDGAR.
 
@@ -270,7 +270,7 @@ class IBKRUniverseScanner:
                 # Fallback: essayer de charger un fichier local
                 local_path = "cache/company_tickers.json"
                 try:
-                    with open(local_path, "r", encoding="utf-8") as f:
+                    with open(local_path, encoding="utf-8") as f:
                         raw = json.load(f)
                     logger.info("sec_bootstrap_local_fallback", path=local_path)
                 except Exception as exc2:
@@ -280,8 +280,8 @@ class IBKRUniverseScanner:
             logger.error("sec_bootstrap_failed", error=str(exc)[:200])
             raise RuntimeError(f"SEC EDGAR download failed: {exc}") from exc
 
-        symbols: List[ScannedSymbol] = []
-        seen: Set[str] = set()
+        symbols: list[ScannedSymbol] = []
+        seen: set[str] = set()
 
         for _key, entry in raw.items():
             ticker = str(entry.get("ticker", "")).upper().strip()
@@ -319,9 +319,9 @@ class IBKRUniverseScanner:
 
     def validate_via_ibkr(
         self,
-        symbols: List[ScannedSymbol],
+        symbols: list[ScannedSymbol],
         ib: Any = None,
-    ) -> List[ScannedSymbol]:
+    ) -> list[ScannedSymbol]:
         """
         Validate symbols via IBKR reqContractDetails and enrich with
         industry/sector classification.
@@ -339,7 +339,7 @@ class IBKRUniverseScanner:
             engine.connect()
             ib = engine._ib
 
-        validated: List[ScannedSymbol] = []
+        validated: list[ScannedSymbol] = []
         total = len(symbols)
         batch_size = self.config.ibkr_batch_size
 
@@ -373,12 +373,12 @@ class IBKRUniverseScanner:
         return validated
 
     def _validate_batch(
-        self, batch: List[ScannedSymbol], ib: Any
-    ) -> List[ScannedSymbol]:
+        self, batch: list[ScannedSymbol], ib: Any
+    ) -> list[ScannedSymbol]:
         """Validate a batch of symbols via IBKR."""
         from ib_insync import Stock
 
-        results: List[ScannedSymbol] = []
+        results: list[ScannedSymbol] = []
 
         for sym in batch:
             try:
@@ -462,8 +462,8 @@ class IBKRUniverseScanner:
 
     def apply_fundamental_filters(
         self,
-        symbols: List[ScannedSymbol],
-    ) -> List[ScannedSymbol]:
+        symbols: list[ScannedSymbol],
+    ) -> list[ScannedSymbol]:
         """
         Filter symbols by fundamental criteria.
 
@@ -484,8 +484,8 @@ class IBKRUniverseScanner:
         Returns:
             Filtered list.
         """
-        passed: List[ScannedSymbol] = []
-        reasons: Dict[str, int] = {}
+        passed: list[ScannedSymbol] = []
+        reasons: dict[str, int] = {}
 
         for sym in symbols:
             # Currency filter
@@ -518,7 +518,7 @@ class IBKRUniverseScanner:
     # Full scan pipeline
     # ==================================================================
 
-    def scan(self, ib: Any = None, use_cache: bool = True) -> List[ScannedSymbol]:
+    def scan(self, ib: Any = None, use_cache: bool = True) -> list[ScannedSymbol]:
         """
         Full scan pipeline: SEC bootstrap ÔåÆ IBKR validation ÔåÆ filters.
 
@@ -556,7 +556,7 @@ class IBKRUniverseScanner:
         )
         return filtered
 
-    def scan_sec_only(self) -> List[ScannedSymbol]:
+    def scan_sec_only(self) -> list[ScannedSymbol]:
         """
         SEC-only scan ÔÇö no IBKR connection required.
 
@@ -576,7 +576,7 @@ class IBKRUniverseScanner:
     # Cache management
     # ==================================================================
 
-    def save_cache(self, symbols: List[ScannedSymbol]) -> None:
+    def save_cache(self, symbols: list[ScannedSymbol]) -> None:
         """Save scanned universe to JSON cache."""
         data = {
             "timestamp": datetime.now().isoformat(),
@@ -588,7 +588,7 @@ class IBKRUniverseScanner:
             json.dump(data, f, indent=2)
         logger.info("universe_cache_saved", path=str(self._cache_path), count=len(symbols))
 
-    def load_cache(self) -> Optional[List[ScannedSymbol]]:
+    def load_cache(self) -> list[ScannedSymbol] | None:
         """Load cached universe, returning None if stale or missing."""
         if not self._cache_path.exists():
             return None
@@ -620,19 +620,19 @@ class IBKRUniverseScanner:
     # ==================================================================
 
     @staticmethod
-    def to_symbol_list(symbols: List[ScannedSymbol]) -> List[str]:
+    def to_symbol_list(symbols: list[ScannedSymbol]) -> list[str]:
         """Extract ticker list from scanned symbols."""
         return [s.ticker for s in symbols]
 
     @staticmethod
-    def to_sector_map(symbols: List[ScannedSymbol]) -> Dict[str, str]:
+    def to_sector_map(symbols: list[ScannedSymbol]) -> dict[str, str]:
         """Extract sector map {ticker: sector_name} from scanned symbols."""
         return {s.ticker: s.sector for s in symbols}
 
     @staticmethod
-    def symbols_by_sector(symbols: List[ScannedSymbol]) -> Dict[str, List[str]]:
+    def symbols_by_sector(symbols: list[ScannedSymbol]) -> dict[str, list[str]]:
         """Group symbols by sector."""
-        groups: Dict[str, List[str]] = {}
+        groups: dict[str, list[str]] = {}
         for s in symbols:
             groups.setdefault(s.sector, []).append(s.ticker)
         return groups

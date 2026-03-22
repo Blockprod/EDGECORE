@@ -11,19 +11,19 @@ Proves M-01 fix:
 Run: pytest tests/test_stationarity_monitor.py -v
 """
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
 from models.stationarity_monitor import (
-    StationarityMonitor,
     StationarityConfig,
+    StationarityMonitor,
 )
-
 
 # ========================================================================
 # Helpers
 # ========================================================================
+
 
 def _make_stationary_spread(n=200, seed=42):
     """Mean-reverting OU-like spread (stationary)."""
@@ -53,6 +53,7 @@ def _make_regime_break(n=300, break_at=200, seed=42):
 # ========================================================================
 # Unit tests ÔÇô StationarityMonitor
 # ========================================================================
+
 
 class TestStationarityMonitorBasic:
     """Core logic tests."""
@@ -108,7 +109,7 @@ class TestStationarityConfig:
         cfg = StationarityConfig(alert_pvalue=0.05)
         mon = StationarityMonitor(config=cfg)
         spread = _make_stationary_spread(200)
-        is_ok, pval = mon.check(spread)
+        is_ok, _pval = mon.check(spread)
         # For a strong OU process, should still pass at 0.05
         assert is_ok is True
 
@@ -157,9 +158,7 @@ class TestRegimeBreakDetection:
 
         assert first_alarm is not None, "Monitor never raised alarm after break"
         # Should fire within window bars after the break
-        assert first_alarm <= 150 + 60 + 20, (
-            f"Alarm at bar {first_alarm}, expected within ~80 bars after break at 150"
-        )
+        assert first_alarm <= 150 + 60 + 20, f"Alarm at bar {first_alarm}, expected within ~80 bars after break at 150"
 
 
 class TestStationarityMonitorPerformance:

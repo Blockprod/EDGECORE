@@ -11,10 +11,12 @@ at every critical point in the trading loop:
   - Fatal crash in run_paper_tick
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
-from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
+
+import pytest
+
 from live_trading.paper_runner import PaperTradingRunner
+from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
 
 
 def _make_runner(email=None, slack=None, **kw):
@@ -60,8 +62,8 @@ class TestKillSwitchAlert:
     def test_kill_switch_triggers_alert(self):
         slack = MagicMock()
         runner = _make_runner(slack=slack)
-        runner._kill_switch = MagicMock()
-        runner._kill_switch.is_active = True
+        runner._risk_facade = MagicMock()
+        runner._risk_facade.is_halted = True
         runner._reconciler = None
 
         runner._tick()
@@ -109,9 +111,10 @@ class TestOrderProcessingAlert:
             with patch.object(runner, "_fetch_market_data", return_value=MagicMock(empty=False)):
                 with patch.object(runner, "_signal_gen") as mock_gen:
                     mock_gen.generate.return_value = [mock_signal]
-                    # position_risk.check will throw
-                    runner._position_risk = MagicMock()
-                    runner._position_risk.check.side_effect = RuntimeError("risk engine crash")
+                    # risk facade raises during can_enter_trade (signal processing error)
+                    runner._risk_facade = MagicMock()
+                    runner._risk_facade.is_halted = False
+                    runner._risk_facade.can_enter_trade.side_effect = RuntimeError("risk facade crash")
                     runner._tick()
 
         slack.send_alert.assert_called_once()
@@ -177,7 +180,7 @@ class TestErrorHandlerAlerter:
 
     def test_handle_error_sends_alert_non_retryable(self):
         from common.error_handler import handle_error
-        from common.errors import TradingError, ErrorCategory
+        from common.errors import ErrorCategory, TradingError
 
         alerter = MagicMock()
         error = TradingError("disk full", ErrorCategory.NON_RETRYABLE)
@@ -191,7 +194,7 @@ class TestErrorHandlerAlerter:
 
     def test_handle_error_no_alert_on_transient(self):
         from common.error_handler import handle_error
-        from common.errors import TradingError, ErrorCategory
+        from common.errors import ErrorCategory, TradingError
 
         alerter = MagicMock()
         error = TradingError("timeout", ErrorCategory.TRANSIENT)
@@ -220,6 +223,5 @@ class TestErrorHandlerAlerter:
 
         # Should have alerted on max retries exceeded
         assert alerter.send_alert.call_count >= 1
-        titles = [c[1].get("title", "") if len(c) > 1 else c[0][1] 
-                  for c in alerter.send_alert.call_args_list]
+        titles = [c[1].get("title", "") if len(c) > 1 else c[0][1] for c in alerter.send_alert.call_args_list]
         assert any("max retries" in t.lower() or "Max retries" in t for t in titles)

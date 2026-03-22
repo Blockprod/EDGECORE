@@ -7,7 +7,7 @@
 - **Broker** : Interactive Brokers via `ib_insync` (ordres live) + `ibapi.client.EClient` (données historiques / shortable shares). Jamais `ccxt`.
 - **Data** : `pandas.DataFrame` OHLCV, colonnes = symboles, index = `DatetimeIndex`. Source principale : IBKR `reqHistoricalData` + Yahoo Finance fallback.
 - **Logging** : `structlog.get_logger(__name__)` partout — **jamais** `print()` ni `logging.basicConfig`.
-- **Tests** : `pytest tests/` — 2654 passants, 0 skipped, 0 failed. Commande : `venv\Scripts\python.exe -m pytest tests/ -q`.
+- **Tests** : `pytest tests/` — 2659 passants, 0 skipped, 0 failed. Commande : `venv\Scripts\python.exe -m pytest tests/ -q`.
 - **Config** : `from config.settings import get_settings` — singleton global. Environnements : `dev` / `test` / `prod` (via `EDGECORE_ENV`).
 - **Datetime** : toujours `datetime.now(timezone.utc)` — **jamais** `datetime.utcnow()`.
 
@@ -63,7 +63,7 @@ L'assertion `_assert_risk_tier_coherence()` vérifie T1 ≤ T2 ≤ T3 au démarr
 
 ### Codebase issues connues (ne pas réintroduire)
 1. **B5-01** : `EDGECORE_ENV=production` dans Dockerfile/docker-compose → tombe silencieusement sur `dev.yaml`. La valeur correcte est `prod`.
-2. **B2-01** : `TradeOrder` dans `execution_engine/router.py` duplique `Order` de `execution/base.py` — toute nouvelle fonctionnalité doit utiliser `Order`.
+2. **B2-01** ✅ CORRIGÉ (2026-03-21) : `class TradeOrder` supprimée — `submit_order(order: Order)` utilise `Order` de `execution/base.py` directement.
 3. **B2-02** : `LiveTradingRunner._initialize()` instancie `PositionRiskManager`, `PortfolioRiskManager`, `KillSwitch` ET `RiskFacade` séparément — la `RiskFacade` devait unifier tout cela.
 4. **B4-05** : `backtester/` n'a pas de `__init__.py` — ne pas importer `from backtester import ...` sans l'avoir d'abord créé.
 

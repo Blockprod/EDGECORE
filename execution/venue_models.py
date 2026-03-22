@@ -1,4 +1,4 @@
-﻿"""Venue-specific market models for realistic execution simulation.
+"""Venue-specific market models for realistic execution simulation.
 
 Provides market models tailored to different trading venues:
 - Stock exchanges: Nasdaq, NYSE (via IBKR)
@@ -6,12 +6,12 @@ Provides market models tailored to different trading venues:
 - IBKR Smart Routing (default)
 """
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Literal
-import logging
+from typing import Literal
 
-from common.types import Symbol, VenueType, VenueCharacteristics
+from common.types import Symbol, VenueCharacteristics, VenueType
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +138,7 @@ class VenueModelBase(ABC):
 class IBKRSmartVenueModel(VenueModelBase):
     """Model for IBKR Smart Routing (default venue)."""
     
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         """Initialize IBKR Smart Routing model."""
         if characteristics is None:
             characteristics = {
@@ -198,7 +198,7 @@ class IBKRSmartVenueModel(VenueModelBase):
 class CMEVenueModel(VenueModelBase):
     """Model for CME futures."""
     
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         """Initialize CME model."""
         if characteristics is None:
             characteristics = {
@@ -257,7 +257,7 @@ class CMEVenueModel(VenueModelBase):
 class NasdaqVenueModel(VenueModelBase):
     """Model for Nasdaq stock exchange."""
     
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         """Initialize Nasdaq model."""
         if characteristics is None:
             characteristics = {
@@ -316,7 +316,7 @@ class NasdaqVenueModel(VenueModelBase):
 class NYSEVenueModel(VenueModelBase):
     """Model for NYSE stock exchange."""
     
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         """Initialize NYSE model (similar to Nasdaq)."""
         if characteristics is None:
             characteristics = {
@@ -371,7 +371,7 @@ class NYSEVenueModel(VenueModelBase):
 class CEXVenueModel(VenueModelBase):
     """Model for centralized crypto exchanges (CEX)."""
 
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         if characteristics is None:
             characteristics = {
                 "venue": VenueType.CENTRALIZED_EXCHANGE,
@@ -411,7 +411,7 @@ class CEXVenueModel(VenueModelBase):
 class DEXVenueModel(VenueModelBase):
     """Model for decentralized exchanges (AMM-style)."""
 
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         if characteristics is None:
             characteristics = {
                 "venue": VenueType.DECENTRALIZED_EXCHANGE,
@@ -446,7 +446,7 @@ class DEXVenueModel(VenueModelBase):
 class SpotCryptoVenueModel(CEXVenueModel):
     """Specialization for spot crypto markets (inherits CEX behavior)."""
 
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
+    def __init__(self, characteristics: VenueCharacteristics | None = None):
         super().__init__(characteristics)
         self.venue = VenueType.CRYPTO_SPOT
 
@@ -475,3 +475,4 @@ def get_venue_model(venue: VenueType) -> VenueModelBase:
     model_class = models.get(venue, IBKRSmartVenueModel)
     logger.info(f"Using {model_class.__name__} for venue {venue}")
     return model_class()  # type: ignore[abstract]
+

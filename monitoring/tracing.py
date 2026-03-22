@@ -8,15 +8,15 @@ Provides OpenTelemetry-like tracing capabilities for order execution:
 - Hierarchical span relationships
 """
 
-import uuid
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Callable
-from datetime import datetime
-import logging
-from contextlib import contextmanager
 import json
+import logging
+import uuid
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Callable
 
-from common.types import TraceLevel, TraceContext
+from common.types import TraceContext, TraceLevel
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +27,10 @@ class TraceEvent:
     
     timestamp: datetime
     name: str
-    attributes: Dict[str, Any] = field(default_factory=dict)
+    attributes: dict[str, Any] = field(default_factory=dict)
     level: TraceLevel = TraceLevel.INFO
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "timestamp": self.timestamp.isoformat(),
@@ -46,16 +46,16 @@ class Span:
     
     trace_id: str
     span_id: str
-    parent_span_id: Optional[str]
+    parent_span_id: str | None
     name: str
     start_time: datetime
-    end_time: Optional[datetime] = None
+    end_time: datetime | None = None
     status: str = "UNSET"
-    attributes: Dict[str, Any] = field(default_factory=dict)
-    events: List[TraceEvent] = field(default_factory=list)
+    attributes: dict[str, Any] = field(default_factory=dict)
+    events: list[TraceEvent] = field(default_factory=list)
     level: TraceLevel = TraceLevel.INFO
     
-    def add_event(self, name: str, attributes: Optional[Dict[str, Any]] = None, level: TraceLevel = TraceLevel.INFO) -> None:
+    def add_event(self, name: str, attributes: dict[str, Any] | None = None, level: TraceLevel = TraceLevel.INFO) -> None:
         """Add event to span."""
         event = TraceEvent(
             timestamp=datetime.now(),
@@ -80,7 +80,7 @@ class Span:
             return (datetime.now() - self.start_time).total_seconds() * 1000
         return (self.end_time - self.start_time).total_seconds() * 1000
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             "trace_id": self.trace_id,
@@ -108,8 +108,8 @@ class TraceCollector:
             service_name: Name of the service being traced
         """
         self.service_name = service_name
-        self.spans: Dict[str, Span] = {}
-        self.traces: Dict[str, List[Span]] = {}  # trace_id -> list of spans
+        self.spans: dict[str, Span] = {}
+        self.traces: dict[str, list[Span]] = {}  # trace_id -> list of spans
     
     def add_span(self, span: Span) -> None:
         """Add completed span."""
@@ -119,15 +119,15 @@ class TraceCollector:
             self.traces[span.trace_id] = []
         self.traces[span.trace_id].append(span)
     
-    def get_trace(self, trace_id: str) -> Optional[List[Span]]:
+    def get_trace(self, trace_id: str) -> list[Span] | None:
         """Get all spans for a trace."""
         return self.traces.get(trace_id)
     
-    def get_span(self, span_id: str) -> Optional[Span]:
+    def get_span(self, span_id: str) -> Span | None:
         """Get a single span by ID."""
         return self.spans.get(span_id)
     
-    def get_statistics(self, trace_id: str) -> Dict[str, Any]:
+    def get_statistics(self, trace_id: str) -> dict[str, Any]:
         """Get statistics for a trace."""
         spans = self.traces.get(trace_id, [])
         
@@ -177,10 +177,10 @@ class DistributedTracer:
         self.collector = TraceCollector(service_name)
         
         # Stack of active spans (for context)
-        self._active_traces: Dict[int, Span] = {}  # thread_id -> current span
-        self._trace_stack: Dict[int, List[Span]] = {}  # thread_id -> span stack
+        self._active_traces: dict[int, Span] = {}  # thread_id -> current span
+        self._trace_stack: dict[int, list[Span]] = {}  # thread_id -> span stack
     
-    def start_trace(self, name: str, attributes: Optional[Dict[str, Any]] = None) -> TraceContext:
+    def start_trace(self, name: str, attributes: dict[str, Any] | None = None) -> TraceContext:
         """
         Start a new trace (root span).
         
@@ -222,8 +222,8 @@ class DistributedTracer:
         self,
         trace_id: str,
         name: str,
-        parent_span_id: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
+        parent_span_id: str | None = None,
+        attributes: dict[str, Any] | None = None,
     ) -> Span:
         """
         Start a child span.
@@ -271,9 +271,9 @@ class DistributedTracer:
     def trace_operation(
         self,
         name: str,
-        trace_id: Optional[str] = None,
-        parent_span_id: Optional[str] = None,
-        attributes: Optional[Dict[str, Any]] = None,
+        trace_id: str | None = None,
+        parent_span_id: str | None = None,
+        attributes: dict[str, Any] | None = None,
         level: TraceLevel = TraceLevel.INFO,
     ):
         """
@@ -335,13 +335,13 @@ class DistributedTracer:
         }
         return json.dumps(data, indent=2)
     
-    def get_statistics(self, trace_id: str) -> Dict[str, Any]:
+    def get_statistics(self, trace_id: str) -> dict[str, Any]:
         """Get trace statistics."""
         return self.collector.get_statistics(trace_id)
 
 
 # Global tracer instance
-_global_tracer: Optional[DistributedTracer] = None
+_global_tracer: DistributedTracer | None = None
 
 
 def initialize_global_tracer(service_name: str, level: TraceLevel = TraceLevel.INFO) -> DistributedTracer:
@@ -360,7 +360,7 @@ def get_global_tracer() -> DistributedTracer:
     return _global_tracer
 
 
-def trace(name: str, attributes: Optional[Dict[str, Any]] = None):
+def trace(name: str, attributes: dict[str, Any] | None = None):
     """
     Decorator for tracing a function.
     

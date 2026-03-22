@@ -7,62 +7,56 @@ Runs mypy checks and categorizes results.
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 
-def run_mypy(modules: List[str], strict: bool = True) -> Tuple[int, str, str]:
+def run_mypy(modules: list[str], strict: bool = True) -> tuple[int, str, str]:
     """
     Run mypy on specified modules.
-    
+
     Args:
         modules: Module paths to check
         strict: Whether to use strict mode
-    
+
     Returns:
         (exit_code, stdout, stderr)
     """
     args = ["mypy"]
-    
+
     if strict:
         args.append("--strict")
-    
+
     args.extend(modules)
-    
+
     print(f"Running: {' '.join(args)}")
     print("-" * 80)
-    
-    result = subprocess.run(
-        args,
-        capture_output=True,
-        text=True,
-        cwd=str(Path(__file__).parent)
-    )
-    
+
+    result = subprocess.run(args, capture_output=True, text=True, cwd=str(Path(__file__).parent))
+
     return result.returncode, result.stdout, result.stderr
 
 
-def parse_mypy_output(output: str) -> Dict[str, List[str]]:
+def parse_mypy_output(output: str) -> dict[str, list[str]]:
     """
     Parse mypy output into categorized errors.
-    
+
     Args:
         output: mypy stdout
-    
+
     Returns:
         Dict mapping error types to list of errors
     """
-    errors: Dict[str, List[str]] = {
+    errors: dict[str, list[str]] = {
         "missing_types": [],
         "type_mismatches": [],
         "missing_returns": [],
         "unused_imports": [],
-        "other": []
+        "other": [],
     }
-    
+
     for line in output.split("\n"):
         if "error:" not in line:
             continue
-        
+
         if "Missing type" in line or "no type" in line:
             errors["missing_types"].append(line)
         elif "incompatible" in line:
@@ -73,17 +67,17 @@ def parse_mypy_output(output: str) -> Dict[str, List[str]]:
             errors["unused_imports"].append(line)
         else:
             errors["other"].append(line)
-    
+
     return errors
 
 
 def main():
     """Run mypy validation suite."""
-    
+
     print("\n" + "=" * 80)
     print("PHASE 3.2: TYPE HINTS VALIDATION")
     print("=" * 80 + "\n")
-    
+
     # Phase 1: Check core modules
     core_modules = [
         "common",
@@ -92,10 +86,10 @@ def main():
         "risk",
         "monitoring",
     ]
-    
+
     print("📋 CORE MODULES (high priority)")
-    exit_code, stdout, stderr = run_mypy(core_modules, strict=False)
-    
+    exit_code, stdout, _stderr = run_mypy(core_modules, strict=False)
+
     if exit_code == 0:
         print("✅ All core modules pass basic type checking")
     else:
@@ -108,19 +102,19 @@ def main():
                     print(f"    {error}")
                 if len(error_list) > 5:
                     print(f"    ... and {len(error_list) - 5} more")
-    
+
     print("\n" + "-" * 80)
-    
+
     # Phase 2: Check execution modules
     exec_modules = [
         "execution",
         "strategies",
         "backtests",
     ]
-    
+
     print("\n📋 EXECUTION MODULES")
-    exit_code, stdout, stderr = run_mypy(exec_modules, strict=False)
-    
+    exit_code, stdout, _stderr = run_mypy(exec_modules, strict=False)
+
     if exit_code == 0:
         print("✅ All execution modules pass basic type checking")
     else:
@@ -133,31 +127,31 @@ def main():
                     print(f"    {error}")
                 if len(error_list) > 3:
                     print(f"    ... and {len(error_list) - 3} more")
-    
+
     print("\n" + "-" * 80)
-    
+
     # Phase 3: Check tests
     print("\n📋 TEST MODULES")
     test_result = run_mypy(["tests"], strict=False)
-    exit_code, stdout, stderr = test_result
-    
+    exit_code, stdout, _stderr = test_result
+
     if exit_code == 0:
         print("✅ All test modules pass basic type checking")
     else:
         print(f"⚠️  Type errors found ({exit_code} issues)")
         print("(Some test type issues are acceptable)")
-    
+
     print("\n" + "=" * 80)
     print("TYPE VALIDATION COMPLETE")
     print("=" * 80 + "\n")
-    
+
     print("📊 SUMMARY:")
     print("  • common/types.py: Reference type system ✅")
     print("  • common/typed_api.py: Type-annotated APIs ✅")
     print("  • All core modules: Import types from common.types")
     print("  • All functions: Parameter and return types required")
     print("  • Next: Run 'mypy --strict <module>' to fix remaining issues")
-    
+
     return 0
 
 

@@ -29,7 +29,7 @@ Usage::
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -68,10 +68,10 @@ class BetaNeutralHedger:
     Estimates and manages a benchmark hedge to achieve market neutrality.
     """
 
-    def __init__(self, config: Optional[BetaNeutralConfig] = None):
+    def __init__(self, config: BetaNeutralConfig | None = None):
         self.config = config or BetaNeutralConfig()
         self._current_hedge_notional: float = 0.0
-        self._last_beta: Optional[float] = None
+        self._last_beta: float | None = None
         self._bars_since_rebalance: int = 0
         logger.info(
             "beta_neutral_hedger_initialized",
@@ -83,7 +83,7 @@ class BetaNeutralHedger:
         self,
         portfolio_returns: pd.Series,
         benchmark_returns: pd.Series,
-    ) -> Optional[float]:
+    ) -> float | None:
         """Estimate the portfolio's beta to the benchmark.
 
         Uses OLS regression: R_portfolio = alpha + beta * R_benchmark + epsilon.
@@ -122,7 +122,7 @@ class BetaNeutralHedger:
         portfolio_returns: pd.Series,
         benchmark_returns: pd.Series,
         portfolio_value: float,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compute the hedge recommendation.
 
         Args:
@@ -198,7 +198,7 @@ class BetaNeutralHedger:
             "hedge_ratio": capped_hedge / max(portfolio_value, 1),
         }
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get current hedge status."""
         return {
             "current_hedge_notional": self._current_hedge_notional,

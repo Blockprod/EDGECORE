@@ -6,11 +6,12 @@ ib_insync (async) so each file has a single responsibility.
 Callers that still import IBGatewaySync from execution.ibkr_engine will
 continue to work via the backward-compatibility re-export in that module.
 """
+
 import logging
 import os
 import threading
 import time
-from typing import Any, List, Optional
+from typing import Any
 
 from ibapi.client import EClient
 from ibapi.contract import Contract
@@ -32,15 +33,15 @@ class IBWrapper(EWrapper):
     def __init__(self) -> None:
         super().__init__()
         self._lock = threading.RLock()  # A-03: protège l'accès concurrent msg-thread / thread principal
-        self.current_time: Optional[int] = None
-        self.contract_details: List[Any] = []
+        self.current_time: int | None = None
+        self.contract_details: list[Any] = []
         self.contract_details_done = False
-        self.historical_data: List[Any] = []
+        self.historical_data: list[Any] = []
         self.historical_data_done = False
-        self.fundamental_data: Optional[str] = None
+        self.fundamental_data: str | None = None
         self.fundamental_data_done = False
-        self.error_msg: Optional[tuple] = None
-        self.shortable_shares = -1.0          # A-08: mis à jour par tickGeneric tick 236
+        self.error_msg: tuple | None = None
+        self.shortable_shares = -1.0  # A-08: mis à jour par tickGeneric tick 236
         self.shortable_shares_received = False  # A-08: flag de complétion
 
     def currentTime(self, time_: int) -> None:
@@ -91,7 +92,8 @@ class IBGatewaySync:
     - Gestion des erreurs
     - Utilisation synchrone (recommandee par IBKR)
     """
-    def __init__(self, host: str = "127.0.0.1", port: Optional[int] = None, client_id: int = 1, timeout: int = 30) -> None:
+
+    def __init__(self, host: str = "127.0.0.1", port: int | None = None, client_id: int = 1, timeout: int = 30) -> None:
         self.host = host
         self.port = port if port is not None else int(os.getenv("IBKR_PORT", "4002"))
         self.client_id = client_id
@@ -100,7 +102,7 @@ class IBGatewaySync:
         self._lock = threading.Lock()
         self._req_id_lock = threading.Lock()  # A-06: protège _req_id_counter contre les accès concurrents
         self.connected = False
-        self._msg_thread: Optional[threading.Thread] = None  # message processing thread
+        self._msg_thread: threading.Thread | None = None  # message processing thread
         self._req_id_counter = 10  # start at 10; incremented before each request
         self.wrapper = IBWrapper()
         self.client = EClient(self.wrapper)
@@ -118,14 +120,17 @@ class IBGatewaySync:
                     self.client.connect(self.host, self.port, self.client_id)
                     # Start the message processing loop in a background thread
                     # Without this, EClient sends requests but never reads responses
-                    self._msg_thread = threading.Thread(
-                        target=self.client.run, daemon=True
-                    )
+                    self._msg_thread = threading.Thread(target=self.client.run, daemon=True)
                     self._msg_thread.start()
                     # Give the reader thread a moment to initialize
                     time.sleep(0.5)
                     self.connected = True
-                    logger.info("[IBGatewaySync] Connecte a IB Gateway %s:%d (client_id=%d)", self.host, self.port, self.client_id)
+                    logger.info(
+                        "[IBGatewaySync] Connecte a IB Gateway %s:%d (client_id=%d)",
+                        self.host,
+                        self.port,
+                        self.client_id,
+                    )
                 except Exception as e:
                     logger.error("[IBGatewaySync] Connexion echouee: %s", e)
                     self.connected = False
@@ -142,7 +147,7 @@ class IBGatewaySync:
     def is_connected(self) -> bool:
         return self.connected
 
-    def get_current_time(self) -> Optional[int]:
+    def get_current_time(self) -> int | None:
         if not self.connect():
             return None
         self.wrapper.current_time = None
@@ -157,7 +162,9 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return self.wrapper.current_time
 
-    def get_contract_details(self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD") -> Optional[List[Any]]:
+    def get_contract_details(
+        self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD"
+    ) -> list[Any] | None:
         if not self.connect():
             return None
         self.wrapper.contract_details = []
@@ -177,7 +184,9 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return list(self.wrapper.contract_details)
 
-    def get_historical_data(self, symbol: str, duration: str = "1 Y", bar_size: str = "1 day", what_to_show: str = "TRADES") -> Optional[List[Any]]:
+    def get_historical_data(
+        self, symbol: str, duration: str = "1 Y", bar_size: str = "1 day", what_to_show: str = "TRADES"
+    ) -> list[Any] | None:
         if not self.connect():
             return None
         # Use a unique, incrementing reqId for every request.
@@ -232,7 +241,9 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return list(self.wrapper.historical_data)
 
-    def get_shortable_shares(self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD") -> float:
+    def get_shortable_shares(
+        self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD"
+    ) -> float:
         """Query shortable share availability via reqMktData (generic tick 236).
 
         Returns the number of shortable shares, or -1 on failure/timeout.
@@ -241,7 +252,7 @@ class IBGatewaySync:
         if not self.connect():
             return -1
         self.wrapper.error_msg = None
-        self.wrapper.shortable_shares = -1.0          # A-08: reset avant chaque requête
+        self.wrapper.shortable_shares = -1.0  # A-08: reset avant chaque requête
         self.wrapper.shortable_shares_received = False  # A-08: reset flag
 
         contract = Contract()
@@ -272,7 +283,9 @@ class IBGatewaySync:
         with self.wrapper._lock:
             return self.wrapper.shortable_shares
 
-    def get_earnings_calendar(self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD") -> Optional[str]:
+    def get_earnings_calendar(
+        self, symbol: str, secType: str = "STK", exchange: str = "SMART", currency: str = "USD"
+    ) -> str | None:
         """Retrieve earnings calendar via reqFundamentalData(CalendarReport).
 
         Requires IBKR market data subscription.  Returns raw XML string
@@ -302,7 +315,8 @@ class IBGatewaySync:
             if err and err[1] in (162, 200, 354, 430):
                 logger.warning(
                     "[IBGatewaySync] Fundamental data unavailable for %s: %s",
-                    symbol, err[2],
+                    symbol,
+                    err[2],
                 )
                 break
             time.sleep(0.1)

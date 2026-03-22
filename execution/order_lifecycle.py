@@ -1,4 +1,4 @@
-﻿"""
+"""
 Order lifecycle management with timeout protection for EDGECORE.
 
 Prevents:
@@ -14,17 +14,18 @@ Main Features:
 - Event logging for order lifecycle
 """
 
-from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from structlog import get_logger
+from datetime import UTC, datetime, timedelta
 from enum import Enum
+from typing import Any
+
+from structlog import get_logger
 
 logger = get_logger(__name__)
 
 
 class OrderStatus(Enum):
-    """Order lifecycle status ÔÇö aligned with execution.base.OrderStatus."""
+    """Order lifecycle status ��� aligned with execution.base.OrderStatus."""
     PENDING = "PENDING"
     PARTIALLY_FILLED = "PARTIALLY_FILLED"
     FILLED = "FILLED"
@@ -56,20 +57,20 @@ class OrderLifecycle:
     filled_quantity: float = 0.0
     initial_quantity: float = 0.0
     price: float = 0.0
-    events: List[Tuple[OrderLifecycleEvent, datetime, str]] = field(default_factory=list)
+    events: list[tuple[OrderLifecycleEvent, datetime, str]] = field(default_factory=list)
     
     def add_event(self, event: OrderLifecycleEvent, message: str = "") -> None:
         """Record an event in the order lifecycle."""
-        self.events.append((event, datetime.now(timezone.utc), message))
-        self.last_update = datetime.now(timezone.utc)
+        self.events.append((event, datetime.now(UTC), message))
+        self.last_update = datetime.now(UTC)
     
     def is_expired(self) -> bool:
         """Check if order has exceeded timeout."""
-        return datetime.now(timezone.utc) > self.timeout_at
+        return datetime.now(UTC) > self.timeout_at
     
     def time_remaining_seconds(self) -> float:
         """Get seconds remaining before timeout."""
-        remaining = (self.timeout_at - datetime.now(timezone.utc)).total_seconds()
+        remaining = (self.timeout_at - datetime.now(UTC)).total_seconds()
         return max(0, remaining)
     
     def get_event_count(self, event_type: OrderLifecycleEvent) -> int:
@@ -118,9 +119,9 @@ class OrderLifecycleManager:
         self.check_interval_seconds = check_interval_seconds
         self.max_retries = max_retries
         
-        self.orders: Dict[str, OrderLifecycle] = {}
-        self.last_timeout_check = datetime.now(timezone.utc)
-        self.force_close_attempts: Dict[str, int] = {}
+        self.orders: dict[str, OrderLifecycle] = {}
+        self.last_timeout_check = datetime.now(UTC)
+        self.force_close_attempts: dict[str, int] = {}
         
         logger.info(
             "order_lifecycle_manager_initialized",
@@ -135,7 +136,7 @@ class OrderLifecycleManager:
         symbol: str,
         quantity: float,
         price: float,
-        timeout_seconds: Optional[float] = None
+        timeout_seconds: float | None = None
     ) -> OrderLifecycle:
         """
         Create a new tracked order.
@@ -176,7 +177,7 @@ class OrderLifecycleManager:
         if timeout <= 0:
             raise ValueError(f"Timeout must be positive, got {timeout}")
         
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         timeout_at = now + timedelta(seconds=timeout)
         
         lifecycle = OrderLifecycle(
@@ -260,17 +261,17 @@ class OrderLifecycleManager:
         
         return lifecycle
     
-    def check_for_timeouts(self) -> Tuple[List[str], List[Dict[str, Any]]]:
+    def check_for_timeouts(self) -> tuple[list[str], list[dict[str, Any]]]:
         """
         Check for expired orders and generate remediation actions.
         
         Returns:
-            Tuple of (expired_order_ids: List[str], remediation_actions: List[Dict])
+            Tuple of (expired_order_ids: list[str], remediation_actions: list[dict])
         
         Raises:
             ValueError: If check encounters invalid state
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expired_orders = []
         remediation_actions = []
         
@@ -329,7 +330,7 @@ class OrderLifecycleManager:
         close_price: float,
         close_quantity: float,
         reason: str = "timeout"
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Force-close an expired order.
         
@@ -388,7 +389,7 @@ class OrderLifecycleManager:
         
         return True, f"Force-closed {close_quantity} units @ {close_price}"
     
-    def get_stale_orders(self, stale_threshold_seconds: float = 60.0) -> List[str]:
+    def get_stale_orders(self, stale_threshold_seconds: float = 60.0) -> list[str]:
         """
         Get list of orders that are close to timeout.
         
@@ -405,7 +406,7 @@ class OrderLifecycleManager:
             raise ValueError(f"Threshold cannot be negative: {stale_threshold_seconds}")
         
         stale_orders = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         
         for order_id, lifecycle in self.orders.items():
             if lifecycle.status in [OrderStatus.FILLED, OrderStatus.CANCELLED, OrderStatus.TIMEOUT]:
@@ -418,14 +419,14 @@ class OrderLifecycleManager:
         
         return stale_orders
     
-    def get_order_statistics(self) -> Dict[str, Any]:
+    def get_order_statistics(self) -> dict[str, Any]:
         """
         Get statistics on tracked orders.
         
         Returns:
-            Dict with count statistics by status
+            dict with count statistics by status
         """
-        by_status: Dict[str, int] = {}
+        by_status: dict[str, int] = {}
         stats = {
             "total_orders": len(self.orders),
             "by_status": by_status,
@@ -465,7 +466,7 @@ class OrderLifecycleManager:
         if older_than_seconds < 0:
             raise ValueError(f"Threshold cannot be negative: {older_than_seconds}")
         
-        cutoff_time = datetime.now(timezone.utc) - timedelta(seconds=older_than_seconds)
+        cutoff_time = datetime.now(UTC) - timedelta(seconds=older_than_seconds)
         orders_to_remove = []
         
         for order_id, lifecycle in self.orders.items():
@@ -483,3 +484,4 @@ class OrderLifecycleManager:
             logger.info("orders_cleanup", removed_count=len(orders_to_remove))
         
         return len(orders_to_remove)
+

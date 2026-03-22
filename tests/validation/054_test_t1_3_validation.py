@@ -6,13 +6,13 @@ def test_t1_3():
     
     # Step 1: Check that walk_forward.py is properly implemented
     print("[TEST] Checking walk_forward module...")
-    from backtests.walk_forward import split_walk_forward, WalkForwardBacktester
+    from backtests.walk_forward import WalkForwardBacktester, split_walk_forward
     print("[OK] walk_forward module imports successfully")
     
     # Step 2: Test split_walk_forward function
     print("\n[TEST] Testing split_walk_forward function...")
-    import pandas as pd
     import numpy as np
+    import pandas as pd
     
     # Create sample data
     dates = pd.date_range('2024-01-01', periods=252, freq='D')  # 1 trading year
@@ -101,7 +101,7 @@ def test_t1_3():
     # Step 6: Test that walk_forward is integrated into main.py
     print("\n[TEST] Checking main.py integration...")
     try:
-        with open('main.py', 'r', encoding='utf-8') as f:
+        with open('main.py', encoding='utf-8') as f:
             main_content = f.read()
         
         # Check that walk_forward module is mentioned

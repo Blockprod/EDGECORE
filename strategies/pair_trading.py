@@ -2,7 +2,7 @@
 from datetime import date, datetime, timedelta
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,12 @@ from statsmodels.tsa.stattools import adfuller
 from structlog import get_logger
 
 from config.settings import get_settings
-from models.cointegration import engle_granger_test, half_life_mean_reversion, is_cointegration_stable, verify_integration_order
+from models.cointegration import (
+    engle_granger_test,
+    half_life_mean_reversion,
+    is_cointegration_stable,
+    verify_integration_order,
+)
 from models.cointegration import newey_west_consensus as _newey_west_consensus
 from models.spread import SpreadModel
 from signal_engine.combiner import SignalCombiner, SignalSource
@@ -30,10 +35,11 @@ logger = get_logger(__name__)
 # Type alias for injectable clock function (REPR-1)
 ClockFn = Callable[[], datetime]
 
+
 class PairTradingStrategy(BaseStrategy):
     """
     Statistical arbitrage via pair trading (mean reversion).
-    
+
     Process:
     1. Identify cointegrated pairs
     2. Compute spread via OLS
@@ -43,24 +49,25 @@ class PairTradingStrategy(BaseStrategy):
     """
 
     @staticmethod
-    def _cfg_val(config, name: str, default):
-        """Safe config accessor ÔÇô returns *default* when the attribute is absent
+    def _cfg_val(config, name: str, default) -> Any:
+        """Safe config accessor — returns *default* when the attribute is absent
         or is a mock auto-attribute (MagicMock)."""
         val = getattr(config, name, default)
         if isinstance(val, (int, float, bool, str, type(None))):
             return val
         return default
-    
-    def __init__(self, clock: Optional[ClockFn] = None):
+
+    def __init__(self, clock: ClockFn | None = None):
         self.config = get_settings().strategy
-        self.spread_models: Dict[str, SpreadModel] = {}
+        self.spread_models: dict[str, SpreadModel] = {}
         self.active_trades = StrategyTradeBook()
-        self.historical_spreads: Dict[str, pd.Series] = {}
+        self.historical_spreads: dict[str, pd.Series] = {}
         self.use_cache: bool = True
+        self.sector_map: dict[str, str] | None = None
 
         # REPR-1: Injectable clock ÔÇö datetime.now in live, bar timestamp in backtest
         self._clock: ClockFn = clock or datetime.now
-        
+
         # Initialize cache directory
         self.cache_dir = Path("cache/pairs")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -77,43 +84,46 @@ class PairTradingStrategy(BaseStrategy):
         from models.stationarity_monitor import StationarityMonitor
 
         self.regime_detector = RegimeDetector(
-            lookback_window=self._cfg_val(_c, 'regime_lookback_window', 20),
-            min_regime_duration=self._cfg_val(_c, 'regime_min_duration', 1),
-            instant_transition_percentile=self._cfg_val(_c, 'instant_transition_percentile', 99.0),
+            lookback_window=self._cfg_val(_c, "regime_lookback_window", 20),
+            min_regime_duration=self._cfg_val(_c, "regime_min_duration", 1),
+            instant_transition_percentile=self._cfg_val(_c, "instant_transition_percentile", 99.0),
         )
         self.hedge_ratio_tracker = HedgeRatioTracker(
-            reestimation_frequency_days=self._cfg_val(_c, 'hedge_ratio_reestimation_days', 7),
-            emergency_vol_sigma=self._cfg_val(_c, 'emergency_vol_threshold_sigma', 3.0),
+            reestimation_frequency_days=self._cfg_val(_c, "hedge_ratio_reestimation_days", 7),
+            emergency_vol_sigma=self._cfg_val(_c, "emergency_vol_threshold_sigma", 3.0),
         )
         self.stationarity_monitor = StationarityMonitor()
         self.liquidity_filter = LiquidityFilter()
         self.delisting_guard = DelistingGuard()
         self.trailing_stop_manager = TrailingStopManager(
-            widening_threshold=self._cfg_val(_c, 'trailing_stop_widening', 1.0),
+            widening_threshold=self._cfg_val(_c, "trailing_stop_widening", 1.0),
         )
         self.concentration_limits = ConcentrationLimitManager(
-            max_symbol_concentration_pct=self._cfg_val(_c, 'max_symbol_concentration_pct', 30.0),
+            max_symbol_concentration_pct=self._cfg_val(_c, "max_symbol_concentration_pct", 30.0),
             allow_rebalancing=True,
         )
 
         from models.model_retraining import ModelRetrainingManager
+
         self.model_retrainer = ModelRetrainingManager()
-        self.pair_regime_states: Dict[str, object] = {}
+        self.pair_regime_states: dict[str, object] = {}
 
         # ÔöÇÔöÇ Momentum overlay (v31) ÔöÇÔöÇ
         try:
             _mom_cfg = get_settings().momentum
-            self._momentum_enabled = bool(getattr(_mom_cfg, 'enabled', False))
+            self._momentum_enabled = bool(getattr(_mom_cfg, "enabled", False))
             if self._momentum_enabled:
-                _lb = getattr(_mom_cfg, 'lookback', 20)
-                _wt = getattr(_mom_cfg, 'weight', 0.30)
-                _ms = getattr(_mom_cfg, 'min_strength', 0.30)
-                _mb = getattr(_mom_cfg, 'max_boost', 1.0)
+                _lb = getattr(_mom_cfg, "lookback", 20)
+                _wt = getattr(_mom_cfg, "weight", 0.30)
+                _ms = getattr(_mom_cfg, "min_strength", 0.30)
+                _mb = getattr(_mom_cfg, "max_boost", 1.0)
                 # Guard against mocked / non-numeric config values
                 if all(isinstance(v, (int, float)) for v in (_lb, _wt, _ms, _mb)):
                     self._momentum = MomentumOverlay(
-                        lookback=int(_lb), weight=float(_wt),
-                        min_strength=float(_ms), max_boost=float(_mb),
+                        lookback=int(_lb),
+                        weight=float(_wt),
+                        min_strength=float(_ms),
+                        max_boost=float(_mb),
                     )
                 else:
                     self._momentum_enabled = False
@@ -154,18 +164,18 @@ class PairTradingStrategy(BaseStrategy):
 
         # ÔöÇÔöÇ Leg-correlation monitoring state ÔöÇÔöÇ
         self._excluded_pairs_correlation: set = set()
-        self._correlation_exclusions: Dict[str, datetime] = {}
-        self._leg_correlation_history: Dict[str, dict] = {}
-        self.leg_correlation_window: int = self._cfg_val(_c, 'leg_correlation_window', 30)
-        self.leg_correlation_decay_threshold: float = self._cfg_val(_c, 'leg_correlation_decay_threshold', 0.3)
+        self._correlation_exclusions: dict[str, datetime] = {}
+        self._leg_correlation_history: dict[str, dict] = {}
+        self.leg_correlation_window: int = self._cfg_val(_c, "leg_correlation_window", 30)
+        self.leg_correlation_decay_threshold: float = self._cfg_val(_c, "leg_correlation_decay_threshold", 0.3)
 
         # ÔöÇÔöÇ Internal risk limits ÔöÇÔöÇ
-        self.max_positions: int = self._cfg_val(_c, 'internal_max_positions', 10)
-        self.max_daily_trades: int = self._cfg_val(_c, 'internal_max_daily_trades', 50)
-        self.max_drawdown_pct: float = self._cfg_val(_c, 'internal_max_drawdown_pct', 20.0)
+        self.max_positions: int = self._cfg_val(_c, "internal_max_positions", 10)
+        self.max_daily_trades: int = self._cfg_val(_c, "internal_max_daily_trades", 50)
+        self.max_drawdown_pct: float = self._cfg_val(_c, "internal_max_drawdown_pct", 20.0)
         self.daily_trade_count: int = 0
         self.daily_trade_date: date = date.today()
-        self.peak_equity: float = self._cfg_val(_c, 'initial_capital', 100_000.0)
+        self.peak_equity: float = self._cfg_val(_c, "initial_capital", 100_000.0)
         self.current_equity: float = self.peak_equity
 
     # ÔöÇÔöÇ Cache control methods ÔöÇÔöÇ
@@ -180,6 +190,7 @@ class PairTradingStrategy(BaseStrategy):
     def clear_cache(self) -> None:
         """Delete all cached pair files."""
         import shutil
+
         if self.cache_dir.exists():
             shutil.rmtree(self.cache_dir)
             self.cache_dir.mkdir(parents=True, exist_ok=True)
@@ -188,13 +199,14 @@ class PairTradingStrategy(BaseStrategy):
     def get_cache_ttl_hours(self) -> int:
         """Return cache TTL in hours based on current volatility regime."""
         from models.regime_detector import VolatilityRegime
+
         regime = self.regime_detector.current_regime
         if regime == VolatilityRegime.HIGH:
-            return int(self._cfg_val(self.config, 'cache_ttl_high_vol', 2))
+            return int(self._cfg_val(self.config, "cache_ttl_high_vol", 2))
         elif regime == VolatilityRegime.LOW:
-            return int(self._cfg_val(self.config, 'cache_ttl_low_vol', 24))
+            return int(self._cfg_val(self.config, "cache_ttl_low_vol", 24))
         else:
-            return int(self._cfg_val(self.config, 'cache_ttl_normal_vol', 12))
+            return int(self._cfg_val(self.config, "cache_ttl_normal_vol", 12))
 
     # ÔöÇÔöÇ Leg-correlation stability ÔöÇÔöÇ
     def _check_leg_correlation_stability(
@@ -202,7 +214,7 @@ class PairTradingStrategy(BaseStrategy):
         y: pd.Series,
         x: pd.Series,
         pair_key: str,
-        window: Optional[int] = None,
+        window: int | None = None,
     ) -> bool:
         """Check if the rolling correlation between pair legs is stable.
 
@@ -214,30 +226,34 @@ class PairTradingStrategy(BaseStrategy):
 
         if len(y) < 2 * win or len(x) < 2 * win:
             self._leg_correlation_history[pair_key] = {
-                'stable': True, 'recent_corr': None, 'reason': 'insufficient_data',
-                'window': win,
+                "stable": True,
+                "recent_corr": None,
+                "reason": "insufficient_data",
+                "window": win,
             }
             return True
 
         if y.std() < 1e-12 or x.std() < 1e-12:
             self._leg_correlation_history[pair_key] = {
-                'stable': True, 'recent_corr': None, 'reason': 'constant_series',
-                'window': win,
+                "stable": True,
+                "recent_corr": None,
+                "reason": "constant_series",
+                "window": win,
             }
             return True
 
         recent_corr = float(y.tail(win).corr(x.tail(win)))
-        historical_corr = getattr(self, '_pair_historical_corr', {}).get(pair_key, None)
+        historical_corr = getattr(self, "_pair_historical_corr", {}).get(pair_key, None)
         if historical_corr is None:
             historical_corr = float(y.corr(x))
 
         stable = abs(recent_corr) >= threshold
         self._leg_correlation_history[pair_key] = {
-            'stable': stable,
-            'recent_corr': recent_corr,
-            'historical_corr': historical_corr,
-            'threshold': threshold,
-            'window': win,
+            "stable": stable,
+            "recent_corr": recent_corr,
+            "historical_corr": historical_corr,
+            "threshold": threshold,
+            "window": win,
         }
 
         if not stable:
@@ -250,11 +266,11 @@ class PairTradingStrategy(BaseStrategy):
         """Return the set of pairs excluded due to correlation breakdown."""
         return set(self._excluded_pairs_correlation)
 
-    def get_correlation_exclusions(self) -> Dict[str, datetime]:
+    def get_correlation_exclusions(self) -> dict[str, datetime]:
         """Return currently excluded pairs with timestamps."""
         return dict(self._correlation_exclusions)
 
-    def reset_correlation_exclusion(self, pair_key: Optional[str] = None) -> None:
+    def reset_correlation_exclusion(self, pair_key: str | None = None) -> None:
         """Remove a single pair or all pairs from the exclusion set."""
         if pair_key is None:
             self._excluded_pairs_correlation.clear()
@@ -268,11 +284,11 @@ class PairTradingStrategy(BaseStrategy):
         self._excluded_pairs_correlation.clear()
         self._correlation_exclusions.clear()
 
-    def get_correlation_analytics(self) -> Dict[str, dict]:
+    def get_correlation_analytics(self) -> dict[str, dict]:
         """Return correlation monitoring analytics."""
         return dict(self._leg_correlation_history)
 
-    def get_leg_correlation_history(self) -> Dict[str, dict]:
+    def get_leg_correlation_history(self) -> dict[str, dict]:
         """Return leg correlation monitoring history."""
         return dict(self._leg_correlation_history)
 
@@ -293,7 +309,7 @@ class PairTradingStrategy(BaseStrategy):
         if self.peak_equity is None or equity > self.peak_equity:
             self.peak_equity = equity
 
-    def _check_internal_risk_limits(self) -> Tuple[bool, str]:
+    def _check_internal_risk_limits(self) -> tuple[bool, str]:
         """Check all internal risk limits. Returns (ok, reason)."""
         self._maybe_reset_daily_counter()
         if len(self.active_trades) >= self.max_positions:
@@ -306,15 +322,15 @@ class PairTradingStrategy(BaseStrategy):
                 dd_display = dd_frac * 100
                 return False, f"max drawdown ({dd_display:.1f}%) breached ÔÇô limit {self.max_drawdown_pct * 100:.0f}%"
         return True, ""
-    
-    def load_cached_pairs(self, max_age_hours: Optional[int] = None) -> Optional[List[Tuple]]:
+
+    def load_cached_pairs(self, max_age_hours: int | None = None) -> list[tuple] | None:
         """
         Load cached cointegrated pairs if recent.
-        
+
         Args:
             max_age_hours: Maximum cache age in hours.  When *None* the
                            adaptive regime-based TTL is used.
-        
+
         Returns:
             Cached pairs list or None if cache is stale/missing
         """
@@ -322,46 +338,46 @@ class PairTradingStrategy(BaseStrategy):
             max_age_hours = self.get_cache_ttl_hours()
 
         cache_file = self.cache_dir / "cointegrated_pairs.json"
-        
+
         if cache_file.exists():
             mod_time = datetime.fromtimestamp(cache_file.stat().st_mtime)
             age = self._clock() - mod_time
-            
+
             if age < timedelta(hours=max_age_hours):
                 try:
                     import json
-                    with open(cache_file, 'r') as f:
+
+                    with open(cache_file) as f:
                         pairs = json.load(f)
                     # pairs are stored as list of [sym1, sym2, ...] lists
                     pairs = [tuple(p) for p in pairs]
                     logger.info(
-                        "loaded_cached_pairs", 
-                        pairs_count=len(pairs), 
-                        age_hours=round(age.total_seconds()/3600, 2)
+                        "loaded_cached_pairs", pairs_count=len(pairs), age_hours=round(age.total_seconds() / 3600, 2)
                     )
                     return pairs
                 except Exception as e:
                     logger.warning("cache_load_failed", error=str(e))
-        
+
         return None
-    
-    def save_cached_pairs(self, pairs: List[Tuple]) -> None:
+
+    def save_cached_pairs(self, pairs: list[tuple]) -> None:
         """Save cointegrated pairs to cache."""
         try:
             import json
+
             cache_file = self.cache_dir / "cointegrated_pairs.json"
             # Write to temporary file first, then rename (atomic operation)
-            temp_file = cache_file.with_suffix('.tmp')
-            with open(temp_file, 'w') as f:
+            temp_file = cache_file.with_suffix(".tmp")
+            with open(temp_file, "w") as f:
                 json.dump([list(p) for p in pairs], f, indent=2)
             # Atomic rename
             temp_file.replace(cache_file)
             logger.info("saved_cointegrated_pairs", count=len(pairs))
         except Exception as e:
             logger.warning("cache_save_failed", error=str(e))
-    
+
     @staticmethod
-    def _test_pair_cointegration(args: Tuple) -> Optional[Tuple[str, str, float, float]]:
+    def _test_pair_cointegration(args: tuple) -> tuple[str, str, float, float] | None:
         """
         Test cointegration for a single pair (runs in worker process).
 
@@ -375,7 +391,7 @@ class PairTradingStrategy(BaseStrategy):
         """
         # Support both 6-element (legacy) and 9-element tuples
         if len(args) == 9:
-            sym1, sym2, series1, series2, min_corr, max_hl, num_symbols, johansen_flag, nw_consensus_flag = args
+            sym1, sym2, series1, series2, min_corr, max_hl, num_symbols, _johansen_flag, nw_consensus_flag = args
         else:
             sym1, sym2, series1, series2, min_corr, max_hl = args[:6]
             num_symbols = None
@@ -392,24 +408,25 @@ class PairTradingStrategy(BaseStrategy):
 
             # Run Engle-Granger test with Bonferroni correction
             result = engle_granger_test(
-                series1, series2,
+                series1,
+                series2,
                 apply_bonferroni=apply_bonferroni,
                 num_symbols=num_symbols,
             )
 
-            if result['is_cointegrated']:
+            if result["is_cointegrated"]:
                 # Newey-West consensus gate
                 if nw_consensus_flag:
                     cons = _newey_west_consensus(series1, series2)
-                    if not cons['consensus']:
+                    if not cons["consensus"]:
                         return None
 
                 # Calculate half-life of mean reversion
-                hl = half_life_mean_reversion(pd.Series(result['residuals']))
+                hl = half_life_mean_reversion(pd.Series(result["residuals"]))
 
                 # Filter by half-life
                 if hl and hl <= max_hl:
-                    return (sym1, sym2, result['adf_pvalue'], hl)
+                    return (sym1, sym2, result["adf_pvalue"], hl)
 
         except Exception:
             pass
@@ -417,7 +434,7 @@ class PairTradingStrategy(BaseStrategy):
         return None
 
     @staticmethod
-    def _test_pair_candidate(args: Tuple) -> Optional[Tuple[str, str, float, float]]:
+    def _test_pair_candidate(args: tuple) -> tuple[str, str, float, float] | None:
         """
         Test cointegration and return candidate with raw p-value (for BH-FDR).
 
@@ -430,9 +447,9 @@ class PairTradingStrategy(BaseStrategy):
             correlation or half-life checks.
         """
         if len(args) >= 9:
-            sym1, sym2, series1, series2, min_corr, max_hl, num_symbols, johansen_flag, nw_consensus_flag = args[:9]
+            sym1, sym2, series1, series2, min_corr, max_hl, _num_symbols, _johansen_flag, nw_consensus_flag = args[:9]  # type: ignore[misc]
         else:
-            sym1, sym2, series1, series2, min_corr, max_hl = args[:6]
+            sym1, sym2, series1, series2, min_corr, max_hl = args[:6]  # type: ignore[misc]
             nw_consensus_flag = False
 
         try:
@@ -445,12 +462,13 @@ class PairTradingStrategy(BaseStrategy):
             # check_integration_order=False because the caller
             # pre-filters symbols via I(1) cache.
             result = engle_granger_test(
-                series1, series2,
+                series1,
+                series2,
                 apply_bonferroni=False,
                 check_integration_order=False,
             )
 
-            pvalue = result.get('adf_pvalue', 1.0)
+            pvalue = result.get("adf_pvalue", 1.0)
 
             # Pre-filter: skip clearly insignificant pairs
             if pvalue >= 0.20 or np.isnan(pvalue):
@@ -459,11 +477,11 @@ class PairTradingStrategy(BaseStrategy):
             # Newey-West consensus gate (if enabled)
             if nw_consensus_flag:
                 cons = _newey_west_consensus(series1, series2)
-                if not cons['consensus']:
+                if not cons["consensus"]:
                     return None
 
             # Calculate half-life of mean reversion
-            hl = half_life_mean_reversion(pd.Series(result['residuals']))
+            hl = half_life_mean_reversion(pd.Series(result["residuals"]))
             if not hl or hl > max_hl:
                 return None
 
@@ -471,14 +489,14 @@ class PairTradingStrategy(BaseStrategy):
 
         except Exception:
             return None
-    
+
     def find_cointegrated_pairs_parallel(
         self,
         price_data: pd.DataFrame,
-        lookback: int = None,
-        num_workers: int = None,
-        sector_map: Optional[Dict[str, str]] = None,
-    ) -> List[Tuple[str, str, float, float]]:
+        lookback: int | None = None,
+        num_workers: int | None = None,
+        sector_map: dict[str, str] | None = None,
+    ) -> list[tuple[str, str, float, float]]:
         """
         Find cointegrated pairs using multiprocessing + BH-FDR correction.
 
@@ -491,37 +509,37 @@ class PairTradingStrategy(BaseStrategy):
         instead of plain Bonferroni, which is standard in quantitative
         finance and dramatically reduces Type-II errors while still
         controlling the false discovery rate.
-        
+
         Args:
             price_data: DataFrame with multiple price series
             lookback: Lookback window (uses config if None)
             num_workers: Number of worker processes (uses cpu_count-1 if None)
             sector_map: Optional dict mapping symbol ÔåÆ sector name.
                         When provided, only intra-sector pairs are tested.
-        
+
         Returns:
             List of (symbol1, symbol2, pvalue, half_life) tuples
         """
         if lookback is None:
             lookback = self.config.lookback_window
-        
+
         if num_workers is None:
             num_workers = max(1, cpu_count() - 1)  # Leave 1 core free
-        
+
         data = price_data.tail(lookback)
         symbols = data.columns.tolist()
 
         # Use instance-level sector_map if not passed explicitly
         if sector_map is None:
-            sector_map = getattr(self, 'sector_map', None)
+            sector_map = getattr(self, "sector_map", None)
 
         # ÔöÇÔöÇ Pre-compute I(1) status per symbol (cache) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         # This avoids repeated ADF/KPSS calls when the same symbol
         # appears in multiple pairs.  Saves ~67% of statsmodels calls.
-        i1_cache: Dict[str, bool] = {}
+        i1_cache: dict[str, bool] = {}
         for sym in symbols:
             io = verify_integration_order(data[sym], name=sym)
-            i1_cache[sym] = io['is_I1']
+            i1_cache[sym] = io["is_I1"]
 
         i1_symbols = [s for s in symbols if i1_cache.get(s, False)]
         n_dropped = len(symbols) - len(i1_symbols)
@@ -533,7 +551,7 @@ class PairTradingStrategy(BaseStrategy):
                 dropped=n_dropped,
             )
         symbols = i1_symbols
-        
+
         # Generate pairs to test.
         # For large universes (>= 50 symbols), use vectorized correlation
         # pre-filter to avoid O(N┬▓) cointegration tests.
@@ -541,8 +559,8 @@ class PairTradingStrategy(BaseStrategy):
         # pair composition and BH-FDR m values.
         from universe.correlation_prefilter import CorrelationPreFilter
 
-        nw_flag = self._cfg_val(self.config, 'newey_west_consensus', False)
-        joh_flag = self._cfg_val(self.config, 'johansen_confirmation', False)
+        nw_flag = self._cfg_val(self.config, "newey_west_consensus", False)
+        joh_flag = self._cfg_val(self.config, "johansen_confirmation", False)
 
         use_prefilter = len(symbols) >= 50
 
@@ -554,37 +572,40 @@ class PairTradingStrategy(BaseStrategy):
                 max_pairs_per_sector=500,
             )
             candidate_pairs = corr_prefilter.filter_pairs(
-                data[symbols], sector_map=sector_map,
+                data[symbols],
+                sector_map=sector_map,
             )
         else:
             # Original O(N┬▓) loop ÔÇö preserves v18 behavior for small universes
             candidate_pairs = []
             for i, sym1 in enumerate(symbols):
-                for sym2 in symbols[i + 1:]:
+                for sym2 in symbols[i + 1 :]:
                     if sector_map and sector_map.get(sym1) != sector_map.get(sym2):
                         continue
                     candidate_pairs.append((sym1, sym2))
 
         pairs_to_test = []
         for sym1, sym2 in candidate_pairs:
-            pairs_to_test.append((
-                sym1, 
-                sym2, 
-                data[sym1], 
-                data[sym2],
-                self.config.min_correlation,
-                self.config.max_half_life,
-                len(symbols),
-                joh_flag,
-                nw_flag,
-            ))
-        
+            pairs_to_test.append(
+                (
+                    sym1,
+                    sym2,
+                    data[sym1],
+                    data[sym2],
+                    self.config.min_correlation,
+                    self.config.max_half_life,
+                    len(symbols),
+                    joh_flag,
+                    nw_flag,
+                )
+            )
+
         if not pairs_to_test:
             logger.warning("no_pairs_to_test")
             return []
-        
+
         # ÔöÇÔöÇ Build sector ÔåÆ pair-index map for per-sector FDR ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-        pair_sector_map: Dict[int, str] = {}
+        pair_sector_map: dict[int, str] = {}
         for idx, args in enumerate(pairs_to_test):
             sym1 = args[0]
             sec = sector_map.get(sym1, "__global__") if sector_map else "__global__"
@@ -596,7 +617,7 @@ class PairTradingStrategy(BaseStrategy):
             workers=num_workers,
             sector_restricted=sector_map is not None,
         )
-        
+
         # ÔöÇÔöÇ BH-FDR path: per-sector correction ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         # Applying BH-FDR per sector is statistically more appropriate
         # because each sector constitutes an independent hypothesis
@@ -606,16 +627,15 @@ class PairTradingStrategy(BaseStrategy):
         candidates_total = 0
         try:
             with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                results = list(executor.map(
-                    self._test_pair_candidate, pairs_to_test
-                ))
-            
-            q = self._cfg_val(self.config, 'fdr_q_level', 0.10)
+                results = list(executor.map(self._test_pair_candidate, pairs_to_test))
+
+            q = self._cfg_val(self.config, "fdr_q_level", 0.10)
 
             # Group results and test counts by sector
             from collections import defaultdict
-            sector_candidates: Dict[str, list] = defaultdict(list)
-            sector_m: Dict[str, int] = defaultdict(int)
+
+            sector_candidates: dict[str, list] = defaultdict(list)
+            sector_m: dict[str, int] = defaultdict(int)
 
             for idx, res in enumerate(results):
                 sec = pair_sector_map[idx]
@@ -643,11 +663,11 @@ class PairTradingStrategy(BaseStrategy):
                             q=q,
                         )
                         break
-        
+
         except Exception as e:
             logger.error("parallel_discovery_failed", error=str(e))
             return []
-        
+
         logger.info(
             "pair_discovery_parallel_complete",
             cointegrated_count=len(cointegrated_pairs),
@@ -655,17 +675,24 @@ class PairTradingStrategy(BaseStrategy):
             candidates_pre_fdr=candidates_total,
             correction="BH-FDR-per-sector",
         )
-        
+
         # ÔöÇÔöÇ Cointegration stability filter ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         # Only keep pairs that are stable across rolling windows
         stability_windows = [60, 120, 180]
         stability_threshold = 0.8
         stable_pairs = []
         for sym1, sym2, pvalue, hl in cointegrated_pairs:
-            if is_cointegration_stable(sym1, sym2, price_data, windows=stability_windows, threshold=stability_threshold):
+            if is_cointegration_stable(
+                sym1, sym2, price_data, windows=stability_windows, threshold=stability_threshold
+            ):
                 stable_pairs.append((sym1, sym2, pvalue, hl))
             else:
-                logger.info("pair_stability_failed", pair=f"{sym1}_{sym2}", windows=stability_windows, threshold=stability_threshold)
+                logger.info(
+                    "pair_stability_failed",
+                    pair=f"{sym1}_{sym2}",
+                    windows=stability_windows,
+                    threshold=stability_threshold,
+                )
         logger.info(
             "stability_filter_applied",
             pre_stability=len(cointegrated_pairs),
@@ -673,23 +700,23 @@ class PairTradingStrategy(BaseStrategy):
             rejected=len(cointegrated_pairs) - len(stable_pairs),
         )
         return stable_pairs
-    
+
     def find_cointegrated_pairs(
         self,
         price_data: pd.DataFrame,
-        lookback: int = None,
+        lookback: int | None = None,
         use_cache: bool = True,
         use_parallel: bool = True,
-        volume_data: dict = None,
-        weekly_prices: Optional[pd.DataFrame] = None,
-    ) -> List[Tuple[str, str, float, float]]:
+        volume_data: dict | None = None,
+        weekly_prices: pd.DataFrame | None = None,
+    ) -> list[tuple[str, str, float, float]]:
         """
         Find cointegrated pairs in price data.
-        
+
         Uses caching and multiprocessing for performance.
         When ``weekly_prices`` is provided, applies multi-timeframe
         confirmation after daily BH-FDR discovery.
-        
+
         Args:
             price_data: DataFrame with multiple price series
             lookback: Lookback window (uses config if None)
@@ -698,13 +725,13 @@ class PairTradingStrategy(BaseStrategy):
             volume_data: Optional dict mapping symbol ÔåÆ 24h volume USD.
                          Symbols below liquidity_filter.min_volume_24h_usd are excluded.
             weekly_prices: Optional weekly close prices for MTF confirmation.
-        
+
         Returns:
             List of (symbol1, symbol2, pvalue, half_life) tuples
         """
         # Filter out illiquid symbols if volume_data provided
         if volume_data is not None:
-            min_vol = getattr(self.liquidity_filter, 'min_volume_24h_usd', 5_000_000)
+            min_vol = getattr(self.liquidity_filter, "min_volume_24h_usd", 5_000_000)
             liquid_symbols = [s for s in price_data.columns if volume_data.get(s, 0) >= min_vol]
             price_data = price_data[liquid_symbols]
 
@@ -716,7 +743,7 @@ class PairTradingStrategy(BaseStrategy):
             cached = self.load_cached_pairs()
             if cached is not None:
                 return cached
-        
+
         # Use parallel discovery if enabled, otherwise sequential
         if use_parallel:
             pairs = self.find_cointegrated_pairs_parallel(price_data, lookback)
@@ -724,7 +751,7 @@ class PairTradingStrategy(BaseStrategy):
             pairs = self._find_cointegrated_pairs_sequential(price_data, lookback)
 
         # ÔöÇÔöÇ Multi-lookback discovery: run additional windows & merge ÔöÇÔöÇ
-        extra_windows = getattr(self.config, 'additional_lookback_windows', [])
+        extra_windows = getattr(self.config, "additional_lookback_windows", [])
         if extra_windows and len(price_data) > max(extra_windows):
             seen = {(p[0], p[1]): p for p in pairs}
             for lb in extra_windows:
@@ -745,19 +772,22 @@ class PairTradingStrategy(BaseStrategy):
                 extra_lbs=extra_windows,
                 merged_pairs=len(pairs),
             )
-        
+
         # ÔöÇÔöÇ Multi-Timeframe weekly confirmation ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         # When weekly prices are available and weekly_confirmation is
         # enabled in config, filter pairs that don't hold on weekly.
-        weekly_conf = self._cfg_val(self.config, 'weekly_confirmation', False)
+        weekly_conf = self._cfg_val(self.config, "weekly_confirmation", False)
         if weekly_conf and weekly_prices is not None and not weekly_prices.empty:
             from data.multi_timeframe import MTFConfig, MultiTimeframeEngine
-            mtf = MultiTimeframeEngine(MTFConfig(
-                weekly_coint_weight=self._cfg_val(self.config, 'weekly_coint_weight', 0.40),
-                weekly_max_pvalue=self._cfg_val(self.config, 'weekly_max_pvalue', 0.10),
-                weekly_lookback_bars=self._cfg_val(self.config, 'weekly_lookback_bars', 104),
-                weekly_confirmation_required=True,
-            ))
+
+            mtf = MultiTimeframeEngine(
+                MTFConfig(
+                    weekly_coint_weight=self._cfg_val(self.config, "weekly_coint_weight", 0.40),
+                    weekly_max_pvalue=self._cfg_val(self.config, "weekly_max_pvalue", 0.10),
+                    weekly_lookback_bars=self._cfg_val(self.config, "weekly_lookback_bars", 104),
+                    weekly_confirmation_required=True,
+                )
+            )
             pre_mtf = len(pairs)
             confirmed = mtf.confirm_pairs(pairs, weekly_prices)
             # Keep only confirmed pairs, drop the MTF score from output
@@ -772,114 +802,106 @@ class PairTradingStrategy(BaseStrategy):
         # Save to cache
         if _use_cache and pairs:
             self.save_cached_pairs(pairs)
-        
+
         return pairs
-    
+
     def _find_cointegrated_pairs_sequential(
-        self,
-        price_data: pd.DataFrame,
-        lookback: int = None
-    ) -> List[Tuple[str, str, float, float]]:
+        self, price_data: pd.DataFrame, lookback: int | None = None
+    ) -> list[tuple[str, str, float, float]]:
         """
         Find cointegrated pairs sequentially (original implementation).
-        
+
         Kept for fallback and testing purposes.
         """
         if lookback is None:
             lookback = self.config.lookback_window
-        
+
         data = price_data.tail(lookback)
         symbols = data.columns.tolist()
         cointegrated_pairs = []
-        
+
         for i, sym1 in enumerate(symbols):
-            for j, sym2 in enumerate(symbols[i+1:], start=i+1):
+            for _j, sym2 in enumerate(symbols[i + 1 :], start=i + 1):
                 try:
                     # Normalize prices for correlation
                     corr = data[sym1].corr(data[sym2])
-                    
+
                     if abs(corr) < self.config.min_correlation:
                         continue
-                    
+
                     result = engle_granger_test(
-                        data[sym1], data[sym2],
-                        apply_bonferroni=getattr(self.config, 'bonferroni_correction', False),
+                        data[sym1],
+                        data[sym2],
+                        apply_bonferroni=getattr(self.config, "bonferroni_correction", False),
                         num_symbols=len(symbols),
                     )
-                    
-                    if result['is_cointegrated']:
-                        hl = half_life_mean_reversion(
-                            pd.Series(result['residuals'])
-                        )
-                        
+
+                    if result["is_cointegrated"]:
+                        hl = half_life_mean_reversion(pd.Series(result["residuals"]))
+
                         if hl and hl <= self.config.max_half_life:
-                            cointegrated_pairs.append((
-                                sym1, sym2, result['adf_pvalue'], hl
-                            ))
-                            
+                            cointegrated_pairs.append((sym1, sym2, result["adf_pvalue"], hl))
+
                             logger.info(
-                                "pair_cointegrated",
-                                pair=f"{sym1}_{sym2}",
-                                pvalue=result['adf_pvalue'],
-                                half_life=hl
+                                "pair_cointegrated", pair=f"{sym1}_{sym2}", pvalue=result["adf_pvalue"], half_life=hl
                             )
-                
+
                 except Exception as e:
                     logger.debug("coint_test_failed", sym1=sym1, sym2=sym2, error=str(e))
                     continue
-        
+
         return cointegrated_pairs
-    
+
     def generate_signals(
         self,
         market_data: pd.DataFrame,
-        discovered_pairs: Optional[List[Tuple]] = None,
-        weekly_prices: Optional[pd.DataFrame] = None,
-    ) -> List[Signal]:
+        discovered_pairs: list[tuple] | None = None,
+        weekly_prices: pd.DataFrame | None = None,
+    ) -> list[Signal]:
         """
         Generate pair trading signals based on spread Z-scores.
-        
+
         Args:
             market_data: DataFrame with price series as columns.
             discovered_pairs: Pre-computed cointegrated pairs.  Each element is
                               ``(sym1, sym2, pvalue, half_life)``.
             weekly_prices: Optional weekly close prices for z-score gate.
-        
+
         Returns:
             List of Signal objects
         """
         signals = []
-        
+
         # Find cointegrated pairs (rerun periodically) or use provided list
         if discovered_pairs is not None:
             cointegrated = discovered_pairs
         else:
             cointegrated = self.find_cointegrated_pairs(market_data, self.config.lookback_window)
-        
+
         # ÔöÇÔöÇ Phase 1: Update cross-sectional rankings once per bar ÔöÇÔöÇ
-        _csm = getattr(self, '_cross_sectional', None)
+        _csm = getattr(self, "_cross_sectional", None)
         if _csm is not None:
             _csm.update_rankings(market_data)
 
         # ÔöÇÔöÇ Phase 4: Update advanced signal generators once per bar ÔöÇÔöÇ
-        _earn = getattr(self, '_earnings_signal', None)
+        _earn = getattr(self, "_earnings_signal", None)
         if _earn is not None:
             _earn.update(market_data)
-        _opt = getattr(self, '_options_flow', None)
+        _opt = getattr(self, "_options_flow", None)
         if _opt is not None:
             _opt.update(market_data)
-        _sent = getattr(self, '_sentiment_signal', None)
+        _sent = getattr(self, "_sentiment_signal", None)
         if _sent is not None:
             _sent.update(market_data)
-        
-        for sym1, sym2, pvalue, hl in cointegrated:
+
+        for sym1, sym2, _pvalue, _hl in cointegrated:
             pair_key = f"{sym1}_{sym2}"
 
             # Skip pairs excluded due to correlation breakdown
-            excluded = getattr(self, '_excluded_pairs_correlation', set())
+            excluded = getattr(self, "_excluded_pairs_correlation", set())
             if pair_key in excluded:
                 continue
-            
+
             try:
                 y = market_data[sym1]
                 x = market_data[sym2]
@@ -892,39 +914,40 @@ class PairTradingStrategy(BaseStrategy):
                     # Emit exit signal if there's an active trade
                     if pair_key in self.active_trades:
                         hist = self._leg_correlation_history.get(pair_key, {})
-                        signals.append(Signal(
-                            symbol_pair=pair_key,
-                            side="exit",
-                            strength=1.0,
-                            reason=(
-                                f"Correlation breakdown: recent_corr="
-                                f"{hist.get('recent_corr', '?'):.2f}"
-                            ),
-                        ))
+                        signals.append(
+                            Signal(
+                                symbol_pair=pair_key,
+                                side="exit",
+                                strength=1.0,
+                                reason=(f"Correlation breakdown: recent_corr={hist.get('recent_corr', '?'):.2f}"),
+                            )
+                        )
                         del self.active_trades[pair_key]
                     continue
-                
+
                 # Build/update spread model
                 model = SpreadModel(y, x)
                 self.spread_models[pair_key] = model
 
                 # Hedge ratio drift monitoring
-                hr_beta, hr_stable = self.hedge_ratio_tracker.reestimate_if_needed(
+                _hr_beta, hr_stable = self.hedge_ratio_tracker.reestimate_if_needed(
                     pair_key=pair_key,
                     new_beta=model.beta,
                 )
                 if not hr_stable:
                     logger.warning("hedge_ratio_unstable", pair=pair_key, beta=model.beta)
                     if pair_key in self.active_trades:
-                        signals.append(Signal(
-                            symbol_pair=pair_key,
-                            side="exit",
-                            strength=1.0,
-                            reason="Hedge ratio drift ÔÇö pair deprecated",
-                        ))
+                        signals.append(
+                            Signal(
+                                symbol_pair=pair_key,
+                                side="exit",
+                                strength=1.0,
+                                reason="Hedge ratio drift ÔÇö pair deprecated",
+                            )
+                        )
                         del self.active_trades[pair_key]
                     continue
-                
+
                 # Compute spread
                 spread = model.compute_spread(y, x)
 
@@ -933,26 +956,28 @@ class PairTradingStrategy(BaseStrategy):
                 _adf_spread = spread.iloc[-_adf_window:]
                 if len(_adf_spread.dropna()) >= 20:
                     try:
-                        _adf_p = adfuller(_adf_spread.dropna().values, autolag='AIC')[1]
+                        _adf_p = adfuller(_adf_spread.dropna().values, autolag="AIC")[1]
                     except Exception:
                         _adf_p = 1.0
                     if _adf_p > 0.10:
                         # Spread is non-stationary ÔÇö skip pair and emit exit if active
                         if pair_key in self.active_trades:
-                            signals.append(Signal(
-                                symbol_pair=pair_key,
-                                side="exit",
-                                strength=1.0,
-                                reason=f"Spread non-stationary (ADF p={_adf_p:.3f})",
-                            ))
+                            signals.append(
+                                Signal(
+                                    symbol_pair=pair_key,
+                                    side="exit",
+                                    strength=1.0,
+                                    reason=f"Spread non-stationary (ADF p={_adf_p:.3f})",
+                                )
+                            )
                             del self.active_trades[pair_key]
                         continue
 
                 # Adaptive Z-score lookback based on half-life (no hardcoded 20)
                 z_score = model.compute_z_score(spread)
-                
+
                 self.historical_spreads[pair_key] = spread
-                
+
                 # Current Z-score
                 current_z = z_score.iloc[-1]
 
@@ -972,23 +997,31 @@ class PairTradingStrategy(BaseStrategy):
                         current_z=float(current_z),
                     )
                     if ts_exit:
-                        signals.append(Signal(
-                            symbol_pair=pair_key,
-                            side="exit",
-                            strength=1.0,
-                            reason=ts_reason or "Trailing stop triggered",
-                        ))
+                        signals.append(
+                            Signal(
+                                symbol_pair=pair_key,
+                                side="exit",
+                                strength=1.0,
+                                reason=ts_reason or "Trailing stop triggered",
+                            )
+                        )
                         del self.active_trades[pair_key]
                         continue
 
                 # Internal risk limits check for new entries
-                risk_ok, risk_reason = self._check_internal_risk_limits()
+                risk_ok, _risk_reason = self._check_internal_risk_limits()
 
                 # RISK-3: Widen entry threshold in volatile regimes
                 effective_entry_z = self.config.entry_z_score
                 if regime_state is not None:
-                    regime_label = getattr(regime_state, 'regime', None) or getattr(regime_state, 'current_regime', None)
-                    if regime_label is not None and str(regime_label).lower() in ('crisis', 'high_volatility', 'volatile'):
+                    regime_label = getattr(regime_state, "regime", None) or getattr(
+                        regime_state, "current_regime", None
+                    )
+                    if regime_label is not None and str(regime_label).lower() in (
+                        "crisis",
+                        "high_volatility",
+                        "volatile",
+                    ):
                         effective_entry_z = self.config.entry_z_score * 1.5
 
                 # ÔöÇÔöÇ Weekly z-score gate ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -997,18 +1030,17 @@ class PairTradingStrategy(BaseStrategy):
                 # appear on daily but not on the higher timeframe.
                 weekly_gate_ok = True
                 if weekly_prices is not None and not weekly_prices.empty:
-                    weekly_zgate = self._cfg_val(
-                        self.config, 'weekly_zscore_entry_gate', 0.0
-                    )
+                    weekly_zgate = self._cfg_val(self.config, "weekly_zscore_entry_gate", 0.0)
                     if weekly_zgate > 0 and pair_key not in self.active_trades:
                         from data.multi_timeframe import MultiTimeframeEngine
+
                         _mtf = MultiTimeframeEngine()
                         _wz = _mtf.compute_weekly_zscore(weekly_prices, sym1, sym2)
                         if _wz is not None and abs(_wz) < weekly_zgate:
                             weekly_gate_ok = False
-                
+
                 # P0 fix: Min-spread filter ÔÇö reject micro-deviations
-                _min_spread = getattr(self.config, 'entry_z_min_spread', 0.0)
+                _min_spread = getattr(self.config, "entry_z_min_spread", 0.0)
                 _abs_spread = abs(float(spread.iloc[-1])) if len(spread) > 0 else 0.0
                 _spread_ok = _abs_spread >= _min_spread if _min_spread > 0 else True
 
@@ -1016,37 +1048,47 @@ class PairTradingStrategy(BaseStrategy):
                 _mom_result = None
                 _mom_gate = True  # default: allow entry
                 _mom_score = 0.0
-                if getattr(self, '_momentum_enabled', False) and self._momentum is not None:
+                if getattr(self, "_momentum_enabled", False) and self._momentum is not None:
                     _raw_str = min(abs(current_z) / 3.0, 1.0)
                     if current_z > effective_entry_z and pair_key not in self.active_trades:
                         _mom_result = self._momentum.adjust_signal_strength(
-                            side="short", raw_strength=_raw_str,
-                            prices_a=y, prices_b=x,
+                            side="short",
+                            raw_strength=_raw_str,
+                            prices_a=y,
+                            prices_b=x,
                         )
                         # Gate: block entry if momentum strongly contradicts
-                        if not _mom_result.confirms_signal and _mom_result.adjusted_strength <= self._momentum.min_strength:
+                        if (
+                            not _mom_result.confirms_signal
+                            and _mom_result.adjusted_strength <= self._momentum.min_strength
+                        ):
                             _mom_gate = False
                         # Compute momentum score for combiner: RS > 0 means A outperforming
                         _rs = self._momentum.compute_relative_strength(y, x)
                         _mom_score = float(np.clip(_rs * 5.0, -1.0, 1.0))
                     elif current_z < -effective_entry_z and pair_key not in self.active_trades:
                         _mom_result = self._momentum.adjust_signal_strength(
-                            side="long", raw_strength=_raw_str,
-                            prices_a=y, prices_b=x,
+                            side="long",
+                            raw_strength=_raw_str,
+                            prices_a=y,
+                            prices_b=x,
                         )
-                        if not _mom_result.confirms_signal and _mom_result.adjusted_strength <= self._momentum.min_strength:
+                        if (
+                            not _mom_result.confirms_signal
+                            and _mom_result.adjusted_strength <= self._momentum.min_strength
+                        ):
                             _mom_gate = False
                         _rs = self._momentum.compute_relative_strength(y, x)
                         _mom_score = float(np.clip(_rs * 5.0, -1.0, 1.0))
 
                 # ÔöÇÔöÇ Phase 1 + Phase 4: Multi-signal combiner ÔöÇÔöÇ
-                _ou_gen = getattr(self, '_ou_signal', None)
-                _vol_gen = getattr(self, '_vol_signal', None)
-                _csm_gen = getattr(self, '_cross_sectional', None)
-                _earn_gen = getattr(self, '_earnings_signal', None)
-                _opt_gen = getattr(self, '_options_flow', None)
-                _sent_gen = getattr(self, '_sentiment_signal', None)
-                _combiner = getattr(self, '_signal_combiner', None)
+                _ou_gen = getattr(self, "_ou_signal", None)
+                _vol_gen = getattr(self, "_vol_signal", None)
+                _csm_gen = getattr(self, "_cross_sectional", None)
+                _earn_gen = getattr(self, "_earnings_signal", None)
+                _opt_gen = getattr(self, "_options_flow", None)
+                _sent_gen = getattr(self, "_sentiment_signal", None)
+                _combiner = getattr(self, "_signal_combiner", None)
                 _composite = None
 
                 if _combiner is not None:
@@ -1071,7 +1113,7 @@ class PairTradingStrategy(BaseStrategy):
                         "options_flow": _opt_score,
                         "sentiment": _sent_score,
                     }
-                    if getattr(self, '_momentum_enabled', False):
+                    if getattr(self, "_momentum_enabled", False):
                         _combo_scores["momentum"] = _mom_score
 
                     _composite = _combiner.combine(
@@ -1081,7 +1123,14 @@ class PairTradingStrategy(BaseStrategy):
                     self._last_composite = _composite
 
                 # Entry signals (z-score threshold + combiner confirmation)
-                if risk_ok and weekly_gate_ok and _spread_ok and _mom_gate and current_z > effective_entry_z and pair_key not in self.active_trades:
+                if (
+                    risk_ok
+                    and weekly_gate_ok
+                    and _spread_ok
+                    and _mom_gate
+                    and current_z > effective_entry_z
+                    and pair_key not in self.active_trades
+                ):
                     if _composite is not None and _composite.confidence > 0.3:
                         _entry_str = abs(_composite.composite_score)
                     else:
@@ -1090,28 +1139,33 @@ class PairTradingStrategy(BaseStrategy):
                     _mom_tag = ""
                     if _mom_result:
                         _mom_tag = " [mom:C]" if _mom_result.confirms_signal else " [mom:X]"
-                    signals.append(Signal(
+                    signals.append(
+                        Signal(
+                            symbol_pair=pair_key,
+                            side="short",
+                            strength=_entry_str,
+                            reason=f"Z-score={current_z:.2f} > entry threshold{_mom_tag}{_combo_tag}",
+                        )
+                    )
+                    self.active_trades[pair_key] = {"entry_z": current_z, "entry_time": self._clock(), "side": "short"}
+                    # RISK-2: Register position with trailing stop manager
+                    self.trailing_stop_manager.add_position(
                         symbol_pair=pair_key,
                         side="short",
-                        strength=_entry_str,
-                        reason=f"Z-score={current_z:.2f} > entry threshold{_mom_tag}{_combo_tag}"
-                    ))
-                    self.active_trades[pair_key] = {
-                        'entry_z': current_z,
-                        'entry_time': self._clock(),
-                        'side': 'short'
-                    }
-                    # RISK-2: Register position with trailing stop manager
-                    self.trailing_stop_manager.add_position(
-                        symbol_pair=pair_key,
-                        side='short',
                         entry_z=float(current_z),
                         entry_spread=float(spread.iloc[-1]),
                         entry_time=pd.Timestamp(self._clock()),
                     )
                     self._record_trade()
-                
-                elif risk_ok and weekly_gate_ok and _spread_ok and _mom_gate and current_z < -effective_entry_z and pair_key not in self.active_trades:
+
+                elif (
+                    risk_ok
+                    and weekly_gate_ok
+                    and _spread_ok
+                    and _mom_gate
+                    and current_z < -effective_entry_z
+                    and pair_key not in self.active_trades
+                ):
                     if _composite is not None and _composite.confidence > 0.3:
                         _entry_str = abs(_composite.composite_score)
                     else:
@@ -1120,59 +1174,56 @@ class PairTradingStrategy(BaseStrategy):
                     _mom_tag = ""
                     if _mom_result:
                         _mom_tag = " [mom:C]" if _mom_result.confirms_signal else " [mom:X]"
-                    signals.append(Signal(
-                        symbol_pair=pair_key,
-                        side="long",
-                        strength=_entry_str,
-                        reason=f"Z-score={current_z:.2f} < -entry threshold{_mom_tag}{_combo_tag}"
-                    ))
-                    self.active_trades[pair_key] = {
-                        'entry_z': current_z,
-                        'entry_time': self._clock(),
-                        'side': 'long'
-                    }
+                    signals.append(
+                        Signal(
+                            symbol_pair=pair_key,
+                            side="long",
+                            strength=_entry_str,
+                            reason=f"Z-score={current_z:.2f} < -entry threshold{_mom_tag}{_combo_tag}",
+                        )
+                    )
+                    self.active_trades[pair_key] = {"entry_z": current_z, "entry_time": self._clock(), "side": "long"}
                     # RISK-2: Register position with trailing stop manager
                     self.trailing_stop_manager.add_position(
                         symbol_pair=pair_key,
-                        side='long',
+                        side="long",
                         entry_z=float(current_z),
                         entry_spread=float(spread.iloc[-1]),
                         entry_time=pd.Timestamp(self._clock()),
                     )
                     self._record_trade()
-                
+
                 # Exit signals (mean reversion)
                 if pair_key in self.active_trades:
                     self.active_trades[pair_key]
                     if abs(current_z) <= self.config.exit_z_score:
-                        signals.append(Signal(
-                            symbol_pair=pair_key,
-                            side="exit",
-                            strength=1.0,
-                            reason=f"Mean reversion at Z={current_z:.2f}"
-                        ))
+                        signals.append(
+                            Signal(
+                                symbol_pair=pair_key,
+                                side="exit",
+                                strength=1.0,
+                                reason=f"Mean reversion at Z={current_z:.2f}",
+                            )
+                        )
                         del self.active_trades[pair_key]
                         # Clean up trailing stop state
                         if pair_key in self.trailing_stop_manager.positions:
                             del self.trailing_stop_manager.positions[pair_key]
-                
+
                 logger.info(
-                    "pair_signal_generated",
-                    pair=pair_key,
-                    z_score=current_z,
-                    active_trades=len(self.active_trades)
+                    "pair_signal_generated", pair=pair_key, z_score=current_z, active_trades=len(self.active_trades)
                 )
-            
+
             except Exception as e:
                 logger.error("signal_generation_failed", pair=pair_key, error=str(e))
                 continue
-        
+
         return signals
-    
+
     def get_state(self) -> dict:
         """Return strategy state."""
         return {
-            'active_trades': len(self.active_trades),
-            'pairs_monitored': len(self.spread_models),
-            'active_trade_details': self.active_trades.as_dict()
+            "active_trades": len(self.active_trades),
+            "pairs_monitored": len(self.spread_models),
+            "active_trade_details": self.active_trades.as_dict(),
         }

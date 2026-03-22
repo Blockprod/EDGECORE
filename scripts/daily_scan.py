@@ -36,7 +36,6 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import pandas as pd
 
@@ -51,45 +50,60 @@ logger = get_logger(__name__)
 def parse_args():
     parser = argparse.ArgumentParser(description="EDGECORE Daily Universe Scan")
     parser.add_argument(
-        "--sec-only", action="store_true",
+        "--sec-only",
+        action="store_true",
         help="Use SEC EDGAR only (no IBKR connection required)",
     )
     parser.add_argument(
-        "--use-cache", action="store_true",
+        "--use-cache",
+        action="store_true",
         help="Use cached universe if available and fresh",
     )
     parser.add_argument(
-        "--no-weekly", action="store_true",
+        "--no-weekly",
+        action="store_true",
         help="Skip weekly MTF confirmation",
     )
     parser.add_argument(
-        "--sector-map", type=str, default=None,
+        "--sector-map",
+        type=str,
+        default=None,
         help="Path to JSON sector map file (overrides scanner)",
     )
     parser.add_argument(
-        "--output", type=str, default="cache/daily_scan_result.json",
+        "--output",
+        type=str,
+        default="cache/daily_scan_result.json",
         help="Output JSON file path",
     )
     parser.add_argument(
-        "--max-symbols", type=int, default=0,
+        "--max-symbols",
+        type=int,
+        default=0,
         help="Limit number of symbols (0 = no limit, for dev/testing)",
     )
     parser.add_argument(
-        "--lookback", type=int, default=252,
+        "--lookback",
+        type=int,
+        default=252,
         help="Daily lookback window for cointegration",
     )
     parser.add_argument(
-        "--min-correlation", type=float, default=0.60,
+        "--min-correlation",
+        type=float,
+        default=0.60,
         help="Minimum correlation for pre-filter",
     )
     parser.add_argument(
-        "--fdr-q", type=float, default=0.10,
+        "--fdr-q",
+        type=float,
+        default=0.10,
         help="BH-FDR q-level for significance",
     )
     return parser.parse_args()
 
 
-def run_daily_scan(args) -> Dict:
+def run_daily_scan(args) -> dict:
     """
     Execute the full daily scan pipeline.
 
@@ -108,10 +122,12 @@ def run_daily_scan(args) -> Dict:
 
     # ÔöÇÔöÇ Phase 1: Universe scan ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     logger.info("phase_1_universe_scan_starting")
-    scanner = IBKRUniverseScanner(ScannerConfig(
-        min_market_cap_usd=settings.scanner.min_market_cap_usd,
-        min_avg_volume_usd=settings.scanner.min_avg_volume_usd,
-    ))
+    scanner = IBKRUniverseScanner(
+        ScannerConfig(
+            min_market_cap_usd=settings.scanner.min_market_cap_usd,
+            min_avg_volume_usd=settings.scanner.min_avg_volume_usd,
+        )
+    )
 
     if args.sec_only:
         symbols = scanner.scan_sec_only()
@@ -127,7 +143,7 @@ def run_daily_scan(args) -> Dict:
 
     # Apply max_symbols limit (for dev/testing)
     if args.max_symbols > 0:
-        symbols = symbols[:args.max_symbols]
+        symbols = symbols[: args.max_symbols]
         logger.info("symbols_limited", count=len(symbols))
 
     tickers = [s.ticker for s in symbols]
@@ -161,10 +177,13 @@ def run_daily_scan(args) -> Dict:
     )
 
     # Build prices DataFrame
-    prices_df = pd.DataFrame({
-        sym: df["close"] for sym, df in prices_data.items()
-        if df is not None and not df.empty and "close" in df.columns
-    })
+    prices_df = pd.DataFrame(
+        {
+            sym: df["close"]
+            for sym, df in prices_data.items()
+            if df is not None and not df.empty and "close" in df.columns
+        }
+    )
 
     # Drop symbols with insufficient data
     min_points = args.lookback // 2
@@ -200,10 +219,7 @@ def run_daily_scan(args) -> Dict:
     strategy.config.fdr_q_level = args.fdr_q
 
     # Update sector map
-    strategy.sector_map = {
-        k: v for k, v in sector_map.items()
-        if k in prices_df.columns
-    }
+    strategy.sector_map = {k: v for k, v in sector_map.items() if k in prices_df.columns}
 
     pairs = strategy.find_cointegrated_pairs(
         prices_df,
@@ -256,11 +272,9 @@ def run_daily_scan(args) -> Dict:
     return result
 
 
-def _sector_pair_distribution(
-    pairs: List[Tuple], sector_map: Dict[str, str]
-) -> Dict[str, int]:
+def _sector_pair_distribution(pairs: list[tuple], sector_map: dict[str, str]) -> dict[str, int]:
     """Count pairs per sector."""
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
     for p in pairs:
         sec = sector_map.get(p[0], "unknown")
         counts[sec] = counts.get(sec, 0) + 1
@@ -280,15 +294,15 @@ def main():
 
     try:
         result = run_daily_scan(args)
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("  EDGECORE Daily Scan Complete")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         print(f"  Universe:   {result['universe_size']} scanned ÔåÆ {result['symbols_with_data']} with data")
         print(f"  Pairs:      {result['pairs_discovered']} cointegrated pairs found")
         print(f"  Weekly MTF: {'enabled' if result['weekly_confirmation'] else 'disabled'}")
         print(f"  Elapsed:    {result['elapsed_seconds']}s")
         print(f"  Output:     {args.output}")
-        print(f"{'='*60}\n")
+        print(f"{'=' * 60}\n")
 
         if result["pairs"]:
             print("  Top 10 pairs by p-value:")

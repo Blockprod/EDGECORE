@@ -25,7 +25,6 @@ import json
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Dict, Optional
 
 from structlog import get_logger
 
@@ -36,8 +35,8 @@ logger = get_logger(__name__)
 class _PairState:
     """Internal bookkeeping for one pair."""
     consecutive_losses: int = 0
-    blacklisted_on: Optional[str] = None   # ISO date string or None
-    cooldown_until: Optional[str] = None   # ISO date string or None
+    blacklisted_on: str | None = None   # ISO date string or None
+    cooldown_until: str | None = None   # ISO date string or None
     total_losses: int = 0
     total_wins: int = 0
 
@@ -62,14 +61,14 @@ class PairBlacklist:
         self,
         max_consecutive_losses: int = 2,
         cooldown_days: int = 30,
-        persist_path: Optional[str] = None,
+        persist_path: str | None = None,
         enabled: bool = True,
     ):
         self.max_consecutive_losses = max_consecutive_losses
         self.cooldown_days = cooldown_days
         self.persist_path = Path(persist_path) if persist_path else None
         self.enabled = enabled
-        self._pairs: Dict[str, _PairState] = {}
+        self._pairs: dict[str, _PairState] = {}
 
         if self.persist_path and self.persist_path.exists():
             self._load()
@@ -184,7 +183,7 @@ class PairBlacklist:
         if self.persist_path is None or not self.persist_path.exists():
             return
         try:
-            with open(self.persist_path, "r", encoding="utf-8") as f:
+            with open(self.persist_path, encoding="utf-8") as f:
                 data = json.load(f)
             for pair, d in data.items():
                 self._pairs[pair] = _PairState(

@@ -10,20 +10,20 @@ Proves C-06 fix:
 Run: pytest tests/test_spread_correlation_guard.py -v
 """
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 
-from risk.spread_correlation import (
-    SpreadCorrelationGuard,
-    SpreadCorrelationConfig,
-)
 from backtests.strategy_simulator import StrategyBacktestSimulator
-
+from risk.spread_correlation import (
+    SpreadCorrelationConfig,
+    SpreadCorrelationGuard,
+)
 
 # ========================================================================
 # Helpers
 # ========================================================================
+
 
 def _make_spread(n=100, seed=0, drift=0.0):
     """Create a synthetic spread (mean-reverting noise)."""
@@ -37,13 +37,15 @@ def _make_correlated_spread(base: pd.Series, rho=0.95, seed=42):
     """Create a spread correlated with *base* at approximately *rho*."""
     np.random.seed(seed)
     noise = np.random.normal(0, 1, len(base))
-    corr_data = rho * base.values + np.sqrt(1 - rho**2) * noise
+    base_values = np.asarray(base, dtype=float)
+    corr_data = rho * base_values + np.sqrt(1 - rho**2) * noise
     return pd.Series(corr_data, index=base.index)
 
 
 # ========================================================================
 # Unit tests ÔÇô SpreadCorrelationGuard
 # ========================================================================
+
 
 class TestSpreadCorrelationGuardBasic:
     """Core logic tests."""
@@ -63,7 +65,7 @@ class TestSpreadCorrelationGuardBasic:
         s2 = _make_spread(100, seed=20)
 
         guard.register_spread("A_B", s1)
-        allowed, reason = guard.check_entry("C_D", s2)
+        allowed, _reason = guard.check_entry("C_D", s2)
         assert allowed is True
 
     def test_highly_correlated_pair_rejected(self):
@@ -75,6 +77,7 @@ class TestSpreadCorrelationGuardBasic:
         guard.register_spread("A_B", s1)
         allowed, reason = guard.check_entry("C_D", s_corr)
         assert allowed is False
+        assert reason is not None
         assert "SPREAD_CORR_GUARD" in reason
 
     def test_negatively_correlated_pair_rejected(self):
@@ -85,7 +88,7 @@ class TestSpreadCorrelationGuardBasic:
         s_neg = -s_neg  # flip sign Ôåô strong negative corr
 
         guard.register_spread("A_B", s1)
-        allowed, reason = guard.check_entry("C_D", s_neg)
+        allowed, _reason = guard.check_entry("C_D", s_neg)
         assert allowed is False
 
     def test_moderate_correlation_allowed(self):
@@ -182,12 +185,14 @@ class TestSpreadCorrelationMultiplePositions:
 
         allowed, reason = guard.check_entry("G_H", s_corr)
         assert allowed is False
+        assert reason is not None
         assert "A_B" in reason  # Should identify which pair conflicts
 
 
 # ========================================================================
 # Integration ÔÇô Simulator
 # ========================================================================
+
 
 class TestSimulatorSpreadCorrelationIntegration:
     """Verify the simulator wires the guard correctly."""
@@ -209,7 +214,8 @@ class TestSimulatorSpreadCorrelationIntegration:
         n = 100
         idx = pd.date_range("2023-01-01", periods=n, freq="B")
         x = pd.Series(100.0 + np.cumsum(np.random.normal(0, 1, n)), index=idx)
-        y = pd.Series(1.5 * x.values + np.random.normal(0, 1, n), index=idx)
+        x_values = np.asarray(x, dtype=float)
+        y = pd.Series(1.5 * x_values + np.random.normal(0, 1, n), index=idx)
         prices = pd.DataFrame({"SYM1": y, "SYM2": x}, index=idx)
 
         spread = StrategyBacktestSimulator._compute_spread(prices, "SYM1", "SYM2")

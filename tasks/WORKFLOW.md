@@ -54,6 +54,22 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
+## ÉTAPE 4 — Modernisation syntaxe Python (ruff + Pylance)
+
+**Prompt** : `tasks/prompts/modernize_python_syntax_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Produit** : tous les `.py` modernisés · 0 erreur ruff · 0 erreur Pylance
+**Méthode** : dossier par dossier, fichiers ouverts dans Open Editors,
+              corrections dynamiques basées sur la lecture des erreurs
+              ruff et du PROBLEMS panel (Pylance). Flow interactif : `GO`
+              entre chaque dossier.
+```
+#file:tasks/prompts/modernize_python_syntax_prompt.md exécute ce prompt
+```
+
+---
+
 ## AUDITS SPÉCIALISÉS (optionnels)
 
 À lancer après l'ÉTAPE 1 pour approfondir
@@ -272,6 +288,90 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
+### Audit Cython
+
+#### Étape A — Audit
+
+**Prompt** : `tasks/prompts/audit_cython_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Dimension** : Cohérence .pyx ↔ consommateurs ·
+               Fallback Python · Build reproductible ·
+               Couverture tests · Imports suspects
+**Produit** : `tasks/audits/audit_cython_edgecore.md`
+```
+#file:tasks/prompts/audit_cython_prompt.md
+Lance cet audit sur le workspace.
+```
+
+#### Étape B — Génération du plan d'action
+
+**Prompt** : `tasks/prompts/generate_action_plan_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Lit**    : `tasks/audits/audit_cython_edgecore.md`
+**Produit** : `tasks/plans/PLAN_ACTION_cython_[DATE].md`
+```
+#file:tasks/prompts/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+#### Étape C — Exécution des corrections
+
+**Prompt** : `tasks/prompts/execute_corrections_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Lit**    : `tasks/plans/PLAN_ACTION_cython_[DATE].md`
+**Produit** : corrections appliquées · statuts ⏳ → ✅
+```
+#file:tasks/prompts/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
+### Audit IA / Machine Learning
+
+#### Étape A — Audit
+
+**Prompt** : `tasks/prompts/audit_ia_ml_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Dimension** : Modules ML orphelins vs actifs ·
+               Opportunités z-score/régime/seuils ·
+               Réalisme déploiement IBKR
+**Produit** : `tasks/audits/audit_ia_ml_edgecore.md`
+```
+#file:tasks/prompts/audit_ia_ml_prompt.md
+Lance cet audit sur le workspace.
+```
+
+#### Étape B — Génération du plan d'action
+
+**Prompt** : `tasks/prompts/generate_action_plan_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Lit**    : `tasks/audits/audit_ia_ml_edgecore.md`
+**Produit** : `tasks/plans/PLAN_ACTION_ia_ml_[DATE].md`
+```
+#file:tasks/prompts/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+#### Étape C — Exécution des corrections
+
+**Prompt** : `tasks/prompts/execute_corrections_prompt.md`
+**Mode**   : Agent
+**Modèle** : Sonnet 4.6
+**Lit**    : `tasks/plans/PLAN_ACTION_ia_ml_[DATE].md`
+**Produit** : corrections appliquées · statuts ⏳ → ✅
+```
+#file:tasks/prompts/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
 ## VALIDATIONS RAPIDES
 
 Commandes à lancer à tout moment sans prompt :
@@ -315,7 +415,10 @@ tasks/
 │   ├── audit_structural_prompt.md       ← audit architecture & modules
 │   ├── audit_email_alerts_prompt.md     ← audit alertes email
 │   ├── audit_ai_driven_prompt.md        ← génération fichiers AI-Driven
+│   ├── audit_ia_ml_prompt.md            ← audit IA / ML (modules orphelins + opportunités)
+│   ├── audit_cython_prompt.md           ← audit Cython (cointegration_fast + fallback + build)
 │   ├── add_strategy.md                  ← procédure ajout nouvelle stratégie
+│   ├── modernize_python_syntax_prompt.md ← ÉTAPE 4 (ruff + Pylance, dossier par dossier)
 │   └── correct_p0.md                    ← template correction P0 critique
 │
 ├── audits/                              ← résultats d'audit (générés par les prompts)

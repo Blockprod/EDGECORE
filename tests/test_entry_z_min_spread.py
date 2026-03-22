@@ -9,7 +9,6 @@ Validates:
 
 import pytest
 
-
 # ÔöÇÔöÇ Config defaults ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
 class TestEntryZConfigDefaults:
@@ -28,6 +27,7 @@ class TestEntryZConfigDefaults:
     def test_entry_z_score_yaml_is_2(self):
         """config.yaml should have entry_z_score = 1.6 (v31 aggressive)."""
         from pathlib import Path
+
         import yaml
         cfg_path = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(cfg_path, encoding="utf-8") as f:
@@ -37,6 +37,7 @@ class TestEntryZConfigDefaults:
     def test_entry_z_min_spread_yaml(self):
         """config.yaml should have entry_z_min_spread = 0.50."""
         from pathlib import Path
+
         import yaml
         cfg_path = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(cfg_path, encoding="utf-8") as f:

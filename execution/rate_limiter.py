@@ -1,8 +1,8 @@
-﻿"""
+"""
 Token-Bucket Rate Limiter for IBKR API compliance.
 
 IBKR enforces a hard cap of **50 messages/second** on the TWS API socket.
-Exceeding this limit triggers automatic disconnection ÔÇö catastrophic in
+Exceeding this limit triggers automatic disconnection ��� catastrophic in
 production.  This module implements a thread-safe token-bucket limiter
 that enforces a configurable sustained rate (default 45 req/s) with burst
 capacity (default 10), providing a comfortable safety margin.
@@ -40,14 +40,14 @@ class TokenBucketRateLimiter:
     rate : float
         Sustained tokens per second (default 45, below IBKR's 50/s hard cap).
     burst : int
-        Maximum burst capacity ÔÇö tokens available immediately before
+        Maximum burst capacity ��� tokens available immediately before
         refill delay kicks in (default 10).
     """
 
     rate: float = 45.0
     burst: int = 10
 
-    # ÔöÇÔöÇ internal state ÔöÇÔöÇ
+    # ������ internal state ������
     _tokens: float = field(init=False, repr=False)
     _last_refill: float = field(init=False, repr=False)
     _lock: threading.Lock = field(init=False, repr=False, default_factory=threading.Lock)
@@ -124,3 +124,4 @@ class TokenBucketRateLimiter:
             float(self.burst),
             self._tokens + elapsed * self.rate,
         )
+

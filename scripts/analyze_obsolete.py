@@ -9,7 +9,7 @@ test_dir = Path("C:\\Users\\averr\\EDGECORE\\tests")
 def count_lines(filepath):
     """Count lines in a file."""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, encoding='utf-8') as f:
             return len(f.readlines())
     except:
         return 0
@@ -17,7 +17,7 @@ def count_lines(filepath):
 def check_imports(filepath):
     """Check imports and find broken ones."""
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, encoding='utf-8') as f:
             content = f.read()
             imports = re.findall(r'^(?:from|import)\s+([^\s\.]+)', content, re.MULTILINE)
             return imports
@@ -63,7 +63,7 @@ for filepath, desc, action in obsolete_candidates:
     
     # Show first few lines
     try:
-        with open(path, 'r', encoding='utf-8') as f:
+        with open(path, encoding='utf-8') as f:
             lines_content = f.readlines()[:5]
             if lines_content:
                 print("   First lines:")

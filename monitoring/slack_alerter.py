@@ -1,9 +1,9 @@
 """Slack alerting integration for real-time trading alerts."""
 
-import requests
 import time
-from typing import Dict, Optional, Tuple
 from datetime import datetime
+
+import requests
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -14,15 +14,13 @@ class SlackAlerter:
 
     # Color codes for severity levels
     COLOR_MAP = {
-        'CRITICAL': '#ff0000',  # Red
-        'ERROR': '#ff6600',     # Orange
-        'WARNING': '#ffff00',   # Yellow
-        'INFO': '#00ff00',      # Green
+        "CRITICAL": "#ff0000",  # Red
+        "ERROR": "#ff6600",  # Orange
+        "WARNING": "#ffff00",  # Yellow
+        "INFO": "#00ff00",  # Green
     }
 
-    def __init__(self, webhook_url: Optional[str] = None, 
-                 throttle_seconds: int = 30,
-                 timeout_seconds: int = 5):
+    def __init__(self, webhook_url: str | None = None, throttle_seconds: int = 30, timeout_seconds: int = 5):
         """
         Initialize Slack alerter.
 
@@ -35,17 +33,16 @@ class SlackAlerter:
         self.webhook_url = webhook_url
         self.throttle_seconds = throttle_seconds
         self.timeout_seconds = timeout_seconds
-        self.last_alert_time: Dict[str, float] = {}  # Track by alert key
+        self.last_alert_time: dict[str, float] = {}  # Track by alert key
         self.enabled = webhook_url is not None
-        
+
         if not self.enabled:
             logger.warning(
                 "slack_alerter_disabled",
-                reason="SLACK_WEBHOOK_URL not configured - critical alerts will NOT be sent to Slack"
+                reason="SLACK_WEBHOOK_URL not configured - critical alerts will NOT be sent to Slack",
             )
 
-    def send_alert(self, level: str, title: str, message: str,
-                   data: Optional[Dict] = None) -> Tuple[bool, str]:
+    def send_alert(self, level: str, title: str, message: str, data: dict | None = None) -> tuple[bool, str]:
         """
         Send alert to Slack.
 
@@ -67,7 +64,7 @@ class SlackAlerter:
             # Validate level
             if level not in self.COLOR_MAP:
                 logger.warning("SLACK_INVALID_LEVEL", level=level)
-                level = 'INFO'
+                level = "INFO"
 
             # Check throttle
             alert_key = f"{level}:{title}"
@@ -82,44 +79,40 @@ class SlackAlerter:
 
             # Build Slack payload
             payload = {
-                'attachments': [{
-                    'color': self.COLOR_MAP.get(level, '#cccccc'),
-                    'title': title,
-                    'text': message,
-                    'ts': int(now),
-                    'fields': [
-                        {'title': 'Severity', 'value': level, 'short': True},
-                        {'title': 'Timestamp', 'value': datetime.now().isoformat(), 'short': True}
-                    ]
-                }]
+                "attachments": [
+                    {
+                        "color": self.COLOR_MAP.get(level, "#cccccc"),
+                        "title": title,
+                        "text": message,
+                        "ts": int(now),
+                        "fields": [
+                            {"title": "Severity", "value": level, "short": True},
+                            {"title": "Timestamp", "value": datetime.now().isoformat(), "short": True},
+                        ],
+                    }
+                ]
             }
 
             # Add custom fields from data dict
             if data:
                 for key, value in data.items():
-                    payload['attachments'][0]['fields'].append({
-                        'title': key,
-                        'value': str(value)[:1000],  # Cap at 1000 chars
-                        'short': len(str(value)) < 50
-                    })
+                    payload["attachments"][0]["fields"].append(
+                        {
+                            "title": key,
+                            "value": str(value)[:1000],  # Cap at 1000 chars
+                            "short": len(str(value)) < 50,
+                        }
+                    )
 
             # Send to Slack
-            response = requests.post(
-                self.webhook_url,
-                json=payload,
-                timeout=self.timeout_seconds
-            )
+            response = requests.post(self.webhook_url or "", json=payload, timeout=self.timeout_seconds)
 
             if response.status_code == 200:
                 self.last_alert_time[alert_key] = now
                 logger.info("SLACK_ALERT_SENT", level=level, title=title)
                 return True, "sent"
             else:
-                logger.error(
-                    "SLACK_ALERT_FAILED",
-                    status=response.status_code,
-                    response=response.text[:500]
-                )
+                logger.error("SLACK_ALERT_FAILED", status=response.status_code, response=response.text[:500])
                 return False, f"HTTP {response.status_code}"
 
         except requests.exceptions.Timeout:
@@ -132,40 +125,39 @@ class SlackAlerter:
             logger.error("SLACK_UNEXPECTED_ERROR", error=str(e)[:100])
             return False, f"error: {str(e)[:50]}"
 
-    def send_trade_alert(self, symbol: str, side: str, quantity: float,
-                        price: float, order_id: str = None) -> bool:
+    def send_trade_alert(
+        self, symbol: str, side: str, quantity: float, price: float, order_id: str | None = None
+    ) -> bool:
         """Send a trade execution alert."""
         title = f"Trade Executed: {symbol} {side.upper()}"
         message = f"Executed {quantity} @ ${price}"
         data = {
-            'symbol': symbol,
-            'side': side,
-            'quantity': quantity,
-            'price': price,
+            "symbol": symbol,
+            "side": side,
+            "quantity": quantity,
+            "price": price,
         }
         if order_id:
-            data['order_id'] = order_id
+            data["order_id"] = order_id
 
-        success, _ = self.send_alert('INFO', title, message, data)
+        success, _ = self.send_alert("INFO", title, message, data)
         return success
 
-    def send_error_alert(self, error_type: str, message: str,
-                        context: Optional[Dict] = None) -> bool:
+    def send_error_alert(self, error_type: str, message: str, context: dict | None = None) -> bool:
         """Send an error alert."""
         title = f"Trading Error: {error_type}"
         data = context or {}
 
-        success, _ = self.send_alert('ERROR', title, message, data)
+        success, _ = self.send_alert("ERROR", title, message, data)
         return success
 
-    def send_critical_alert(self, title: str, message: str,
-                           context: Optional[Dict] = None) -> bool:
+    def send_critical_alert(self, title: str, message: str, context: dict | None = None) -> bool:
         """Send a critical alert (highest priority)."""
         data = context or {}
-        success, _ = self.send_alert('CRITICAL', title, message, data)
+        success, _ = self.send_alert("CRITICAL", title, message, data)
         return success
 
-    def reset_throttle(self, level: str = None, title: str = None) -> None:
+    def reset_throttle(self, level: str | None = None, title: str | None = None) -> None:
         """
         Reset throttle for testing/manual override.
 
@@ -182,12 +174,12 @@ class SlackAlerter:
             self.last_alert_time.clear()
             logger.debug("SLACK_THROTTLE_RESET_ALL")
 
-    def get_status(self) -> Dict:
+    def get_status(self) -> dict:
         """Get alerter status for monitoring."""
         return {
-            'enabled': self.enabled,
-            'webhook_configured': bool(self.webhook_url),
-            'throttle_seconds': self.throttle_seconds,
-            'pending_throttles': len(self.last_alert_time),
-            'recent_alerts': list(self.last_alert_time.keys())[-5:] if self.last_alert_time else []
+            "enabled": self.enabled,
+            "webhook_configured": bool(self.webhook_url),
+            "throttle_seconds": self.throttle_seconds,
+            "pending_throttles": len(self.last_alert_time),
+            "recent_alerts": list(self.last_alert_time.keys())[-5:] if self.last_alert_time else [],
         }

@@ -7,16 +7,16 @@ Covers:
   3. Integration with pair_trading pipeline (parallel + sequential)
 """
 
-import numpy as np
-import pandas as pd
 from unittest import mock
 
+import numpy as np
+import pandas as pd
+
 from models.cointegration import (
+    engle_granger_test,
     engle_granger_test_robust,
     newey_west_consensus,
-    engle_granger_test,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers ÔÇô deterministic synthetic series

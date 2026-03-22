@@ -15,8 +15,6 @@ Filters:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -43,7 +41,7 @@ class PairFilters:
         min_data_points: int = 60,
         min_variance: float = 1e-10,
         max_half_life_hint: int = 60,
-        sector_map: Optional[Dict[str, str]] = None,
+        sector_map: dict[str, str] | None = None,
         require_same_sector: bool = False,
     ):
         self.min_correlation = min_correlation
@@ -56,8 +54,8 @@ class PairFilters:
     def apply_all(
         self,
         price_data: pd.DataFrame,
-        candidate_pairs: List[Tuple[str, str]],
-    ) -> List[Tuple[str, str]]:
+        candidate_pairs: list[tuple[str, str]],
+    ) -> list[tuple[str, str]]:
         """
         Apply all pre-filters and return surviving pairs.
 
@@ -68,7 +66,7 @@ class PairFilters:
         Returns:
             Filtered list of candidate pairs.
         """
-        passed: List[Tuple[str, str]] = []
+        passed: list[tuple[str, str]] = []
         available_cols = set(price_data.columns)
 
         for sym1, sym2 in candidate_pairs:
@@ -143,9 +141,9 @@ class PairFilters:
         Ôëñ max_half_life.  This is a *hint*, not definitive.
         """
         try:
-            X = np.column_stack([np.ones(len(s2)), s2.values])
-            beta = np.linalg.lstsq(X, s1.values, rcond=None)[0]
-            spread = s1.values - X @ beta
+            X = np.column_stack([np.ones(len(s2)), np.asarray(s2, dtype=float)])
+            beta = np.linalg.lstsq(X, np.asarray(s1, dtype=float), rcond=None)[0]
+            spread = np.asarray(s1, dtype=float) - X @ beta
             lag = spread[:-1].reshape(-1, 1)
             diff = spread[1:]
             if len(lag) < 20:
@@ -157,7 +155,6 @@ class PairFilters:
             return 0 < hl <= max_half_life
         except Exception:
             return True  # degrade gracefully
-
 
 
 class MomentumDivergenceFilter:
@@ -207,7 +204,7 @@ class MomentumDivergenceFilter:
             lb = min(self.lookback_days, n_bars - 1)
             if lb < 10:
                 return None
-            recent = price_data.iloc[-(lb + 1):]
+            recent = price_data.iloc[-(lb + 1) :]
             returns = (recent.iloc[-1] / recent.iloc[0]) - 1.0
             returns = returns.dropna()
             if len(returns) < self.min_universe_size:
@@ -219,7 +216,7 @@ class MomentumDivergenceFilter:
     def check_market_dispersion(
         self,
         price_data: pd.DataFrame,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Market-level gate: block ALL new entries when cross-sectional return
         dispersion is below min_dispersion.
@@ -235,10 +232,7 @@ class MomentumDivergenceFilter:
                 return True, ""  # fail open
             dispersion = float(returns.std())
             if dispersion < self.min_dispersion:
-                return False, (
-                    "low_cs_dispersion=%.3f<%.3f (smooth_bull_gate)"
-                    % (dispersion, self.min_dispersion)
-                )
+                return False, (f"low_cs_dispersion={dispersion:.3f}<{self.min_dispersion:.3f} (smooth_bull_gate)")
             return True, ""
         except Exception:
             return True, ""
@@ -248,7 +242,7 @@ class MomentumDivergenceFilter:
         sym1: str,
         sym2: str,
         price_data: pd.DataFrame,
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         """
         Per-pair gate: reject entry when one leg is a cross-sectional momentum
         outlier.
@@ -280,8 +274,7 @@ class MomentumDivergenceFilter:
 
             if divergence > self.threshold:
                 return False, (
-                    "momentum_divergence=%.2f>%.2f z(%s)=%.2f z(%s)=%.2f"
-                    % (divergence, self.threshold, sym1, z1, sym2, z2)
+                    f"momentum_divergence={divergence:.2f}>{self.threshold:.2f} z({sym1})={z1:.2f} z({sym2})={z2:.2f}"
                 )
             return True, ""
         except Exception:

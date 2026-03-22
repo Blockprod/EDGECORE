@@ -6,8 +6,9 @@ def test_t1_4():
     
     # Step 1: Check Position class has stop-loss fields
     print("[TEST] Checking Position class modifications...")
-    from risk.engine import Position
     from datetime import datetime
+
+    from risk.engine import Position
     
     # Create a test position
     pos = Position(
@@ -156,7 +157,7 @@ def test_t1_4():
     # Step 6: Verify main.py integration
     print("\n[TEST] Checking main.py integration...")
     try:
-        with open('main.py', 'r', encoding='utf-8') as f:
+        with open('main.py', encoding='utf-8') as f:
             main_content = f.read()
         
         assert 'check_position_stops' in main_content, "main.py should call check_position_stops()"

@@ -16,12 +16,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from structlog import get_logger
 
-from backtests.runner import BacktestRunner
 from backtests.metrics import BacktestMetrics
+from backtests.runner import BacktestRunner
 
 logger = get_logger(__name__)
 
@@ -29,9 +29,10 @@ logger = get_logger(__name__)
 @dataclass
 class BacktestConfig:
     """Configuration for a single backtest run."""
-    symbols: List[str] = field(default_factory=list)
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
+
+    symbols: list[str] = field(default_factory=list)
+    start_date: str | None = None
+    end_date: str | None = None
     initial_capital: float = 100_000.0
     commission_bps: float = 5.0
     slippage_bps: float = 2.0
@@ -43,6 +44,7 @@ class BacktestConfig:
 @dataclass
 class BacktestResult:
     """Structured backtest result."""
+
     metrics: BacktestMetrics
     config: BacktestConfig
     run_time_seconds: float = 0.0
@@ -69,7 +71,7 @@ class BacktestResult:
     def total_trades(self) -> int:
         return getattr(self.metrics, "total_trades", 0)
 
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return a summary dict for logging / display."""
         return {
             "total_return": self.total_return,
@@ -146,8 +148,8 @@ class BacktestEngine:
 
     def run_batch(
         self,
-        configs: List[BacktestConfig],
-    ) -> List[BacktestResult]:
+        configs: list[BacktestConfig],
+    ) -> list[BacktestResult]:
         """
         Run multiple backtests sequentially.
 

@@ -5,12 +5,12 @@ Covers two scenarios:
      no partial commit in _persisted_order_ids.
   2. After reconnection the engine can re-submit successfully.
 """
-import pytest
 from unittest.mock import MagicMock, patch
 
-from execution.ibkr_engine import IBKRExecutionEngine
-from execution.base import Order, OrderSide
+import pytest
 
+from execution.base import Order, OrderSide
+from execution.ibkr_engine import IBKRExecutionEngine
 
 # ---------------------------------------------------------------------------
 # Helpers

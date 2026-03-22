@@ -12,8 +12,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
 
@@ -64,7 +64,9 @@ class TestTickHappyPath:
 
         # Risk facade & metrics
         runner._risk_facade = MagicMock()
+        runner._risk_facade.is_halted = False
         from monitoring.metrics import SystemMetrics
+
         runner._metrics = SystemMetrics(equity=100_000)
 
         runner._active_pairs = [("AAPL", "MSFT", 0.01, 25.0)]
@@ -93,31 +95,31 @@ class TestTickHappyPath:
     def test_tick_submits_order_on_signal(self):
         runner = self._setup_mocks(self._make_runner())
 
-        with patch.object(runner, '_fetch_market_data', return_value=_mock_market_data()):
+        with patch.object(runner, "_fetch_market_data", return_value=_mock_market_data()):
             runner._tick()
 
-        assert runner._router.submit_order.called
+        assert runner._router.submit_order.called  # type: ignore[union-attr]
         assert runner._iteration == 1
 
     def test_tick_increments_iteration(self):
         runner = self._setup_mocks(self._make_runner())
-        with patch.object(runner, '_fetch_market_data', return_value=_mock_market_data()):
+        with patch.object(runner, "_fetch_market_data", return_value=_mock_market_data()):
             runner._tick()
             runner._tick()
         assert runner._iteration == 2
 
     def test_tick_no_order_when_risk_rejects(self):
         runner = self._setup_mocks(self._make_runner())
-        runner._position_risk.check.return_value = False
+        runner._risk_facade.can_enter_trade.return_value = (False, "risk rejected")  # type: ignore[union-attr]
 
-        with patch.object(runner, '_fetch_market_data', return_value=_mock_market_data()):
+        with patch.object(runner, "_fetch_market_data", return_value=_mock_market_data()):
             runner._tick()
 
-        runner._router.submit_order.assert_not_called()
+        runner._router.submit_order.assert_not_called()  # type: ignore[union-attr]
 
     def test_tick_updates_metrics(self):
         runner = self._setup_mocks(self._make_runner())
-        with patch.object(runner, '_fetch_market_data', return_value=_mock_market_data()):
+        with patch.object(runner, "_fetch_market_data", return_value=_mock_market_data()):
             runner._tick()
         assert runner._metrics.trades_total >= 1
 
@@ -138,19 +140,21 @@ class TestTickDisconnect:
         runner._portfolio_risk = None
         runner._allocator = None
         runner._router = None
-        runner._trailing_stop = None
-        runner._time_stop = None
-        runner._partial_profit = None
-        runner._shutdown_mgr = None
-        runner._correlation_monitor = None
+        runner._trailing_stop = None  # type: ignore[assignment]
+        runner._time_stop = None  # type: ignore[assignment]
+        runner._partial_profit = None  # type: ignore[assignment]
+        runner._shutdown_mgr = None  # type: ignore[assignment]
+        runner._correlation_monitor = None  # type: ignore[assignment]
         runner._reconciler = None
         runner._last_reconciliation = None
         runner._reconciliation_interval = timedelta(minutes=5)
         runner._risk_facade = MagicMock()
+        runner._risk_facade.is_halted = False
         from monitoring.metrics import SystemMetrics
+
         runner._metrics = SystemMetrics(equity=100_000)
 
-        with patch.object(runner, '_fetch_market_data', side_effect=ConnectionError("IBKR down")):
+        with patch.object(runner, "_fetch_market_data", side_effect=ConnectionError("IBKR down")):
             runner._tick()  # should not raise
 
         assert runner._state == TradingState.RUNNING
@@ -167,16 +171,18 @@ class TestTickDisconnect:
         runner._reconciler = None
         runner._last_reconciliation = None
         runner._reconciliation_interval = timedelta(minutes=5)
-        runner._trailing_stop = None
-        runner._time_stop = None
-        runner._partial_profit = None
-        runner._shutdown_mgr = None
-        runner._correlation_monitor = None
+        runner._trailing_stop = None  # type: ignore[assignment]
+        runner._time_stop = None  # type: ignore[assignment]
+        runner._partial_profit = None  # type: ignore[assignment]
+        runner._shutdown_mgr = None  # type: ignore[assignment]
+        runner._correlation_monitor = None  # type: ignore[assignment]
         runner._risk_facade = MagicMock()
+        runner._risk_facade.is_halted = False
         from monitoring.metrics import SystemMetrics
+
         runner._metrics = SystemMetrics(equity=100_000)
 
-        with patch.object(runner, '_fetch_market_data', return_value=pd.DataFrame()):
+        with patch.object(runner, "_fetch_market_data", return_value=pd.DataFrame()):
             runner._tick()
 
         assert runner._state == TradingState.RUNNING
@@ -197,6 +203,7 @@ class TestTickKillSwitch:
         runner._signal_gen = MagicMock()
         runner._risk_facade = MagicMock()
         from monitoring.metrics import SystemMetrics
+
         runner._metrics = SystemMetrics(equity=100_000)
 
         runner._tick()
@@ -215,6 +222,7 @@ class TestTickKillSwitch:
         runner._reconciliation_interval = timedelta(minutes=5)
         runner._risk_facade = MagicMock()
         from monitoring.metrics import SystemMetrics
+
         runner._metrics = SystemMetrics(equity=100_000)
 
         runner._tick()

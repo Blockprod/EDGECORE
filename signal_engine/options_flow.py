@@ -20,7 +20,6 @@ Data source strategy:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -81,7 +80,7 @@ class OptionsFlowSignal:
         self.vol_lookback = vol_lookback
 
         # symbol -> OptionsFlowSnapshot
-        self._snapshots: Dict[str, OptionsFlowSnapshot] = {}
+        self._snapshots: dict[str, OptionsFlowSnapshot] = {}
 
     def update(self, prices_df: pd.DataFrame) -> None:
         """Update options flow estimates from daily prices.
@@ -178,7 +177,7 @@ class OptionsFlowSignal:
         diff = c1 - c2
         return float(np.clip(diff, -1.0, 1.0))
 
-    def get_snapshot(self, symbol: str) -> Optional[OptionsFlowSnapshot]:
+    def get_snapshot(self, symbol: str) -> OptionsFlowSnapshot | None:
         """Return the latest options flow snapshot for a symbol."""
         return self._snapshots.get(symbol)
 

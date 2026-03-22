@@ -11,13 +11,13 @@ Ensures:
 """
 
 import warnings
-import pytest
+
 import numpy as np
 import pandas as pd
+import pytest
 
-from backtests.runner import BacktestRunner, _generate_cointegrated_pair
 from backtests.metrics import BacktestMetrics
-
+from backtests.runner import BacktestRunner, _generate_cointegrated_pair
 
 # --------------------------------------------------
 # Helpers
@@ -183,8 +183,8 @@ class TestRunUnifiedNoPairs:
         run_unified with uncorrelated data should not generate any synthetic pairs.
         The simulator simply produces no trades.
         """
-        from backtests.strategy_simulator import StrategyBacktestSimulator
         from backtests.cost_model import CostModel
+        from backtests.strategy_simulator import StrategyBacktestSimulator
 
         prices_df = _make_uncorrelated_prices(n=200)
         simulator = StrategyBacktestSimulator(

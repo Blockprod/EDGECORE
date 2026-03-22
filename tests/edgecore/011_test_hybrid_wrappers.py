@@ -2,8 +2,9 @@
 These tests verify that Python/Cython hybrid implementation works correctly.
 """
 
-import pytest
 import numpy as np
+import pytest
+
 from edgecore.backtest_engine_wrapper import BacktestEngineWrapper
 from edgecore.cointegration_engine_wrapper import CointegrationEngineWrapper
 

@@ -25,9 +25,16 @@ from pathlib import Path
 
 # Force UTF-8 stdout/stderr regardless of Windows console encoding (cp1252).
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # TextIOWrapper has reconfigure(); io.TextIOBase check verifies it exists
+    import io
+
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    import io
+
+    if isinstance(sys.stderr, io.TextIOWrapper):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 # ─── Chemins ─────────────────────────────────────────────────────────────────
 ROOT = Path(__file__).parent.parent
@@ -37,14 +44,31 @@ LESSONS_FILE = ROOT / "tasks" / "lessons.md"
 
 # Préfixes de messages → jamais lesson-worthy (commits non-fonctionnels)
 SKIP_PREFIXES = (
-    "docs:", "chore:", "style:", "plan(", "merge ", "merge:",
-    "bump ", "release", "wip:", "reformat",
+    "docs:",
+    "chore:",
+    "style:",
+    "plan(",
+    "merge ",
+    "merge:",
+    "bump ",
+    "release",
+    "wip:",
+    "reformat",
 )
 
 # Mots-clés dans le message → probablement lesson-worthy
 LESSON_KEYWORDS = (
-    "fix", "bug", "error", "patch", "revert", "correct",
-    "hotfix", "remove", "replace", "broken", "broken",
+    "fix",
+    "bug",
+    "error",
+    "patch",
+    "revert",
+    "correct",
+    "hotfix",
+    "remove",
+    "replace",
+    "broken",
+    "broken",
 )
 
 # Chemins critiques → les fichiers modifiés ici augmentent le score
@@ -67,8 +91,7 @@ ANTIPATTERNS = [
     (
         r"utcnow\(\)",
         "datetime.utcnow() utilisé au lieu de datetime.now(timezone.utc)",
-        "Toujours utiliser datetime.now(timezone.utc). "
-        "datetime.utcnow() est deprecated depuis Python 3.12.",
+        "Toujours utiliser datetime.now(timezone.utc). datetime.utcnow() est deprecated depuis Python 3.12.",
     ),
     (
         r"from research\.",
@@ -85,38 +108,32 @@ ANTIPATTERNS = [
     (
         r"^\+?.*\bprint\s*\(",
         "print() dans du code de production",
-        "Utiliser structlog.get_logger(__name__) partout. "
-        "print() interdit hors scripts/, examples/, research/.",
+        "Utiliser structlog.get_logger(__name__) partout. print() interdit hors scripts/, examples/, research/.",
     ),
     (
         r"slippage\s*=\s*[\d.]+(?!\s*\*\s*get_settings)",
         "slippage hardcodé au lieu de lire CostConfig",
-        "Toujours lire get_settings().costs.slippage_bps. "
-        "La valeur hardcodée diverge des backtests.",
+        "Toujours lire get_settings().costs.slippage_bps. La valeur hardcodée diverge des backtests.",
     ),
     (
         r"commission\s*=\s*[\d.]+\s*\*\s*[\d.]+\s*\*\s*0\.",
         "commission hardcodée (0.000xx) au lieu de CostConfig",
-        "Toujours lire get_settings().costs.commission_bps / 10_000. "
-        "Source de vérité : CostConfig.",
+        "Toujours lire get_settings().costs.commission_bps / 10_000. Source de vérité : CostConfig.",
     ),
     (
         r"from execution\.modes import",
         "Import depuis execution/modes.py (archivé en modes_legacy.py)",
-        "Importer depuis execution/base.py ou execution/modes_legacy.py. "
-        "Le fichier modes.py a été archivé (C-09).",
+        "Importer depuis execution/base.py ou execution/modes_legacy.py. Le fichier modes.py a été archivé (C-09).",
     ),
     (
         r"TradeOrder\b",
         "TradeOrder utilisé au lieu de Order (B2-01)",
-        "Utiliser execution.base.Order exclusivement. "
-        "TradeOrder est deprecated et sera supprimé.",
+        "Utiliser execution.base.Order exclusivement. TradeOrder est deprecated et sera supprimé.",
     ),
     (
         r"class OrderStatus",
         "Nouvelle définition de OrderStatus (3ème doublon potentiel)",
-        "Ne jamais redéfinir OrderStatus. "
-        "Source de vérité unique : execution/base.py::OrderStatus (11 états).",
+        "Ne jamais redéfinir OrderStatus. Source de vérité unique : execution/base.py::OrderStatus (11 états).",
     ),
 ]
 
@@ -180,10 +197,7 @@ def score_commit(msg: str, files: list[str]) -> tuple[int, str]:
         reasons.append("mot-clé fix/error/patch")
 
     # Chemins critiques → +1 par chemin unique
-    critical_hits = {
-        p for p in CRITICAL_PATHS
-        if any(f.startswith(p) for f in non_md)
-    }
+    critical_hits = {p for p in CRITICAL_PATHS if any(f.startswith(p) for f in non_md)}
     if critical_hits:
         score += 1
         reasons.append(f"fichiers critiques: {', '.join(list(critical_hits)[:3])}")
@@ -200,9 +214,7 @@ def score_commit(msg: str, files: list[str]) -> tuple[int, str]:
 
 def detect_antipattern(diff: str) -> tuple[str | None, str | None]:
     """Retourne (erreur, règle) si un anti-pattern connu est détecté dans les lignes supprimées."""
-    removed_lines = "\n".join(
-        line[1:] for line in diff.splitlines() if line.startswith("-")
-    )
+    removed_lines = "\n".join(line[1:] for line in diff.splitlines() if line.startswith("-"))
     for pattern, erreur, regle in ANTIPATTERNS:
         if re.search(pattern, removed_lines, re.MULTILINE):
             return erreur, regle
@@ -296,7 +308,9 @@ def main() -> int:
         return 1
 
     print(f"[update_lessons] Commit analysé : {short_hash} — {msg}")
-    print(f"[update_lessons] Fichiers modifiés : {len(files)} ({', '.join(files[:4])}{'...' if len(files) > 4 else ''})")
+    print(
+        f"[update_lessons] Fichiers modifiés : {len(files)} ({', '.join(files[:4])}{'...' if len(files) > 4 else ''})"
+    )
 
     # 2. Évalue si la leçon est pertinente
     score, reason = score_commit(msg, files)

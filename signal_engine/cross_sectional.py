@@ -13,8 +13,6 @@ Phase 1, Etape 1.2.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -45,7 +43,7 @@ class CrossSectionalMomentum:
 
     def __init__(
         self,
-        windows: Optional[List[int]] = None,
+        windows: list[int] | None = None,
         min_history: int = 63,
     ):
         """
@@ -56,7 +54,7 @@ class CrossSectionalMomentum:
         self.windows = windows or self.DEFAULT_WINDOWS
         self.min_history = min_history
         # symbol -> composite percentile rank (0..1)
-        self._rankings: Dict[str, float] = {}
+        self._rankings: dict[str, float] = {}
 
     def update_rankings(self, prices: pd.DataFrame) -> None:
         """Recompute cross-sectional rankings from a universe price DataFrame.
@@ -94,7 +92,7 @@ class CrossSectionalMomentum:
             return
 
         composite = rank_sum / valid_windows
-        self._rankings = composite.to_dict()
+        self._rankings = {str(k): v for k, v in composite.to_dict().items()}
 
     def compute_score(self, sym_a: str, sym_b: str) -> float:
         """Compute cross-sectional momentum score for pair (A, B).
@@ -120,6 +118,6 @@ class CrossSectionalMomentum:
         return float(np.clip(score, -1.0, 1.0))
 
     @property
-    def rankings(self) -> Dict[str, float]:
+    def rankings(self) -> dict[str, float]:
         """Current symbol rankings (read-only copy)."""
         return dict(self._rankings)

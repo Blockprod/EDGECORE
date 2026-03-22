@@ -19,7 +19,7 @@ def extract_imports(filepath):
     """Extract import statements from a file."""
     imports = []
     try:
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+        with open(filepath, encoding='utf-8', errors='ignore') as f:
             content = f.read()
             # Match: import X, from X import Y
             patterns = [

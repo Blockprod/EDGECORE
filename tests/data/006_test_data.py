@@ -1,11 +1,13 @@
-﻿import pytest
-import pandas as pd
-import numpy as np
+﻿import os
 import tempfile
-import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pandas as pd
+import pytest
+
 from data.loader import DataLoader
-from data.preprocessing import resample_ohlcv, align_pairs, remove_outliers
+from data.preprocessing import align_pairs, remove_outliers, resample_ohlcv
 
 
 class TestDataLoader:
@@ -15,9 +17,9 @@ class TestDataLoader:
     def _make_bars(dates, opens, highs, lows, closes, volumes):
         """Build list of mock bar objects matching ibapi BarData interface."""
         bars = []
-        for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes):
+        for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes, strict=False):
             bar = MagicMock()
-            bar.date = d.strftime('%Y%m%d') if hasattr(d, 'strftime') else str(d)
+            bar.date = d.strftime("%Y%m%d") if hasattr(d, "strftime") else str(d)
             bar.open = o
             bar.high = h
             bar.low = l
@@ -30,7 +32,7 @@ class TestDataLoader:
         """Test that loaded equity data has correct OHLCV structure."""
         loader = DataLoader()
 
-        dates = pd.date_range('2023-01-01', periods=3, freq='B')
+        dates = pd.date_range("2023-01-01", periods=3, freq="B")
         bars = self._make_bars(
             dates,
             opens=[175.0, 176.0, 177.0],
@@ -40,26 +42,26 @@ class TestDataLoader:
             volumes=[50000000, 55000000, 60000000],
         )
 
-        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+        with patch("execution.ibkr_engine.IBGatewaySync") as mock_gw_cls:
             mock_gw = MagicMock()
             mock_gw_cls.return_value = mock_gw
             mock_gw.get_historical_data.return_value = bars
 
-            result = loader.load_ibkr_data('AAPL', timeframe='1d', limit=3)
+            result = loader.load_ibkr_data("AAPL", timeframe="1d", limit=3)
 
             assert len(result) == 3
-            assert 'open' in result.columns
-            assert 'high' in result.columns
-            assert 'low' in result.columns
-            assert 'close' in result.columns
-            assert 'volume' in result.columns
+            assert "open" in result.columns
+            assert "high" in result.columns
+            assert "low" in result.columns
+            assert "close" in result.columns
+            assert "volume" in result.columns
 
     def test_load_csv_data(self):
         """Test CSV loading functionality."""
         loader = DataLoader()
 
         # Create temp CSV
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             f.write("timestamp,open,high,low,close,volume\n")
             f.write("2023-01-02,150.00,152.00,149.00,151.50,40000000\n")
             f.write("2023-01-03,151.50,153.00,150.00,152.00,42000000\n")
@@ -70,8 +72,8 @@ class TestDataLoader:
             df = loader.load_csv(temp_file)
 
             assert len(df) == 2
-            assert df['close'].iloc[0] == 151.50
-            assert df['close'].iloc[1] == 152.00
+            assert df["close"].iloc[0] == 151.50
+            assert df["close"].iloc[1] == 152.00
         finally:
             os.unlink(temp_file)
 
@@ -79,13 +81,13 @@ class TestDataLoader:
         """Test error handling when IBKR connection fails."""
         loader = DataLoader()
 
-        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+        with patch("execution.ibkr_engine.IBGatewaySync") as mock_gw_cls:
             mock_gw = MagicMock()
             mock_gw_cls.return_value = mock_gw
             mock_gw.get_historical_data.side_effect = Exception("Network error")
 
             with pytest.raises(Exception):
-                loader.load_ibkr_data('AAPL')
+                loader.load_ibkr_data("AAPL")
 
     def test_load_multiple_equity_symbols(self):
         """Test loading data for multiple US equity tickers."""
@@ -93,7 +95,7 @@ class TestDataLoader:
 
         def _bars_for_price(price):
             bar = MagicMock()
-            bar.date = '20230103'
+            bar.date = "20230103"
             bar.open = price * 0.99
             bar.high = price * 1.01
             bar.low = price * 0.98
@@ -101,23 +103,23 @@ class TestDataLoader:
             bar.volume = 50000000
             return [bar]
 
-        prices = {'AAPL': 175.0, 'MSFT': 300.0}
+        prices = {"AAPL": 175.0, "MSFT": 300.0}
 
-        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+        with patch("execution.ibkr_engine.IBGatewaySync") as mock_gw_cls:
             mock_gw = MagicMock()
             mock_gw_cls.return_value = mock_gw
 
             def get_hist(symbol=None, **kwargs):
-                price = prices.get(symbol, 175.0)
+                price = prices.get(symbol or "", 175.0)
                 return _bars_for_price(price)
 
             mock_gw.get_historical_data.side_effect = get_hist
 
-            aapl_data = loader.load_ibkr_data('AAPL', limit=1)
-            msft_data = loader.load_ibkr_data('MSFT', limit=1)
+            aapl_data = loader.load_ibkr_data("AAPL", limit=1)
+            msft_data = loader.load_ibkr_data("MSFT", limit=1)
 
-            assert aapl_data['close'].iloc[0] == 175.0
-            assert msft_data['close'].iloc[0] == 300.0
+            assert aapl_data["close"].iloc[0] == 175.0
+            assert msft_data["close"].iloc[0] == 300.0
 
 
 class TestDataPreprocessing:
@@ -126,29 +128,32 @@ class TestDataPreprocessing:
     def test_resample_ohlcv_daily_to_weekly(self):
         """Test resampling OHLCV data."""
         # Create daily OHLCV data
-        dates = pd.date_range('2023-01-01', periods=30, freq='D')
-        df = pd.DataFrame({
-            'open': np.linspace(100, 110, 30),
-            'high': np.linspace(101, 111, 30),
-            'low': np.linspace(99, 109, 30),
-            'close': np.linspace(100.5, 110.5, 30),
-            'volume': np.ones(30) * 1000,
-        }, index=dates)
+        dates = pd.date_range("2023-01-01", periods=30, freq="D")
+        df = pd.DataFrame(
+            {
+                "open": np.linspace(100, 110, 30),
+                "high": np.linspace(101, 111, 30),
+                "low": np.linspace(99, 109, 30),
+                "close": np.linspace(100.5, 110.5, 30),
+                "volume": np.ones(30) * 1000,
+            },
+            index=dates,
+        )
 
         # Resample to weekly
-        weekly = resample_ohlcv(df, 'W')
+        weekly = resample_ohlcv(df, "W")
 
         # Should have fewer rows
         assert len(weekly) < len(df)
-        assert 'close' in weekly.columns
+        assert "close" in weekly.columns
 
     def test_align_pairs(self):
         """Test aligning two time series."""
-        dates1 = pd.date_range('2023-01-01', periods=10, freq='D')
-        dates2 = pd.date_range('2023-01-05', periods=10, freq='D')
+        dates1 = pd.date_range("2023-01-01", periods=10, freq="D")
+        dates2 = pd.date_range("2023-01-05", periods=10, freq="D")
 
-        df1 = pd.DataFrame({'price': np.linspace(100, 110, 10)}, index=dates1)
-        df2 = pd.DataFrame({'price': np.linspace(50, 55, 10)}, index=dates2)
+        df1 = pd.DataFrame({"price": np.linspace(100, 110, 10)}, index=dates1)
+        df2 = pd.DataFrame({"price": np.linspace(50, 55, 10)}, index=dates2)
 
         # Align
         aligned1, aligned2 = align_pairs(df1, df2)
@@ -161,7 +166,7 @@ class TestDataPreprocessing:
         """Test outlier removal with z-score method."""
         series = pd.Series([1, 2, 3, 4, 5, 100])  # 100 is outlier
 
-        cleaned = remove_outliers(series, method='zscore', threshold=3.0)
+        cleaned = remove_outliers(series, method="zscore", threshold=3.0)
 
         # Should return a series
         assert isinstance(cleaned, pd.Series)
@@ -173,22 +178,23 @@ class TestDataPreprocessing:
         normal = np.random.normal(100, 10, 50)
         series = pd.Series(np.concatenate([normal, [200]]))  # One outlier
 
-        cleaned = remove_outliers(series, method='iqr', threshold=3.0)
+        cleaned = remove_outliers(series, method="iqr", threshold=3.0)
 
         # Should handle gracefully
         assert len(cleaned) == len(series)
 
     def test_preprocessing_maintains_index(self):
         """Test that preprocessing maintains date index."""
-        dates = pd.date_range('2023-01-01', periods=20, freq='D')
-        df = pd.DataFrame({
-            'close': np.linspace(100, 110, 20),
-        }, index=dates)
+        dates = pd.date_range("2023-01-01", periods=20, freq="D")
+        df = pd.DataFrame(
+            {
+                "close": np.linspace(100, 110, 20),
+            },
+            index=dates,
+        )
 
         resampled = resample_ohlcv(
-            df.assign(open=df['close'], high=df['close']*1.01,
-                      low=df['close']*0.99, volume=1000),
-            'W'
+            df.assign(open=df["close"], high=df["close"] * 1.01, low=df["close"] * 0.99, volume=1000), "W"
         )
 
         # Should have DatetimeIndex
@@ -200,24 +206,23 @@ class TestDataCaching:
 
     def test_cache_directory_exists(self):
         """Test that cache directory exists."""
-        cache_dir = 'data/cache'
+        cache_dir = "data/cache"
         assert os.path.exists(cache_dir) or True  # May or may not exist in test env
 
     def test_data_consistency(self):
         """Test that loaded equity data maintains consistency."""
         loader = DataLoader()
 
-        dates = pd.date_range('2023-01-03', periods=2, freq='B')
+        dates = pd.date_range("2023-01-03", periods=2, freq="B")
         # DataLoader.load_ibkr_data uses IBGatewaySync and expects bar objects,
         # not a DataFrame — patch the correct class with the correct return type.
         bars = []
         for date, (open_, high, low, close, volume) in zip(
             dates,
-            [(150.0, 152.0, 149.0, 151.0, 40000000),
-             (151.0, 153.0, 150.0, 152.0, 41000000)],
+            [(150.0, 152.0, 149.0, 151.0, 40000000), (151.0, 153.0, 150.0, 152.0, 41000000)], strict=False,
         ):
             bar = MagicMock()
-            bar.date = date.strftime('%Y%m%d')
+            bar.date = date.strftime("%Y%m%d")
             bar.open = open_
             bar.high = high
             bar.low = low
@@ -225,14 +230,13 @@ class TestDataCaching:
             bar.volume = volume
             bars.append(bar)
 
-        with patch('execution.ibkr_engine.IBGatewaySync') as mock_gw_cls:
+        with patch("execution.ibkr_engine.IBGatewaySync") as mock_gw_cls:
             mock_gw = MagicMock()
             mock_gw_cls.return_value = mock_gw
             mock_gw.get_historical_data.return_value = bars
 
-            df1 = loader.load_ibkr_data('MSFT')
-            df2 = loader.load_ibkr_data('MSFT')
+            df1 = loader.load_ibkr_data("MSFT")
+            df2 = loader.load_ibkr_data("MSFT")
 
             # Data should be identical
             pd.testing.assert_frame_equal(df1, df2)
-

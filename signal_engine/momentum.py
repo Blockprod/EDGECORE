@@ -15,7 +15,6 @@ v31 ÔÇö Phase 1, Etape 2.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -86,7 +85,7 @@ class MomentumOverlay:
         self,
         prices_a: pd.Series,
         prices_b: pd.Series,
-        lookback: Optional[int] = None,
+        lookback: int | None = None,
     ) -> float:
         """
         Compute relative strength: RS = return_A(lookback) - return_B(lookback).
@@ -116,7 +115,7 @@ class MomentumOverlay:
         self,
         prices_a: pd.Series,
         prices_b: pd.Series,
-        lookback: Optional[int] = None,
+        lookback: int | None = None,
     ) -> float:
         """
         Compute normalised momentum score in [-1, 1].
@@ -142,7 +141,7 @@ class MomentumOverlay:
         raw_strength: float,
         prices_a: pd.Series,
         prices_b: pd.Series,
-        lookback: Optional[int] = None,
+        lookback: int | None = None,
     ) -> MomentumResult:
         """
         Adjust signal strength based on relative momentum.

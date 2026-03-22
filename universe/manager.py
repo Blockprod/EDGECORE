@@ -23,14 +23,15 @@ Usage::
 
 from __future__ import annotations
 
-import pandas as pd
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Union
+
+import pandas as pd
 from structlog import get_logger
 
-from data.liquidity_filter import LiquidityFilter, LiquidityConfig
 from data.delisting_guard import DelistingGuard
+from data.liquidity_filter import LiquidityConfig, LiquidityFilter
 
 logger = get_logger(__name__)
 
@@ -71,7 +72,7 @@ def _normalize_sector(value: Union[str, Sector]) -> str:
 
 # Canonical sector mapping for the default US large-cap universe.
 # Uses plain strings ÔÇö compatible with both run_backtest.py and Sector enum.
-DEFAULT_SECTOR_MAP: Dict[str, str] = {
+DEFAULT_SECTOR_MAP: dict[str, str] = {
     # Technology (Mega Cap)
     "AAPL": "technology", "MSFT": "technology",
     "GOOGL": "technology", "META": "technology",
@@ -161,9 +162,9 @@ DEFAULT_SECTOR_MAP: Dict[str, str] = {
 @dataclass
 class UniverseSnapshot:
     """Point-in-time view of the tradeable universe."""
-    symbols: List[str]
-    sector_groups: Dict[str, List[str]]   # sector_name -> symbols
-    excluded: Dict[str, str]              # symbol -> exclusion reason
+    symbols: list[str]
+    sector_groups: dict[str, list[str]]   # sector_name -> symbols
+    excluded: dict[str, str]              # symbol -> exclusion reason
     timestamp: pd.Timestamp
     total_candidates: int
 
@@ -175,7 +176,7 @@ class UniverseSnapshot:
     def exclusion_count(self) -> int:
         return len(self.excluded)
 
-    def symbols_in_sector(self, sector: Union[str, Sector]) -> List[str]:
+    def symbols_in_sector(self, sector: Union[str, Sector]) -> list[str]:
         """Return symbols belonging to *sector*."""
         key = _normalize_sector(sector)
         return self.sector_groups.get(key, [])
@@ -210,8 +211,8 @@ class UniverseManager:
 
     def __init__(
         self,
-        symbols: Optional[List[str]] = None,
-        sector_map: Optional[Dict[str, Union[str, Sector]]] = None,
+        symbols: list[str] | None = None,
+        sector_map: dict[str, Union[str, Sector]] | None = None,
         min_volume_24h_usd: float = 5_000_000.0,
         cross_sector_pairs: bool = False,
     ):
@@ -228,15 +229,15 @@ class UniverseManager:
             from config.settings import get_settings
             symbols = get_settings().trading_universe.symbols
 
-        self._all_symbols: List[str] = list(symbols)
+        self._all_symbols: list[str] = list(symbols)
 
         # Normalize sector_map: convert Sector enum values to strings
         raw_map = sector_map if sector_map is not None else dict(DEFAULT_SECTOR_MAP)
-        self._sector_map: Dict[str, str] = {
+        self._sector_map: dict[str, str] = {
             k: _normalize_sector(v) for k, v in raw_map.items()
         }
 
-        self._manually_excluded: Set[str] = set()
+        self._manually_excluded: set[str] = set()
         self._cross_sector = cross_sector_pairs
 
         self.liquidity_filter = LiquidityFilter(
@@ -257,9 +258,9 @@ class UniverseManager:
 
     def get_snapshot(
         self,
-        volume_data: Optional[Dict[str, float]] = None,
-        price_data: Optional[Dict[str, pd.Series]] = None,
-        timestamp: Optional[pd.Timestamp] = None,
+        volume_data: dict[str, float] | None = None,
+        price_data: dict[str, pd.Series] | None = None,
+        timestamp: pd.Timestamp | None = None,
     ) -> UniverseSnapshot:
         """
         Generate a filtered universe snapshot.
@@ -273,8 +274,8 @@ class UniverseManager:
             UniverseSnapshot with active symbols and exclusion reasons.
         """
         ts = timestamp or pd.Timestamp.now()
-        excluded: Dict[str, str] = {}
-        active: List[str] = []
+        excluded: dict[str, str] = {}
+        active: list[str] = []
 
         for sym in self._all_symbols:
             # Manual exclusion
@@ -299,7 +300,7 @@ class UniverseManager:
             active.append(sym)
 
         # Build sector groups (string keys)
-        sector_groups: Dict[str, List[str]] = {}
+        sector_groups: dict[str, list[str]] = {}
         for sym in active:
             sector = self._sector_map.get(sym, "unknown")
             sector_groups.setdefault(sector, []).append(sym)
@@ -327,7 +328,7 @@ class UniverseManager:
     def generate_candidate_pairs(
         self,
         snapshot: UniverseSnapshot,
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         """
         Generate candidate pairs for cointegration testing.
 
@@ -340,7 +341,7 @@ class UniverseManager:
         Returns:
             Sorted list of (symbol1, symbol2) tuples.
         """
-        pairs: List[Tuple[str, str]] = []
+        pairs: list[tuple[str, str]] = []
         if self._cross_sector:
             syms = sorted(snapshot.symbols)
             for i, s1 in enumerate(syms):
@@ -435,14 +436,14 @@ class UniverseManager:
     # Accessors
     # ------------------------------------------------------------------
 
-    def get_active_symbols(self) -> List[str]:
+    def get_active_symbols(self) -> list[str]:
         """Return symbols not manually excluded (for live trading runner)."""
         return [s for s in self._all_symbols if s not in self._manually_excluded]
 
     def get_symbols(
         self,
-        as_of_date: Optional[Union[str, pd.Timestamp]] = None,
-    ) -> List[str]:
+        as_of_date: Union[str, pd.Timestamp] | None = None,
+    ) -> list[str]:
         """Return active symbols, optionally filtered by a historical date.
 
         .. warning::
@@ -477,18 +478,18 @@ class UniverseManager:
         return symbols
 
     @property
-    def all_symbols(self) -> List[str]:
+    def all_symbols(self) -> list[str]:
         """Full symbol list (including manually excluded)."""
         return list(self._all_symbols)
 
     @property
-    def sector_map(self) -> Dict[str, str]:
+    def sector_map(self) -> dict[str, str]:
         """Sector map as plain strings (unified format)."""
         return dict(self._sector_map)
 
-    def get_sector_map_as_enum(self) -> Dict[str, Sector]:
+    def get_sector_map_as_enum(self) -> dict[str, Sector]:
         """Backward-compat: return sector map with Sector enum values."""
-        result: Dict[str, Sector] = {}
+        result: dict[str, Sector] = {}
         for sym, sec_str in self._sector_map.items():
             try:
                 result[sym] = Sector(sec_str)

@@ -95,3 +95,12 @@
 **Ref** : `.github/copilot-instructions.md` — IBKR rate limit section
 
 ---
+
+## L-11 · fix(lessons): force utf-8 stdout via reconfigure() — fixes cp1252 UnicodeEncodeError on Windows [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `c029cb8` : fix(lessons): force utf-8 stdout via reconfigure() — fixes cp1252 UnicodeEncodeError on Windows. Fichiers : scripts/update_lessons.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/update_lessons.py` — commit `c029cb8` (2026-03-20)
+
+---

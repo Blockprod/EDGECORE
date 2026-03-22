@@ -14,7 +14,6 @@ v31 ÔÇö Phase 1, Etape 3.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 import numpy as np
 from structlog import get_logger
@@ -59,8 +58,8 @@ class CompositeSignal:
     """
     composite_score: float
     direction: str
-    source_scores: Dict[str, float] = field(default_factory=dict)
-    source_weights: Dict[str, float] = field(default_factory=dict)
+    source_scores: dict[str, float] = field(default_factory=dict)
+    source_weights: dict[str, float] = field(default_factory=dict)
     confidence: float = 1.0
 
 
@@ -100,7 +99,7 @@ class SignalCombiner:
 
     def __init__(
         self,
-        sources: Optional[List[SignalSource]] = None,
+        sources: list[SignalSource] | None = None,
         entry_threshold: float = 0.6,
         exit_threshold: float = 0.2,
     ):
@@ -121,7 +120,7 @@ class SignalCombiner:
         self.exit_threshold = exit_threshold
 
         # Build lookup dict
-        self._source_map: Dict[str, SignalSource] = {
+        self._source_map: dict[str, SignalSource] = {
             s.name: s for s in self.sources
         }
 
@@ -131,7 +130,7 @@ class SignalCombiner:
 
     def combine(
         self,
-        scores: Dict[str, float],
+        scores: dict[str, float],
         in_position: bool = False,
     ) -> CompositeSignal:
         """
@@ -154,8 +153,8 @@ class SignalCombiner:
         """
         total_weight = 0.0
         weighted_sum = 0.0
-        used_scores: Dict[str, float] = {}
-        used_weights: Dict[str, float] = {}
+        used_scores: dict[str, float] = {}
+        used_weights: dict[str, float] = {}
 
         for source in self.sources:
             if not source.enabled:
@@ -228,7 +227,7 @@ class SignalCombiner:
             self._source_map[name].enabled = enabled
 
     @property
-    def active_sources(self) -> List[str]:
+    def active_sources(self) -> list[str]:
         """Return names of enabled sources."""
         return [s.name for s in self.sources if s.enabled]
 

@@ -21,7 +21,6 @@ Data source strategy:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -82,13 +81,13 @@ class EarningsSurpriseSignal:
         self.max_events = max_events
 
         # symbol -> list of EarningsEvent (most recent first)
-        self._events: Dict[str, list] = {}
+        self._events: dict[str, list] = {}
         self._last_bar_idx: int = -1
 
     def update(
         self,
         prices_df: pd.DataFrame,
-        volumes_df: Optional[pd.DataFrame] = None,
+        volumes_df: pd.DataFrame | None = None,
     ) -> None:
         """Scan price data for earnings-like gaps.
 

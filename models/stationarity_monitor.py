@@ -27,7 +27,6 @@ Expected Impact: Regime-resistance score 5/10 Ôåô 8/10.
 """
 
 from dataclasses import dataclass
-from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -69,7 +68,7 @@ class StationarityMonitor:
             ...
     """
 
-    def __init__(self, config: Optional[StationarityConfig] = None):
+    def __init__(self, config: StationarityConfig | None = None):
         self.config = config or StationarityConfig()
         logger.info(
             "stationarity_monitor_initialized",
@@ -77,7 +76,7 @@ class StationarityMonitor:
             alert_pvalue=self.config.alert_pvalue,
         )
 
-    def check(self, spread: pd.Series) -> Tuple[bool, float]:
+    def check(self, spread: pd.Series) -> tuple[bool, float]:
         """Run a rolling ADF test on the tail of *spread*.
 
         Args:

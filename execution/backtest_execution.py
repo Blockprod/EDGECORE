@@ -1,4 +1,4 @@
-﻿"""
+"""
 Realistic backtest execution with slippage, commissions, and partial fills.
 
 This module provides realistic order fill simulation for backtesting,
@@ -12,6 +12,7 @@ including:
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Literal, cast
 
 from common.types import (
     CommissionConfig,
@@ -26,7 +27,6 @@ from common.types import (
     SlippageModel,
     Symbol,
 )
-from typing import Literal, cast
 
 
 @dataclass
@@ -59,13 +59,9 @@ class SlippageCalculator:
         if self.config["model"] == SlippageModel.FIXED_BPS:
             return self._fixed_slippage(order_price, side)
         elif self.config["model"] == SlippageModel.ADAPTIVE:
-            return self._adaptive_slippage(
-                order_price, market_price, side
-            )
+            return self._adaptive_slippage(order_price, market_price, side)
         elif self.config["model"] == SlippageModel.VOLUME_BASED:
-            return self._volume_based_slippage(
-                order_price, order_quantity, market_volume, side
-            )
+            return self._volume_based_slippage(order_price, order_quantity, market_volume, side)
         else:
             # Default: no slippage
             return 0.0, order_price
@@ -83,9 +79,7 @@ class SlippageCalculator:
 
         return slippage_bps, execution_price
 
-    def _adaptive_slippage(
-        self, order_price: Price, market_price: Price, side: str
-    ) -> tuple[float, Price]:
+    def _adaptive_slippage(self, order_price: Price, market_price: Price, side: str) -> tuple[float, Price]:
         """Calculate adaptive slippage based on market conditions."""
         # Slippage increases with distance from market price
         distance = abs(order_price - market_price) / market_price
@@ -184,12 +178,15 @@ class PartialFillHandler:
     """Handles partial fill scenarios in backtest."""
 
     fill_simulation: FillSimulation = field(
-        default_factory=lambda: cast(FillSimulation, {
-            "base_volume_bps": 100,  # 1% base
-            "market_volume": 1000000.0,
-            "max_fill_pct": 10.0,
-            "partial_fill_probability": 0.1,
-        })
+        default_factory=lambda: cast(
+            FillSimulation,
+            {
+                "base_volume_bps": 100,  # 1% base
+                "market_volume": 1000000.0,
+                "max_fill_pct": 10.0,
+                "partial_fill_probability": 0.1,
+            },
+        )
     )
 
     def determine_fill_quantity(
@@ -257,9 +254,7 @@ class BacktestExecutor:
             }
         )
     )
-    fill_handler: PartialFillHandler = field(
-        default_factory=PartialFillHandler
-    )
+    fill_handler: PartialFillHandler = field(default_factory=PartialFillHandler)
 
     def execute_order(
         self,
@@ -346,7 +341,7 @@ class BacktestExecutor:
 
         for i, leg in enumerate(legs):
             leg_result = self.execute_order(
-                order_id=f"{order_id}_L{i+1}",
+                order_id=f"{order_id}_L{i + 1}",
                 symbol=leg["symbol"],
                 side=leg["side"],
                 quantity=leg["quantity"],

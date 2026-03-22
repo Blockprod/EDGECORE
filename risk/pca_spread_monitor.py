@@ -32,7 +32,7 @@ Usage::
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -72,10 +72,10 @@ class PCASpreadMonitor:
     guards miss.
     """
 
-    def __init__(self, config: Optional[PCASpreadConfig] = None):
+    def __init__(self, config: PCASpreadConfig | None = None):
         self.config = config or PCASpreadConfig()
-        self._spreads: Dict[str, pd.Series] = {}
-        self._last_pca_result: Optional[Dict[str, Any]] = None
+        self._spreads: dict[str, pd.Series] = {}
+        self._last_pca_result: dict[str, Any] | None = None
         logger.info(
             "pca_spread_monitor_initialized",
             max_pc1_variance=self.config.max_pc1_variance,
@@ -84,7 +84,7 @@ class PCASpreadMonitor:
 
     # ÔôÇÔôÇ Public API ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-    def update_spreads(self, spreads: Dict[str, pd.Series]) -> None:
+    def update_spreads(self, spreads: dict[str, pd.Series]) -> None:
         """Replace the full set of active spreads (called each bar)."""
         self._spreads = dict(spreads)
 
@@ -100,7 +100,7 @@ class PCASpreadMonitor:
         self,
         candidate_key: str,
         candidate_spread: pd.Series,
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Decide whether a new entry increases factor concentration.
 
         Args:
@@ -144,9 +144,9 @@ class PCASpreadMonitor:
         pc1_scores = ret_matrix[-n:] @ pc1
 
         # Correlation between candidate and PC1 scores
-        if np.std(cand_tail) < 1e-12 or np.std(pc1_scores) < 1e-12:
+        if np.std(np.asarray(cand_tail, dtype=float)) < 1e-12 or np.std(np.asarray(pc1_scores, dtype=float)) < 1e-12:
             return True, None
-        loading = abs(float(np.corrcoef(cand_tail, pc1_scores)[0, 1]))
+        loading = abs(float(np.corrcoef(np.asarray(cand_tail, dtype=float), np.asarray(pc1_scores, dtype=float))[0, 1]))
 
         if loading > self.config.max_candidate_loading:
             reason = (
@@ -164,14 +164,14 @@ class PCASpreadMonitor:
 
         return True, None
 
-    def get_concentration_report(self) -> Dict[str, Any]:
+    def get_concentration_report(self) -> dict[str, Any]:
         """Get the current factor concentration analysis.
 
         Returns a dict with PC1 variance ratio, per-spread loadings,
         and concentration status.
         """
         n_active = len(self._spreads)
-        report: Dict[str, Any] = {
+        report: dict[str, Any] = {
             "n_active_spreads": n_active,
             "pca_computed": False,
             "pc1_variance_ratio": None,
@@ -221,7 +221,7 @@ class PCASpreadMonitor:
 
     # ÔôÇÔôÇ Internals ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-    def _build_return_matrix(self) -> Tuple[Optional[np.ndarray], List[str]]:
+    def _build_return_matrix(self) -> tuple[np.ndarray | None, list[str]]:
         """Build a (T ├ù N) matrix of spread returns from active spreads.
 
         Returns:
@@ -253,7 +253,7 @@ class PCASpreadMonitor:
         return df.values, list(df.columns)
 
     @staticmethod
-    def _run_pca(X: np.ndarray) -> Tuple[float, np.ndarray]:
+    def _run_pca(X: np.ndarray) -> tuple[float, np.ndarray]:
         """Run PCA on return matrix X (T ├ù N).
 
         Uses numpy's eigendecomposition on the covariance matrix (fast for

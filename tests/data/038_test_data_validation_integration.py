@@ -8,15 +8,16 @@ EDGECORE Remediation: Validates data integrity enforcement across data pipeline.
 - Tests error propagation and logging
 """
 
-import pytest
-import pandas as pd
+from unittest.mock import MagicMock, Mock, patch
+
 import numpy as np
-from unittest.mock import Mock, MagicMock, patch
+import pandas as pd
+import pytest
 import structlog
 
-from data.loader import DataLoader
-from data.validators import OHLCVValidator, ValidationResult, DataValidationError
 from backtests.runner import BacktestRunner
+from data.loader import DataLoader
+from data.validators import DataValidationError, OHLCVValidator, ValidationResult
 
 logger = structlog.get_logger()
 
@@ -26,7 +27,7 @@ def _make_bars(opens, highs, lows, closes, volumes, dates=None):
     if dates is None:
         dates = pd.date_range('2022-01-03', periods=len(opens), freq='B')
     bars = []
-    for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes):
+    for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes, strict=False):
         bar = MagicMock()
         bar.date = d.strftime('%Y%m%d') if hasattr(d, 'strftime') else str(d)
         bar.open = o

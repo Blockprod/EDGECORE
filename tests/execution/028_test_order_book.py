@@ -9,17 +9,15 @@ Covers:
 - Microstructure effects
 """
 
-
 import pytest
 
 from common.types import (
     BookSimulationConfig,
 )
 from execution.order_book import (
-    OrderBookSimulator,
     MarketMicrostructure,
+    OrderBookSimulator,
 )
-
 
 # ============================================================================
 # ORDER BOOK SIMULATOR TESTS
@@ -236,10 +234,10 @@ class TestOrderBookSimulator:
         book = sim.create_order_book("AAPL", 150.0, 20.0)
 
         # Small order
-        small_price, _, small_impact = sim.estimate_execution_price(book, "buy", 10.0)
+        _small_price, _, small_impact = sim.estimate_execution_price(book, "buy", 10.0)
 
         # Large order
-        large_price, _, large_impact = sim.estimate_execution_price(book, "buy", 5000.0)
+        _large_price, _, large_impact = sim.estimate_execution_price(book, "buy", 5000.0)
 
         # Large order should have more impact
         assert large_impact >= small_impact
@@ -283,7 +281,7 @@ class TestOrderBookSimulator:
         assert update["side"] in ["bid", "ask"]
         assert update["update_type"] in ["trade", "add", "cancel", "modify"]
         assert update["quantity"] > 0
-        assert update["order_count"] >= 0
+        assert update.get("order_count", 0) >= 0
 
 
 # ============================================================================
@@ -410,10 +408,8 @@ class TestOrderBookIntegration:
 
         # Simulate several trades
         results = []
-        for i in range(3):
-            exec_price, filled, impact = sim.estimate_execution_price(
-                book, "buy", 1000.0
-            )
+        for _i in range(3):
+            exec_price, filled, impact = sim.estimate_execution_price(book, "buy", 1000.0)
             results.append((exec_price, filled, impact))
 
         # All trades should show fills and impact

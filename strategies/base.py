@@ -1,7 +1,8 @@
 ﻿from abc import ABC, abstractmethod
-from typing import List
-import pandas as pd
 from dataclasses import dataclass
+
+import pandas as pd
+
 
 @dataclass
 class Signal:
@@ -15,7 +16,7 @@ class BaseStrategy(ABC):
     """Abstract base strategy."""
     
     @abstractmethod
-    def generate_signals(self, market_data: pd.DataFrame) -> List[Signal]:
+    def generate_signals(self, market_data: pd.DataFrame) -> list[Signal]:
         """Generate trading signals from market data."""
         pass
     

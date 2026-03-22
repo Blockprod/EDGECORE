@@ -17,8 +17,6 @@ of mean reversion for each pair.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -56,8 +54,8 @@ class ZScoreCalculator:
     def compute(
         self,
         spread: pd.Series,
-        half_life: Optional[float] = None,
-        lookback: Optional[int] = None,
+        half_life: float | None = None,
+        lookback: int | None = None,
     ) -> pd.Series:
         """
         Compute rolling z-score of *spread*.
@@ -92,8 +90,8 @@ class ZScoreCalculator:
 
     def _resolve_lookback(
         self,
-        half_life: Optional[float],
-        explicit: Optional[int],
+        half_life: float | None,
+        explicit: int | None,
     ) -> int:
         """Determine lookback window from half-life or explicit override."""
         if explicit is not None:

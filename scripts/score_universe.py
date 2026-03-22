@@ -22,12 +22,13 @@ Usage:
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Any
 from structlog import get_logger
 from data.loader import DataLoader
 from data.validators import DataValidationError
@@ -39,38 +40,79 @@ logger = get_logger(__name__)
 # ÔöÇÔöÇ Full candidate universe (53 symbols across 8 sectors) ÔöÇÔöÇ
 CANDIDATES = {
     "Tech": [
-        "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD",
-        "INTC", "AVGO", "CRM", "ADBE",
+        "AAPL",
+        "MSFT",
+        "GOOGL",
+        "META",
+        "NVDA",
+        "AMD",
+        "INTC",
+        "AVGO",
+        "CRM",
+        "ADBE",
     ],
     "Financials": [
-        "JPM", "GS", "BAC", "MS", "WFC", "C", "BLK", "SCHW",
+        "JPM",
+        "GS",
+        "BAC",
+        "MS",
+        "WFC",
+        "C",
+        "BLK",
+        "SCHW",
     ],
     "Healthcare": [
-        "JNJ", "PFE", "UNH", "MRK", "ABBV", "LLY", "TMO", "ABT",
+        "JNJ",
+        "PFE",
+        "UNH",
+        "MRK",
+        "ABBV",
+        "LLY",
+        "TMO",
+        "ABT",
     ],
     "Consumer": [
-        "KO", "PEP", "PG", "CL", "WMT", "COST",
+        "KO",
+        "PEP",
+        "PG",
+        "CL",
+        "WMT",
+        "COST",
     ],
     "Energy": [
-        "XOM", "CVX", "COP", "SLB", "EOG",
+        "XOM",
+        "CVX",
+        "COP",
+        "SLB",
+        "EOG",
     ],
     "Industrials": [
-        "CAT", "DE", "HON", "GE", "RTX", "LMT",
+        "CAT",
+        "DE",
+        "HON",
+        "GE",
+        "RTX",
+        "LMT",
     ],
     "Utilities": [
-        "NEE", "DUK", "SO", "D",
+        "NEE",
+        "DUK",
+        "SO",
+        "D",
     ],
     "REITs": [
-        "PLD", "AMT", "SPG",
+        "PLD",
+        "AMT",
+        "SPG",
     ],
 }
 
 
 def load_all_data(
-    candidates: Dict[str, List[str]],
+    candidates: dict[str, list[str]],
     start_date: str = "2019-06-01",  # buffer before 2020
     end_date: str = "2026-01-01",
-) -> Tuple[pd.DataFrame, List[str]]:
+) -> tuple[pd.DataFrame, list[str]]:
     """Load close prices for all candidate symbols from IBKR."""
     loader = DataLoader()
     all_symbols = [s for syms in candidates.values() for s in syms]
@@ -80,8 +122,11 @@ def load_all_data(
     for sym in all_symbols:
         try:
             df = loader.load_ibkr_data(
-                symbol=sym, timeframe="1d",
-                since=start_date, limit=3000, validate=True,
+                symbol=sym,
+                timeframe="1d",
+                since=start_date,
+                limit=3000,
+                validate=True,
             )
             price_data[sym] = df["close"]
             print(f"  [OK] {sym}: {len(df)} rows")
@@ -94,9 +139,7 @@ def load_all_data(
 
     prices_df = pd.DataFrame(price_data)
     # Filter to requested date range
-    prices_df = prices_df[
-        (prices_df.index >= start_date) & (prices_df.index <= end_date)
-    ]
+    prices_df = prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)]
     print(f"\nLoaded {len(prices_df)} bars for {len(prices_df.columns)} symbols")
     if failed:
         print(f"Failed: {failed}")
@@ -106,9 +149,9 @@ def load_all_data(
 
 def score_symbols(
     prices_df: pd.DataFrame,
-    candidates: Dict[str, List[str]],
+    candidates: dict[str, list[str]],
     window: int = 252,
-    step: int = 21,       # ~monthly steps (faster than daily)
+    step: int = 21,  # ~monthly steps (faster than daily)
     max_half_life: int = 120,
 ) -> pd.DataFrame:
     """
@@ -122,14 +165,16 @@ def score_symbols(
     n_bars = len(prices_df)
 
     # Per-symbol accumulators
-    stats = defaultdict(lambda: {
-        "sector": "",
-        "coint_count": 0,        # how many (window, partner) pairs are cointegrated
-        "total_tests": 0,        # total pair tests involving this symbol
-        "pvalues": [],           # raw p-values when cointegrated
-        "half_lives": [],        # half-lives when cointegrated
-        "partners": set(),       # distinct cointegrating partners
-    })
+    stats: dict[str, Any] = defaultdict(
+        lambda: {
+            "sector": "",
+            "coint_count": 0,  # how many (window, partner) pairs are cointegrated
+            "total_tests": 0,  # total pair tests involving this symbol
+            "pvalues": [],  # raw p-values when cointegrated
+            "half_lives": [],  # half-lives when cointegrated
+            "partners": set(),  # distinct cointegrating partners
+        }
+    )
 
     # Assign sectors
     for sector, syms in candidates.items():
@@ -157,14 +202,10 @@ def score_symbols(
                     stats[sym2]["total_tests"] += 1
 
                     try:
-                        result = engle_granger_test(
-                            s1, s2, apply_bonferroni=False
-                        )
+                        result = engle_granger_test(s1, s2, apply_bonferroni=False)
                         pval = result.get("adf_pvalue", 1.0)
                         if pval < 0.05 and not np.isnan(pval):
-                            hl = half_life_mean_reversion(
-                                pd.Series(result["residuals"])
-                            )
+                            hl = half_life_mean_reversion(pd.Series(result["residuals"]))
                             if hl and 0 < hl <= max_half_life:
                                 stats[sym1]["coint_count"] += 1
                                 stats[sym2]["coint_count"] += 1
@@ -210,18 +251,20 @@ def score_symbols(
             + 0.20 * partner_diversity
         )
 
-        rows.append({
-            "symbol": sym,
-            "sector": s["sector"],
-            "coint_frequency": round(coint_freq, 4),
-            "avg_pvalue": round(avg_pval, 6),
-            "avg_half_life": round(avg_hl, 1),
-            "hl_stability": round(hl_stability, 4),
-            "n_partners": n_partners,
-            "n_tests": s["total_tests"],
-            "n_cointegrated": s["coint_count"],
-            "composite_score": round(composite, 4),
-        })
+        rows.append(
+            {
+                "symbol": sym,
+                "sector": s["sector"],
+                "coint_frequency": round(coint_freq, 4),
+                "avg_pvalue": round(avg_pval, 6),
+                "avg_half_life": round(avg_hl, 1),
+                "hl_stability": round(hl_stability, 4),
+                "n_partners": n_partners,
+                "n_tests": s["total_tests"],
+                "n_cointegrated": s["coint_count"],
+                "composite_score": round(composite, 4),
+            }
+        )
 
     df = pd.DataFrame(rows)
     df.sort_values(["sector", "composite_score"], ascending=[True, False], inplace=True)
@@ -230,7 +273,7 @@ def score_symbols(
 
 def recommend_universe(
     scores_df: pd.DataFrame,
-    max_per_sector: Dict[str, int] = None,
+    max_per_sector: dict[str, int] | None = None,
 ) -> pd.DataFrame:
     """Select top symbols per sector based on composite score."""
     if max_per_sector is None:
@@ -287,16 +330,17 @@ def main():
         print(f"\n{'ÔöÇ' * 55}")
         print(f"  {sector.upper()}")
         print(f"{'ÔöÇ' * 55}")
-        print(f"{'Symbol':<8} {'Score':>6} {'Freq':>6} {'AvgP':>8} "
-              f"{'AvgHL':>6} {'HLStab':>6} {'Partners':>8}")
+        print(f"{'Symbol':<8} {'Score':>6} {'Freq':>6} {'AvgP':>8} {'AvgHL':>6} {'HLStab':>6} {'Partners':>8}")
         print(f"{'ÔöÇ' * 55}")
         for _, row in sector_df.iterrows():
             marker = " ***" if row["composite_score"] >= 0.20 else ""
-            print(f"{row['symbol']:<8} {row['composite_score']:>6.3f} "
-                  f"{row['coint_frequency']:>6.3f} {row['avg_pvalue']:>8.5f} "
-                  f"{row['avg_half_life']:>6.1f} {row['hl_stability']:>6.3f} "
-                  f"{row['n_partners']:>4}/{len(clean_candidates.get(row['sector'], []))-1}"
-                  f"{marker}")
+            print(
+                f"{row['symbol']:<8} {row['composite_score']:>6.3f} "
+                f"{row['coint_frequency']:>6.3f} {row['avg_pvalue']:>8.5f} "
+                f"{row['avg_half_life']:>6.1f} {row['hl_stability']:>6.3f} "
+                f"{row['n_partners']:>4}/{len(clean_candidates.get(row['sector'], [])) - 1}"
+                f"{marker}"
+            )
 
     # Recommendation
     recommended = recommend_universe(scores)
@@ -308,8 +352,7 @@ def main():
         print(f"  {sector:<14}: {', '.join(syms)}")
 
     total_pairs = sum(
-        len(recommended[recommended["sector"] == s]) *
-        (len(recommended[recommended["sector"] == s]) - 1) // 2
+        len(recommended[recommended["sector"] == s]) * (len(recommended[recommended["sector"] == s]) - 1) // 2
         for s in recommended["sector"].unique()
     )
     print(f"\n  Total intra-sector pairs: {total_pairs}")

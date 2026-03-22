@@ -116,7 +116,7 @@ Source de vérité : `CostConfig` (lue via `get_settings().costs`).
 
 **Règle :** `expected_edge > 2 × coût_total_aller_retour` avant de placer un ordre.
 
-**Dette connue B5-02 :** `execution_engine/router.py` a des valeurs `slippage = 2.0` hardcodées (lignes ~162 et ~189). Ces valeurs doivent être remplacées par `get_settings().costs.slippage`.
+~~**Dette B5-02**~~ ✅ CORRIGÉ (2026-03-21) : `execution_engine/router.py:148,173` lit `get_settings().costs.slippage_bps`.
 
 ---
 

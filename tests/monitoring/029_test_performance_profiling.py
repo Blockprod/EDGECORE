@@ -9,19 +9,20 @@ Covers:
 - Context manager timing
 """
 
+# pyright: reportUnusedVariable=false, reportAttributeAccessIssue=false, reportOptionalSubscript=false, reportOptionalIterable=false
+
 import time
 
 import pytest
 
 from monitoring.profiler import (
-    PerformanceProfiler,
     PerformanceMetric,
+    PerformanceProfiler,
     TimingContext,
-    time_block,
     get_global_profiler,
     reset_global_profiler,
+    time_block,
 )
-
 
 # ============================================================================
 # PERFORMANCE PROFILER TESTS
@@ -215,14 +216,10 @@ class TestPerformanceProfiler:
         for i in range(10):
             if i < 5:
                 # Fast function
-                profiler.metrics.setdefault("fast_func", []).append(
-                    PerformanceMetric("fast_func", 1.0)
-                )
+                profiler.metrics.setdefault("fast_func", []).append(PerformanceMetric("fast_func", 1.0))
             else:
                 # Slow function
-                profiler.metrics.setdefault("slow_func", []).append(
-                    PerformanceMetric("slow_func", 50.0)
-                )
+                profiler.metrics.setdefault("slow_func", []).append(PerformanceMetric("slow_func", 50.0))
 
         bottlenecks = profiler.find_bottlenecks(threshold_pct=20.0)
 
@@ -249,15 +246,11 @@ class TestPerformanceProfiler:
 
         # Add successful calls
         for _ in range(8):
-            profiler.metrics.setdefault("test_func", []).append(
-                PerformanceMetric("test_func", 1.0)
-            )
+            profiler.metrics.setdefault("test_func", []).append(PerformanceMetric("test_func", 1.0))
 
         # Add failed calls
         for _ in range(2):
-            profiler.metrics.setdefault("test_func", []).append(
-                PerformanceMetric("test_func", 0.5, error="Test error")
-            )
+            profiler.metrics.setdefault("test_func", []).append(PerformanceMetric("test_func", 0.5, error="Test error"))
 
         stats = profiler.get_stats("test_func")
 
@@ -409,6 +402,7 @@ class TestProfilingIntegration:
         cleanup(data)
 
         stats_dict = profiler.get_stats()
+        assert isinstance(stats_dict, dict)
 
         assert "setup" in stats_dict
         assert "process" in stats_dict
@@ -463,5 +457,6 @@ class TestProfilingIntegration:
         assert "fibonacci" in profiler.metrics
 
         stats = profiler.get_stats("fibonacci")
+        assert stats is not None
         assert stats.call_count > 1  # Multiple recursive calls
         assert stats.mean_time_ms >= 0

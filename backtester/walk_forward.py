@@ -14,7 +14,7 @@ Walk-forward validation prevents overfitting by:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd
 from structlog import get_logger
@@ -27,7 +27,8 @@ logger = get_logger(__name__)
 @dataclass
 class WalkForwardConfig:
     """Configuration for walk-forward validation."""
-    symbols: List[str] = field(default_factory=list)
+
+    symbols: list[str] = field(default_factory=list)
     start_date: str = ""
     end_date: str = ""
     num_periods: int = 4
@@ -40,8 +41,9 @@ class WalkForwardConfig:
 @dataclass
 class WalkForwardResult:
     """Structured walk-forward validation result."""
-    per_period: List[Dict[str, Any]]
-    aggregate: Dict[str, Any]
+
+    per_period: list[dict[str, Any]]
+    aggregate: dict[str, Any]
     config: WalkForwardConfig
     num_periods_executed: int = 0
     passed: bool = False
@@ -109,13 +111,8 @@ class WalkForwardEngine:
         aggregate = raw.get("aggregate_metrics", {})
 
         # Determine pass/fail: at least 50% of periods must be profitable
-        profitable_periods = sum(
-            1 for p in per_period if p.get("total_return", 0) > 0
-        )
-        passed = (
-            len(per_period) > 0
-            and (profitable_periods / len(per_period)) >= 0.50
-        )
+        profitable_periods = sum(1 for p in per_period if p.get("total_return", 0) > 0)
+        passed = len(per_period) > 0 and (profitable_periods / len(per_period)) >= 0.50
 
         result = WalkForwardResult(
             per_period=per_period,

@@ -40,7 +40,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -119,7 +118,7 @@ class MarketRegimeFilter:
         self.enabled = enabled
         self.trend_favorable_sizing = trend_favorable_sizing
         self.neutral_sizing = neutral_sizing
-        self._last_state: Optional[MarketRegimeState] = None
+        self._last_state: MarketRegimeState | None = None
 
     def classify(self, spy_prices: pd.Series) -> MarketRegimeState:
         """
@@ -239,6 +238,6 @@ class MarketRegimeFilter:
         return state
 
     @property
-    def last_state(self) -> Optional[MarketRegimeState]:
+    def last_state(self) -> MarketRegimeState | None:
         """Return the most recent regime state."""
         return self._last_state

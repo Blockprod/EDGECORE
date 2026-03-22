@@ -8,27 +8,29 @@ Provides:
 - Performance regression detection
 """
 
-import time
 import functools
 import statistics
+import time
 from dataclasses import dataclass, field
-from typing import Callable, Any, Optional, Dict, List
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Any, Callable
 
 
 @dataclass
 class PerformanceMetric:
     """Individual performance measurement."""
+
     function_name: str
     execution_time_ms: float
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    args_signature: Optional[str] = None
-    error: Optional[str] = None
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
+    args_signature: str | None = None
+    error: str | None = None
 
 
 @dataclass
 class PerformanceStats:
     """Aggregated performance statistics."""
+
     function_name: str
     call_count: int
     total_time_ms: float
@@ -48,11 +50,9 @@ class PerformanceProfiler:
 
     def __init__(self, name: str = "default"):
         self.name = name
-        self.metrics: Dict[str, List[PerformanceMetric]] = {}
+        self.metrics: dict[str, list[PerformanceMetric]] = {}
 
-    def profile_function(
-        self, func: Callable, *args: Any, **kwargs: Any
-    ) -> tuple[Any, float]:
+    def profile_function(self, func: Callable, *args: Any, **kwargs: Any) -> tuple[Any, float]:
         """
         Profile a single function call.
 
@@ -101,13 +101,15 @@ class PerformanceProfiler:
             def my_function():
                 pass
         """
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             result, _ = self.profile_function(func, *args, **kwargs)
             return result
+
         return wrapper
 
-    def get_stats(self, function_name: Optional[str] = None) -> Optional[PerformanceStats] | Dict[str, PerformanceStats]:
+    def get_stats(self, function_name: str | None = None) -> PerformanceStats | dict[str, PerformanceStats] | None:
         """
         Get aggregated statistics for function(s).
 
@@ -122,14 +124,9 @@ class PerformanceProfiler:
                 return None
             return self._calculate_stats(function_name, self.metrics[function_name])
         else:
-            return {
-                name: self._calculate_stats(name, metrics)
-                for name, metrics in self.metrics.items()
-            }
+            return {name: self._calculate_stats(name, metrics) for name, metrics in self.metrics.items()}
 
-    def _calculate_stats(
-        self, func_name: str, metrics: List[PerformanceMetric]
-    ) -> PerformanceStats:
+    def _calculate_stats(self, func_name: str, metrics: list[PerformanceMetric]) -> PerformanceStats:
         """Calculate statistics from metrics."""
         times = [m.execution_time_ms for m in metrics if m.error is None]
         errors = [m for m in metrics if m.error is not None]
@@ -154,7 +151,7 @@ class PerformanceProfiler:
         )
 
     @staticmethod
-    def _percentile(data: List[float], percentile: float) -> float:
+    def _percentile(data: list[float], percentile: float) -> float:
         """Calculate percentile of data."""
         if not data:
             return 0.0
@@ -177,16 +174,20 @@ class PerformanceProfiler:
         report_lines.append("=" * 80)
 
         stats_dict = self.get_stats()
-        
+
+        # get_stats() with no arg returns dict[str, PerformanceStats] | None
+        if not isinstance(stats_dict, dict) or not stats_dict:
+            return "No stats available."
+
         # Sort by total time (descending)
-        sorted_funcs = sorted(
+        sorted_stats = sorted(
             stats_dict.items(),
-            key=lambda x: x[1].total_time_ms,
-            reverse=True
+            key=lambda item: item[1].total_time_ms,
+            reverse=True,
         )
 
-        for func_name, stats in sorted_funcs:
-            report_lines.append(f"\n{func_name}:")
+        for name, stats in sorted_stats:
+            report_lines.append(f"\n{name}:")
             report_lines.append(f"  Calls:        {stats.call_count}")
             report_lines.append(f"  Total:        {stats.total_time_ms:.2f} ms")
             report_lines.append(f"  Mean:         {stats.mean_time_ms:.2f} ms")
@@ -197,13 +198,11 @@ class PerformanceProfiler:
             report_lines.append(f"  P95:          {stats.p95_time_ms:.2f} ms")
             report_lines.append(f"  P99:          {stats.p99_time_ms:.2f} ms")
             if stats.error_count > 0:
-                report_lines.append(
-                    f"  Errors:       {stats.error_count} ({stats.error_rate_pct:.1f}%)"
-                )
+                report_lines.append(f"  Errors:       {stats.error_count} ({stats.error_rate_pct:.1f}%)")
 
         return "\n".join(report_lines)
 
-    def find_bottlenecks(self, threshold_pct: float = 10.0) -> List[tuple[str, PerformanceStats]]:
+    def find_bottlenecks(self, threshold_pct: float = 10.0) -> list[tuple[str, PerformanceStats]]:
         """
         Find functions consuming > threshold% of total time.
 
@@ -214,15 +213,20 @@ class PerformanceProfiler:
             List of (function_name, stats) sorted by time consumed
         """
         stats_dict = self.get_stats()
+        if not stats_dict or not isinstance(stats_dict, dict):
+            return []
         total_time = sum(s.total_time_ms for s in stats_dict.values())
 
-        bottlenecks = [
-            (name, stats)
-            for name, stats in stats_dict.items()
-            if (stats.total_time_ms / total_time * 100) > threshold_pct
-        ]
+        if total_time == 0:
+            return []
 
-        return sorted(bottlenecks, key=lambda x: x[1].total_time_ms, reverse=True)
+        bottlenecks = []
+        for name, stats in stats_dict.items():
+            percentage = (stats.total_time_ms / total_time) * 100
+            if percentage >= threshold_pct:
+                bottlenecks.append((name, stats))
+
+        return sorted(bottlenecks, key=lambda item: item[1].total_time_ms, reverse=True)
 
     def reset(self) -> None:
         """Clear all metrics."""
@@ -251,6 +255,7 @@ def reset_global_profiler() -> None:
 @dataclass
 class TimingContext:
     """Context manager for timing code blocks."""
+
     name: str
     profiler: PerformanceProfiler = field(default_factory=lambda: _global_profiler)
     start_time: float = field(default=0.0)
@@ -285,7 +290,7 @@ class TimingContext:
 
 
 # Global timing context
-def time_block(name: str, profiler: Optional[PerformanceProfiler] = None) -> TimingContext:
+def time_block(name: str, profiler: PerformanceProfiler | None = None) -> "TimingContext":
     """Create a timing context for a code block."""
     if profiler is None:
         profiler = _global_profiler

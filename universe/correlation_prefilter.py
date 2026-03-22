@@ -24,8 +24,6 @@ Usage::
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -94,8 +92,8 @@ class CorrelationPreFilter:
     def filter_pairs(
         self,
         price_data: pd.DataFrame,
-        sector_map: Optional[Dict[str, str]] = None,
-    ) -> List[Tuple[str, str]]:
+        sector_map: dict[str, str] | None = None,
+    ) -> list[tuple[str, str]]:
         """
         Generate candidate pairs using vectorized correlation + sector.
 
@@ -140,8 +138,8 @@ class CorrelationPreFilter:
 
         # Build pairs with sector filtering
         use_sector = self.require_same_sector and sector_map is not None
-        candidates: List[Tuple[str, str]] = []
-        sector_counts: Dict[str, int] = {}
+        candidates: list[tuple[str, str]] = []
+        sector_counts: dict[str, int] = {}
 
         # Sort by correlation descending ÔÇö keep strongest pairs first
         sort_idx = np.argsort(-passing_corrs)
@@ -152,6 +150,8 @@ class CorrelationPreFilter:
 
             # Sector restriction
             if use_sector:
+                if sector_map is None:
+                    continue
                 sec1 = sector_map.get(sym1)
                 sec2 = sector_map.get(sym2)
                 if sec1 != sec2 or sec1 is None:
@@ -190,8 +190,8 @@ class CorrelationPreFilter:
     def filter_pairs_with_scores(
         self,
         price_data: pd.DataFrame,
-        sector_map: Optional[Dict[str, str]] = None,
-    ) -> List[Tuple[str, str, float]]:
+        sector_map: dict[str, str] | None = None,
+    ) -> list[tuple[str, str, float]]:
         """
         Like filter_pairs() but also returns the correlation score.
 
@@ -218,8 +218,8 @@ class CorrelationPreFilter:
         passing_corrs = corr_upper[mask]
 
         use_sector = self.require_same_sector and sector_map is not None
-        results: List[Tuple[str, str, float]] = []
-        sector_counts: Dict[str, int] = {}
+        results: list[tuple[str, str, float]] = []
+        sector_counts: dict[str, int] = {}
 
         sort_idx = np.argsort(-np.abs(passing_corrs))
 
@@ -229,6 +229,8 @@ class CorrelationPreFilter:
             corr_val = float(passing_corrs[idx])
 
             if use_sector:
+                if sector_map is None:
+                    continue
                 sec1 = sector_map.get(sym1)
                 sec2 = sector_map.get(sym2)
                 if sec1 != sec2 or sec1 is None:
@@ -244,20 +246,17 @@ class CorrelationPreFilter:
 
     @staticmethod
     def sector_pair_counts(
-        sector_map: Dict[str, str],
-        symbols: List[str],
-    ) -> Dict[str, int]:
+        sector_map: dict[str, str],
+        symbols: list[str],
+    ) -> dict[str, int]:
         """
         Count maximum possible intra-sector pairs per sector.
 
         Useful for capacity planning and logging.
         """
-        groups: Dict[str, int] = {}
+        groups: dict[str, int] = {}
         for sym in symbols:
             sec = sector_map.get(sym, "unknown")
             groups[sec] = groups.get(sec, 0) + 1
 
-        return {
-            sec: n * (n - 1) // 2
-            for sec, n in groups.items()
-        }
+        return {sec: n * (n - 1) // 2 for sec, n in groups.items()}

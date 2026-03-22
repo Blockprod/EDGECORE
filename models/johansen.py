@@ -13,8 +13,8 @@ Usage:
         print(f"Rank: {result['rank']}")
 """
 
+
 import pandas as pd
-from typing import Optional
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -51,8 +51,8 @@ class JohansenCointegrationTest:
     def test(
         self,
         data: pd.DataFrame,
-        det_order: Optional[int] = None,
-        k_ar_diff: Optional[int] = None,
+        det_order: int | None = None,
+        k_ar_diff: int | None = None,
     ) -> dict:
         """
         Run the Johansen cointegration test on a multivariate dataset.

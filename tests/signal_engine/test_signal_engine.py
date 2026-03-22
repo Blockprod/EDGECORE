@@ -8,15 +8,15 @@ Covers:
       constant series, missing columns
 """
 
-import numpy as np
-import pandas as pd
 from unittest.mock import MagicMock
 
-from signal_engine.zscore import ZScoreCalculator
-from signal_engine.adaptive import AdaptiveThresholdEngine, ThresholdResult
-from signal_engine.generator import SignalGenerator, Signal
-from models.regime_detector import VolatilityRegime
+import numpy as np
+import pandas as pd
 
+from models.regime_detector import VolatilityRegime
+from signal_engine.adaptive import AdaptiveThresholdEngine, ThresholdResult
+from signal_engine.generator import Signal, SignalGenerator
+from signal_engine.zscore import ZScoreCalculator
 
 # ======================================================================
 # ZScoreCalculator

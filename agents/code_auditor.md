@@ -57,16 +57,16 @@ Audit de conformité technique, détection de régressions, validation de la cou
 
 - [ ] **B4-04** : `CMakeLists.txt` archivé dans `docs/archived/` (pipeline C++ abandonné)
 
-- [ ] **B4-05** : `backtester/__init__.py` existe
+- [x] **B4-05** : `backtester/__init__.py` existe ✅ CORRIGÉ (2026-03-20)
   - Vérification : `Test-Path backtester/__init__.py`
 
 ### Bloc B5 — Configuration et infrastructure
 
-- [ ] **B5-01** : Docker utilise `EDGECORE_ENV=prod` (pas `production`)
+- [x] **B5-01** : Docker utilise `EDGECORE_ENV=prod` (pas `production`) ✅ CORRIGÉ (2026-03-20)
   - Vérification : `grep -n "production" Dockerfile docker-compose.yml`
   - Conformité : valeurs valides = `dev`, `test`, `prod`
 
-- [ ] **B5-02** : `execution_engine/router.py` lit `get_settings().costs.slippage_bps` (pas hardcodé)
+- [x] **B5-02** : `execution_engine/router.py` lit `get_settings().costs.slippage_bps` (pas hardcodé) ✅ CORRIGÉ (2026-03-21)
 
 - [ ] **B5-03** : `setup.py` (Cython only) et `pyproject.toml` (package metadata) coexistent sans conflit
 
@@ -112,8 +112,8 @@ ENTRY_Z = 2.0  # hardcodé
 # ✅ Correct
 from execution.base import Order, OrderStatus
 
-# ❌ Interdit
-from execution_engine.router import TradeOrder  # doublon B2-01
+# ❌ Interdit (B2-01 ✅ CORRIGÉ 2026-03-21 — class TradeOrder supprimée)
+# from execution_engine.router import TradeOrder
 ```
 
 ---

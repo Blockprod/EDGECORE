@@ -163,7 +163,7 @@ exit_threshold:  float = 0.2
 | ID | Localisation | Description | Statut |
 |----|-------------|-------------|--------|
 | B5-01 | `Dockerfile:37`, `docker-compose.yml:11` | `EDGECORE_ENV=production` → fallback `dev.yaml` silencieux | ✅ CORRIGÉ — `prod` (2026-03-20) |
-| B5-02 | `execution_engine/router.py:162,189` | `slippage = 2.0` hardcodé, ignore `CostConfig` | ⚠️ OUVERT — lire `get_settings().costs` |
-| B2-01 | `execution_engine/router.py:37` | `TradeOrder` duplique `Order` de `execution/base.py` | ⚠️ OUVERT — unifier |
-| B2-02 | `live_trading/runner.py:224-231` | `PositionRiskManager` + `PortfolioRiskManager` + `KillSwitch` + `RiskFacade` instanciés séparément | ⚠️ OUVERT — `RiskFacade` devrait tout contenir |
+| B5-02 | `execution_engine/router.py:148,173` | `slippage = 2.0` hardcodé, ignore `CostConfig` | ✅ CORRIGÉ — `get_settings().costs.slippage_bps` (2026-03-21) |
+| B2-01 | `execution_engine/router.py` | `TradeOrder` duplique `Order` de `execution/base.py` | ✅ CORRIGÉ — `class TradeOrder` absente, `submit_order(order: Order)` (2026-03-21) |
+| B2-02 | `live_trading/runner.py:231-241` | `KillSwitch` partagé via injection ✅ — `_position_risk.check()` encore appelé directement (lignes 474, 636) | ⚠️ PARTIEL — unifier via `RiskFacade` (C-01) |
 | B4-05 | `backtester/` | Pas de `__init__.py` — pas importable | ✅ CORRIGÉ — `__init__.py` créé (2026-03-20) |

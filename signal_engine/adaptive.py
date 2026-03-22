@@ -12,7 +12,6 @@ pair characteristics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import pandas as pd
 from structlog import get_logger
@@ -32,7 +31,7 @@ class ThresholdResult:
     entry_threshold: float
     exit_threshold: float
     regime: VolatilityRegime
-    adjustments: Dict[str, float]
+    adjustments: dict[str, float]
 
 
 class AdaptiveThresholdEngine:
@@ -62,7 +61,7 @@ class AdaptiveThresholdEngine:
         base_exit: float = 0.5,
         min_entry: float = 1.0,
         max_entry: float = 3.5,
-        config: Optional[ThresholdConfig] = None,
+        config: ThresholdConfig | None = None,
     ):
         self._config = config or ThresholdConfig(
             base_entry_threshold=base_entry,
@@ -75,8 +74,8 @@ class AdaptiveThresholdEngine:
     def get_thresholds(
         self,
         spread: pd.Series,
-        half_life: Optional[float] = None,
-        regime: Optional[VolatilityRegime] = None,
+        half_life: float | None = None,
+        regime: VolatilityRegime | None = None,
     ) -> ThresholdResult:
         """
         Calculate adaptive entry/exit thresholds.

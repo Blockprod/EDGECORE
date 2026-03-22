@@ -5,13 +5,14 @@ Tests for ExecutionRouter ÔÇö verifies order routing across modes.
 import time
 
 import pytest
+
 from execution.base import Order, OrderSide
+from execution.rate_limiter import TokenBucketRateLimiter
 from execution_engine.router import (
-    ExecutionRouter,
     ExecutionMode,
+    ExecutionRouter,
     TradeExecution,
 )
-from execution.rate_limiter import TokenBucketRateLimiter
 
 
 @pytest.fixture
@@ -128,9 +129,14 @@ class TestTradeExecution:
 
     def test_not_partial_by_default(self):
         ex = TradeExecution(
-            pair_key="A_B", symbol="A", side="buy",
-            requested_qty=100, filled_qty=100,
-            fill_price=100.0, commission=0.5, slippage_bps=1.0,
+            pair_key="A_B",
+            symbol="A",
+            side="buy",
+            requested_qty=100,
+            filled_qty=100,
+            fill_price=100.0,
+            commission=0.5,
+            slippage_bps=1.0,
         )
         assert not ex.is_partial
 
@@ -140,6 +146,7 @@ class TestMultipleOrders:
         for _ in range(5):
             backtest_router.submit_order(sample_order)
         assert len(backtest_router._execution_log) == 5
+
 
 # ÔöÇÔöÇ Phase 3: rate limiter, paper exclusion, live path ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
@@ -164,7 +171,7 @@ class TestRateLimiter:
         limiter.acquire()
         elapsed = time.monotonic() - t0
         # Should wait approximately 1/45 Ôëê 22ms
-        assert elapsed >= 0.015, f"Expected throttle, got {elapsed*1000:.1f}ms"
+        assert elapsed >= 0.015, f"Expected throttle, got {elapsed * 1000:.1f}ms"
 
     def test_timeout_raises(self):
         """Exhausted bucket + tiny timeout ÔåÆ RuntimeError."""
@@ -193,7 +200,7 @@ class TestUnknownMode:
     def test_unknown_mode_raises(self, sample_order):
         """Invalid mode raises ValueError on submit."""
         router = ExecutionRouter(mode=ExecutionMode.PAPER)
-        router._mode = "INVALID"
+        router._mode = "INVALID"  # type: ignore[assignment]
         with pytest.raises(ValueError, match="Unknown mode"):
             router.submit_order(sample_order)
 
@@ -203,8 +210,9 @@ class TestGetOrderStatus:
 
     def test_returns_filled_for_paper_order(self):
         """Paper orders are recorded as FILLED in _pending_orders."""
-        from execution.base import OrderStatus, Order, OrderSide
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide, OrderStatus
 
         router = ExecutionRouter(mode=ExecutionMode.PAPER)
         order = Order(
@@ -237,8 +245,9 @@ class TestGetOrderStatus:
 
     def test_paper_order_with_execution_base_order(self):
         """execution.base.Order submitted in paper mode is tracked by order_id."""
-        from execution.base import OrderStatus, Order, OrderSide
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide, OrderStatus
 
         router = ExecutionRouter(mode=ExecutionMode.PAPER)
         oid = str(uuid4())
@@ -259,9 +268,10 @@ class TestAntiShortGuard:
 
     def test_sell_blocked_when_shares_insufficient(self):
         """SELL order with quantity > shortable shares → filled_qty=0, status REJECTED."""
-        from execution.base import OrderStatus, Order, OrderSide
         from unittest.mock import MagicMock
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide, OrderStatus
 
         router = ExecutionRouter(mode=ExecutionMode.LIVE)
 
@@ -288,9 +298,10 @@ class TestAntiShortGuard:
 
     def test_sell_allowed_when_shares_sufficient(self):
         """SELL order with quantity <= shortable shares → proceeds to IBKR."""
-        from execution.base import OrderStatus, Order, OrderSide
         from unittest.mock import MagicMock
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide, OrderStatus
 
         router = ExecutionRouter(mode=ExecutionMode.LIVE)
 
@@ -319,15 +330,17 @@ class TestAntiShortGuard:
 
     def test_buy_order_skips_guard(self):
         """BUY orders are never checked for shortable shares."""
-        from execution.base import Order, OrderSide
         from unittest.mock import MagicMock
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide
 
         router = ExecutionRouter(mode=ExecutionMode.LIVE)
 
         mock_engine = MagicMock()
         mock_engine._ensure_connected.return_value = None
         from execution.base import OrderStatus
+
         mock_engine.submit_order.return_value = "ibkr-buy-001"
         mock_engine.get_order_status.return_value = OrderStatus.FILLED
         mock_engine._order_map = {}
@@ -348,9 +361,10 @@ class TestAntiShortGuard:
 
     def test_sell_with_negative_shortable_allowed(self):
         """get_shortable_shares() returning -1 (unavailable) should not block the order."""
-        from execution.base import OrderStatus, Order, OrderSide
         from unittest.mock import MagicMock
         from uuid import uuid4
+
+        from execution.base import Order, OrderSide, OrderStatus
 
         router = ExecutionRouter(mode=ExecutionMode.LIVE)
 
@@ -375,4 +389,3 @@ class TestAntiShortGuard:
         # -1 means "data unavailable", should NOT block
         mock_engine.submit_order.assert_called_once()
         assert result.filled_qty == 100.0
-

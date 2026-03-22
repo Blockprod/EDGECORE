@@ -1,15 +1,17 @@
-﻿"""Paper trading execution with realistic slippage and commissions.
+"""Paper trading execution with realistic slippage and commissions.
 
-Fully decoupled from IBKRExecutionEngine ÔÇö no live broker connection needed.
+Fully decoupled from IBKRExecutionEngine ��� no live broker connection needed.
 Maintains an in-memory order book, positions, and balance for simulation.
 """
 
-from typing import Dict, cast
 from datetime import datetime
+from typing import cast
+
 from structlog import get_logger
-from execution.backtest_execution import SlippageCalculator, CommissionCalculator
+
+from common.types import CommissionConfig, CommissionType, SlippageConfig, SlippageModel
+from execution.backtest_execution import CommissionCalculator, SlippageCalculator
 from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
-from common.types import SlippageModel, CommissionType, SlippageConfig, CommissionConfig
 
 logger = get_logger(__name__)
 
@@ -39,9 +41,9 @@ class PaperExecutionEngine(BaseExecutionEngine):
         # In-memory state
         self._balance: float = initial_capital
         self._initial_capital: float = initial_capital
-        self._positions: Dict[str, float] = {}          # symbol -> net qty
-        self._orders: Dict[str, Order] = {}             # order_id -> Order
-        self._market_prices: Dict[str, float] = {}      # symbol -> last known price
+        self._positions: dict[str, float] = {}          # symbol -> net qty
+        self._orders: dict[str, Order] = {}             # order_id -> Order
+        self._market_prices: dict[str, float] = {}      # symbol -> last known price
 
         # Convert string slippage model to enum
         slippage_model_enum = self._parse_slippage_model(slippage_model)
@@ -69,7 +71,7 @@ class PaperExecutionEngine(BaseExecutionEngine):
             commission_pct=commission_pct,
         )
 
-    # ÔöÇÔöÇ helpers ÔöÇÔöÇ
+    # ������ helpers ������
     @staticmethod
     def _parse_slippage_model(model_str: str) -> SlippageModel:
         mapping = {
@@ -88,11 +90,11 @@ class PaperExecutionEngine(BaseExecutionEngine):
         """Feed a market price into the paper engine (call before submit_order)."""
         self._market_prices[symbol] = price
 
-    def set_market_prices(self, prices: Dict[str, float]) -> None:
+    def set_market_prices(self, prices: dict[str, float]) -> None:
         """Bulk-update market prices."""
         self._market_prices.update(prices)
 
-    # ÔöÇÔöÇ BaseExecutionEngine interface ÔöÇÔöÇ
+    # ������ BaseExecutionEngine interface ������
 
     def submit_order(self, order: Order) -> str:
         """Simulate order fill with slippage and commission."""
@@ -169,8 +171,9 @@ class PaperExecutionEngine(BaseExecutionEngine):
             return OrderStatus.PENDING
         return order.status
 
-    def get_positions(self) -> Dict[str, float]:
+    def get_positions(self) -> dict[str, float]:
         return dict(self._positions)
 
     def get_account_balance(self) -> float:
         return self._balance
+

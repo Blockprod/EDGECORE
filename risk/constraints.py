@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
+
 class ConstraintType(Enum):
     """Risk constraint types."""
     POSITION_SIZE = "POSITION_SIZE"

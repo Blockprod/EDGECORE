@@ -32,7 +32,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable
 
 from structlog import get_logger
 
@@ -68,7 +68,7 @@ class KillSwitchState:
     is_active: bool
     reason: KillReason
     message: str
-    activated_at: Optional[datetime]
+    activated_at: datetime | None
     checks_passed: int
     checks_failed: int
 
@@ -105,9 +105,9 @@ class KillSwitch:
 
     def __init__(
         self,
-        config: Optional[KillSwitchConfig] = None,
-        on_activate: Optional[Callable[[KillReason, str], None]] = None,
-        state_file: Optional[str] = None,
+        config: KillSwitchConfig | None = None,
+        on_activate: Callable[[KillReason, str], None] | None = None,
+        state_file: str | None = None,
     ):
         """
         Args:
@@ -126,10 +126,10 @@ class KillSwitch:
         self._is_active: bool = False
         self._reason: KillReason = KillReason.UNKNOWN
         self._message: str = ""
-        self._activated_at: Optional[datetime] = None
+        self._activated_at: datetime | None = None
         self._check_count: int = 0
         self._fail_count: int = 0
-        self._activation_history: List[Dict] = []
+        self._activation_history: list[dict] = []
         self._activation_lock = threading.Lock()  # A-16: makes check-then-set atomic
 
         # Restore state from disk (crash recovery)
@@ -382,6 +382,6 @@ class KillSwitch:
         )
 
     @property
-    def activation_history(self) -> List[Dict]:
+    def activation_history(self) -> list[dict]:
         """Return full activation history (for audit)."""
         return list(self._activation_history)

@@ -1,5 +1,5 @@
-﻿"""
-Stress Testing Framework ÔÇô Phase 3 (addresses audit ┬º6.6).
+"""
+Stress Testing Framework -- Phase 3 (addresses audit S6.6).
 
 Problem
 -------
@@ -12,14 +12,14 @@ Solution
 --------
 Synthetic scenario injection into historical price data:
 
-1. **Flash crash** ÔÇô Injects a sudden drop (user-defined magnitude) over
+1. **Flash crash** -- Injects a sudden drop (user-defined magnitude) over
    a short window, then partial recovery.
-2. **Prolonged drawdown** ÔÇô Applies a gradual negative trend over N bars.
-3. **Correlation breakdown** ÔÇô Decorrelates pair legs by adding independent
+2. **Prolonged drawdown** -- Applies a gradual negative trend over N bars.
+3. **Correlation breakdown** -- Decorrelates pair legs by adding independent
    noise to one leg, breaking the cointegration relationship.
-4. **Volatility spike** ÔÇô Multiplies returns by a factor for N bars to
+4. **Volatility spike** -- Multiplies returns by a factor for N bars to
    simulate a vol regime change.
-5. **Liquidity drought** ÔÇô Widens effective slippage and reduces volume.
+5. **Liquidity drought** -- Widens effective slippage and reduces volume.
 
 Each scenario returns modified price data that can be fed to the standard
 ``StrategyBacktestSimulator`` for evaluation.
@@ -34,7 +34,8 @@ Usage::
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Any, Callable
+
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -68,7 +69,7 @@ class StressTestResult:
     win_rate: float
     survived: bool
     """Whether the strategy survived (equity > 0 and DD < 100%)."""
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 class StressScenarioGenerator:
@@ -80,7 +81,7 @@ class StressScenarioGenerator:
     @staticmethod
     def flash_crash(
         prices: pd.DataFrame,
-        crash_bar: Optional[int] = None,
+        crash_bar: int | None = None,
         crash_pct: float = 0.30,
         recovery_pct: float = 0.50,
         crash_duration: int = 1,
@@ -135,7 +136,7 @@ class StressScenarioGenerator:
     @staticmethod
     def prolonged_drawdown(
         prices: pd.DataFrame,
-        start_bar: Optional[int] = None,
+        start_bar: int | None = None,
         duration: int = 60,
         total_drop_pct: float = 0.20,
     ) -> pd.DataFrame:
@@ -165,7 +166,7 @@ class StressScenarioGenerator:
             # Shift remaining bars
             end_idx = start_bar + duration
             if end_idx < n:
-                final_factor = daily_factor ** duration
+                final_factor = daily_factor**duration
                 series[end_idx:] *= final_factor
 
             df[col] = series
@@ -175,10 +176,10 @@ class StressScenarioGenerator:
     @staticmethod
     def correlation_breakdown(
         prices: pd.DataFrame,
-        start_bar: Optional[int] = None,
+        start_bar: int | None = None,
         duration: int = 30,
         noise_scale: float = 0.05,
-        affected_columns: Optional[List[str]] = None,
+        affected_columns: list[str] | None = None,
     ) -> pd.DataFrame:
         """Break cointegration by adding independent noise to selected columns.
 
@@ -215,7 +216,7 @@ class StressScenarioGenerator:
     @staticmethod
     def volatility_spike(
         prices: pd.DataFrame,
-        start_bar: Optional[int] = None,
+        start_bar: int | None = None,
         duration: int = 20,
         vol_multiplier: float = 3.0,
     ) -> pd.DataFrame:
@@ -265,15 +266,16 @@ class StressTestRunner:
                 default factory that imports and creates one with standard config.
         """
         self._simulator_factory = simulator_factory or self._default_factory
-        self.results: List[StressTestResult] = []
+        self.results: list[StressTestResult] = []
 
     @staticmethod
     def _default_factory():
-        from backtests.strategy_simulator import StrategyBacktestSimulator
         from backtests.cost_model import CostModel
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
         return StrategyBacktestSimulator(cost_model=CostModel())
 
-    def get_default_scenarios(self) -> List[Tuple[StressScenario, callable, dict]]:
+    def get_default_scenarios(self) -> list[tuple[StressScenario, Callable, dict]]:
         """Return the default suite of stress scenarios.
 
         Returns:
@@ -328,9 +330,9 @@ class StressTestRunner:
         self,
         prices_df: pd.DataFrame,
         scenario: StressScenario,
-        generator_func: callable,
+        generator_func: Callable,
         gen_kwargs: dict,
-        fixed_pairs: Optional[list] = None,
+        fixed_pairs: list | None = None,
     ) -> StressTestResult:
         """Run a single stress scenario.
 
@@ -394,9 +396,9 @@ class StressTestRunner:
     def run_all_scenarios(
         self,
         prices_df: pd.DataFrame,
-        fixed_pairs: Optional[list] = None,
-        scenarios: Optional[List[Tuple]] = None,
-    ) -> List[StressTestResult]:
+        fixed_pairs: list | None = None,
+        scenarios: list[tuple] | None = None,
+    ) -> list[StressTestResult]:
         """Run all default (or custom) scenarios.
 
         Returns:
@@ -412,7 +414,7 @@ class StressTestRunner:
 
         return self.results
 
-    def generate_report(self, results: Optional[List[StressTestResult]] = None) -> Dict[str, Any]:
+    def generate_report(self, results: list[StressTestResult] | None = None) -> dict[str, Any]:
         """Generate a summary report from stress test results.
 
         Returns:
@@ -430,16 +432,18 @@ class StressTestRunner:
 
         per_scenario = []
         for r in results:
-            per_scenario.append({
-                "name": r.scenario.name,
-                "severity": r.scenario.severity,
-                "survived": r.survived,
-                "total_return": round(r.total_return, 4),
-                "max_drawdown": round(r.max_drawdown, 4),
-                "sharpe_ratio": round(r.sharpe_ratio, 4),
-                "num_trades": r.num_trades,
-                "win_rate": round(r.win_rate, 4),
-            })
+            per_scenario.append(
+                {
+                    "name": r.scenario.name,
+                    "severity": r.scenario.severity,
+                    "survived": r.survived,
+                    "total_return": round(r.total_return, 4),
+                    "max_drawdown": round(r.max_drawdown, 4),
+                    "sharpe_ratio": round(r.sharpe_ratio, 4),
+                    "num_trades": r.num_trades,
+                    "win_rate": round(r.win_rate, 4),
+                }
+            )
 
         report = {
             "total_scenarios": total,
