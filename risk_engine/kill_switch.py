@@ -41,6 +41,7 @@ logger = get_logger(__name__)
 
 class KillReason(Enum):
     """Reason codes for kill switch activation."""
+
     DRAWDOWN = "drawdown_breach"
     DAILY_LOSS = "daily_loss_breach"
     CONSECUTIVE_LOSSES = "consecutive_loss_streak"
@@ -53,18 +54,24 @@ class KillReason(Enum):
 
 @dataclass
 class KillSwitchConfig:
-    """Kill switch thresholds ÔÇö intentionally conservative."""
+    """Kill switch thresholds — intentionally conservative."""
+
     max_drawdown_pct: float = 0.15
     max_daily_loss_pct: float = 0.03
     max_consecutive_losses: int = 5
     max_data_stale_seconds: int = 300
     extreme_vol_multiplier: float = 3.0
     alert_on_activation: bool = True
+    cooldown_seconds: int = 0
+    """Minimum seconds between activation and reset (C-15).
+    Default 0 disables the cooldown (backwards-compatible).
+    Set to 300 in production to enforce a 5-minute review period."""
 
 
 @dataclass
 class KillSwitchState:
     """Snapshot of kill switch status."""
+
     is_active: bool
     reason: KillReason
     message: str
@@ -202,16 +209,12 @@ class KillSwitch:
         if seconds_since_last_data > self.config.max_data_stale_seconds:
             self.activate(
                 KillReason.DATA_STALE,
-                f"No fresh data for {seconds_since_last_data:.0f}s "
-                f"(limit: {self.config.max_data_stale_seconds}s)",
+                f"No fresh data for {seconds_since_last_data:.0f}s (limit: {self.config.max_data_stale_seconds}s)",
             )
             return True
 
         # Check 5: Extreme volatility
-        if (
-            historical_vol_mean > 0
-            and current_vol > historical_vol_mean * self.config.extreme_vol_multiplier
-        ):
+        if historical_vol_mean > 0 and current_vol > historical_vol_mean * self.config.extreme_vol_multiplier:
             self.activate(
                 KillReason.VOLATILITY_EXTREME,
                 f"Vol {current_vol:.4f} > {self.config.extreme_vol_multiplier}├ù "
@@ -236,11 +239,13 @@ class KillSwitch:
             self._message = message
             self._activated_at = datetime.now()
             self._fail_count += 1
-            self._activation_history.append({
-                "reason": reason.value,
-                "message": message,
-                "timestamp": self._activated_at.isoformat(),
-            })
+            self._activation_history.append(
+                {
+                    "reason": reason.value,
+                    "message": message,
+                    "timestamp": self._activated_at.isoformat(),
+                }
+            )
 
         logger.critical(
             "KILL_SWITCH_ACTIVATED",
@@ -267,6 +272,18 @@ class KillSwitch:
         with self._activation_lock:
             if not self._is_active:
                 return
+            # C-15: enforce cooldown — warn and abort if not enough time has elapsed
+            if self.config.cooldown_seconds > 0 and self._activated_at is not None:
+                elapsed = (datetime.now() - self._activated_at).total_seconds()
+                if elapsed < self.config.cooldown_seconds:
+                    remaining = self.config.cooldown_seconds - elapsed
+                    logger.warning(
+                        "kill_switch_reset_blocked_cooldown",
+                        cooldown_seconds=self.config.cooldown_seconds,
+                        elapsed_seconds=round(elapsed, 1),
+                        remaining_seconds=round(remaining, 1),
+                    )
+                    return
             self._is_active = False
             prev_reason = self._reason
             prev_message = self._message
@@ -279,11 +296,7 @@ class KillSwitch:
             "KILL_SWITCH_RESET",
             was_reason=prev_reason.value,
             was_message=prev_message,
-            duration_seconds=(
-                (datetime.now() - prev_activated_at).total_seconds()
-                if prev_activated_at
-                else 0
-            ),
+            duration_seconds=((datetime.now() - prev_activated_at).total_seconds() if prev_activated_at else 0),
         )
 
         self._save_state()
@@ -307,12 +320,13 @@ class KillSwitch:
         }
         try:
             # Atomic write: .tmp ÔåÆ rename
-            tmp_path = self._state_path.with_suffix('.tmp')
+            tmp_path = self._state_path.with_suffix(".tmp")
             tmp_path.write_text(json.dumps(state, indent=2))
             # A-10: backup existing state file before overwrite
             if self._state_path.exists():
                 import shutil
-                shutil.copy2(self._state_path, self._state_path.with_suffix('.bak'))
+
+                shutil.copy2(self._state_path, self._state_path.with_suffix(".bak"))
             tmp_path.replace(self._state_path)
         except Exception as exc:
             logger.critical(

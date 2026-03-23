@@ -29,6 +29,15 @@ logger = get_logger(__name__)
 # to enable per-row integrity protection.  Empty string disables HMAC (dev mode).
 _AUDIT_HMAC_KEY: bytes = os.getenv("AUDIT_HMAC_KEY", "").encode("utf-8")
 
+# C-07: warn/error when HMAC key is absent so operators notice in prod.
+if not _AUDIT_HMAC_KEY:
+    _hmac_log_level = "error" if os.getenv("EDGECORE_ENV", "dev") == "prod" else "warning"
+    _hmac_msg = "AUDIT_HMAC_KEY not set — audit entries are unsigned (integrity unverifiable)"
+    getattr(get_logger(__name__), _hmac_log_level)(
+        "audit_trail_hmac_disabled",
+        message=_hmac_msg,
+    )
+
 
 # Local definition to avoid circular imports
 # Matches risk.engine.Position structure
@@ -63,15 +72,22 @@ class AuditTrail:
     - Integrity checks for reconstruction
     """
 
-    def __init__(self, trail_dir: str = "data/audit"):
+    def __init__(self, trail_dir: str = "data/audit", fsync_mode: str = "always"):
         """
         Initialize audit trail storage.
 
         Args:
             trail_dir: Directory for audit logs
+            fsync_mode: Durability mode for appends (C-12).
+                ``"always"`` — fsync after every row (default, safest).
+                ``"never"``  — skip fsync (fastest, data loss risk on crash).
         """
         self.trail_dir = Path(trail_dir)
         self.trail_dir.mkdir(parents=True, exist_ok=True)
+        # C-12: configurable fsync mode — "always" is safest, "never" skips fsync
+        if fsync_mode not in ("always", "never"):
+            raise ValueError(f"fsync_mode must be 'always' or 'never', got {fsync_mode!r}")
+        self._fsync_always: bool = fsync_mode == "always"
 
         # Current session's trail file (one per day)
         self._date_str = datetime.now(UTC).strftime("%Y%m%d")
@@ -87,6 +103,7 @@ class AuditTrail:
             "audit_trail_initialized",
             trail_file=str(self.trail_file),
             equity_snapshot_file=str(self.equity_snapshot_file),
+            fsync_mode=fsync_mode,
         )
 
     def _rotate_if_needed(self, filepath: Path, max_file_bytes: int = 50 * 1024 * 1024) -> None:
@@ -172,6 +189,7 @@ class AuditTrail:
                     event_id,
                 ],
                 _AUDIT_HMAC_KEY,
+                force_fsync=self._fsync_always,
             )
             logger.info(
                 "trade_event_logged",
@@ -205,6 +223,7 @@ class AuditTrail:
                 self.equity_snapshot_file,
                 [datetime.now(UTC).isoformat(), current_equity, positions_count, positions_list or ""],
                 _AUDIT_HMAC_KEY,
+                force_fsync=self._fsync_always,
             )
             logger.info("equity_snapshot_logged", equity=current_equity, positions_count=positions_count)
         except OSError as e:
@@ -216,15 +235,12 @@ class AuditTrail:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _atomic_append(filepath: Path, row: list, hmac_key: bytes = b"") -> None:
-        """Append a single CSV row with ``os.fsync()`` durability.
+    def _atomic_append(filepath: Path, row: list, hmac_key: bytes = b"", force_fsync: bool = True) -> None:
+        """Append a single CSV row with configurable fsync durability (C-12).
 
-        Writes the row to a temporary file first, then appends its
-        content to *filepath* and calls ``os.fsync()`` on the file
-        descriptor.  If the process is killed between the write and
-        the fsync, the worst case is the row is missing — the file
-        itself is never corrupted because we only ever append a
-        complete, pre-serialised line.
+        When *force_fsync* is True (default), calls ``os.fsync()`` after the
+        write so the row survives a process kill.  When False, the OS page
+        cache handles flushing — faster but not crash-safe for that row.
 
         When *hmac_key* is non-empty, a HMAC-SHA256 digest of the
         serialised row is appended as a trailing ``_hmac`` column.
@@ -244,7 +260,8 @@ class AuditTrail:
         fd = os.open(str(filepath), os.O_WRONLY | os.O_APPEND | os.O_CREAT)
         try:
             os.write(fd, line.encode("utf-8"))
-            os.fsync(fd)
+            if force_fsync:  # C-12: conditional fsync
+                os.fsync(fd)
         finally:
             os.close(fd)
 

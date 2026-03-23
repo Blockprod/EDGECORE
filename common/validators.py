@@ -207,6 +207,11 @@ def validate_config(config: dict[str, Any], schema: dict | None = None) -> None:
     if not config:
         raise ConfigError("Config cannot be empty")
 
+    if schema is not None:
+        unknown_keys = set(config.keys()) - set(schema.keys())
+        if unknown_keys:
+            raise ConfigError(f"Unknown config keys not present in schema: {sorted(unknown_keys)}")
+
     # Basic checks
     if "strategy" in config:
         strategy = config["strategy"]

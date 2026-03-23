@@ -395,6 +395,7 @@ class TestProfilingIntegration:
 
         @profiler.decorator
         def cleanup(data: dict) -> None:
+            _ = len(data)  # consume data param — cleanup tracks its size
             time.sleep(0.001)
 
         data = setup()

@@ -47,10 +47,15 @@ class BacktestEngineWrapper:
         """
 
         # Use Python implementation
-        return self._run_python(prices, symbols, strategy_callback, risk_callback)
+        return self._run_python(prices, symbols, strategy_callback, risk_callback, lookback=lookback)
 
     def _run_python(
-        self, prices: list[list[float]], symbols: list[str], strategy_callback: Callable, risk_callback: Callable
+        self,
+        prices: list[list[float]],
+        symbols: list[str],
+        strategy_callback: Callable,
+        risk_callback: Callable,
+        lookback: int = 20,
     ) -> dict[str, Any]:
         """Pure Python fallback implementation."""
 
@@ -115,7 +120,7 @@ class BacktestEngineWrapper:
                 logger.debug(f"Error on day {day}: {e}")
                 daily_returns.append(0.0)
 
-        return {"equity": equity, "daily_returns": daily_returns, "positions": positions}
+        return {"equity": equity, "daily_returns": daily_returns, "positions": positions, "lookback": lookback}
 
     def get_equity(self) -> float:
         """Get current equity."""

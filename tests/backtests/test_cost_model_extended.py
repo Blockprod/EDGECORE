@@ -20,6 +20,7 @@ from backtests.cost_model import CostModel, CostModelConfig
 @pytest.fixture(autouse=True)
 def reset_settings():
     from config.settings import Settings
+
     Settings._instance = None
     yield
     Settings._instance = None
@@ -28,6 +29,7 @@ def reset_settings():
 # ===========================================================================
 # SECTION 1 ÔÇô Funding Rate
 # ===========================================================================
+
 
 class TestFundingRate:
     """Tests for funding rate cost calculation."""
@@ -64,13 +66,13 @@ class TestFundingRate:
         """round_trip_cost includes funding when enabled."""
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=1.0)
         model = CostModel(cfg)
-        
+
         rt_with = model.round_trip_cost(5000, holding_days=10)
-        
+
         cfg_no = CostModelConfig(include_funding=False)
         model_no = CostModel(cfg_no)
         rt_without = model_no.round_trip_cost(5000, holding_days=10)
-        
+
         # With funding should cost more
         assert rt_with > rt_without
 
@@ -88,6 +90,7 @@ class TestFundingRate:
 # ===========================================================================
 # SECTION 2 ÔÇô Round-Trip BPS Threshold
 # ===========================================================================
+
 
 class TestRoundTripRealistic:
     """Verify realistic fee levels match DoD requirements."""
@@ -146,6 +149,7 @@ class TestRoundTripRealistic:
 # SECTION 3 ÔÇô Low-Liquidity Scenario (DoD requirement)
 # ===========================================================================
 
+
 class TestLowLiquidityScenario:
     """DoD: $1000 trade on low-volume stock with volume=$50K Ôåô slippage > 20 bps."""
 
@@ -160,7 +164,7 @@ class TestLowLiquidityScenario:
         slippage_bps = slippage_decimal * 10_000
         # participation = 1000/50000 = 2%, impact = 2 + 100├ù0.02 = 4 bps
         assert slippage_bps > 3, f"Per-leg slippage should be > 3 bps, got {slippage_bps:.1f}"
-        
+
         # Total round-trip with POPCAT-like liquidity
         rt = model.round_trip_cost(
             notional_per_leg=1000,
@@ -189,6 +193,7 @@ class TestLowLiquidityScenario:
 # ===========================================================================
 # SECTION 4 ÔÇô Backward Compatibility
 # ===========================================================================
+
 
 class TestBackwardCompatibility:
     """Ensure existing callers (strategy_simulator, runner) are not broken."""
@@ -222,19 +227,22 @@ class TestBackwardCompatibility:
     def test_cost_model_config_has_all_fields(self):
         """Config has all required fields including new ones."""
         cfg = CostModelConfig()
-        assert hasattr(cfg, 'funding_rate_daily_bps')
-        assert hasattr(cfg, 'include_funding')
-        assert hasattr(cfg, 'maker_fee_bps')
-        assert hasattr(cfg, 'taker_fee_bps')
-        assert hasattr(cfg, 'base_slippage_bps')
-        assert hasattr(cfg, 'borrowing_cost_annual_pct')
-        assert hasattr(cfg, 'include_borrowing')
-        assert hasattr(cfg, 'slippage_model')
+        assert hasattr(cfg, "funding_rate_daily_bps")
+        assert hasattr(cfg, "include_funding")
+        assert hasattr(cfg, "maker_fee_bps")
+        assert hasattr(cfg, "taker_fee_bps")
+        assert hasattr(cfg, "base_slippage_bps")
+        assert hasattr(cfg, "borrowing_cost_annual_pct")
+        assert hasattr(cfg, "include_borrowing")
+        assert hasattr(cfg, "slippage_model")
+        assert hasattr(cfg, "htb_symbols")
+        assert isinstance(cfg.htb_symbols, dict)
 
 
 # ===========================================================================
 # SECTION 5 ÔÇô Integration
 # ===========================================================================
+
 
 class TestIntegration:
     """Integration tests with StrategyBacktestSimulator."""
@@ -242,6 +250,7 @@ class TestIntegration:
     def test_simulator_uses_funding_cost_model(self):
         """Simulator can accept CostModel with funding enabled."""
         from backtests.strategy_simulator import StrategyBacktestSimulator
+
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=2.0)
         model = CostModel(cfg)
         sim = StrategyBacktestSimulator(cost_model=model, initial_capital=100000)
@@ -250,12 +259,14 @@ class TestIntegration:
     def test_runner_imports_cost_model(self):
         """runner.py should import CostModel without error."""
         from backtests.runner import _LEGACY_COST_MODEL
+
         assert _LEGACY_COST_MODEL is not None
 
 
 # ===========================================================================
 # SECTION 6 ÔÇô Edge Cases
 # ===========================================================================
+
 
 class TestEdgeCases:
     """Edge cases and boundary conditions."""
@@ -286,3 +297,180 @@ class TestEdgeCases:
         s1 = model._slippage(100, 1e6)
         s2 = model._slippage(100, 1e3)
         assert s1 == s2 == pytest.approx(5 / 10_000)
+
+
+# ===========================================================================
+# SECTION 7 — HTB Premium Cost Model (C-05)
+# ===========================================================================
+
+
+class TestHTBPremium:
+    """Hard-to-borrow (HTB) per-symbol borrow rate overrides."""
+
+    def test_default_htb_symbols_is_empty(self):
+        """Default config has no HTB overrides (backward compat)."""
+        cfg = CostModelConfig()
+        assert cfg.htb_symbols == {}
+
+    def test_gc_rate_when_symbol_not_in_htb(self):
+        """Unknown symbol → falls back to borrowing_cost_annual_pct (GC rate)."""
+        cfg = CostModelConfig(borrowing_cost_annual_pct=0.5)
+        model = CostModel(cfg)
+        cost_named = model.holding_cost(10_000, 30, symbol="AAPL")
+        cost_unnamed = model.holding_cost(10_000, 30)
+        assert cost_named == pytest.approx(cost_unnamed, rel=1e-9)
+
+    def test_htb_rate_applied_for_known_symbol(self):
+        """HTB symbol uses its own annual rate, not the GC fallback."""
+        cfg = CostModelConfig(
+            borrowing_cost_annual_pct=0.5,  # 0.5% GC
+            htb_symbols={"GME": 25.0},  # 25% HTB
+        )
+        model = CostModel(cfg)
+        gc_cost = model.holding_cost(10_000, 365, symbol="AAPL")
+        htb_cost = model.holding_cost(10_000, 365, symbol="GME")
+        # GME should cost approx 50× more than GC rate
+        assert htb_cost == pytest.approx(10_000 * 25.0 / 100.0, rel=0.01)
+        assert htb_cost > gc_cost * 40
+
+    def test_htb_symbol_lookup_is_case_insensitive(self):
+        """Lowercase symbol should match uppercase key in htb_symbols."""
+        cfg = CostModelConfig(htb_symbols={"GME": 25.0})
+        model = CostModel(cfg)
+        cost_upper = model.holding_cost(10_000, 30, symbol="GME")
+        cost_lower = model.holding_cost(10_000, 30, symbol="gme")
+        assert cost_upper == pytest.approx(cost_lower, rel=1e-9)
+
+    def test_round_trip_cost_with_htb_short_symbol(self):
+        """round_trip_cost propagates short_symbol to holding_cost."""
+        cfg = CostModelConfig(htb_symbols={"GME": 25.0})
+        model = CostModel(cfg)
+        rt_htb = model.round_trip_cost(5_000, holding_days=30, short_symbol="GME")
+        rt_gc = model.round_trip_cost(5_000, holding_days=30)
+        assert rt_htb > rt_gc
+
+    def test_from_htb_csv(self, tmp_path):
+        """CostModelConfig.from_htb_csv() loads rates from a well-formed CSV."""
+        csv_file = tmp_path / "htb.csv"
+        csv_file.write_text("symbol,annual_borrow_pct\nGME,25.0\nAMC,18.5\n")
+        cfg = CostModelConfig.from_htb_csv(csv_file)
+        assert cfg.htb_symbols == {"GME": 25.0, "AMC": 18.5}
+
+    def test_from_htb_csv_headerless(self, tmp_path):
+        """from_htb_csv() works even without a header row."""
+        csv_file = tmp_path / "htb_no_header.csv"
+        csv_file.write_text("GME,25.0\nAMC,18.5\n")
+        cfg = CostModelConfig.from_htb_csv(csv_file)
+        assert "GME" in cfg.htb_symbols
+        assert "AMC" in cfg.htb_symbols
+
+    def test_from_htb_csv_skips_malformed_rows(self, tmp_path):
+        """Rows with non-numeric rates are silently skipped."""
+        csv_file = tmp_path / "htb_bad.csv"
+        csv_file.write_text("GME,25.0\nBAD,not_a_number\nAMC,18.5\n")
+        cfg = CostModelConfig.from_htb_csv(csv_file)
+        assert "BAD" not in cfg.htb_symbols
+        assert len(cfg.htb_symbols) == 2
+
+    def test_from_htb_csv_with_real_seed_file(self):
+        """data/htb_rates.csv seed file loads without error."""
+        from pathlib import Path
+
+        seed = Path(__file__).parent.parent.parent / "data" / "htb_rates.csv"
+        cfg = CostModelConfig.from_htb_csv(seed)
+        assert len(cfg.htb_symbols) >= 10
+        # GME is always the canonical HTB example
+        assert "GME" in cfg.htb_symbols
+        assert cfg.htb_symbols["GME"] > 10.0  # Much higher than GC rate
+
+
+# ===========================================================================
+# SECTION 8 — Real ADV injection (C-06)
+# ===========================================================================
+
+
+class TestRealADV:
+    """CostModelConfig.default_adv_usd fallback and ADV injection into simulator."""
+
+    def test_default_adv_usd_field_exists(self):
+        """CostModelConfig has default_adv_usd with a sensible conservative default."""
+        cfg = CostModelConfig()
+        assert hasattr(cfg, "default_adv_usd")
+        assert cfg.default_adv_usd == 10_000_000.0
+
+    def test_custom_default_adv_usd(self):
+        """Caller can override default_adv_usd (e.g. for mid-cap universe)."""
+        cfg = CostModelConfig(default_adv_usd=5_000_000.0)
+        assert cfg.default_adv_usd == 5_000_000.0
+
+    def test_simulator_accepts_adv_by_symbol(self):
+        """StrategyBacktestSimulator accepts adv_by_symbol without error."""
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        adv = {"AAPL": 500_000_000.0, "MSFT": 400_000_000.0}
+        sim = StrategyBacktestSimulator(adv_by_symbol=adv)
+        assert sim.adv_by_symbol == adv
+
+    def test_simulator_default_adv_by_symbol_is_empty(self):
+        """Default adv_by_symbol is an empty dict (backward compat)."""
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        sim = StrategyBacktestSimulator()
+        assert sim.adv_by_symbol == {}
+
+    def test_estimate_adv_uses_injected_value(self):
+        """_estimate_adv() returns injected ADV when symbol is present."""
+        import pandas as pd
+
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        sim = StrategyBacktestSimulator(adv_by_symbol={"XYZ": 8_000_000.0})
+        dummy_df = pd.DataFrame({"XYZ": [100.0, 101.0]})
+        result = sim._estimate_adv("XYZ", dummy_df, notional_per_leg=5_000)
+        assert result == 8_000_000.0
+
+    def test_estimate_adv_falls_back_to_tier_for_unknown_symbol(self):
+        """_estimate_adv() falls back to tier table when symbol not in adv_by_symbol."""
+        import pandas as pd
+
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        sim = StrategyBacktestSimulator(adv_by_symbol={})
+        dummy_df = pd.DataFrame({"SO": [50.0, 51.0]})
+        # SO is not in _MEGA_CAP_SYMBOLS → large-cap tier
+        result = sim._estimate_adv("SO", dummy_df, notional_per_leg=5_000)
+        assert result == StrategyBacktestSimulator._ADV_LARGE_CAP
+
+    def test_estimate_adv_mega_cap_tier_without_injection(self):
+        """Mega-cap symbols use _ADV_MEGA_CAP when not overridden."""
+        import pandas as pd
+
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        sim = StrategyBacktestSimulator()
+        dummy_df = pd.DataFrame({"AAPL": [170.0, 171.0]})
+        result = sim._estimate_adv("AAPL", dummy_df, 5_000)
+        assert result == StrategyBacktestSimulator._ADV_MEGA_CAP
+
+    def test_estimate_adv_symbol_lookup_case_insensitive(self):
+        """adv_by_symbol lookup normalises symbol to uppercase."""
+        import pandas as pd
+
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        sim = StrategyBacktestSimulator(adv_by_symbol={"NVDA": 700_000_000.0})
+        dummy_df = pd.DataFrame({"nvda": [800.0]})
+        result = sim._estimate_adv("nvda", dummy_df, 5_000)
+        assert result == 700_000_000.0
+
+    def test_injected_adv_overrides_mega_cap_tier(self):
+        """Injected ADV takes precedence even for mega-cap symbols."""
+        import pandas as pd
+
+        from backtests.strategy_simulator import StrategyBacktestSimulator
+
+        custom_adv = 1_000_000.0  # much smaller than tier default
+        sim = StrategyBacktestSimulator(adv_by_symbol={"AAPL": custom_adv})
+        dummy_df = pd.DataFrame({"AAPL": [170.0]})
+        result = sim._estimate_adv("AAPL", dummy_df, 5_000)
+        assert result == custom_adv

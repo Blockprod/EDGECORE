@@ -47,7 +47,7 @@ _shutdown = False
 def _signal_handler(signum, frame):
     global _shutdown
     _shutdown = True
-    logger.info("shutdown_signal_received", signal=signum)
+    logger.info("shutdown_signal_received", signal=signum, frame=str(frame))
 
 
 signal.signal(signal.SIGINT, _signal_handler)

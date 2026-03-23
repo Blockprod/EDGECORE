@@ -158,7 +158,10 @@ def with_error_handling(
                     if isinstance(e, TradingError):
                         error_category = e.category
                     else:
-                        error_category = classify_exception(e)
+                        classified = classify_exception(e)
+                        # `category` is the decorator-level default; prefer it when
+                        # classify_exception falls back to its own generic RETRYABLE default.
+                        error_category = classified if classified != ErrorCategory.RETRYABLE else category
 
                     # Log the error (and alert if non-retryable/fatal)
                     handle_error(e, context=context, alerter=alerter)

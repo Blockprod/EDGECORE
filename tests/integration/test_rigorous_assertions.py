@@ -44,7 +44,9 @@ class TestFullPipelineNoLeakage:
 
         observed_lengths = []
 
-        def _recording_generate(self_strategy, market_data, discovered_pairs=None, **kwargs):
+        def _recording_generate(
+            _self_strategy, market_data, _discovered_pairs=None, **_kwargs
+        ):  # mirrors generate_signals signature
             observed_lengths.append(len(market_data))
             return []
 

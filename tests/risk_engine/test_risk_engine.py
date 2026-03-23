@@ -75,6 +75,7 @@ class TestKillSwitch:
 
         def cb(reason, msg):
             called["reason"] = reason
+            called["msg"] = msg
 
         ks = KillSwitch(on_activate=cb)
         ks.activate(KillReason.MANUAL, "test")

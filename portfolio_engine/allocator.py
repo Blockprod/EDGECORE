@@ -66,14 +66,17 @@ class PortfolioAllocator:
         equity: float = 100_000.0,
         max_pairs: int = 10,
         max_allocation_pct: float = 0.30,
-        sizing_method: SizingMethod = SizingMethod.EQUAL_WEIGHT,
+        sizing_method: SizingMethod = SizingMethod.VOLATILITY_INVERSE,
         max_portfolio_heat: float = 0.95,
+        min_vol_floor: float = 0.001,
     ):
         self.equity = equity
         self.max_pairs = max_pairs
         self.max_allocation_pct = max_allocation_pct
         self.sizing_method = sizing_method
         self.max_portfolio_heat = max_portfolio_heat
+        # C-07: floor for spread_vol used in vol-inverse sizing (avoids division by zero)
+        self.min_vol_floor = max(min_vol_floor, 1e-9)
 
         # Track current allocations
         self._allocations: dict[str, float] = {}
@@ -125,10 +128,13 @@ class PortfolioAllocator:
             details["base_fraction"] = frac
 
         elif self.sizing_method == SizingMethod.VOLATILITY_INVERSE:
-            if spread_vol is not None and spread_vol > 0:
+            # Use min_vol_floor to avoid division by zero and to model
+            # very low-vol spreads as a bounded-size position.
+            eff_vol = max(spread_vol, self.min_vol_floor) if spread_vol is not None else None
+            if eff_vol is not None and eff_vol > 0:
                 # Target vol contribution
                 target_vol = 0.02  # 2% daily vol budget per pair
-                frac = min(target_vol / spread_vol, self.max_allocation_pct)
+                frac = min(target_vol / eff_vol, self.max_allocation_pct)
             else:
                 frac = min(1.0 / self.max_pairs, self.max_allocation_pct)
             details["spread_vol"] = spread_vol or 0.0
@@ -137,6 +143,11 @@ class PortfolioAllocator:
             frac = self._kelly_fraction(win_rate, avg_win_loss_ratio)
             details["kelly_raw"] = frac
             frac = min(frac, self.max_allocation_pct)  # half-Kelly cap
+            if half_life is not None:
+                details["half_life"] = half_life
+                # Very short half-life → reduce size (mean-reversion decays quickly)
+                if half_life < 5.0:
+                    frac *= max(0.5, half_life / 10.0)
 
         elif self.sizing_method == SizingMethod.SIGNAL_WEIGHTED:
             base = min(1.0 / self.max_pairs, self.max_allocation_pct)

@@ -22,8 +22,8 @@ from enum import Enum
 
 from structlog import get_logger
 
+from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 from execution.base import Order, OrderSide
-from execution.rate_limiter import TokenBucketRateLimiter
 
 logger = get_logger(__name__)
 
@@ -81,9 +81,8 @@ class ExecutionRouter:
         # A-02: order_id → OrderStatus tracking for fill confirmations
         self._pending_orders: dict[str, object] = {}
         self._orders_lock = threading.Lock()  # T3-03: guard concurrent r/w on _pending_orders
-        # IBKR API rate limiter ÔÇö 45 req/s sustained, 10 burst
-        # (hard cap is 50/s; exceeding triggers disconnect)
-        self._rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
+        # IBKR API rate limiter — singleton global partagé (C-04)
+        self._rate_limiter = _ibkr_rate_limiter
 
         logger.info("execution_router_initialized", mode=mode.value)
 

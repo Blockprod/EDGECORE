@@ -1,9 +1,9 @@
-﻿
-import numpy as np
+﻿import numpy as np
 import pandas as pd
 from structlog import get_logger
 
 from models.half_life_estimator import SpreadHalfLifeEstimator
+from models.kalman_hedge import KalmanHedgeRatio
 
 # Module-level Cython import ÔÇö avoids per-call dict lookup in hot path
 try:
@@ -35,6 +35,9 @@ class SpreadModel:
         pair_key: str | None = None,
         hedge_ratio_tracker=None,
         eg_beta_raw: float | None = None,
+        use_log_prices: bool = False,
+        use_kalman: bool = False,
+        kalman_delta: float = 1e-4,
     ):
         """
         Initialize spread model via OLS regression: y = alpha + beta * x + residuals
@@ -47,9 +50,23 @@ class SpreadModel:
             eg_beta_raw: Optional ╬▓ from the Engle-Granger test (de-normalised).
                 If provided, a consistency check is performed against the
                 OLS-on-raw-prices ╬▓.  Large divergences are logged as warnings.
+            use_log_prices: If True, fit OLS on log-prices instead of levels.
+                Preferred for equities (multiplicative process). Default False
+                for backward compatibility.
+            use_kalman: If True, use KalmanHedgeRatio instead of static OLS for
+                hedge ratio estimation. β and intercept adapt bar-by-bar.
+            kalman_delta: Process noise for KalmanHedgeRatio (default 1e-4).
         """
-        X = np.column_stack([np.ones(len(x)), np.asarray(x, dtype=float)])
-        beta = np.linalg.lstsq(X, np.asarray(y, dtype=float), rcond=None)[0]
+        self.use_log_prices = use_log_prices
+        self.use_kalman = use_kalman
+        self._kalman: KalmanHedgeRatio | None = None
+        if use_log_prices:
+            y_fit = pd.Series(np.log(np.asarray(y, dtype=float).clip(min=1e-10)), index=y.index)
+            x_fit = pd.Series(np.log(np.asarray(x, dtype=float).clip(min=1e-10)), index=x.index)
+        else:
+            y_fit, x_fit = y, x
+        X = np.column_stack([np.ones(len(x_fit)), np.asarray(x_fit, dtype=float)])
+        beta = np.linalg.lstsq(X, np.asarray(y_fit, dtype=float), rcond=None)[0]
 
         self.intercept = beta[0]
         self.beta = beta[1]
@@ -70,13 +87,27 @@ class SpreadModel:
         self.pair_key = pair_key
         self.tracker = hedge_ratio_tracker
         self.is_deprecated = False
-        self.residuals = np.asarray(y, dtype=float) - X @ beta
-        self.std_residuals = np.std(self.residuals)
+        self.residuals = np.asarray(y_fit, dtype=float) - X @ beta
+        self.std_residuals = float(np.std(self.residuals))
+
+        # C-04: Kalman warm-up — replace OLS residuals with Kalman spreads
+        if use_kalman:
+            self._kalman = KalmanHedgeRatio(delta=kalman_delta)
+            _y_arr = np.asarray(y_fit, dtype=float)
+            _x_arr = np.asarray(x_fit, dtype=float)
+            _spread_vals: list[float] = []
+            for _y_val, _x_val in zip(_y_arr, _x_arr, strict=False):
+                _beta_k, _spread_k, _ = self._kalman.update(float(_y_val), float(_x_val))
+                _spread_vals.append(_spread_k)
+            self.intercept = self._kalman.intercept
+            self.beta = self._kalman.beta if self._kalman.beta is not None else self.beta
+            self.residuals = np.array(_spread_vals, dtype=float)
+            self.std_residuals = float(np.std(self.residuals))
 
         # Estimate half-life of spread mean reversion
-        self.half_life = self._estimate_half_life(y, x)
+        self.half_life = self._estimate_half_life(y_fit, x_fit)
 
-        # Record initial ╬▓ if tracker is provided
+        # Record initial β if tracker is provided
         if self.tracker is not None and self.pair_key is not None:
             self.tracker.record_initial_beta(self.pair_key, self.beta)
 
@@ -107,7 +138,9 @@ class SpreadModel:
                     return float(hl_int)
 
             # ÔöÇÔöÇ Pure-Python fallback ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-            spread = pd.Series(res, index=y.index)
+            # Prefer y.index; fall back to x.index when y is a bare numpy array.
+            _index = y.index if hasattr(y, "index") else (x.index if hasattr(x, "index") else range(len(res)))
+            spread = pd.Series(res, index=_index)
             estimator = SpreadHalfLifeEstimator(lookback=min(252, len(spread)))
             hl = estimator.estimate_half_life_from_spread(spread, validate=True)
             if hl is not None:
@@ -121,14 +154,42 @@ class SpreadModel:
         """
         Compute spread as: spread = y - (intercept + beta * x)
 
+        When use_kalman=True, the Kalman filter updates bar-by-bar so the
+        hedge ratio \u03b2 (and intercept) track structural shifts in real time:
+            spread_t = y_t - (\u03b2_t * x_t + \u03b1_t)
+        This eliminates bias from stale OLS estimates between re-estimation windows.
+
+        When use_log_prices=True, spread is computed on log-prices:
+            spread = log(y) - (intercept + beta * log(x))
+
         Args:
             y: Dependent series
             x: Independent series
 
         Returns:
-            Spread series
+            Spread series (in log space when use_log_prices=True)
         """
-        return y - (self.intercept + self.beta * x)
+        if self.use_log_prices:
+            y_vals = pd.Series(np.log(np.asarray(y, dtype=float).clip(min=1e-10)), index=y.index)
+            x_vals = pd.Series(np.log(np.asarray(x, dtype=float).clip(min=1e-10)), index=x.index)
+        else:
+            y_vals, x_vals = y, x
+
+        if self.use_kalman and self._kalman is not None:
+            # Run Kalman update bar-by-bar; the filter retains its state across calls.
+            y_arr = np.asarray(y_vals, dtype=float)
+            x_arr = np.asarray(x_vals, dtype=float)
+            spread_vals = np.empty(len(y_arr), dtype=float)
+            for i, (_y, _x) in enumerate(zip(y_arr, x_arr, strict=False)):
+                _beta_k, _spread_k, _ = self._kalman.update(float(_y), float(_x))
+                spread_vals[i] = _spread_k
+            # Expose latest Kalman \u03b2 on the model for external inspection
+            if self._kalman.beta is not None:
+                self.beta = self._kalman.beta
+                self.intercept = self._kalman.intercept
+            return pd.Series(spread_vals, index=y_vals.index)
+
+        return y_vals - (self.intercept + self.beta * x_vals)
 
     def reestimate_beta_if_needed(self, y: pd.Series, x: pd.Series, bar_time=None) -> bool:
         """
@@ -148,11 +209,19 @@ class SpreadModel:
         if self.tracker is None or self.pair_key is None:
             # No tracking, model stays as-is
             return True
-
+        # C-04: Kalman filter continuously updates \u03b2 \u2014 skip OLS re-estimation.
+        if self.use_kalman:
+            return True
         # Reestimate ╬▓ from recent data
-        X = np.column_stack([np.ones(len(x)), np.asarray(x, dtype=float)])
+        if self.use_log_prices:
+            y_fit = np.log(np.asarray(y, dtype=float).clip(min=1e-10))
+            x_fit = np.log(np.asarray(x, dtype=float).clip(min=1e-10))
+        else:
+            y_fit = np.asarray(y, dtype=float)
+            x_fit = np.asarray(x, dtype=float)
+        X = np.column_stack([np.ones(len(x_fit)), x_fit])
         try:
-            beta_coef = np.linalg.lstsq(X, np.asarray(y, dtype=float), rcond=None)[0]
+            beta_coef = np.linalg.lstsq(X, y_fit, rcond=None)[0]
             new_beta = beta_coef[1]
         except Exception as e:
             logger.warning("beta_reestimation_failed", pair=self.pair_key, error=str(e))
@@ -170,7 +239,7 @@ class SpreadModel:
         if current_beta is not None and not self.is_deprecated:
             self.beta = current_beta
             self.intercept = beta_coef[0]
-            self.residuals = np.asarray(y, dtype=float) - X @ beta_coef
+            self.residuals = y_fit - X @ beta_coef
             self.std_residuals = np.std(self.residuals)
 
         # Mark as deprecated if unstable
@@ -242,14 +311,22 @@ class SpreadModel:
 
     def get_model_info(self) -> dict:
         """Return model parameters for inspection."""
-        return {
+        info: dict = {
             "intercept": self.intercept,
             "beta": self.beta,
             "residual_std": self.std_residuals,
-            "residual_mean": np.mean(self.residuals),
+            "residual_mean": float(np.mean(self.residuals)),
             "half_life": self.half_life,
             "is_deprecated": self.is_deprecated,
+            "use_kalman": self.use_kalman,
         }
+        if self.use_kalman and self._kalman is not None:
+            info["kalman_bars_processed"] = self._kalman.bars_processed
+            info["kalman_breakdown_count"] = self._kalman.breakdown_count
+            ci = self._kalman.get_confidence_interval()
+            info["kalman_beta_ci_lower"] = ci[0]
+            info["kalman_beta_ci_upper"] = ci[1]
+        return info
 
     def update(self, y: pd.Series, x: pd.Series) -> None:
         """Re-fit the model with new price data *in place*.
@@ -258,9 +335,15 @@ class SpreadModel:
         HedgeRatioTracker state) while refreshing the OLS estimate,
         residuals, and half-life.
         """
-        X = np.column_stack([np.ones(len(x)), np.asarray(x, dtype=float)])
+        if self.use_log_prices:
+            y_fit = np.log(np.asarray(y, dtype=float).clip(min=1e-10))
+            x_fit = np.log(np.asarray(x, dtype=float).clip(min=1e-10))
+        else:
+            y_fit = np.asarray(y, dtype=float)
+            x_fit = np.asarray(x, dtype=float)
+        X = np.column_stack([np.ones(len(x_fit)), x_fit])
         try:
-            beta_coef = np.linalg.lstsq(X, np.asarray(y, dtype=float), rcond=None)[0]
+            beta_coef = np.linalg.lstsq(X, y_fit, rcond=None)[0]
         except Exception as exc:
             logger.warning(
                 "spread_model_update_failed",
@@ -273,4 +356,19 @@ class SpreadModel:
         self.beta = beta_coef[1]
         self.y = y
         self.x = x
-        self.residuals = np.asarray(y, dtype=float) - X @ beta_coef
+        self.residuals = y_fit - X @ beta_coef
+        self.std_residuals = float(np.std(self.residuals))
+
+        # C-04: When Kalman is active, also re-warm it on the new price window
+        # so the filter state is consistent with the new data origin.
+        if self.use_kalman and self._kalman is not None:
+            self._kalman = KalmanHedgeRatio(delta=self._kalman.delta)
+            _spread_vals_warm: list[float] = []
+            for _y_val, _x_val in zip(y_fit, x_fit, strict=False):
+                _beta_k, _spread_k, _ = self._kalman.update(float(_y_val), float(_x_val))
+                _spread_vals_warm.append(_spread_k)
+            if self._kalman.beta is not None:
+                self.beta = self._kalman.beta
+                self.intercept = self._kalman.intercept
+            self.residuals = np.array(_spread_vals_warm, dtype=float)
+            self.std_residuals = float(np.std(self.residuals))

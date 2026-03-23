@@ -20,8 +20,9 @@ from __future__ import annotations
 
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -30,6 +31,8 @@ from structlog import get_logger
 
 if TYPE_CHECKING:
     from monitoring.metrics import SystemMetrics
+
+from risk_engine.kill_switch import KillReason
 
 logger = get_logger(__name__)
 
@@ -109,6 +112,9 @@ class LiveTradingRunner:
         # Alerters (Email + Slack) ÔÇö initialised from env or passed in
         self._email_alerter = email_alerter
         self._slack_alerter = slack_alerter
+        # C-11: dedicated single-worker executor for alert dispatch
+        # (avoids blocking the tick thread on SMTP/HTTP timeouts)
+        self._alert_executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="alerts")
 
         # Module references (lazy-initialized in _initialize)
         self._universe_mgr = None
@@ -128,6 +134,29 @@ class LiveTradingRunner:
     # Alerting helpers
     # ------------------------------------------------------------------
 
+    def _on_kill_switch_activated(self, reason: KillReason, message: str) -> None:
+        """Callback wired into KillSwitch — called on activation.
+
+        Cancels all pending IBKR orders to prevent runaway fills, then
+        sends a CRITICAL alert to all configured channels.
+        """
+        logger.critical("live_trading_kill_switch_activated", reason=str(reason), message=message)
+        # Cancel pending orders at the broker level
+        if self._router is not None:
+            ibkr_engine = getattr(self._router, "_ibkr_engine", None)
+            if ibkr_engine is not None:
+                try:
+                    cancelled = ibkr_engine.cancel_all_pending()
+                    logger.info("live_trading_kill_switch_orders_cancelled", count=cancelled)
+                except Exception as exc:
+                    logger.error("live_trading_kill_switch_cancel_failed", error=str(exc)[:200])
+        self._send_alert(
+            "CRITICAL",
+            "Kill-switch activated",
+            f"Trading halted — {message}",
+            {"reason": str(reason)},
+        )
+
     def _send_alert(
         self,
         level: str,
@@ -135,7 +164,17 @@ class LiveTradingRunner:
         message: str,
         data: dict | None = None,
     ) -> None:
-        """Dispatch alert to Email + Slack.  Never raises ÔÇö fire-and-forget."""
+        """Submit an alert to the dedicated alert thread (C-11 — non-blocking)."""
+        self._alert_executor.submit(self._do_send_alert, level, title, message, data)
+
+    def _do_send_alert(
+        self,
+        level: str,
+        title: str,
+        message: str,
+        data: dict | None = None,
+    ) -> None:
+        """Dispatch alert to Email + Slack.  Never raises — fire-and-forget."""
         for alerter in (self._email_alerter, self._slack_alerter):
             if alerter is None:
                 continue
@@ -172,6 +211,7 @@ class LiveTradingRunner:
     def stop(self) -> None:
         """Signal the loop to stop gracefully."""
         self._state = TradingState.SHUTTING_DOWN
+        self._alert_executor.shutdown(wait=False)  # C-11: don't block on pending alerts
         logger.info("live_trading_stop_requested")
 
     # ------------------------------------------------------------------
@@ -235,7 +275,7 @@ class LiveTradingRunner:
         self._portfolio_risk = PortfolioRiskManager(
             initial_equity=self.config.initial_capital,
         )
-        self._kill_switch = KillSwitch()
+        self._kill_switch = KillSwitch(on_activate=self._on_kill_switch_activated)
         # Inject the shared KillSwitch into RiskFacade so both references
         # point to the same object — prevents divergent halt states (B2-02).
         self._risk_facade = RiskFacade(
@@ -278,6 +318,7 @@ class LiveTradingRunner:
 
         from config.settings import get_settings as _gs
         from signal_engine.ml_combiner import MLSignalCombiner
+
         _sc = _gs().signal_combiner
         self._ml_combiner = MLSignalCombiner(enabled=True)
         _model_dir = Path("data/models")
@@ -286,6 +327,7 @@ class LiveTradingRunner:
 
         # C-07: Periodic hedge-ratio retraining task
         from scheduler.retraining_task import RetrainingTask as _RetrainingTask
+
         _interval = _gs().strategy.retraining_interval_bars
         self._retraining_task = _RetrainingTask(interval_bars=_interval)
 
@@ -490,23 +532,19 @@ class LiveTradingRunner:
         self._maybe_reconcile()
 
         # 0. Kill-switch check (via RiskFacade — shared KillSwitch instance)
-        if self._risk_facade and self._risk_facade.is_halted:
-            self._state = TradingState.HALTED
-            logger.critical("live_trading_halted_by_kill_switch")
-            self._send_alert(
-                "CRITICAL",
-                "Kill-switch activated",
-                "Trading halted ÔÇö kill-switch has been triggered. Immediate operator intervention required.",
-                {"iteration": self._iteration, "open_positions": len(self._positions)},
-            )
+        if self._step_check_kill_switch():
             return
 
-        # 1. Periodic pair re-discovery
-        self._maybe_rediscover_pairs()
+        # 1. Periodic pair re-discovery (C-02: may return cached market data)
+        prefetched_data = self._maybe_rediscover_pairs()
 
-        # 2. Fetch latest market data for active symbols
+        # 2. Fetch latest market data — reuse discovery data if already loaded (C-02)
         try:
-            market_data = self._fetch_market_data()
+            market_data = (
+                prefetched_data
+                if isinstance(prefetched_data, pd.DataFrame) and not prefetched_data.empty
+                else self._fetch_market_data()
+            )
         except Exception as exc:
             logger.error("live_trading_data_fetch_failed", error=str(exc)[:200])
             self._send_alert(
@@ -521,6 +559,45 @@ class LiveTradingRunner:
             logger.warning("live_trading_no_market_data", iteration=self._iteration)
             return
 
+        self._step_process_stops(market_data)
+
+        # 3. Generate signals for active pairs
+        signals = self._step_generate_signals(market_data)
+
+        # 4. Process each signal through risk checks, sizing, execution
+        # C-10: fetch account balance once per tick instead of once per signal
+        _tick_balance = self._router.get_account_balance() if self._router else self.config.initial_capital
+        self._step_execute_signals(signals, market_data, account_balance=_tick_balance)
+
+        self._step_periodic_tasks(market_data, signals)
+
+        # MON-1: Update metrics snapshot for Prometheus / dashboard
+        self._update_metrics(signals, equity=_tick_balance)
+
+    def _step_check_kill_switch(self) -> bool:
+        """Check if the kill-switch has been activated.
+
+        Returns:
+            True if halted (caller should return immediately), False if clear.
+        """
+        if self._risk_facade and self._risk_facade.is_halted:
+            self._state = TradingState.HALTED
+            logger.critical("live_trading_halted_by_kill_switch")
+            self._send_alert(
+                "CRITICAL",
+                "Kill-switch activated",
+                "Trading halted ÔÇö kill-switch has been triggered. Immediate operator intervention required.",
+                {"iteration": self._iteration, "open_positions": len(self._positions)},
+            )
+            return True
+        return False
+
+    def _step_process_stops(self, market_data: pd.DataFrame) -> None:
+        """Check trailing/time/partial-profit/correlation stops and execute exits.
+
+        Evaluates every active stop condition for open positions and submits
+        close orders for positions that trigger an exit.
+        """
         # 2b. Stop manager checks on existing positions
         exit_signals_from_stops = []
         with self._positions_lock:
@@ -636,8 +713,13 @@ class LiveTradingRunner:
                     )
                     # Position intentionnellement conservée : l'ordre de fermeture a échoué
 
-        # 3. Generate signals for active pairs
-        signals = []
+    def _step_generate_signals(self, market_data: pd.DataFrame) -> list:
+        """Generate alpha signals for all active pairs.
+
+        Returns:
+            List of signal objects produced by the SignalGenerator.
+        """
+        signals: list = []
         if self._active_pairs and self._signal_gen:
             try:
                 signals = self._signal_gen.generate(
@@ -647,18 +729,38 @@ class LiveTradingRunner:
                 )
             except Exception as exc:
                 logger.error("live_trading_signal_error", error=str(exc)[:200])
+        return signals
 
-        # 4. Process each signal through risk checks, sizing, execution
+    def _step_execute_signals(
+        self, signals: list, market_data: pd.DataFrame, account_balance: float | None = None
+    ) -> None:
+        """Process each alpha signal through risk, sizing, and execution.
+
+        Applies RiskFacade gate, PortfolioHedger diversification check, ML
+        shadow gate, position sizing, and order routing for each signal.
+        """
+        # C-10: use caller-provided balance cache to avoid 1 broker call per signal
+        _balance = (
+            account_balance
+            if account_balance is not None
+            else (self._router.get_account_balance() if self._router else self.config.initial_capital)
+        )
         for sig in signals:
             try:
                 # 4a. Portfolio-level risk check via RiskFacade (unified kill-switch + drawdown gate)
                 if self._risk_facade:
-                    current_eq = self._router.get_account_balance() if self._router else self.config.initial_capital
+                    current_eq = _balance
+                    # Estimate spread volatility from recent market_data for the pair legs
+                    _vol = 0.0
+                    _s1, _s2 = (sig.pair_key.split(":") + [""])[:2]
+                    if _s1 in market_data.columns and _s2 in market_data.columns:
+                        _spread = market_data[_s1] - market_data[_s2]
+                        _vol = float(_spread.std()) if len(_spread) > 1 else 0.0
                     facade_ok, facade_reason = self._risk_facade.can_enter_trade(
                         symbol_pair=sig.pair_key,
                         position_size=0.0,
                         current_equity=current_eq,
-                        volatility=0.0,
+                        volatility=_vol,
                     )
                     if not facade_ok:
                         logger.info("live_trading_signal_blocked_risk_facade", pair=sig.pair_key, reason=facade_reason)
@@ -667,6 +769,7 @@ class LiveTradingRunner:
                 # 4b. ML signal shadow mode (C-04)
                 if self._ml_combiner is not None:
                     from config.settings import get_settings as _gs_tick
+
                     _sc = _gs_tick().signal_combiner
                     # Normalize z-score to [-1, 1] for the feature vector
                     _z_norm = float(max(-1.0, min(1.0, sig.z_score / 3.0)))
@@ -696,7 +799,7 @@ class LiveTradingRunner:
                 if self._allocator:
                     sized_order = self._allocator.size(  # type: ignore[attr-defined]
                         signal=sig,
-                        capital=self._router.get_account_balance() if self._router else self.config.initial_capital,
+                        capital=_balance,
                         max_positions=self.config.max_positions,
                         current_positions=self._positions,
                     )
@@ -725,6 +828,12 @@ class LiveTradingRunner:
                     {"pair": getattr(sig, "pair_key", "unknown"), "iteration": self._iteration},
                 )
 
+    def _step_periodic_tasks(self, market_data: pd.DataFrame, signals: list) -> None:
+        """Execute periodic housekeeping tasks at end of each tick.
+
+        Includes: tick completion logging, portfolio beta check, ML state
+        persist, PSI drift detection, and hedge-ratio re-estimation.
+        """
         logger.debug(
             "live_trading_tick_complete",
             iteration=self._iteration,
@@ -734,9 +843,12 @@ class LiveTradingRunner:
         )
 
         # C-04: Persist ML combiner state after each tick (every 100 ticks to limit I/O)
+        # C-13: submit save() to the alert executor (background thread) to avoid blocking the tick
         if self._ml_combiner is not None and self._iteration % 100 == 0:
-            from pathlib import Path
-            self._ml_combiner.save(Path("data/models") / "ml_combiner_live.joblib")
+            from pathlib import Path as _Path
+
+            _save_dest = _Path("data/models") / "ml_combiner_live.joblib"
+            self._alert_executor.submit(self._ml_combiner.save, _save_dest)
 
         # C-09: PSI drift check every 252 bars
         if self._ml_combiner is not None and self._iteration % 252 == 0:
@@ -746,8 +858,7 @@ class LiveTradingRunner:
                     "WARNING",
                     "ML feature drift detected",
                     f"PSI critical: {drift_report.critical_features}",
-                    {"overall_psi": round(drift_report.overall_psi, 4),
-                     "critical": drift_report.critical_features},
+                    {"overall_psi": round(drift_report.overall_psi, 4), "critical": drift_report.critical_features},
                 )
 
         # C-07: Periodic hedge-ratio re-estimation (every retraining_interval_bars bars)
@@ -762,13 +873,15 @@ class LiveTradingRunner:
                 regime_detector=_regime_det,  # C-10: adaptive frequency by regime
             )
 
-        # MON-1: Update metrics snapshot for Prometheus / dashboard
-        self._update_metrics(signals)
-
-    def _update_metrics(self, signals: list) -> None:
+    def _update_metrics(self, signals: list, equity: float | None = None) -> None:
         """Refresh SystemMetrics snapshot at end of each tick."""
         try:
-            equity = self._router.get_account_balance() if self._router else self.config.initial_capital
+            # C-10: reuse tick-level balance cache when provided to avoid extra broker call
+            equity = (
+                equity
+                if equity is not None
+                else (self._router.get_account_balance() if self._router else self.config.initial_capital)
+            )
             # Fallback: if router returns 0 (paper engine has no balance tracker),
             # keep initial_capital as equity to avoid false -100% PnL display.
             if equity <= 0:
@@ -811,6 +924,24 @@ class LiveTradingRunner:
                     symbols = active
             lookback = getattr(self, "_lookback", 252)
             df = load_price_data(symbols=symbols, limit=lookback)
+            # C-09: freshness guard — warn if any symbol's latest bar is stale (> 10 min)
+            _MAX_DATA_LAG = timedelta(minutes=10)
+            if df is not None and not df.empty:
+                now = datetime.now(timezone.utc)
+                for sym in df.columns:
+                    col = df[sym].dropna()
+                    if col.empty:
+                        continue
+                    last_ts = col.index[-1]
+                    if hasattr(last_ts, "tzinfo") and last_ts.tzinfo is None:
+                        last_ts = last_ts.tz_localize("UTC")
+                    lag = now - last_ts
+                    if lag > _MAX_DATA_LAG:
+                        logger.warning(
+                            "market_data_stale",
+                            symbol=sym,
+                            lag_minutes=round(lag.total_seconds() / 60, 1),
+                        )
             # Track data load stats for dashboard
             self._data_symbols_total = len(symbols)
             if df is not None and not df.empty:
@@ -831,18 +962,23 @@ class LiveTradingRunner:
     # Pair discovery
     # ------------------------------------------------------------------
 
-    def _maybe_rediscover_pairs(self) -> None:
+    def _maybe_rediscover_pairs(self) -> pd.DataFrame | None:
         """Re-discover cointegrated pairs if enough time has elapsed.
 
         Uses ``PairTradingStrategy.find_cointegrated_pairs()`` as the
         canonical pair discovery path (same as backtests and main.py)
         to keep all pipelines consistent.
+
+        Returns:
+            The fetched market data DataFrame if discovery was triggered and
+            data was loaded successfully (so ``_tick()`` can reuse it without
+            a second IBKR round-trip), or ``None`` otherwise.
         """
         now = datetime.now()
         interval = timedelta(hours=self.config.pair_rediscovery_hours)
 
         if self._last_discovery is not None and (now - self._last_discovery) < interval:
-            return
+            return None
 
         logger.info("live_trading_pair_rediscovery_start")
 
@@ -850,7 +986,7 @@ class LiveTradingRunner:
             market_data = self._fetch_market_data()
             if market_data is None or market_data.empty:
                 logger.warning("live_trading_pair_rediscovery_no_data")
-                return
+                return None
 
             from config.settings import get_settings
             from strategies.pair_trading import PairTradingStrategy
@@ -865,6 +1001,7 @@ class LiveTradingRunner:
                 "live_trading_pair_rediscovery_complete",
                 pairs=len(self._active_pairs),
             )
+            return market_data  # C-02: reused by _tick() — avoids second fetch
         except Exception as exc:
             logger.error(
                 "live_trading_pair_rediscovery_failed",
@@ -872,6 +1009,7 @@ class LiveTradingRunner:
             )
             # Keep existing pairs on failure
             self._last_discovery = now  # avoid tight retry loop
+            return None
 
     # ------------------------------------------------------------------
     # Shutdown

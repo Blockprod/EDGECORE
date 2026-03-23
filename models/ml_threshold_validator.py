@@ -6,9 +6,14 @@ out-of-sample using temporal walk-forward cross-validation.
 
 Key rules:
   - 5-fold temporal walk-forward (expanding window)
-  - If OOS R┬▓ < 80% of IS R┬▓ Ôåô disable ML, use fixed thresholds
+  - If OOS R² < 80% of IS R² → disable ML, use fixed thresholds
   - Explicit logging of validation results
   - Automatic fallback to heuristic thresholds
+
+DECISION 2026-03-22 (C-10): This module is RESEARCH / OPTIONAL tooling.
+Used only by ml_threshold_optimizer.py during offline training.
+Tests: tests/models/test_ml_threshold_validator.py
+Not a runtime dependency.
 """
 
 import logging

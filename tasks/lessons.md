@@ -104,3 +104,21 @@
 **Ref** : `scripts/update_lessons.py` — commit `c029cb8` (2026-03-20)
 
 ---
+
+## L-12 · audit IA/ML: 10 corrections C-01-C-10 (2681 tests passing) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `4d5459e` : audit IA/ML: 10 corrections C-01-C-10 (2681 tests passing). Fichiers : backtester/oos.py, backtester/runner.py
+**Erreur** : datetime.utcnow() utilisé au lieu de datetime.now(timezone.utc)
+**Règle** : Toujours utiliser datetime.now(timezone.utc). datetime.utcnow() est deprecated depuis Python 3.12.
+**Ref** : `backtester/oos.py`, `backtester/runner.py`, `backtester/walk_forward.py` — commit `4d5459e` (2026-03-22)
+
+---
+
+## L-13 · fix(ruff): UP017 timezone.utc -> UTC, B905 zip strict=False [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `52e92ab` : fix(ruff): UP017 timezone.utc -> UTC, B905 zip strict=False. Fichiers : models/model_retraining.py, pair_selection/discovery.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `models/model_retraining.py`, `pair_selection/discovery.py` — commit `52e92ab` (2026-03-22)
+
+---

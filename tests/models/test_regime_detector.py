@@ -678,7 +678,91 @@ class TestRealisticScenarios:
         assert stats["current_regime"] in ["low", "normal", "high"], (
             f"Expected valid regime string, got {stats['current_regime']}"
         )
-        assert stats["regime_transitions"] >= 1, "Expected at least 1 transition (calmÔåôvolatileÔåôcalm)"
+        assert stats["regime_transitions"] >= 1, "Expected at least 1 transition (calm→volatile→calm)"
+
+
+class TestRegimeDetectorAdaptive:
+    """C-09: Tests for adaptive-window RegimeDetector."""
+
+    def test_adaptive_params_stored(self):
+        """Adaptive window params are stored as instance attributes."""
+        detector = RegimeDetector(adaptive_window=True, min_window=15, max_window=90)
+        assert detector.adaptive_window is True
+        assert detector.min_window == 15
+        assert detector.max_window == 90
+        assert detector.current_effective_window == detector.lookback_window
+
+    def test_non_adaptive_mode_unchanged(self):
+        """Default (non-adaptive) mode keeps lookback_window==20 behaviour."""
+        detector = RegimeDetector(lookback_window=20)
+        assert detector.adaptive_window is False
+        # deque should still be sized 20
+        assert detector.volatility_history.maxlen == 20
+        for i in range(30):
+            detector.update(spread=100.0 + float(i))
+        # history is capped at 20
+        assert len(detector.volatility_history) == 20
+
+    def test_adaptive_deque_sized_for_max_window(self):
+        """In adaptive mode the deque holds max_window bars so we can slice adaptively."""
+        detector = RegimeDetector(adaptive_window=True, min_window=20, max_window=60)
+        assert detector.volatility_history.maxlen == 60
+        assert detector.spread_history.maxlen == 60
+
+    def test_effective_window_shrinks_in_high_vol(self):
+        """High realized vol should drive effective_window toward min_window."""
+        np.random.seed(42)
+        detector = RegimeDetector(adaptive_window=True, min_window=20, max_window=120, lookback_window=20)
+        # Feed 30 low-vol bars first to establish baseline
+        for _ in range(30):
+            detector.update(spread=100.0 + np.random.normal(0, 0.01))
+
+        # Now inject high-vol bars
+        base = 100.0
+        for _ in range(40):
+            base += np.random.normal(0, 4.0)
+            detector.update(spread=max(0.1, base))
+
+        # After sustained high vol the effective window should have decreased
+        assert detector.current_effective_window <= 80, (
+            f"Expected effective_window ≤ 80 in high vol, got {detector.current_effective_window}"
+        )
+
+    def test_effective_window_grows_in_low_vol(self):
+        """Sustained low vol should drive effective_window toward max_window."""
+        np.random.seed(7)
+        detector = RegimeDetector(adaptive_window=True, min_window=20, max_window=120, lookback_window=20)
+        # Seed with some history first
+        for _ in range(30):
+            detector.update(spread=100.0 + np.random.normal(0, 2.0))
+
+        # Then many low-vol bars
+        for _ in range(80):
+            detector.update(spread=100.0 + np.random.normal(0, 0.001))
+
+        assert detector.current_effective_window >= 60, (
+            f"Expected effective_window ≥ 60 in low vol, got {detector.current_effective_window}"
+        )
+
+    def test_adaptive_window_in_regime_stats(self):
+        """get_regime_stats() includes adaptive_window and current_effective_window keys."""
+        detector = RegimeDetector(adaptive_window=True, min_window=20, max_window=120)
+        for i in range(10):
+            detector.update(spread=100.0 + float(i))
+        stats = detector.get_regime_stats()
+        assert "adaptive_window" in stats
+        assert "current_effective_window" in stats
+        assert stats["adaptive_window"] is True
+        assert isinstance(stats["current_effective_window"], int)
+
+    def test_adaptive_reset_restores_effective_window(self):
+        """reset() restores current_effective_window to lookback_window."""
+        detector = RegimeDetector(adaptive_window=True, lookback_window=25, min_window=20, max_window=90)
+        # Force some updates to potentially shift the effective window
+        for i in range(50):
+            detector.update(spread=100.0 + float(i % 10))
+        detector.reset()
+        assert detector.current_effective_window == 25  # restored to lookback_window
 
 
 # Test execution

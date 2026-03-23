@@ -109,7 +109,7 @@ class TestDataLoader:
             mock_gw = MagicMock()
             mock_gw_cls.return_value = mock_gw
 
-            def get_hist(symbol=None, **kwargs):
+            def get_hist(symbol=None, **_kwargs):  # mirrors get_historical_data signature
                 price = prices.get(symbol or "", 175.0)
                 return _bars_for_price(price)
 
@@ -219,7 +219,8 @@ class TestDataCaching:
         bars = []
         for date, (open_, high, low, close, volume) in zip(
             dates,
-            [(150.0, 152.0, 149.0, 151.0, 40000000), (151.0, 153.0, 150.0, 152.0, 41000000)], strict=False,
+            [(150.0, 152.0, 149.0, 151.0, 40000000), (151.0, 153.0, 150.0, 152.0, 41000000)],
+            strict=False,
         ):
             bar = MagicMock()
             bar.date = date.strftime("%Y%m%d")

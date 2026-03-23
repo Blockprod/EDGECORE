@@ -18,8 +18,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+import pandas as pd
 from structlog import get_logger
 
+from backtester.oos import OOSConfig, OOSReport
 from backtests.metrics import BacktestMetrics
 from backtests.runner import BacktestRunner
 
@@ -166,3 +168,44 @@ class BacktestEngine:
             logger.info("batch_backtest_run", run=i, total=len(configs))
             results.append(self.run(cfg))
         return results
+
+    def run_oos_validation(
+        self,
+        pairs: list[tuple[str, str]],
+        price_data: pd.DataFrame,
+        split_date: str,
+        oos_config: OOSConfig | None = None,
+    ) -> OOSReport:
+        """
+        Run out-of-sample validation on a set of discovered pairs.
+
+        Validates that pairs cointegrated in-sample persist OOS by delegating
+        to :class:`backtester.oos.OOSValidationEngine`.
+
+        Args:
+            pairs: List of (symbol_1, symbol_2) tuples to validate.
+            price_data: Full price DataFrame (IS + OOS combined).
+            split_date: ISO date string separating in-sample from OOS period.
+            oos_config: Optional OOS configuration; uses defaults if None.
+
+        Returns:
+            :class:`~backtester.oos.OOSReport` with per-pair results and
+            aggregate ``strategy_validated`` flag.
+        """
+        from backtester.oos import OOSValidationEngine
+
+        engine = OOSValidationEngine(oos_config)
+        logger.info(
+            "backtest_engine_oos_validation_start",
+            n_pairs=len(pairs),
+            split_date=split_date,
+        )
+        report = engine.validate(pairs=pairs, price_data=price_data, split_date=split_date)
+        logger.info(
+            "backtest_engine_oos_validation_complete",
+            strategy_validated=report.strategy_validated,
+            persistence_rate=report.persistence_rate,
+            passed=report.passed_pairs,
+            total=report.total_pairs,
+        )
+        return report

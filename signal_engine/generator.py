@@ -35,6 +35,7 @@ logger = get_logger(__name__)
 # Signal data class
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Signal:
     """
@@ -51,6 +52,7 @@ class Signal:
         reason: Human-readable reason string.
         timestamp: Signal generation time.
     """
+
     pair_key: str
     side: str
     strength: float
@@ -65,6 +67,7 @@ class Signal:
 # ---------------------------------------------------------------------------
 # Generator
 # ---------------------------------------------------------------------------
+
 
 class SignalGenerator:
     """
@@ -101,6 +104,7 @@ class SignalGenerator:
             self.regime_detector: RegimeDetector | MarkovRegimeDetector = regime_detector
         else:
             from config.settings import get_settings as _get_settings_gen
+
             if _get_settings_gen().signal_combiner.use_markov_regime:
                 self.regime_detector = MarkovRegimeDetector()
             else:
@@ -156,8 +160,12 @@ class SignalGenerator:
 
             try:
                 sig = self._process_pair(
-                    pair_key, sym1, sym2, hl,
-                    market_data, active_positions,
+                    pair_key,
+                    sym1,
+                    sym2,
+                    hl,
+                    market_data,
+                    active_positions,
                 )
                 if sig is not None:
                     signals.append(sig)
@@ -202,7 +210,7 @@ class SignalGenerator:
         self._spreads[pair_key] = spread
 
         # 3. Stationarity check
-        is_stationary, adf_pval = self.stationarity_monitor.check(spread)
+        is_stationary, adf_pval = self.stationarity_monitor.check(spread, pair_key=pair_key)
         if not is_stationary:
             # If holding a position in a non-stationary spread ÔåÆ exit
             if pair_key in active_positions:
@@ -216,9 +224,7 @@ class SignalGenerator:
         # 3b. Structural break check (CUSUM + recursive β stability)
         if pair_key not in self._break_detectors:
             self._break_detectors[pair_key] = StructuralBreakDetector()
-        has_break, break_details = self._break_detectors[pair_key].check(
-            residuals=spread, y=y, x=x
-        )
+        has_break, break_details = self._break_detectors[pair_key].check(residuals=spread, y=y, x=x)
         if has_break:
             if pair_key in active_positions:
                 return Signal(

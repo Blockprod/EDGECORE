@@ -226,12 +226,14 @@ def equity_validator():
 @pytest.fixture
 def risk_engine_default(production_config):
     """Risk engine with production config."""
+    assert production_config is not None  # Ensure production config is loaded
     return RiskEngine(initial_equity=100000.0)
 
 
 @pytest.fixture
 def risk_engine_conservative(production_config):
     """Risk engine with conservative limits."""
+    assert production_config is not None  # Ensure production config is loaded
     return RiskEngine(initial_equity=50000.0)
 
 

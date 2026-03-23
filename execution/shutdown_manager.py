@@ -74,13 +74,16 @@ class ShutdownManager:
         """Register OS signal handlers for graceful shutdown."""
 
         def _sigint_handler(signum: int, frame: Any) -> None:
-            self.request_shutdown(f"SIGINT (Ctrl+C) - pid={os.getpid()}")
+            logger.debug("sigint_received", signum=signum, frame=str(frame))
+            self.request_shutdown(f"SIGINT/{signum} (Ctrl+C) - pid={os.getpid()}")
 
         def _sigterm_handler(signum: int, frame: Any) -> None:
-            self.request_shutdown(f"SIGTERM (system kill) - pid={os.getpid()}")
+            logger.debug("sigterm_received", signum=signum, frame=str(frame))
+            self.request_shutdown(f"SIGTERM/{signum} (system kill) - pid={os.getpid()}")
 
         def _sigusr1_handler(signum: int, frame: Any) -> None:
-            self.request_shutdown(f"SIGUSR1 (user signal) - pid={os.getpid()}")
+            logger.debug("sigusr1_received", signum=signum, frame=str(frame))
+            self.request_shutdown(f"SIGUSR1/{signum} (user signal) - pid={os.getpid()}")
 
         try:
             signal.signal(signal.SIGINT, _sigint_handler)
@@ -183,4 +186,3 @@ def request_external_shutdown(reason: str = "external_shutdown") -> None:
     """
     mgr = ShutdownManager()
     mgr.request_shutdown(reason)
-

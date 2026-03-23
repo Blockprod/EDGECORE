@@ -285,7 +285,7 @@ def engle_granger_test(
 
         # Step 2: ADF test on residuals with error handling
         try:
-            adf_result = adfuller(residuals, regression=regression, autolag="AIC")
+            adf_result = adfuller(residuals, regression=regression, maxlag=max_lags, autolag="AIC")
         except (LinAlgError, ValueError) as e:
             return {
                 "beta": beta_raw,
@@ -316,7 +316,7 @@ def engle_granger_test(
             "adf_statistic": coint_score,
             "adf_pvalue": coint_pvalue,
             "is_cointegrated": is_cointegrated,
-            "critical_values": adf_result[4],  # type: ignore[index]
+            "critical_values": dict(adf_result[4]),
             "alpha_threshold": alpha,
             "num_pairs": n_pairs,
         }
@@ -450,7 +450,7 @@ def engle_granger_test_robust(
 
         # ADF on residuals
         try:
-            adf_res = adfuller(residuals, regression=regression, autolag="AIC")
+            adf_res = adfuller(residuals, regression=regression, maxlag=max_lags, autolag="AIC")
         except (LinAlgError, ValueError) as e:
             return _err(f"ADF test failed: {str(e)[:50]}")
 
@@ -470,7 +470,7 @@ def engle_granger_test_robust(
             "adf_statistic": coint_stat,
             "adf_pvalue": coint_pvalue,
             "is_cointegrated": coint_pvalue < alpha,
-            "critical_values": adf_res[4],  # type: ignore[index]
+            "critical_values": dict(adf_res[4]),
             "hac_bse": ols.bse,
             "hac_tvalues": ols.tvalues,
             "hac_pvalues": ols.pvalues,
@@ -526,7 +526,7 @@ def newey_west_consensus(
     }
 
 
-def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> int | None:
+def half_life_mean_reversion(spread: pd.Series, _max_lag: int = 60) -> int | None:
     """
     Estimate half-life of mean reversion.
 
@@ -535,7 +535,7 @@ def half_life_mean_reversion(spread: pd.Series, max_lag: int = 60) -> int | None
 
     Args:
         spread: Spread time series.
-        max_lag: Unused (kept for backwards compatibility).
+        _max_lag: Reserved for backwards compatibility — not forwarded to estimator.
 
     Returns:
         Half-life in periods (int), or None if not mean-reverting.

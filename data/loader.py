@@ -1,10 +1,12 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import UTC
 from pathlib import Path
 
 import pandas as pd
 from structlog import get_logger
 
+from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 from data.validators import DataValidationError, OHLCVValidator
 
 logger = get_logger(__name__)
@@ -19,9 +21,8 @@ def load_price_data(
 
     Returns a DataFrame with columns = symbols, values = close prices.
     Uses IBGatewaySync (port 4002) with a single sequential connection.
+    Rate limiting is handled by GLOBAL_IBKR_RATE_LIMITER (40 req/s).
     """
-    import time as _time
-
     from execution.ibkr_engine import IBGatewaySync
 
     bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours"}
@@ -35,6 +36,7 @@ def load_price_data(
     try:
         for sym in symbols:
             try:
+                _ibkr_rate_limiter.acquire()
                 bars = engine.get_historical_data(
                     symbol=sym,
                     duration=duration,
@@ -51,7 +53,6 @@ def load_price_data(
                     logger.debug("load_price_data_ok", symbol=sym, bars=len(bars))
                 else:
                     logger.warning("load_price_data_empty", symbol=sym)
-                _time.sleep(0.5)  # IBKR rate limiting
             except Exception as exc:
                 logger.error("load_price_data_failed", symbol=sym, error=str(exc)[:120])
     finally:
@@ -119,18 +120,32 @@ class DataLoader:
             bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours", "1m": "1 min"}
             bar_size = bar_size_map.get(timeframe, "1 day")
 
-            # Calculate IB duration string from limit
-            if timeframe in ("1d",):
-                years = max(1, limit // 252)
-                duration = f"{years} Y" if years >= 1 else f"{limit} D"
-            elif timeframe in ("4h",):
-                days = max(1, (limit * 4) // 24 + 10)
-                duration = f"{days} D"
-            elif timeframe in ("1h",):
-                days = max(1, (limit) // 7 + 5)
-                duration = f"{days} D"
-            else:
-                duration = f"{max(1, limit * 60)} S"
+            # Calculate IB duration string: prefer since-date if provided, else derive from limit
+            _use_limit = True
+            if since is not None:
+                from datetime import datetime
+
+                try:
+                    since_dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
+                    if since_dt.tzinfo is None:
+                        since_dt = since_dt.replace(tzinfo=UTC)
+                    days_back = max(1, (datetime.now(UTC) - since_dt).days)
+                    duration = f"{days_back} D"
+                    _use_limit = False
+                except ValueError:
+                    logger.warning("invalid_since_date_using_limit", since=since, symbol=symbol)
+            if _use_limit:
+                if timeframe in ("1d",):
+                    years = max(1, limit // 252)
+                    duration = f"{years} Y" if years >= 1 else f"{limit} D"
+                elif timeframe in ("4h",):
+                    days = max(1, (limit * 4) // 24 + 10)
+                    duration = f"{days} D"
+                elif timeframe in ("1h",):
+                    days = max(1, (limit) // 7 + 5)
+                    duration = f"{days} D"
+                else:
+                    duration = f"{max(1, limit * 60)} S"
 
             engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id())
             engine.connect()
@@ -183,6 +198,98 @@ class DataLoader:
         except Exception as e:
             logger.error("ibkr_data_load_failed", symbol=str(symbol), error=str(e))
             raise
+
+    def load_ibkr_data_batch(
+        self,
+        symbols: list[str],
+        timeframe: str = "1d",
+        since: str | None = None,
+        limit: int = 252,
+        validate: bool = True,
+    ) -> dict[str, pd.DataFrame]:
+        """Load OHLCV data for multiple symbols using a single IBGatewaySync connection.
+
+        More efficient than calling load_ibkr_data() in a loop: one connect/disconnect
+        cycle for all symbols instead of one per symbol. (C-05)
+
+        Returns:
+            Dict mapping symbol → DataFrame (symbols that fail are omitted).
+
+        Raises:
+            DataValidationError: If validation fails for any symbol and validate=True.
+        """
+        from execution.ibkr_engine import IBGatewaySync
+
+        bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours", "1m": "1 min"}
+        bar_size = bar_size_map.get(timeframe, "1 day")
+
+        _use_limit = True
+        duration = ""
+        if since is not None:
+            from datetime import datetime
+
+            try:
+                since_dt = datetime.fromisoformat(since.replace("Z", "+00:00"))
+                if since_dt.tzinfo is None:
+                    since_dt = since_dt.replace(tzinfo=UTC)
+                days_back = max(1, (datetime.now(UTC) - since_dt).days)
+                duration = f"{days_back} D"
+                _use_limit = False
+            except ValueError:
+                logger.warning("invalid_since_date_using_limit_batch", since=since)
+        if _use_limit:
+            if timeframe in ("1d",):
+                years = max(1, limit // 252)
+                duration = f"{years} Y"
+            elif timeframe in ("4h",):
+                days = max(1, (limit * 4) // 24 + 10)
+                duration = f"{days} D"
+            elif timeframe in ("1h",):
+                days = max(1, limit // 7 + 5)
+                duration = f"{days} D"
+            else:
+                duration = f"{max(1, limit * 60)} S"
+
+        engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id())
+        engine.connect()
+        results: dict[str, pd.DataFrame] = {}
+        try:
+            for symbol in symbols:
+                try:
+                    _ibkr_rate_limiter.acquire()
+                    bars = engine.get_historical_data(
+                        symbol=symbol,
+                        duration=duration,
+                        bar_size=bar_size,
+                        what_to_show="ADJUSTED_LAST",
+                    )
+                    if not bars:
+                        logger.warning("ibkr_batch_empty", symbol=symbol)
+                        continue
+                    df = pd.DataFrame(
+                        {
+                            "open": [b.open for b in bars],
+                            "high": [b.high for b in bars],
+                            "low": [b.low for b in bars],
+                            "close": [b.close for b in bars],
+                            "volume": [b.volume for b in bars],
+                        },
+                        index=pd.DatetimeIndex([b.date for b in bars]),
+                    )
+                    df.index.name = "date"
+                    df = df.dropna()
+                    if validate and len(df) > 0:
+                        self.validator.validate(df, raise_on_error=True)
+                    results[symbol] = df
+                    logger.info("ibkr_batch_symbol_ok", symbol=symbol, rows=len(df))
+                except DataValidationError:
+                    raise
+                except Exception as exc:
+                    logger.error("ibkr_batch_symbol_failed", symbol=symbol, error=str(exc)[:120])
+        finally:
+            engine.disconnect()
+
+        return results
 
     def load_csv(self, filepath: str) -> pd.DataFrame:
         """Load OHLCV data from CSV file."""

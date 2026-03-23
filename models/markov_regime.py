@@ -34,6 +34,13 @@ Fitting is done in two modes:
 
 Dependencies: ``hmmlearn`` (pip install hmmlearn).  Falls back to the
 legacy percentile detector if ``hmmlearn`` is not installed.
+
+DECISION 2026-03-22 (C-09): MarkovRegimeDetector is RETAINED as an optional
+drop-in replacement for RegimeDetector, gated by
+``signal_combiner.use_markov_regime`` (default: False).
+It is NOT dead code — it is disabled by default in prod for stability and
+enabled explicitly via config for research/live A/B.
+Tests: tests/phase4/test_phase4_signals.py (concordance, hmm_available).
 """
 
 from __future__ import annotations
@@ -111,7 +118,7 @@ class MarkovRegimeDetector:
         high_percentile: float = 0.67,
         min_regime_duration: int = 1,
         config: MarkovRegimeConfig | None = None,
-        **kwargs: Any,
+        **_kwargs: Any,
     ):
         cfg = config or MarkovRegimeConfig(
             lookback_window=lookback_window,

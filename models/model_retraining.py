@@ -413,6 +413,7 @@ class ModelRetrainingManager:
             reestimation_count=1,
             is_valid=True,
             stability_score=1.0 if p_value < self.cointegration_threshold else 0.0,
+            metadata={"symbol1": symbol1, "symbol2": symbol2},
         )
 
         self.tracked_pairs[pair_key] = metadata

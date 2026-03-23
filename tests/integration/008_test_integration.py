@@ -15,7 +15,7 @@ def _make_ohlcv_df(n, base_price=175.0, symbol="AAPL"):
     """Helper: create a realistic OHLCV DataFrame for IBKR-style data."""
     dates = pd.date_range("2021-01-01", periods=n, freq="D")
     prices = np.linspace(base_price, base_price * 1.1, n) + np.random.randn(n) * 0.5
-    return pd.DataFrame(
+    df = pd.DataFrame(
         {
             "Open": prices * 0.99,
             "High": prices * 1.01,
@@ -25,6 +25,8 @@ def _make_ohlcv_df(n, base_price=175.0, symbol="AAPL"):
         },
         index=dates,
     )
+    df.attrs["symbol"] = symbol
+    return df
 
 
 class TestEndToEndPipeline:

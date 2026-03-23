@@ -35,6 +35,16 @@ from models.cointegration import (
 )
 from models.johansen import JohansenCointegrationTest
 
+# C-03: observabilité Cython — engle_granger_test() utilise déjà engle_granger_fast()
+# en interne quand disponible (models/cointegration.py). Ce flag permet de vérifier
+# au démarrage si l'accélération est active et d'alerter l'opérateur si elle est absente.
+try:
+    from models.cointegration_fast import engle_granger_fast as _engle_granger_fast  # noqa: F401
+
+    _CYTHON_EG_AVAILABLE = True
+except ImportError:
+    _CYTHON_EG_AVAILABLE = False
+
 logger = get_logger(__name__)
 
 
@@ -119,7 +129,14 @@ class PairDiscoveryEngine:
             bonferroni=self.config.bonferroni_correction,
             johansen=self.config.johansen_confirmation,
             nw_consensus=self.config.newey_west_consensus,
+            cython_eg_available=_CYTHON_EG_AVAILABLE,
         )
+        if not _CYTHON_EG_AVAILABLE:
+            logger.warning(
+                "cython_eg_unavailable",
+                impact="pair_discovery 5-10x slower",
+                fix="venv\\Scripts\\python.exe setup.py build_ext --inplace",
+            )
 
     # ------------------------------------------------------------------
     # Public API

@@ -15,7 +15,11 @@ Cost components:
   4. Financing rate for leveraged/margined positions
 """
 
-from dataclasses import dataclass
+from __future__ import annotations
+
+import csv
+from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -33,6 +37,67 @@ class CostModelConfig:
     # Almgren-Chriss market impact parameters
     market_impact_eta: float = 0.05  # Temporary impact coefficient (calibrated v32j)
     execution_delay_days: float = 0.01  # Execution delay in trading days (calibrated v32j)
+    # Hard-to-borrow (HTB) per-symbol annual borrow rate overrides (decimal %).
+    # E.g. {"GME": 20.0, "AMC": 15.0}. Symbols not listed fall back to
+    # borrowing_cost_annual_pct (the general-collateral / ETB rate).
+    htb_symbols: dict[str, float] = field(default_factory=dict)
+    # Default ADV (USD/day) used in Almgren-Chriss slippage when no per-symbol
+    # ADV is injected by the caller.  $10M is a conservative mid-cap estimate;
+    # StrategyBacktestSimulator overrides this via adv_by_symbol.
+    default_adv_usd: float = 10_000_000.0
+
+    @classmethod
+    def from_htb_csv(
+        cls,
+        path: str | Path,
+        maker_fee_bps: float = 1.5,
+        taker_fee_bps: float = 2.0,
+        base_slippage_bps: float = 2.0,
+        borrowing_cost_annual_pct: float = 0.5,
+        include_borrowing: bool = True,
+        slippage_model: str = "almgren_chriss",
+        include_funding: bool = False,
+        funding_rate_daily_bps: float = 0.0,
+        market_impact_eta: float = 0.05,
+        execution_delay_days: float = 0.01,
+        default_adv_usd: float = 10_000_000.0,
+    ) -> CostModelConfig:
+        """Build a config loading HTB rates from a two-column CSV file.
+
+        CSV format (no header required but accepted):
+            symbol,annual_borrow_pct
+            GME,25.0
+            AMC,18.5
+
+        All CostModelConfig fields can be overridden via keyword arguments.
+        """
+        htb: dict[str, float] = {}
+        with open(path, newline="", encoding="utf-8") as fh:
+            reader = csv.reader(fh)
+            for row in reader:
+                if len(row) < 2:
+                    continue
+                sym, rate_str = row[0].strip().upper(), row[1].strip()
+                if sym.lower() == "symbol":  # skip header row
+                    continue
+                try:
+                    htb[sym] = float(rate_str)
+                except ValueError:
+                    continue  # ignore malformed rows
+        return cls(
+            htb_symbols=htb,
+            maker_fee_bps=maker_fee_bps,
+            taker_fee_bps=taker_fee_bps,
+            base_slippage_bps=base_slippage_bps,
+            borrowing_cost_annual_pct=borrowing_cost_annual_pct,
+            include_borrowing=include_borrowing,
+            slippage_model=slippage_model,
+            include_funding=include_funding,
+            funding_rate_daily_bps=funding_rate_daily_bps,
+            market_impact_eta=market_impact_eta,
+            execution_delay_days=execution_delay_days,
+            default_adv_usd=default_adv_usd,
+        )
 
 
 class CostModel:
@@ -100,11 +165,24 @@ class CostModel:
         """Cost to EXIT a pair trade (2 legs)."""
         return self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2, sigma_sym1, sigma_sym2)
 
-    def holding_cost(self, notional_short_leg: float, holding_days: int) -> float:
-        """Borrowing cost for the short leg over *holding_days*."""
+    def holding_cost(
+        self,
+        notional_short_leg: float,
+        holding_days: int,
+        symbol: str = "",
+    ) -> float:
+        """Borrowing cost for the short leg over *holding_days*.
+
+        When *symbol* is provided and present in ``config.htb_symbols``, its
+        per-symbol annual rate is used instead of the general-collateral
+        ``borrowing_cost_annual_pct``.  This correctly prices hard-to-borrow
+        stocks (GME, AMC, squeeze candidates) where borrow can run 5-50×
+        the GC rate.
+        """
         if not self.config.include_borrowing or holding_days <= 0:
             return 0.0
-        daily_rate = self.config.borrowing_cost_annual_pct / 100.0 / 365.0  # Calendar days
+        annual_pct = self.config.htb_symbols.get(symbol.upper(), self.config.borrowing_cost_annual_pct)
+        daily_rate = annual_pct / 100.0 / 365.0  # Calendar days
         return notional_short_leg * daily_rate * holding_days
 
     def funding_cost(self, notional_per_leg: float, holding_days: int) -> float:
@@ -125,12 +203,17 @@ class CostModel:
         holding_days: int = 0,
         volume_24h_sym1: float = 1e7,
         volume_24h_sym2: float = 1e7,
+        short_symbol: str = "",
     ) -> float:
-        """Total cost for a complete round-trip (entry + exit + holding + funding)."""
+        """Total cost for a complete round-trip (entry + exit + holding + funding).
+
+        Pass *short_symbol* to apply the correct HTB borrow rate for the
+        shorted leg (falls back to GC rate when not in ``htb_symbols``).
+        """
         return (
             self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
             + self.exit_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
-            + self.holding_cost(notional_per_leg, holding_days)
+            + self.holding_cost(notional_per_leg, holding_days, symbol=short_symbol)
             + self.funding_cost(notional_per_leg, holding_days)
         )
 

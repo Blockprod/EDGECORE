@@ -186,6 +186,7 @@ class BacktestRunner:
             pair_rediscovery_interval=pair_rediscovery_interval,
             pair_validation_interval=pair_validation_interval,
             max_portfolio_heat=max_portfolio_heat,
+            max_position_loss_pct=max_position_loss_pct,
             time_stop=time_stop,
             kelly_sizer=kelly_sizer,
             sector_map=sector_map,
@@ -249,8 +250,10 @@ class BacktestRunner:
                 raise TypeError(f"Symboles non-str d├®tect├®s et rejet├®s: {problematic}")
             return sanitized
 
-        # Apply sanitization early to catch upstream issues (lists/tuples etc.)
-        symbols = _sanitize_symbols(symbols)
+        # Apply sanitization early to catch upstream issues (lists/tuples etc.).
+        # When validate_data=False the type guard is skipped (caller guarantees purity).
+        if validate_data:
+            symbols = _sanitize_symbols(symbols)
 
         # ÔöÇÔöÇ Disk cache: skip IBKR entirely when valid daily cache exists ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         import hashlib as _hashlib
@@ -443,7 +446,9 @@ class BacktestRunner:
     ) -> BacktestMetrics:
         # C-02: This method has confirmed look-ahead bias and is disabled.
         warnings.warn(
-            "BacktestRunner.run() has look-ahead bias (C-02). Use run_unified() instead.",
+            f"BacktestRunner.run() has look-ahead bias (C-02). Use run_unified() instead. "
+            f"[symbols={symbols}, start={start_date}, end={end_date}, "
+            f"validate_data={validate_data}, use_synthetic={use_synthetic}]",
             DeprecationWarning,
             stacklevel=2,
         )

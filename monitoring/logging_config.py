@@ -156,7 +156,12 @@ def setup_logging(
 
     # File handler with rotation
     file_handler = RotatingJSONHandler(
-        filename=os.path.join(log_dir, "trading.log"), when="midnight", interval=1, backupCount=backup_count, utc=True
+        filename=os.path.join(log_dir, "trading.log"),
+        when="midnight",
+        interval=1,
+        backupCount=backup_count,
+        utc=True,
+        maxBytes=max_bytes,
     )
     file_handler.setLevel(level)
     file_handler.addFilter(context_filter)

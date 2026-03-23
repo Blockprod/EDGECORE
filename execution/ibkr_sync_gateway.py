@@ -17,16 +17,9 @@ from ibapi.client import EClient
 from ibapi.contract import Contract
 from ibapi.wrapper import EWrapper
 
-from execution.rate_limiter import TokenBucketRateLimiter
+from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 
 logger = logging.getLogger(__name__)
-
-# Module-level rate limiter — shared with IBKRExecutionEngine via the same
-# TokenBucketRateLimiter instance imported in ibkr_engine.py.
-# Each file instantiates its own bucket; they do NOT share state, which is
-# intentional: IBGatewaySync (sync) and IBKRExecutionEngine (async) each
-# control their own request pacing at 45 req/s / burst 10.
-_ibkr_rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
 
 
 class IBWrapper(EWrapper):
@@ -43,6 +36,9 @@ class IBWrapper(EWrapper):
         self.error_msg: tuple | None = None
         self.shortable_shares = -1.0  # A-08: mis à jour par tickGeneric tick 236
         self.shortable_shares_received = False  # A-08: flag de complétion
+        # C-08: event-based wake-up for historical data requests (replaces sleep(0.1) polling)
+        self._hist_done_event: threading.Event = threading.Event()
+        self._hist_req_id: int | None = None  # set by IBGatewaySync before each request
 
     def currentTime(self, time_: int) -> None:
         with self._lock:
@@ -51,23 +47,29 @@ class IBWrapper(EWrapper):
     def contractDetails(self, reqId: int, contractDetails: Any) -> None:
         with self._lock:
             self.contract_details.append(contractDetails)
+        logger.debug("[IBWrapper] contractDetails reqId=%d count=%d", reqId, len(self.contract_details))
 
     def contractDetailsEnd(self, reqId: int) -> None:
         with self._lock:
             self.contract_details_done = True
+        logger.debug("[IBWrapper] contractDetailsEnd reqId=%d", reqId)
 
     def historicalData(self, reqId: int, bar: Any) -> None:
         with self._lock:
             self.historical_data.append(bar)
+        logger.debug("[IBWrapper] historicalData reqId=%d bars=%d", reqId, len(self.historical_data))
 
     def historicalDataEnd(self, reqId: int, start: str, end: str) -> None:
         with self._lock:
             self.historical_data_done = True
+        logger.debug("[IBWrapper] historicalDataEnd reqId=%d start=%s end=%s", reqId, start, end)
+        self._hist_done_event.set()  # C-08: wake up get_historical_data immediately
 
     def fundamentalData(self, reqId: int, data: str) -> None:
         with self._lock:
             self.fundamental_data = data
             self.fundamental_data_done = True
+        logger.debug("[IBWrapper] fundamentalData reqId=%d bytes=%d", reqId, len(data))
 
     def tickGeneric(self, reqId: int, tickType: int, value: float) -> None:
         """A-08: Capture tick type 236 (shortable shares) from reqMktData snapshot."""
@@ -75,6 +77,7 @@ class IBWrapper(EWrapper):
             if tickType == 236:
                 self.shortable_shares = value
                 self.shortable_shares_received = True
+        logger.debug("[IBWrapper] tickGeneric reqId=%d tickType=%d value=%s", reqId, tickType, value)
 
     def error(self, reqId: int, errorCode: int, errorString: str, *args: Any) -> None:
         with self._lock:
@@ -82,6 +85,11 @@ class IBWrapper(EWrapper):
         # Error codes 2104, 2106, 2158 are informational - not real errors
         if errorCode not in (2104, 2106, 2158):
             logger.warning("[IBWrapper] Error %d: %s (reqId=%d)", errorCode, errorString, reqId)
+        if args:
+            logger.debug("[IBWrapper] error extra data reqId=%d extra=%s", reqId, args)
+        # C-08: unblock get_historical_data immediately on fatal data errors for the current request
+        if errorCode in (162, 200, 354) and reqId == self._hist_req_id:
+            self._hist_done_event.set()
 
 
 class IBGatewaySync:
@@ -197,6 +205,9 @@ class IBGatewaySync:
         self.wrapper.historical_data = []
         self.wrapper.historical_data_done = False
         self.wrapper.error_msg = None
+        # C-08: register this request's req_id and clear the event before sending
+        self.wrapper._hist_req_id = req_id
+        self.wrapper._hist_done_event.clear()
         contract = Contract()
         contract.symbol = symbol
         contract.secType = "STK"
@@ -214,23 +225,13 @@ class IBGatewaySync:
             keepUpToDate=False,
             chartOptions=[],
         )
-        t0 = time.time()
-        while time.time() - t0 < self.timeout:
-            with self.wrapper._lock:
-                done = self.wrapper.historical_data_done
-                err = self.wrapper.error_msg
-            if done:
-                break
-            # Only break on errors for THIS specific request (check reqId).
-            # Stale error 162 from a previous cancelHistoricalData can arrive
-            # during the next request and must NOT cut it short.
-            if err and err[0] == req_id and err[1] in (162, 200, 354):
-                break
-            time.sleep(0.1)
+        # C-08: block until historicalDataEnd fires the event (or error unblocks it),
+        # replacing the while/sleep(0.1) polling loop.
+        completed = self.wrapper._hist_done_event.wait(timeout=self.timeout)
         # Cancel if still pending so IB Gateway frees this reqId.
         with self.wrapper._lock:
             done = self.wrapper.historical_data_done
-        if not done:
+        if not done or not completed:
             try:
                 self.client.cancelHistoricalData(req_id)
             except Exception:

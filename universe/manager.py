@@ -25,7 +25,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
+from pathlib import Path
+from typing import IO, Union
 
 import pandas as pd
 from structlog import get_logger
@@ -33,12 +34,16 @@ from structlog import get_logger
 from data.delisting_guard import DelistingGuard
 from data.liquidity_filter import LiquidityConfig, LiquidityFilter
 
+# Default path for the point-in-time universe history file (C-01)
+_DEFAULT_HISTORY_CSV = Path(__file__).parent.parent / "data" / "universe_history.csv"
+
 logger = get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
 # Sector classification
 # ---------------------------------------------------------------------------
+
 
 class Sector(Enum):
     """
@@ -49,6 +54,7 @@ class Sector(Enum):
         instead of enum members.  The enum is kept for backward
         compatibility but the manager now works with strings internally.
     """
+
     TECHNOLOGY = "technology"
     FINANCIALS = "financials"
     HEALTHCARE = "healthcare"
@@ -74,84 +80,137 @@ def _normalize_sector(value: Union[str, Sector]) -> str:
 # Uses plain strings ÔÇö compatible with both run_backtest.py and Sector enum.
 DEFAULT_SECTOR_MAP: dict[str, str] = {
     # Technology (Mega Cap)
-    "AAPL": "technology", "MSFT": "technology",
-    "GOOGL": "technology", "META": "technology",
-    "NVDA": "technology", "AMD": "technology",
-    "INTC": "technology", "AVGO": "technology",
-    "CRM": "technology", "ADBE": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
+    "INTC": "technology",
+    "AVGO": "technology",
+    "CRM": "technology",
+    "ADBE": "technology",
     # Technology / Semiconductors (Mid-Cap)
-    "MRVL": "technology", "ON": "technology",
-    "MCHP": "technology", "QCOM": "technology",
-    "TXN": "technology", "AMAT": "technology",
-    "LRCX": "technology", "KLAC": "technology",
+    "MRVL": "technology",
+    "ON": "technology",
+    "MCHP": "technology",
+    "QCOM": "technology",
+    "TXN": "technology",
+    "AMAT": "technology",
+    "LRCX": "technology",
+    "KLAC": "technology",
     # Financials (Mega Cap)
-    "JPM": "financials", "BAC": "financials",
-    "GS": "financials", "MS": "financials",
-    "WFC": "financials", "C": "financials",
-    "BLK": "financials", "SCHW": "financials",
+    "JPM": "financials",
+    "BAC": "financials",
+    "GS": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
+    "BLK": "financials",
+    "SCHW": "financials",
     # Financials - Regional Banks
-    "USB": "financials", "PNC": "financials",
-    "TFC": "financials", "RF": "financials",
-    "CFG": "financials", "HBAN": "financials",
+    "USB": "financials",
+    "PNC": "financials",
+    "TFC": "financials",
+    "RF": "financials",
+    "CFG": "financials",
+    "HBAN": "financials",
     "KEY": "financials",
     # Healthcare / Pharma (Mega Cap)
-    "JNJ": "healthcare", "PFE": "healthcare",
-    "UNH": "healthcare", "MRK": "healthcare",
-    "ABBV": "healthcare", "LLY": "healthcare",
-    "TMO": "healthcare", "ABT": "healthcare",
+    "JNJ": "healthcare",
+    "PFE": "healthcare",
+    "UNH": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
+    "LLY": "healthcare",
+    "TMO": "healthcare",
+    "ABT": "healthcare",
     # Healthcare / Biotech (Mid-Cap)
-    "GILD": "healthcare", "REGN": "healthcare",
-    "BIIB": "healthcare", "VRTX": "healthcare",
-    "BMY": "healthcare", "ZTS": "healthcare",
+    "GILD": "healthcare",
+    "REGN": "healthcare",
+    "BIIB": "healthcare",
+    "VRTX": "healthcare",
+    "BMY": "healthcare",
+    "ZTS": "healthcare",
     "MCK": "healthcare",
     # Healthcare Services
-    "CVS": "healthcare", "CI": "healthcare",
-    "HUM": "healthcare", "ELV": "healthcare",
+    "CVS": "healthcare",
+    "CI": "healthcare",
+    "HUM": "healthcare",
+    "ELV": "healthcare",
     "CNC": "healthcare",
     # Consumer Staples
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
-    "WMT": "consumer_staples", "COST": "consumer_staples",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
+    "WMT": "consumer_staples",
+    "COST": "consumer_staples",
     # Consumer Discretionary / Retail
-    "TGT": "consumer_discretionary", "LOW": "consumer_discretionary",
-    "HD": "consumer_discretionary", "ROST": "consumer_discretionary",
-    "TJX": "consumer_discretionary", "DLTR": "consumer_discretionary",
+    "TGT": "consumer_discretionary",
+    "LOW": "consumer_discretionary",
+    "HD": "consumer_discretionary",
+    "ROST": "consumer_discretionary",
+    "TJX": "consumer_discretionary",
+    "DLTR": "consumer_discretionary",
     "DG": "consumer_discretionary",
     # Energy
-    "XOM": "energy", "CVX": "energy",
-    "COP": "energy", "SLB": "energy",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "SLB": "energy",
     "EOG": "energy",
-    "VLO": "energy", "MPC": "energy",
-    "PSX": "energy", "DVN": "energy",
-    "HAL": "energy", "BKR": "energy",
+    "VLO": "energy",
+    "MPC": "energy",
+    "PSX": "energy",
+    "DVN": "energy",
+    "HAL": "energy",
+    "BKR": "energy",
     # Industrials
-    "CAT": "industrials", "DE": "industrials",
-    "HON": "industrials", "GE": "industrials",
-    "RTX": "industrials", "LMT": "industrials",
-    "MMM": "industrials", "EMR": "industrials",
-    "ITW": "industrials", "ROK": "industrials",
-    "CMI": "industrials", "PH": "industrials",
+    "CAT": "industrials",
+    "DE": "industrials",
+    "HON": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "LMT": "industrials",
+    "MMM": "industrials",
+    "EMR": "industrials",
+    "ITW": "industrials",
+    "ROK": "industrials",
+    "CMI": "industrials",
+    "PH": "industrials",
     # Communication / Media
-    "CMCSA": "communication", "DIS": "communication",
-    "NFLX": "communication", "FOXA": "communication",
-    "VZ": "communication", "T": "communication",
+    "CMCSA": "communication",
+    "DIS": "communication",
+    "NFLX": "communication",
+    "FOXA": "communication",
+    "VZ": "communication",
+    "T": "communication",
     # Utilities
-    "NEE": "utilities", "DUK": "utilities",
-    "SO": "utilities", "D": "utilities",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
+    "D": "utilities",
     # REITs
-    "PLD": "reits", "AMT": "reits",
+    "PLD": "reits",
+    "AMT": "reits",
     "SPG": "reits",
     # --- ETFs Sectoriels ---
-    "XLK": "technology", "SMH": "technology",
-    "XLF": "financials", "KRE": "financials",
+    "XLK": "technology",
+    "SMH": "technology",
+    "XLF": "financials",
+    "KRE": "financials",
     "XLE": "energy",
-    "XLV": "healthcare", "XBI": "healthcare", "IBB": "healthcare",
+    "XLV": "healthcare",
+    "XBI": "healthcare",
+    "IBB": "healthcare",
     "XLI": "industrials",
     "XLU": "utilities",
     "XLP": "consumer_staples",
     "XLB": "materials",
     "XLC": "communication",
-    "XLRE": "reits", "IYR": "reits",
+    "XLRE": "reits",
+    "IYR": "reits",
 }
 
 
@@ -159,12 +218,14 @@ DEFAULT_SECTOR_MAP: dict[str, str] = {
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class UniverseSnapshot:
     """Point-in-time view of the tradeable universe."""
+
     symbols: list[str]
-    sector_groups: dict[str, list[str]]   # sector_name -> symbols
-    excluded: dict[str, str]              # symbol -> exclusion reason
+    sector_groups: dict[str, list[str]]  # sector_name -> symbols
+    excluded: dict[str, str]  # symbol -> exclusion reason
     timestamp: pd.Timestamp
     total_candidates: int
 
@@ -185,6 +246,7 @@ class UniverseSnapshot:
 # ---------------------------------------------------------------------------
 # UniverseManager
 # ---------------------------------------------------------------------------
+
 
 class UniverseManager:
     """
@@ -227,29 +289,40 @@ class UniverseManager:
         """
         if symbols is None:
             from config.settings import get_settings
+
             symbols = get_settings().trading_universe.symbols
 
         self._all_symbols: list[str] = list(symbols)
 
         # Normalize sector_map: convert Sector enum values to strings
         raw_map = sector_map if sector_map is not None else dict(DEFAULT_SECTOR_MAP)
-        self._sector_map: dict[str, str] = {
-            k: _normalize_sector(v) for k, v in raw_map.items()
-        }
+        self._sector_map: dict[str, str] = {k: _normalize_sector(v) for k, v in raw_map.items()}
 
         self._manually_excluded: set[str] = set()
         self._cross_sector = cross_sector_pairs
+        # Point-in-time history: loaded lazily from universe_history.csv (C-01)
+        self._history_df: pd.DataFrame | None = None
 
-        self.liquidity_filter = LiquidityFilter(
-            LiquidityConfig(min_volume_24h_usd=min_volume_24h_usd)
-        )
+        self.liquidity_filter = LiquidityFilter(LiquidityConfig(min_volume_24h_usd=min_volume_24h_usd))
         self.delisting_guard = DelistingGuard()
+
+        # Auto-load PIT history if the default CSV exists (C-01)
+        if _DEFAULT_HISTORY_CSV.is_file():
+            try:
+                self.load_constituents_csv(_DEFAULT_HISTORY_CSV)
+            except Exception as _e:
+                logger.warning(
+                    "universe_history_csv_load_failed",
+                    path=str(_DEFAULT_HISTORY_CSV),
+                    error=str(_e),
+                )
 
         logger.info(
             "universe_manager_initialized",
             total_symbols=len(self._all_symbols),
             sectors=len(set(self._sector_map.get(s, "unknown") for s in self._all_symbols)),
             cross_sector=cross_sector_pairs,
+            pit_history_loaded=self._history_df is not None,
         )
 
     # ------------------------------------------------------------------
@@ -345,13 +418,13 @@ class UniverseManager:
         if self._cross_sector:
             syms = sorted(snapshot.symbols)
             for i, s1 in enumerate(syms):
-                for s2 in syms[i + 1:]:
+                for s2 in syms[i + 1 :]:
                     pairs.append((s1, s2))
         else:
             for _sector, syms in snapshot.sector_groups.items():
                 syms_sorted = sorted(syms)
                 for i, s1 in enumerate(syms_sorted):
-                    for s2 in syms_sorted[i + 1:]:
+                    for s2 in syms_sorted[i + 1 :]:
                         pairs.append((s1, s2))
 
         logger.info(
@@ -436,6 +509,75 @@ class UniverseManager:
     # Accessors
     # ------------------------------------------------------------------
 
+    # ------------------------------------------------------------------
+    # Point-in-time constituents (C-01)
+    # ------------------------------------------------------------------
+
+    def load_constituents_csv(self, path: str | Path | IO[str]) -> None:
+        """Load a point-in-time universe history file.
+
+        Expected CSV columns: ``symbol``, ``sector``, ``date_in``, ``date_out``.
+        ``date_out`` may be empty / NaN, which means the symbol is still active.
+
+        Args:
+            path: Path to the CSV file, or a file-like object (e.g. ``io.StringIO``).
+        """
+        df = pd.read_csv(
+            path,
+            dtype=str,
+        )
+        required = {"symbol", "date_in"}
+        missing = required - set(df.columns)
+        if missing:
+            raise ValueError(f"universe_history.csv missing columns: {missing}")
+        if "sector" not in df.columns:
+            df["sector"] = "unknown"
+        if "date_out" not in df.columns:
+            df["date_out"] = pd.NaT
+        df["symbol"] = df["symbol"].str.strip().str.upper()
+        df["date_in"] = pd.to_datetime(df["date_in"], utc=False)
+        df["date_out"] = pd.to_datetime(df["date_out"], utc=False)
+        self._history_df = df.reset_index(drop=True)
+        logger.info(
+            "universe_history_csv_loaded",
+            path=str(path),
+            rows=len(df),
+            symbols=df["symbol"].nunique(),
+        )
+
+    def get_symbols_as_of(self, as_of_date: str | pd.Timestamp) -> list[str]:
+        """Return symbols that were active at ``as_of_date`` (point-in-time).
+
+        Requires ``load_constituents_csv()`` to have been called first.
+        If no history is loaded, falls back to ``get_active_symbols()`` with a
+        survivorship-bias warning.
+
+        Args:
+            as_of_date: The historical date to filter by.
+
+        Returns:
+            List of symbol strings active on that date.
+        """
+        ts = pd.Timestamp(as_of_date)
+        if self._history_df is not None:
+            df = self._history_df
+            date_in_ok = df["date_in"] <= ts
+            date_out_ok = df["date_out"].isna() | (df["date_out"] > ts)
+            pit_symbols = set(df.loc[date_in_ok & date_out_ok, "symbol"].tolist())
+            return [s for s in self._all_symbols if s not in self._manually_excluded and s in pit_symbols]
+        # Fallback: no history file → warn about survivorship bias
+        logger.warning(
+            "universe_survivorship_bias_possible",
+            as_of_date=str(as_of_date),
+            symbol_count=len(self._all_symbols),
+            note=(
+                "universe_history.csv not loaded — universe is static (current survivors only). "
+                "Backtests may over-estimate Sharpe by 15-25%. "
+                "Put data/universe_history.csv in the workspace to eliminate this warning."
+            ),
+        )
+        return self.get_active_symbols()
+
     def get_active_symbols(self) -> list[str]:
         """Return symbols not manually excluded (for live trading runner)."""
         return [s for s in self._all_symbols if s not in self._manually_excluded]
@@ -444,38 +586,25 @@ class UniverseManager:
         self,
         as_of_date: Union[str, pd.Timestamp] | None = None,
     ) -> list[str]:
-        """Return active symbols, optionally filtered by a historical date.
+        """Return active symbols, optionally filtered point-in-time.
 
-        .. warning::
-            When *as_of_date* is provided the universe map is still the
-            **current** (static) DEFAULT_SECTOR_MAP that contains only
-            companies that survive to today.  Backtests using this list for
-            historical periods are subject to survivorship bias.
-            A point-in-time constituents file (``universe/constituents_history.csv``)
-            would eliminate this limitation.
+        When *as_of_date* is provided:
+
+        - If ``data/universe_history.csv`` is loaded, returns only symbols
+          whose ``date_in \u2264 as_of_date < date_out`` (genuine PIT filter — C-01).
+        - Otherwise emits a survivorship-bias warning and returns the full
+          live universe (backward-compat behaviour).
 
         Args:
             as_of_date: Historical date string (``"YYYY-MM-DD"``) or
-                ``pd.Timestamp``.  When supplied a ``WARNING`` is emitted to
-                alert back-testers of the potential bias.
+                ``pd.Timestamp``.  ``None`` returns the current live universe.
 
         Returns:
             List of active (non-excluded) symbol strings.
         """
-        symbols = self.get_active_symbols()
         if as_of_date is not None:
-            logger.warning(
-                "universe_survivorship_bias_possible",
-                as_of_date=str(as_of_date),
-                symbol_count=len(symbols),
-                note=(
-                    "Universe is static (current survivors only). "
-                    "Symbols that delisted or merged before as_of_date are not excluded. "
-                    "Sharpe ratios from backtests may be over-estimated. "
-                    "Provide universe/constituents_history.csv for point-in-time filtering."
-                ),
-            )
-        return symbols
+            return self.get_symbols_as_of(as_of_date)
+        return self.get_active_symbols()
 
     @property
     def all_symbols(self) -> list[str]:

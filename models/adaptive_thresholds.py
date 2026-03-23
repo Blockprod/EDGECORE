@@ -201,6 +201,9 @@ class AdaptiveThresholdCalculator:
         """
         if spread_vol == 0:
             return 1.0
+        if portfolio_vol <= 0:
+            logger.warning("invalid_portfolio_vol", portfolio_vol=portfolio_vol)
+            return 1.0
 
         # Position size inversely proportional to volatility
         size = target_risk_pct / max(spread_vol, 0.001)
@@ -442,10 +445,11 @@ class DynamicSpreadModel:
         """
         z_score = self.compute_z_score(spread)
 
+        # Use caller-supplied config to override threshold calculation if provided
+        calculator = AdaptiveThresholdCalculator(config=config) if config is not None else self.threshold_calculator
+
         # Calculate adaptive thresholds
-        entry_thresh, exit_thresh, adj_details = self.threshold_calculator.calculate_threshold(
-            spread, half_life=self.half_life
-        )
+        entry_thresh, exit_thresh, adj_details = calculator.calculate_threshold(spread, half_life=self.half_life)
 
         # Generate signals: 1 (long), 0 (hold), -1 (short)
         signals = pd.Series(0, index=z_score.index)

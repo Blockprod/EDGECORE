@@ -84,7 +84,11 @@ class PairTradingStrategy(BaseStrategy):
         from models.stationarity_monitor import StationarityMonitor
 
         self.regime_detector = RegimeDetector(
-            lookback_window=self._cfg_val(_c, "regime_lookback_window", 20),
+            lookback_window=self._cfg_val(
+                _c,
+                "regime_lookback_window",
+                self._cfg_val(get_settings().regime_detector_config, "regime_window", 60),
+            ),
             min_regime_duration=self._cfg_val(_c, "regime_min_duration", 1),
             instant_transition_percentile=self._cfg_val(_c, "instant_transition_percentile", 99.0),
         )

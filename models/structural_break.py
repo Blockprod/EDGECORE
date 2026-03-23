@@ -69,6 +69,11 @@ class StructuralBreakConfig:
     """Fraction of observations trimmed from start/end of CUSUM path
     to avoid spurious boundary crossings near endpoints."""
 
+    check_interval_bars: int = 5
+    """Run CUSUM+beta tests only every N calls (C-07). Between runs, the
+    cached result is returned unchanged. Default 5 bars — structural breaks
+    are gradual; a 5-bar detection delay is negligible."""
+
 
 class StructuralBreakDetector:
     """
@@ -80,10 +85,13 @@ class StructuralBreakDetector:
 
     def __init__(self, config: StructuralBreakConfig | None = None):
         self.config = config or StructuralBreakConfig()
+        self._call_count: int = 0
+        self._last_result: tuple[bool, dict[str, Any]] | None = None
         logger.info(
             "structural_break_detector_initialized",
             cusum_significance=self.config.cusum_significance,
             beta_drift_threshold=self.config.beta_drift_threshold,
+            check_interval_bars=self.config.check_interval_bars,
         )
 
     def check(
@@ -97,16 +105,21 @@ class StructuralBreakDetector:
         Args:
             residuals: OLS residuals from the cointegration regression
                        (y - alpha - beta*x).
-            y: Dependent series (required for ╬▓ stability check).
-            x: Independent series (required for ╬▓ stability check).
+            y: Dependent series (required for β stability check).
+            x: Independent series (required for β stability check).
 
         Returns:
             (has_break, details)
 
-            * ``has_break=True`` if **either** CUSUM or ╬▓ stability
+            * ``has_break=True`` if **either** CUSUM or β stability
               flags a structural break.
             * ``details`` dict with sub-test results.
         """
+        # C-07: throttle per-instance using call count
+        self._call_count += 1
+        if self._call_count % self.config.check_interval_bars != 0 and self._last_result is not None:
+            return self._last_result
+
         n = len(residuals)
         details: dict[str, Any] = {
             "n_observations": n,
@@ -143,12 +156,15 @@ class StructuralBreakDetector:
                 beta_drift=details["beta_drift_pct"],
             )
 
-        return has_break, details
+        result = has_break, details
+        self._last_result = result  # C-07: cache for throttled calls
+        return result
 
     # ÔôÇÔôÇ CUSUM test (BrownÔÇôDurbinÔÇôEvans) ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
     def _cusum_test(
-        self, residuals: pd.Series,
+        self,
+        residuals: pd.Series,
         y: pd.Series | None = None,
         x: pd.Series | None = None,
     ) -> tuple[bool, float, float]:
@@ -198,7 +214,7 @@ class StructuralBreakDetector:
 
         # Trim boundaries to avoid false alarms at endpoints
         trim = max(1, int(n * self.config.cusum_trim))
-        cusum_trimmed = cusum[trim: n - trim]
+        cusum_trimmed = cusum[trim : n - trim]
 
         if len(cusum_trimmed) == 0:
             return False, 0.0, 1.0
@@ -231,9 +247,7 @@ class StructuralBreakDetector:
 
     # ÔôÇÔôÇ Recursive ╬▓ stability ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-    def _beta_stability(
-        self, y: pd.Series, x: pd.Series
-    ) -> tuple[bool, float | None]:
+    def _beta_stability(self, y: pd.Series, x: pd.Series) -> tuple[bool, float | None]:
         """Check whether recent ╬▓ diverges from full-sample ╬▓.
 
         Estimates ╬▓ on the full sample and on the last ``beta_window``
@@ -275,9 +289,7 @@ class StructuralBreakDetector:
 
     # ÔôÇÔôÇ Convenience: full pipeline on price series ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-    def check_from_prices(
-        self, y: pd.Series, x: pd.Series
-    ) -> tuple[bool, dict[str, Any]]:
+    def check_from_prices(self, y: pd.Series, x: pd.Series) -> tuple[bool, dict[str, Any]]:
         """Run structural break detection directly from price series.
 
         Estimates the cointegration regression internally and tests the

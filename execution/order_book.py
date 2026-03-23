@@ -141,6 +141,9 @@ class OrderBookSimulator:
             volume_per_level = 250.0
             level_distance_bps = 2.0
 
+        # Ensure level spacing respects the given spread as a minimum floor
+        level_distance_bps = max(level_distance_bps, spread_bps / max(level_count, 1))
+
         for i in range(level_count):
             # Price decreases as we go down (worse bids)
             distance_bps = (i + 1) * level_distance_bps
@@ -179,6 +182,9 @@ class OrderBookSimulator:
             level_count = 10
             volume_per_level = 250.0
             level_distance_bps = 2.0
+
+        # Ensure level spacing respects the given spread as a minimum floor
+        level_distance_bps = max(level_distance_bps, spread_bps / max(level_count, 1))
 
         for i in range(level_count):
             # Price increases as we go up (worse asks)
@@ -379,8 +385,12 @@ class MarketMicrostructure:
         # Volatility adjustment (higher vol = can absorb larger order)
         vol_multiplier = 1.0 / (1.0 + volatility / 10.0)
 
+        # Directional adjustment: buy-side orders tend to have slightly higher market impact
+        # due to momentum effects and visible order flow
+        side_multiplier = 1.05 if side == "buy" else 0.95
+
         # Combine
-        total_impact = size_impact * vol_multiplier
+        total_impact = size_impact * vol_multiplier * side_multiplier
 
         # Cap at reasonable maximum
         return min(total_impact, 200.0)  # 200 bps max

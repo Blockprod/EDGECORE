@@ -32,6 +32,7 @@ from signal_engine.intraday_signals import (
 # 3.1: IntradayLoader ÔÇö Synthetic Intraday Data Generation
 # ===================================================================
 
+
 class TestIntradayLoader:
     """Test synthetic intraday data generation from daily prices."""
 
@@ -83,6 +84,7 @@ class TestIntradayLoader:
 # ===================================================================
 # 3.2: IntradaySignalEngine ÔÇö Intraday Signal Generators
 # ===================================================================
+
 
 class TestIntradayMeanReversionSignal:
     """Fast z-score on 5-min spread."""
@@ -167,7 +169,8 @@ class TestVolumeProfileSignal:
         score = sig.compute_score(spread, vol_a, vol_b)
         assert -1.0 <= score <= 1.0
 
-    def test_low_volume_returns_zero(self, volume_data):
+    def test_low_volume_returns_zero(self, volume_data):  # noqa: ARG002 — fixture dep not used; volumes constructed locally
+        _ = volume_data  # fixture dependency declared for test isolation
         spread = pd.Series(np.random.randn(30) * 0.01)
         vol_a = pd.Series([100.0] * 30)  # constant low ÔåÆ ratio = 1.0
         vol_b = pd.Series([100.0] * 30)
@@ -208,14 +211,14 @@ class TestIntradaySignalEngine:
         vol_a = pd.Series(np.random.randint(1000, 10000, n).astype(float))
         vol_b = pd.Series(np.random.randint(1000, 10000, n).astype(float))
         engine = IntradaySignalEngine(mr_lookback=15, vol_lookback=20)
-        result = engine.compute(spread, bars_since_open=5,
-                                volume_a=vol_a, volume_b=vol_b)
+        result = engine.compute(spread, bars_since_open=5, volume_a=vol_a, volume_b=vol_b)
         assert isinstance(result.volume_score, float)
 
 
 # ===================================================================
 # 3.3: AlgoExecutor ÔÇö TWAP and VWAP Order Slicing
 # ===================================================================
+
 
 class TestTWAPExecutor:
     """TWAP order simulation."""
@@ -272,8 +275,7 @@ class TestVWAPExecutor:
         assert result.algo_type == AlgoType.VWAP
 
     def test_fills_quantity(self):
-        config = AlgoConfig(algo_type=AlgoType.VWAP, num_slices=10,
-                            max_participation=1.0)
+        config = AlgoConfig(algo_type=AlgoType.VWAP, num_slices=10, max_participation=1.0)
         vwap = VWAPExecutor(config)
         result = vwap.simulate("MSFT", "BUY", 500, 300.0, adv=2e6)
         assert result.total_filled_qty == pytest.approx(500, rel=0.01)
@@ -291,8 +293,7 @@ class TestVWAPExecutor:
     def test_custom_volume_profile(self):
         profile = np.array([0.3, 0.2, 0.1, 0.1, 0.3])
         vwap = VWAPExecutor(
-            config=AlgoConfig(algo_type=AlgoType.VWAP, num_slices=5,
-                              max_participation=1.0),
+            config=AlgoConfig(algo_type=AlgoType.VWAP, num_slices=5, max_participation=1.0),
             volume_profile=profile,
         )
         result = vwap.simulate("MSFT", "BUY", 500, 300.0, adv=2e6)

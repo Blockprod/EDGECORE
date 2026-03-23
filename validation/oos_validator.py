@@ -111,6 +111,12 @@ class OutOfSampleValidator:
             OOSValidationResult with pass/fail determination
         """
         # Test cointegration OOS
+        # Sanity check: IS series lengths must match for meaningful IS→OOS comparison
+        if len(is_series_1) != len(is_series_2):
+            raise ValueError(
+                f"is_series_1 ({len(is_series_1)}) and is_series_2 ({len(is_series_2)}) "
+                "must have the same length for a valid IS/OOS split."
+            )
         oos_result = engle_granger_test(oos_series_2, oos_series_1, num_symbols=self.num_symbols, apply_bonferroni=True)
 
         oos_pvalue = oos_result["adf_pvalue"]

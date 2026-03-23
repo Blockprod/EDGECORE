@@ -4,7 +4,7 @@ S4.1: Machine Learning Threshold Optimization
 Objective: Train ML models to optimize entry/exit thresholds for maximum performance.
 
 Problem Statement:
-- Current system uses fixed thresholds: entry=2.0¤â, exit=0.5¤â
+- Current system uses fixed thresholds: entry=2.0σ, exit=0.5σ
 - Fixed thresholds don't adapt to market conditions
 - Different pairs have different optimal thresholds
 - Manual tuning is time-consuming and error-prone
@@ -18,6 +18,14 @@ Solution:
 Performance Target:
 - Win rate: >55% (vs current 50%)
 - Profit factor: >1.5 (vs current 1.2)
+
+DECISION 2026-03-22 (C-10): This module is RESEARCH / OPTIONAL tooling.
+It is NOT imported by the live trading pipeline (production code).
+It is called offline via scripts/ or research/ to generate threshold
+recommendations, which are then baked into config YAML.
+Tests: tests/models/test_ml_threshold_optimizer.py
+Do NOT import from live_trading/ or execution/ — this is a training tool, not
+a runtime component.
 - Sharpe ratio: >1.5 (vs current 1.1)
 - False signal ratio: <30% (vs current 40%)
 

@@ -29,7 +29,7 @@ def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
     """Create a PairTradingStrategy with controlled internal risk params."""
     from strategies.pair_trading import PairTradingStrategy
 
-    with mock.patch.object(PairTradingStrategy, "__init__", lambda self: None):
+    with mock.patch.object(PairTradingStrategy, "__init__", lambda _self: None):
         strat = PairTradingStrategy()
     # Minimal attributes needed for risk checks
     strat.active_trades = {}
@@ -280,7 +280,7 @@ class TestSignalEntryBlocking:
         """Build strategy with enough mocks to call generate_signals."""
         from strategies.pair_trading import PairTradingStrategy
 
-        with mock.patch.object(PairTradingStrategy, "__init__", lambda self: None):
+        with mock.patch.object(PairTradingStrategy, "__init__", lambda _self: None):
             strat = PairTradingStrategy()
         # Minimal init to avoid AttributeError
         strat.config = mock.MagicMock()

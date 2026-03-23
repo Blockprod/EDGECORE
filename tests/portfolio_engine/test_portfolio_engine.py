@@ -263,12 +263,12 @@ class TestBetaHedgeDirection:
     """compute_beta_hedge recommends a hedge that reduces net beta."""
 
     def test_positive_beta_recommends_short_hedge(self):
-        """Portfolio positively correlated with benchmark ÔåÆ hedge notional is negative (short)."""
+        """Portfolio positively correlated with benchmark → hedge notional is negative (short)."""
         h = PortfolioHedger()
         np.random.seed(42)
         # Create correlated returns (beta > 0)
         bench = pd.Series(np.random.randn(100) * 0.01)
-        port = bench * 1.2 + np.random.randn(100) * 0.002  # beta Ôëê 1.2
+        port = bench * 1.2 + np.random.randn(100) * 0.002  # beta ≈ 1.2
         result = h.compute_beta_hedge(port, bench, 100_000)
         assert isinstance(result, dict)
         # With positive beta, hedge should be a SHORT position (negative notional)
@@ -277,3 +277,109 @@ class TestBetaHedgeDirection:
         if "notional" in result:
             # Negative notional = short hedge to offset positive beta
             assert result["notional"] < 0, f"Expected negative (short) hedge, got {result['notional']}"
+
+
+# ======================================================================
+# C-07 — VOLATILITY_INVERSE default + PortfolioConfig
+# ======================================================================
+
+
+class TestVolatilityInverseDefault:
+    """C-07: PortfolioAllocator now defaults to VOLATILITY_INVERSE."""
+
+    def test_default_sizing_method_is_volatility_inverse(self):
+        """Default constructor uses VOLATILITY_INVERSE (not EQUAL_WEIGHT)."""
+        a = PortfolioAllocator(equity=100_000)
+        assert a.sizing_method == SizingMethod.VOLATILITY_INVERSE
+
+    def test_default_min_vol_floor_positive(self):
+        """min_vol_floor defaults to a small positive value."""
+        a = PortfolioAllocator()
+        assert a.min_vol_floor > 0
+
+    def test_zero_spread_vol_uses_floor_not_crash(self):
+        """spread_vol=0 triggers min_vol_floor; no ZeroDivisionError."""
+        a = PortfolioAllocator(
+            equity=100_000,
+            sizing_method=SizingMethod.VOLATILITY_INVERSE,
+            min_vol_floor=0.01,
+        )
+        r = a.allocate("A_B", spread_vol=0.0)
+        assert r.notional > 0
+
+    def test_none_spread_vol_falls_back_to_equal(self):
+        """spread_vol=None → equal-weight fallback (no error)."""
+        a = PortfolioAllocator(
+            equity=100_000,
+            max_pairs=5,
+            sizing_method=SizingMethod.VOLATILITY_INVERSE,
+        )
+        r = a.allocate("A_B", spread_vol=None)
+        assert r.fraction_of_equity == pytest.approx(1.0 / 5, rel=0.01)
+
+    def test_very_small_spread_vol_capped_at_max_allocation(self):
+        """Very small spread_vol → capped at max_allocation_pct."""
+        a = PortfolioAllocator(
+            equity=100_000,
+            max_allocation_pct=0.30,
+            sizing_method=SizingMethod.VOLATILITY_INVERSE,
+        )
+        r = a.allocate("A_B", spread_vol=0.00001)
+        assert r.fraction_of_equity <= 0.30
+
+    def test_higher_vol_spread_gets_smaller_allocation(self):
+        """Higher vol spread receives smaller allocation than lower vol."""
+        # Use vols above the cap threshold (target_vol=0.02 / max_alloc=0.30 → threshold ≈ 0.067)
+        # so neither pair saturates max_allocation_pct and the difference is visible.
+        a = PortfolioAllocator(equity=100_000, sizing_method=SizingMethod.VOLATILITY_INVERSE)
+        r_low = a.allocate("LOW_VOL", spread_vol=0.08)  # frac = 0.02/0.08 = 0.25
+        a2 = PortfolioAllocator(equity=100_000, sizing_method=SizingMethod.VOLATILITY_INVERSE)
+        r_high = a2.allocate("HIGH_VOL", spread_vol=0.20)  # frac = 0.02/0.20 = 0.10
+        assert r_low.notional > r_high.notional
+
+    def test_equal_weight_still_works_as_explicit_option(self):
+        """EQUAL_WEIGHT remains fully functional when passed explicitly."""
+        a = PortfolioAllocator(equity=100_000, max_pairs=4, sizing_method=SizingMethod.EQUAL_WEIGHT)
+        r = a.allocate("X_Y")
+        assert r.fraction_of_equity == pytest.approx(0.25, rel=0.01)
+
+
+class TestPortfolioConfig:
+    """C-07: PortfolioConfig dataclass in Settings."""
+
+    def test_portfolio_config_importable(self):
+        """PortfolioConfig can be imported from config.settings."""
+        from config.settings import PortfolioConfig
+
+        cfg = PortfolioConfig()
+        assert cfg.sizing_method == "volatility_inverse"
+
+    def test_portfolio_config_default_fields(self):
+        """PortfolioConfig has expected default values."""
+        from config.settings import PortfolioConfig
+
+        cfg = PortfolioConfig()
+        assert cfg.min_vol_floor > 0
+        assert 0 < cfg.max_allocation_pct <= 1.0
+        assert 0 < cfg.max_portfolio_heat <= 1.0
+
+    def test_settings_has_portfolio_attribute(self):
+        """Settings singleton exposes .portfolio attribute."""
+        from config.settings import Settings
+
+        Settings._instance = None
+        s = Settings()
+        assert hasattr(s, "portfolio")
+        from config.settings import PortfolioConfig
+
+        assert isinstance(s.portfolio, PortfolioConfig)
+        Settings._instance = None
+
+    def test_settings_portfolio_sizing_method_default(self):
+        """Settings.portfolio.sizing_method defaults to 'volatility_inverse'."""
+        from config.settings import Settings
+
+        Settings._instance = None
+        s = Settings()
+        assert s.portfolio.sizing_method == "volatility_inverse"
+        Settings._instance = None

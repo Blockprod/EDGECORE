@@ -329,6 +329,7 @@ def main() -> int:
             _stop_event = threading.Event()
 
             def _sigint_handler(sig, frame):
+                log.debug("sigint_received sig=%s frame=%s", sig, frame)
                 _stop_event.set()
 
             signal.signal(signal.SIGINT, _sigint_handler)

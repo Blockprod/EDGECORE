@@ -77,6 +77,7 @@ def cointegrated_pair_data():
 @pytest.fixture
 def execution_engine(test_config):
     """Create paper trading execution engine."""
+    assert test_config is not None  # Ensure test config is loaded
     engine = ExecutionEngine(mode=ModeType.PAPER)
     engine.context.equity = 100000.0
     engine.context.cash = 100000.0
@@ -86,6 +87,7 @@ def execution_engine(test_config):
 @pytest.fixture
 def risk_engine(test_config):
     """Create risk engine."""
+    assert test_config is not None  # Ensure test config is loaded
     return RiskEngine(initial_equity=100000.0)
 
 
@@ -430,6 +432,7 @@ class TestBacktestIntegration:
 
     def test_backtest_complete_flow(self, sample_ohlcv_data, test_config):
         """Test complete backtest flow."""
+        assert test_config is not None  # Ensure test config is loaded
         engine = ExecutionEngine(mode=ModeType.BACKTEST)
         engine.context.equity = 100000.0
         engine.context.cash = 100000.0
@@ -452,6 +455,7 @@ class TestBacktestIntegration:
 
     def test_backtest_with_slippage(self, test_config):
         """Test backtest slippage calculation."""
+        assert test_config is not None  # Ensure test config is loaded
         engine = ExecutionEngine(mode=ModeType.BACKTEST)
         engine.context.market_prices["AAPL"] = 50000.0
 
@@ -471,6 +475,7 @@ class TestCompleteStrategyFlow:
 
     def test_full_strategy_cycle(self, cointegrated_pair_data, test_config, execution_engine, risk_engine, alerter):
         """Test complete trading cycle."""
+        assert test_config is not None  # Ensure test config is loaded
 
         # Step 1: Validate data
         validator = OHLCVValidator(symbol="AAPL")

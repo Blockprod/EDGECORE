@@ -207,7 +207,15 @@ class MultiTimeframeEngine:
         """
         if not self.config.weekly_confirmation_required:
             return True
-        return weekly_pvalue <= self.config.weekly_max_pvalue
+        passed = weekly_pvalue <= self.config.weekly_max_pvalue
+        logger.debug(
+            "passes_confirmation",
+            daily_pvalue=daily_pvalue,
+            weekly_pvalue=weekly_pvalue,
+            weekly_max_pvalue=self.config.weekly_max_pvalue,
+            passed=passed,
+        )
+        return passed
 
     def weekly_zscore_gate(
         self,

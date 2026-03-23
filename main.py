@@ -166,6 +166,9 @@ def _close_all_positions(risk_engine: RiskEngine, execution_engine, positions_to
                     quantity=position.quantity,
                     side=order.side,
                 )
+                # Notify risk engine so P&L tracking stays consistent on shutdown
+                exit_price = float(position.marked_price or position.entry_price or 0.0)
+                risk_engine.register_exit(symbol_pair, exit_price=exit_price, pnl=0.0)
             except Exception as e:
                 logger.error("shutdown_position_close_failed", symbol=symbol_pair, error=str(e))
         except Exception as e:

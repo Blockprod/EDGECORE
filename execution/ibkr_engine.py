@@ -19,22 +19,17 @@ import pandas as pd
 from dotenv import load_dotenv
 from structlog import get_logger
 
+from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 from common.retry import RetryPolicy, retry_with_backoff
 from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
 
 # Backward-compat re-exports (C-16): callers that import IBGatewaySync or
 # IBWrapper from this module will continue to work transparently.
 from execution.ibkr_sync_gateway import IBGatewaySync, IBWrapper  # noqa: F401  # type: ignore[reportUnusedImport]
-from execution.rate_limiter import TokenBucketRateLimiter
 
 load_dotenv()
 
 logger = get_logger(__name__)
-
-# Module-level rate limiter shared by all IBKRExecutionEngine instances.
-# Ensures the 50 req/s TWS socket cap is never exceeded, even with
-# multiple engine instances (e.g. reconnect scenarios).
-_ibkr_rate_limiter = TokenBucketRateLimiter(rate=45, burst=10)
 
 
 class IBKRExecutionEngine(BaseExecutionEngine):

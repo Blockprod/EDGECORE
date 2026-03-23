@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 import pandas as pd
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 from common.types import (
     AlertRecord,
@@ -167,6 +170,16 @@ def submit_order_typed(
     """
     import uuid
 
+    logger.debug(
+        "submit_order_typed_called",
+        symbol=symbol,
+        side=side,
+        quantity=quantity,
+        order_type=order_type,
+        price=price,
+        timeout_seconds=timeout_seconds,
+        metadata=metadata,
+    )
     return str(uuid.uuid4())
 
 
@@ -186,6 +199,13 @@ def open_position_typed(symbol: Symbol, quantity: Quantity, entry_price: Price, 
     NOTE: Stateless typed façade — does not persist state.
     For production use, inject ExecutionRouter directly.
     """
+    logger.debug(
+        "open_position_typed_called",
+        symbol=symbol,
+        quantity=quantity,
+        entry_price=entry_price,
+        side=side,
+    )
     return True
 
 
@@ -203,6 +223,11 @@ def close_position_typed(symbol: Symbol, exit_price: Price) -> "tuple[bool, floa
     NOTE: Stateless typed façade — does not persist state.
     For production use, inject ExecutionRouter directly.
     """
+    logger.debug(
+        "close_position_typed_called",
+        symbol=symbol,
+        exit_price=exit_price,
+    )
     return True, None
 
 

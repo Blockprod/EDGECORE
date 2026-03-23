@@ -239,6 +239,23 @@ class MomentumConfig:
 
 
 @dataclass
+class RegimeDetectorConfig:
+    """Spread-level volatility regime detector configuration (C-09: adaptive window).
+
+    Controls RegimeDetector instances used inside SignalGenerator and PairTradingStrategy.
+    """
+
+    # Default effective lookback window (bars) — raised from 20 to 60 to capture slow regimes
+    regime_window: int = 60
+    # Enable adaptive window: window shrinks in high vol, grows in low vol
+    adaptive_window: bool = False
+    # Minimum effective window when adaptive_window=True (fast-response floor)
+    min_window: int = 20
+    # Maximum effective window when adaptive_window=True (stability ceiling)
+    max_window: int = 120
+
+
+@dataclass
 class RegimeConfig:
     """Market-level regime filter configuration (v30: adaptive bidirectional).
 
@@ -254,6 +271,26 @@ class RegimeConfig:
     neutral_band_pct: float = 0.02  # MA spread % to distinguish NEUTRAL
     trend_favorable_sizing: float = 0.80  # Sizing for favorable side in trends
     neutral_sizing: float = 0.65  # Sizing for both sides in NEUTRAL
+
+
+@dataclass
+class PortfolioConfig:
+    """Portfolio engine configuration (C-07).
+
+    Controls position sizing method used by PortfolioAllocator.
+    Maps to the `portfolio:` section in YAML config files.
+    """
+
+    # Sizing method: "equal_weight" | "volatility_inverse" | "kelly" | "signal_weighted"
+    # volatility_inverse is the production default: allocates more capital to
+    # lower-volatility spreads, reducing tail risk from volatile-spread dominance.
+    sizing_method: str = "volatility_inverse"
+    # Floor on spread vol used by vol-inverse sizing (avoids division by zero)
+    min_vol_floor: float = 0.001
+    # Max allocation fraction per pair
+    max_allocation_pct: float = 0.30
+    # Max portfolio heat (total allocation fraction across all open pairs)
+    max_portfolio_heat: float = 0.95
 
 
 class Settings:
@@ -294,9 +331,11 @@ class Settings:
         self.scanner = ScannerConfig()
         self.trading = TradingConfig()
         self.regime = RegimeConfig()
+        self.regime_detector_config = RegimeDetectorConfig()
         self.momentum = MomentumConfig()
         self.signal_combiner = SignalCombinerConfig()
         self.pair_blacklist = BlacklistConfig()
+        self.portfolio = PortfolioConfig()
         self.raw_config = {}
 
         if config_path.exists():
@@ -484,6 +523,9 @@ class Settings:
 
         if "pair_blacklist" in config:
             self._apply_section(self.pair_blacklist, config["pair_blacklist"], "pair_blacklist")
+
+        if "portfolio" in config:
+            self._apply_section(self.portfolio, config["portfolio"], "portfolio")
 
     @staticmethod
     def _apply_section(target, mapping: dict, section_name: str) -> None:

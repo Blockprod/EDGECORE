@@ -181,10 +181,13 @@ class TestRateLimiter:
             limiter.acquire(timeout=0.01)
 
     def test_router_has_rate_limiter(self):
-        """Router initializes with a TokenBucketRateLimiter."""
+        """Router uses the global IBKR rate-limiter singleton (C-04, rate=40)."""
+        from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER
+
         router = ExecutionRouter(mode=ExecutionMode.PAPER)
         assert isinstance(router._rate_limiter, TokenBucketRateLimiter)
-        assert router._rate_limiter.rate == 45
+        assert router._rate_limiter is GLOBAL_IBKR_RATE_LIMITER
+        assert router._rate_limiter.rate == 40
 
 
 class TestPaperExclusion:

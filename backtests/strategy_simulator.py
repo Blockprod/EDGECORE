@@ -95,6 +95,8 @@ class StrategyBacktestSimulator:
         leverage_multiplier: float = 1.0,
         bars_per_day: int = 1,
         momentum_filter=None,
+        universe_manager=None,
+        adv_by_symbol: dict[str, float] | None = None,
     ):
         """
         Args:
@@ -130,6 +132,12 @@ class StrategyBacktestSimulator:
         self.pair_validation_interval = max(1, pair_validation_interval)
         # Phase 5.3: Leverage multiplier (1.0 = no leverage, 1.5 = 150% gross exposure)
         self.leverage_multiplier = max(1.0, float(leverage_multiplier))
+        # C-01: Point-in-time universe manager (eliminates survivorship bias in backtests)
+        self.universe_manager = universe_manager
+        # C-06: Real per-symbol ADV for Almgren-Chriss market impact.
+        # Keys are uppercase symbols, values are USD notional/day.
+        # Falls back to tier-based estimates when a symbol is absent.
+        self.adv_by_symbol: dict[str, float] = adv_by_symbol or {}
         # Phase 3: Intraday support ÔÇö bars per trading day (1=daily, 7=1h, 78=5min)
         self.bars_per_day: int = max(1, int(bars_per_day))
         self.time_stop = time_stop if time_stop is not None else TimeStopManager()
@@ -252,8 +260,13 @@ class StrategyBacktestSimulator:
         """
         Run a bar-by-bar backtest using the live strategy code.
 
+        Execution timing convention (C-02):
+            Signal generated at bar T close → fill at bar T+1 open price.
+            Entries at the final bar are skipped (no T+1 bar available).
+            Exits are filled at min(T+1, last_bar) — always closed.
+
         Args:
-            prices_df: Price DataFrame ÔÇô columns are symbol names,
+            prices_df: Price DataFrame — columns are symbol names,
                        index is DatetimeIndex (daily).
             fixed_pairs: If provided, these pairs are used for the **entire**
                          run instead of periodic re-discovery.  Intended for
@@ -413,8 +426,15 @@ class StrategyBacktestSimulator:
                 # ÔöÇÔöÇ Slow path: full EG re-discovery ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
                 if bars_since_discovery >= self.pair_rediscovery_interval:
                     strategy.reset_all_correlation_exclusions()
+                    # C-01: Filter hist_prices columns to PIT universe when available
+                    if self.universe_manager is not None:
+                        _bar_date = prices_df.index[bar_idx]
+                        _pit_syms = set(self.universe_manager.get_symbols_as_of(_bar_date))
+                        _discovery_prices = hist_prices[[c for c in hist_prices.columns if c in _pit_syms]]
+                    else:
+                        _discovery_prices = hist_prices
                     current_pairs = strategy.find_cointegrated_pairs(
-                        hist_prices,
+                        _discovery_prices,
                         use_cache=False,
                         weekly_prices=weekly_prices,
                     )
@@ -829,9 +849,14 @@ class StrategyBacktestSimulator:
                     _adv1 = self._estimate_adv(sym1, hist_prices, notional_per_leg)
                     _adv2 = self._estimate_adv(sym2, hist_prices, notional_per_leg)
 
+                    # C-02: T+1 fill — signal at bar T, execution at open of bar T+1.
+                    # Skip entry at the last bar since no T+1 bar exists.
+                    if bar_idx + 1 >= len(prices_df):
+                        continue
+
                     # Phase 3.3: Use algo executor for realistic entry cost
-                    _entry_px1 = prices_df[sym1].iloc[bar_idx]
-                    _entry_px2 = prices_df[sym2].iloc[bar_idx]
+                    _entry_px1 = prices_df[sym1].iloc[bar_idx + 1]
+                    _entry_px2 = prices_df[sym2].iloc[bar_idx + 1]
                     _qty1 = _notional_1 / _entry_px1 if _entry_px1 > 0 else 0
                     _qty2 = _notional_2 / _entry_px2 if _entry_px2 > 0 else 0
                     _algo_res1 = self._algo_executor.simulate(
@@ -889,9 +914,9 @@ class StrategyBacktestSimulator:
                         "side": signal.side,
                         "sym1": sym1,
                         "sym2": sym2,
-                        "entry_price_1": prices_df[sym1].iloc[bar_idx],
-                        "entry_price_2": prices_df[sym2].iloc[bar_idx],
-                        "entry_bar": bar_idx,
+                        "entry_price_1": prices_df[sym1].iloc[bar_idx + 1],
+                        "entry_price_2": prices_df[sym2].iloc[bar_idx + 1],
+                        "entry_bar": bar_idx + 1,  # C-02: actual fill bar
                         "notional": notional,
                         "notional_1": _notional_1,
                         "notional_2": _notional_2,
@@ -1378,15 +1403,18 @@ class StrategyBacktestSimulator:
         entry cost that was already deducted on the entry day.
         """
         sym1, sym2 = pos["sym1"], pos["sym2"]
-        exit_price_1 = prices_df[sym1].iloc[bar_idx]
-        exit_price_2 = prices_df[sym2].iloc[bar_idx]
+        # C-02: T+1 fill — execute exit at bar T+1 (clamped to last bar).
+        _n_bars = len(prices_df)
+        exec_bar = min(bar_idx + 1, _n_bars - 1)
+        exit_price_1 = prices_df[sym1].iloc[exec_bar]
+        exit_price_2 = prices_df[sym2].iloc[exec_bar]
         entry_price_1 = pos["entry_price_1"]
         entry_price_2 = pos["entry_price_2"]
         notional = pos["notional"]
         not_1 = pos.get("notional_1", notional / 2.0)
         not_2 = pos.get("notional_2", notional / 2.0)
         notional_per_leg = notional / 2.0  # average (for cost estimation)
-        holding_days = max(bar_idx - pos["entry_bar"], 0)
+        holding_days = max(exec_bar - pos["entry_bar"], 0)
 
         # P&L per leg (% return ├ù beta-neutral per-leg notional)
         if pos["side"] == "long":
@@ -1581,22 +1609,31 @@ class StrategyBacktestSimulator:
         }
     )
 
-    @classmethod
     def _estimate_adv(
-        cls,
+        self,
         symbol: str,
         prices_df: pd.DataFrame,
         notional_per_leg: float,
     ) -> float:
         """Estimate Average Daily Volume in USD for slippage calculation.
 
-        Since backtest data has close prices only (no volume), we use
-        market-cap tier estimates.  Conservative for cost estimation.
+        Lookup order:
+        1. ``self.adv_by_symbol`` (injected real ADV from DataLoader / caller)
+        2. Static mega-cap / large-cap tier table (conservative fallback)
         """
-        if symbol in cls._MEGA_CAP_SYMBOLS:
-            return cls._ADV_MEGA_CAP
+        injected = self.adv_by_symbol.get(symbol.upper())
+        if injected is not None:
+            return injected
+        if symbol not in prices_df.columns:
+            logger.debug(
+                "adv_estimate_symbol_not_in_prices",
+                symbol=symbol,
+                notional_per_leg=notional_per_leg,
+            )
+        if symbol in self._MEGA_CAP_SYMBOLS:
+            return self._ADV_MEGA_CAP
         # All v31h symbols are large-cap at minimum
-        return cls._ADV_LARGE_CAP
+        return self._ADV_LARGE_CAP
 
     def _compute_sector_exposure(
         self,
