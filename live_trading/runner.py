@@ -22,7 +22,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -702,7 +702,6 @@ class LiveTradingRunner:
                         self._router.submit_order(close_order)
                         if self._audit_trail is not None:
                             from datetime import datetime as _dt_stop
-                            from datetime import timezone as _tz_stop
 
                             from monitoring.events import EventType as _ET_stop
                             from monitoring.events import TradingEvent as _TE_stop
@@ -712,7 +711,7 @@ class LiveTradingRunner:
                             )
                             _exit_event = _TE_stop(
                                 event_type=_ET_stop.TRADE_EXIT,
-                                timestamp=_dt_stop.now(_tz_stop.utc),
+                                timestamp=_dt_stop.now(UTC),
                                 symbol_pair=pair_key,
                                 position_size=abs(qty),
                                 reason=reason,
@@ -850,8 +849,6 @@ class LiveTradingRunner:
                         slippage_bps=_exec_result.slippage_bps,
                     )
                     if self._audit_trail is not None:
-                        from datetime import timezone as _tz
-
                         from monitoring.events import EventType, TradingEvent
 
                         _entry_equity = (
@@ -859,7 +856,7 @@ class LiveTradingRunner:
                         )
                         _entry_event = TradingEvent(
                             event_type=EventType.TRADE_ENTRY,
-                            timestamp=sig.timestamp.replace(tzinfo=_tz.utc)
+                            timestamp=sig.timestamp.replace(tzinfo=UTC)
                             if sig.timestamp.tzinfo is None
                             else sig.timestamp,
                             symbol_pair=sig.pair_key,
@@ -998,7 +995,7 @@ class LiveTradingRunner:
             # C-09: freshness guard — warn if any symbol's latest bar is stale (> 10 min)
             _MAX_DATA_LAG = timedelta(minutes=10)
             if df is not None and not df.empty:
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 for sym in df.columns:
                     col = df[sym].dropna()
                     if col.empty:
