@@ -132,3 +132,12 @@
 **Ref** : `backtester/__init__.py`, `backtester/runner.py`, `backtester/walk_forward.py` — commit `ee34f5c` (2026-03-23)
 
 ---
+
+## L-15 · fix(audit#12): Trade Journal — 9 corrections C-01→C-09 [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `f29e6af` : fix(audit#12): Trade Journal — 9 corrections C-01→C-09. Fichiers : backtests/strategy_simulator.py, execution/ibkr_sync_gateway.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `backtests/strategy_simulator.py`, `execution/ibkr_sync_gateway.py`, `live_trading/runner.py` — commit `f29e6af` (2026-03-24)
+
+---
