@@ -61,7 +61,8 @@ jobs:
 
       - name: Security audit (pip-audit)
         run: |
-          pip-audit --skip-editable
+          # CVE-2026-4539 (pygments transitive dep): no fix version available yet — tracked, ignore until patch released
+          pip-audit --skip-editable --ignore-vuln CVE-2026-4539
 
       - name: Secret scan (trufflehog)
         uses: trufflesecurity/trufflehog@main
