@@ -161,7 +161,6 @@ def setup_logging(
         interval=1,
         backupCount=backup_count,
         utc=True,
-        maxBytes=max_bytes,
     )
     file_handler.setLevel(level)
     file_handler.addFilter(context_filter)

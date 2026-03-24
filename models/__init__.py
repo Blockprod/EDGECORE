@@ -5,10 +5,10 @@ import structlog as _structlog
 _log = _structlog.get_logger(__name__)
 
 try:
-    import models.cointegration_fast  # noqa: F401
+    import models.cointegration_fast
 
     CYTHON_AVAILABLE = True
-    _log.info("cython_extensions_loaded", module="models.cointegration_fast")
+    _log.info("cython_extensions_loaded", module=models.cointegration_fast.__name__)
 except ImportError:
     CYTHON_AVAILABLE = False
     _log.warning(

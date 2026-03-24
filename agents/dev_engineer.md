@@ -214,3 +214,21 @@ venv\Scripts\python.exe -c "from config.settings import get_settings; get_settin
 - ❌ Développer des modèles stat-arb → `quant_researcher`
 - ❌ Auditer la conformité structurelle → `code_auditor`
 - ❌ Appeler directement l'API IBKR sans `_ibkr_rate_limiter.acquire()`
+
+---
+
+## Invocation dans Copilot Chat (VSCode)
+
+**Mode Ask** :
+```
+#file:agents/dev_engineer.md
+#file:.github/copilot-instructions.md
+Corrige [problème] dans [fichier] selon les conventions EDGECORE.
+```
+
+**Mode Agent** :
+```
+#file:agents/dev_engineer.md
+#file:tasks/corrections/plans/PLAN_ACTION_[...].md
+Exécute la correction [C-XX] du plan d'action.
+```

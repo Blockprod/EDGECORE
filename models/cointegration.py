@@ -1,4 +1,4 @@
-﻿from typing import Any
+﻿from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -285,7 +285,10 @@ def engle_granger_test(
 
         # Step 2: ADF test on residuals with error handling
         try:
-            adf_result = adfuller(residuals, regression=regression, maxlag=max_lags, autolag="AIC")
+            adf_result = cast(
+                tuple[float, float, int, int, dict[str, float]],
+                adfuller(residuals, regression=regression, maxlag=max_lags, autolag="AIC"),
+            )
         except (LinAlgError, ValueError) as e:
             return {
                 "beta": beta_raw,
@@ -450,7 +453,10 @@ def engle_granger_test_robust(
 
         # ADF on residuals
         try:
-            adf_res = adfuller(residuals, regression=regression, maxlag=max_lags, autolag="AIC")
+            adf_res = cast(
+                tuple[float, float, int, int, dict[str, float]],
+                adfuller(residuals, regression=regression, maxlag=max_lags, autolag="AIC"),
+            )
         except (LinAlgError, ValueError) as e:
             return _err(f"ADF test failed: {str(e)[:50]}")
 

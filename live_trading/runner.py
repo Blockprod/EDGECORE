@@ -418,7 +418,11 @@ class LiveTradingRunner:
             broker_equity = self._router.get_account_balance() if self._router else 0
             if broker_equity <= 0:
                 return
-            self._reconciler.internal_equity = self.config.initial_capital  # update if tracking
+            self._reconciler.internal_equity = (
+                self._metrics.equity
+                if hasattr(self, "_metrics") and self._metrics.equity > 0
+                else self.config.initial_capital
+            )
             self._reconciler.internal_positions = {k: v for k, v in self._positions.items()}
             broker_positions = {}
             try:
@@ -696,6 +700,36 @@ class LiveTradingRunner:
                             order_type="MARKET",
                         )
                         self._router.submit_order(close_order)
+                        if self._audit_trail is not None:
+                            from datetime import datetime as _dt_stop
+                            from datetime import timezone as _tz_stop
+
+                            from monitoring.events import EventType as _ET_stop
+                            from monitoring.events import TradingEvent as _TE_stop
+
+                            _exit_equity = (
+                                self._metrics.equity if self._metrics.equity > 0 else self.config.initial_capital
+                            )
+                            _exit_event = _TE_stop(
+                                event_type=_ET_stop.TRADE_EXIT,
+                                timestamp=_dt_stop.now(_tz_stop.utc),
+                                symbol_pair=pair_key,
+                                position_size=abs(qty),
+                                reason=reason,
+                                risk_tier="stop",
+                            )
+                            try:
+                                self._audit_trail.log_trade_event(
+                                    _exit_event,
+                                    current_equity=_exit_equity,
+                                    event_id=close_order_id,
+                                )
+                            except Exception as _ae_stop:
+                                logger.error(
+                                    "audit_trail_exit_log_failed",
+                                    pair=pair_key,
+                                    error=str(_ae_stop)[:200],
+                                )
                         # A-02: Mark pending_close instead of immediately removing.
                         # _process_fill_confirmations() will confirm and remove on the
                         # next tick once IBKR confirms the fill.
@@ -808,12 +842,49 @@ class LiveTradingRunner:
 
                 # 4d. Submit order through execution router
                 if self._router and sized_order:
-                    order_id = self._router.submit_order(sized_order)  # type: ignore[arg-type]
+                    _exec_result = self._router.submit_order(sized_order)  # type: ignore[arg-type]
                     logger.info(
                         "live_trading_order_submitted",
                         pair=sig.pair_key,
-                        order_id=order_id,
+                        fill_price=_exec_result.fill_price,
+                        slippage_bps=_exec_result.slippage_bps,
                     )
+                    if self._audit_trail is not None:
+                        from datetime import timezone as _tz
+
+                        from monitoring.events import EventType, TradingEvent
+
+                        _entry_equity = (
+                            self._metrics.equity if self._metrics.equity > 0 else self.config.initial_capital
+                        )
+                        _entry_event = TradingEvent(
+                            event_type=EventType.TRADE_ENTRY,
+                            timestamp=sig.timestamp.replace(tzinfo=_tz.utc)
+                            if sig.timestamp.tzinfo is None
+                            else sig.timestamp,
+                            symbol_pair=sig.pair_key,
+                            position_size=_exec_result.filled_qty or getattr(sized_order, "quantity", 0.0),
+                            entry_price=_exec_result.fill_price or None,
+                            z_score=sig.z_score,
+                            hedge_ratio=getattr(sig, "hedge_ratio", None),
+                            half_life=getattr(sig, "half_life", None),
+                            momentum_score=getattr(sig, "momentum_score", None),
+                            slippage_actual=_exec_result.slippage_bps,
+                            reason=sig.side,
+                            risk_tier=getattr(sig, "risk_tier", None),
+                        )
+                        try:
+                            self._audit_trail.log_trade_event(
+                                _entry_event,
+                                current_equity=_entry_equity,
+                                event_id=f"{sig.pair_key}_{sig.timestamp.isoformat()}",
+                            )
+                        except Exception as _ae:
+                            logger.error(
+                                "audit_trail_entry_log_failed",
+                                pair=sig.pair_key,
+                                error=str(_ae)[:200],
+                            )
 
             except Exception as exc:
                 logger.error(

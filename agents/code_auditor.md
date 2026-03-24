@@ -167,3 +167,21 @@ Structure de livrable pour chaque audit :
 - ❌ Implémenter des corrections → `dev_engineer`
 - ❌ Modifier les paramètres de risque → `risk_manager`
 - ❌ Développer des modèles → `quant_researcher`
+
+---
+
+## Invocation dans Copilot Chat (VSCode)
+
+**Mode Ask** :
+```
+#file:agents/code_auditor.md
+#file:.claude/rules.md
+Vérifie la conformité de [module] selon ta checklist B2→B5.
+```
+
+**Mode Agent** :
+```
+#file:agents/code_auditor.md
+#codebase
+Lance un audit complet B2→B5 sur le module [nom_module]/.
+```

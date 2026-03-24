@@ -108,3 +108,21 @@ from backtests.parameter_cv import ParameterCVBacktester
 - ❌ Émettre des ordres réels → `dev_engineer` ou `live_trading/`
 - ❌ Modifier les seuils de risque → `risk_manager`
 - ❌ Auditer la conformité du code → `code_auditor`
+
+---
+
+## Invocation dans Copilot Chat (VSCode)
+
+**Mode Ask** :
+```
+#file:agents/quant_researcher.md
+#file:knowledge/trading_constraints.md
+Analyse la cohérence des paramètres de [paire/signal].
+```
+
+**Mode Agent** :
+```
+#file:agents/quant_researcher.md
+#codebase
+Revue complète du signal alpha : z-score, Kalman, momentum weights.
+```

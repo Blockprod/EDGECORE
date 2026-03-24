@@ -307,6 +307,8 @@ class StrategyBacktestSimulator:
         portfolio_values: list[float] = [self.initial_capital]
         daily_returns: list[float] = []
         trades_pnl: list[float] = []  # round-trip P&L per closed trade
+        _trade_durations: list[int] = []  # C-06: holding bars per closed trade
+        _total_slippage: float = 0.0  # C-04: cumulative slippage across all entries
 
         lookback_min = max(60, strategy.config.lookback_window)
 
@@ -386,9 +388,10 @@ class StrategyBacktestSimulator:
                 fc_pnl = 0.0
                 for pk in list(positions.keys_list()):
                     pc = positions.pop(pk)
-                    cpnl, tpnl = self._close_position(pc, prices_df, bar_idx)
+                    cpnl, tpnl, _dur = self._close_position(pc, prices_df, bar_idx)
                     fc_pnl += cpnl
                     trades_pnl.append(tpnl)
+                    _trade_durations.append(_dur)
                     self.spread_corr_guard.remove_spread(pk)
                     self.pca_monitor.remove_spread(pk)
                     self.partial_profit.remove(pk)
@@ -406,9 +409,10 @@ class StrategyBacktestSimulator:
                 _n_to_close = max(1, int(len(positions) * _dd_action.close_fraction))
                 for pk in positions.weakest_positions(prices_df, bar_idx, _n_to_close):
                     pc = positions.pop(pk)
-                    cpnl, tpnl = self._close_position(pc, prices_df, bar_idx)
+                    cpnl, tpnl, _dur = self._close_position(pc, prices_df, bar_idx)
                     realized_pnl += cpnl
                     trades_pnl.append(tpnl)
+                    _trade_durations.append(_dur)
                     self.spread_corr_guard.remove_spread(pk)
                     self.pca_monitor.remove_spread(pk)
                     self.partial_profit.remove(pk)
@@ -515,9 +519,10 @@ class StrategyBacktestSimulator:
                     _stop_limit = pos.get("nav_stop_pct", self.max_position_loss_pct)
                     if loss_pct >= _stop_limit:
                         pos_closed = positions.pop(pair_key)
-                        close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                        close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                         realized_pnl += close_pnl
                         trades_pnl.append(trade_pnl)
+                        _trade_durations.append(_dur)
                         self.spread_corr_guard.remove_spread(pair_key)
                         self.pca_monitor.remove_spread(pair_key)
                         self.partial_profit.remove(pair_key)
@@ -890,6 +895,7 @@ class StrategyBacktestSimulator:
                         sigma=_sigma2,
                     )
                     e_cost += slippage_cost_leg1 + slippage_cost_leg2
+                    _total_slippage += slippage_cost_leg1 + slippage_cost_leg2  # C-04: track cumulative slippage
                     # Commission-only portion (impact d├®j├á inclus)
                     e_cost += (
                         self.cost_model.entry_cost(
@@ -947,9 +953,10 @@ class StrategyBacktestSimulator:
                 # --- EXIT --------------------------------------------
                 elif signal.side == "exit" and pair_key in positions:
                     pos = positions.pop(pair_key)
-                    close_pnl, trade_pnl = self._close_position(pos, prices_df, bar_idx)
+                    close_pnl, trade_pnl, _dur = self._close_position(pos, prices_df, bar_idx)
                     realized_pnl += close_pnl
                     trades_pnl.append(trade_pnl)
+                    _trade_durations.append(_dur)
                     self.spread_corr_guard.remove_spread(pair_key)
                     self.pca_monitor.remove_spread(pair_key)
                     self.partial_profit.remove(pair_key)
@@ -1004,9 +1011,10 @@ class StrategyBacktestSimulator:
                     # Mean-reversion exit: z reverted to near zero
                     if abs(current_z) <= strategy.config.exit_z_score:
                         pos_closed = positions.pop(pair_key)
-                        close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                        close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                         realized_pnl += close_pnl
                         trades_pnl.append(trade_pnl)
+                        _trade_durations.append(_dur)
                         strategy.active_trades.pop(pair_key, None)
                         self.spread_corr_guard.remove_spread(pair_key)
                         self.pca_monitor.remove_spread(pair_key)
@@ -1021,9 +1029,10 @@ class StrategyBacktestSimulator:
                     # Z-score stop: spread diverged far beyond entry
                     elif abs(current_z) > z_stop_threshold:
                         pos_closed = positions.pop(pair_key)
-                        close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                        close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                         realized_pnl += close_pnl
                         trades_pnl.append(trade_pnl)
+                        _trade_durations.append(_dur)
                         strategy.active_trades.pop(pair_key, None)
                         self.spread_corr_guard.remove_spread(pair_key)
                         self.pca_monitor.remove_spread(pair_key)
@@ -1062,9 +1071,10 @@ class StrategyBacktestSimulator:
                 if force_all:
                     # Remainder stop: close entire remaining position
                     pos_closed = positions.pop(pair_key)
-                    close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                    close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                     realized_pnl += close_pnl
                     trades_pnl.append(trade_pnl)
+                    _trade_durations.append(_dur)
                     self.spread_corr_guard.remove_spread(pair_key)
                     self.pca_monitor.remove_spread(pair_key)
                     self.partial_profit.remove(pair_key)
@@ -1104,9 +1114,10 @@ class StrategyBacktestSimulator:
                 should_exit_ts, ts_reason = self.time_stop.should_exit(holding_bars, pos.get("half_life"))
                 if should_exit_ts:
                     pos_closed = positions.pop(pair_key)
-                    close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                    close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                     realized_pnl += close_pnl
                     trades_pnl.append(trade_pnl)
+                    _trade_durations.append(_dur)
                     self.spread_corr_guard.remove_spread(pair_key)
                     self.pca_monitor.remove_spread(pair_key)
                     self.partial_profit.remove(pair_key)
@@ -1142,9 +1153,10 @@ class StrategyBacktestSimulator:
                     _stop_limit = pos.get("nav_stop_pct", self.max_position_loss_pct)
                     if loss_pct >= _stop_limit:
                         pos_closed = positions.pop(pair_key)
-                        close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                        close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                         realized_pnl += close_pnl
                         trades_pnl.append(trade_pnl)
+                        _trade_durations.append(_dur)
                         self.spread_corr_guard.remove_spread(pair_key)
                         self.pca_monitor.remove_spread(pair_key)
                         self.partial_profit.remove(pair_key)
@@ -1186,9 +1198,10 @@ class StrategyBacktestSimulator:
                         drawback_pct = drawback / pos["notional"] if pos["notional"] > 0 else 0
                         if drawback_pct >= self.trailing_stop_trail_pct:
                             pos_closed = positions.pop(pair_key)
-                            close_pnl, trade_pnl = self._close_position(pos_closed, prices_df, bar_idx)
+                            close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
                             realized_pnl += close_pnl
                             trades_pnl.append(trade_pnl)
+                            _trade_durations.append(_dur)
                             self.spread_corr_guard.remove_spread(pair_key)
                             self.pca_monitor.remove_spread(pair_key)
                             self.partial_profit.remove(pair_key)
@@ -1237,9 +1250,10 @@ class StrategyBacktestSimulator:
             fc_realized = 0.0
             for pair_key in list(positions.keys_list()):
                 pos = positions.pop(pair_key)
-                close_pnl, trade_pnl = self._close_position(pos, prices_df, final_bar)
+                close_pnl, trade_pnl, _dur = self._close_position(pos, prices_df, final_bar)
                 fc_realized += close_pnl
                 trades_pnl.append(trade_pnl)
+                _trade_durations.append(_dur)
                 self.spread_corr_guard.remove_spread(pair_key)
                 self.pca_monitor.remove_spread(pair_key)
                 self.partial_profit.remove(pair_key)
@@ -1279,6 +1293,8 @@ class StrategyBacktestSimulator:
         metrics.initial_capital = self.initial_capital
         metrics.final_capital = round(portfolio_values[-1], 2)
         metrics.realized_pnl = round(portfolio_values[-1] - self.initial_capital, 2)
+        if _trade_durations:
+            metrics.avg_trade_duration = round(sum(_trade_durations) / len(_trade_durations), 2)
 
         logger.info(
             "strategy_simulation_completed",
@@ -1288,6 +1304,7 @@ class StrategyBacktestSimulator:
             total_return=f"{metrics.total_return:.2%}",
             sharpe=round(metrics.sharpe_ratio, 2),
             max_dd=f"{metrics.max_drawdown:.2%}",
+            total_slippage=round(_total_slippage, 4),  # C-04: slippage measured
         )
 
         return metrics
@@ -1392,7 +1409,7 @@ class StrategyBacktestSimulator:
         pos: dict,
         prices_df: pd.DataFrame,
         bar_idx: int,
-    ) -> tuple[float, float]:
+    ) -> tuple[float, float, int]:
         """
         Close *pos* at *bar_idx* and return (daily_realized_pnl, full_trade_pnl).
 
@@ -1485,7 +1502,7 @@ class StrategyBacktestSimulator:
                 outcome=full_trade / notional if notional > 0 else 0.0,
             )
 
-        return daily_realized, full_trade
+        return daily_realized, full_trade, holding_days
 
     @staticmethod
     def _compute_spread(

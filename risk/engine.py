@@ -1,4 +1,5 @@
-﻿from dataclasses import dataclass
+﻿import json
+from dataclasses import dataclass
 from datetime import datetime
 from typing import cast
 
@@ -471,7 +472,7 @@ class RiskEngine:
             EquityError: If snapshot cannot be persisted
         """
         try:
-            positions_list = ",".join(self.positions.keys())
+            positions_list = json.dumps(list(self.positions.keys()))
             self.audit_trail.log_equity_snapshot(
                 current_equity=self.current_equity, positions_count=len(self.positions), positions_list=positions_list
             )

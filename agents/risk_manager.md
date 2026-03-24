@@ -153,3 +153,21 @@ risk_engine/kill_switch.py  →  DOIT adapter risk/facade.py
 - ❌ Modéliser les alphas → `quant_researcher`
 - ❌ Coder des features → `dev_engineer`
 - ❌ Auditer la structure du code → `code_auditor`
+
+---
+
+## Invocation dans Copilot Chat (VSCode)
+
+**Mode Ask** :
+```
+#file:agents/risk_manager.md
+#file:knowledge/trading_constraints.md
+Valide la cohérence des seuils de risque dans [fichier].
+```
+
+**Mode Agent** :
+```
+#file:agents/risk_manager.md
+#codebase
+Audit complet de la politique de risque : kill-switch, tiers, sizing.
+```

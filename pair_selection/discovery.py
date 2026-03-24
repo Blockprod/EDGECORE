@@ -39,9 +39,9 @@ from models.johansen import JohansenCointegrationTest
 # en interne quand disponible (models/cointegration.py). Ce flag permet de vérifier
 # au démarrage si l'accélération est active et d'alerter l'opérateur si elle est absente.
 try:
-    from models.cointegration_fast import engle_granger_fast as _engle_granger_fast  # noqa: F401
+    from models.cointegration_fast import engle_granger_fast as _engle_granger_fast
 
-    _CYTHON_EG_AVAILABLE = True
+    _CYTHON_EG_AVAILABLE = callable(_engle_granger_fast)
 except ImportError:
     _CYTHON_EG_AVAILABLE = False
 

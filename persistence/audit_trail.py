@@ -31,11 +31,16 @@ _AUDIT_HMAC_KEY: bytes = os.getenv("AUDIT_HMAC_KEY", "").encode("utf-8")
 
 # C-07: warn/error when HMAC key is absent so operators notice in prod.
 if not _AUDIT_HMAC_KEY:
-    _hmac_log_level = "error" if os.getenv("EDGECORE_ENV", "dev") == "prod" else "warning"
-    _hmac_msg = "AUDIT_HMAC_KEY not set — audit entries are unsigned (integrity unverifiable)"
-    getattr(get_logger(__name__), _hmac_log_level)(
+    _env = os.getenv("EDGECORE_ENV", "dev")
+    if _env == "prod":
+        raise RuntimeError(
+            "AUDIT_HMAC_KEY environment variable is not set. "
+            "Audit trail integrity cannot be guaranteed in production. "
+            "Set AUDIT_HMAC_KEY to a strong secret before starting."
+        )
+    get_logger(__name__).warning(
         "audit_trail_hmac_disabled",
-        message=_hmac_msg,
+        message="AUDIT_HMAC_KEY not set — audit entries are unsigned (integrity unverifiable)",
     )
 
 
@@ -128,9 +133,10 @@ class AuditTrail:
 
     def _ensure_headers(self) -> None:
         """Create CSV files with headers if they don't exist."""
-        # Trade events trail
+        # Trade events trail — write to .tmp then atomically rename
         if not self.trail_file.exists():
-            with open(self.trail_file, "w", newline="") as f:
+            tmp = self.trail_file.with_suffix(".tmp")
+            with open(tmp, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(
                     [
@@ -143,17 +149,27 @@ class AuditTrail:
                         "exit_price",
                         "pnl",
                         "equity_at_event",
+                        "z_score",
+                        "hedge_ratio",
+                        "half_life",
+                        "momentum_score",
+                        "slippage_actual",
+                        "bid_ask_spread",
+                        "risk_tier",
                         "event_id",  # For idempotency
                         "_hmac",
                     ]
                 )
+            os.replace(tmp, self.trail_file)
             logger.debug("trade_trail_created", file=str(self.trail_file))
 
-        # Equity snapshots
+        # Equity snapshots — write to .tmp then atomically rename
         if not self.equity_snapshot_file.exists():
-            with open(self.equity_snapshot_file, "w", newline="") as f:
+            tmp_eq = self.equity_snapshot_file.with_suffix(".tmp")
+            with open(tmp_eq, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["timestamp", "equity", "positions_count", "positions_list", "_hmac"])
+            os.replace(tmp_eq, self.equity_snapshot_file)
             logger.debug("equity_snapshots_created", file=str(self.equity_snapshot_file))
 
     def log_trade_event(self, event: TradingEvent, current_equity: float, event_id: str | None = None) -> None:
@@ -186,6 +202,13 @@ class AuditTrail:
                     event.exit_price or "",
                     event.pnl or "",
                     current_equity,
+                    event.z_score if event.z_score is not None else "",
+                    event.hedge_ratio if event.hedge_ratio is not None else "",
+                    event.half_life if event.half_life is not None else "",
+                    event.momentum_score if event.momentum_score is not None else "",
+                    event.slippage_actual if event.slippage_actual is not None else "",
+                    event.bid_ask_spread if event.bid_ask_spread is not None else "",
+                    event.risk_tier or "",
                     event_id,
                 ],
                 _AUDIT_HMAC_KEY,

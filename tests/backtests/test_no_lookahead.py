@@ -242,7 +242,7 @@ class TestT1ExecutionTiming:
         signal_bar = 150
         exec_bar = min(signal_bar + 1, len(prices) - 1)
 
-        pnl, _ = sim._close_position(pos, prices, signal_bar)
+        pnl, _, _ = sim._close_position(pos, prices, signal_bar)
 
         # Verify that exit price is bar+1 (exec_bar), not bar (signal_bar).
         expected_exit_1 = prices["AAA"].iloc[exec_bar]
@@ -296,7 +296,7 @@ class TestT1ExecutionTiming:
             "ml_features": {},
         }
         last_bar = len(prices) - 1
-        pnl, trade_pnl = sim._close_position(pos, prices, last_bar)
+        pnl, trade_pnl, _ = sim._close_position(pos, prices, last_bar)
         assert isinstance(pnl, float)
         assert isinstance(trade_pnl, float)
 

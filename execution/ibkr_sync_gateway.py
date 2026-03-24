@@ -159,6 +159,7 @@ class IBGatewaySync:
         if not self.connect():
             return None
         self.wrapper.current_time = None
+        _ibkr_rate_limiter.acquire()
         self.client.reqCurrentTime()
         # Wait for response (lecture atomique sous lock)
         t0 = time.time()
@@ -182,6 +183,7 @@ class IBGatewaySync:
         contract.secType = secType
         contract.exchange = exchange
         contract.currency = currency
+        _ibkr_rate_limiter.acquire()
         self.client.reqContractDetails(self._get_next_req_id(), contract)
         t0 = time.time()
         while time.time() - t0 < self.timeout:
@@ -213,6 +215,7 @@ class IBGatewaySync:
         contract.secType = "STK"
         contract.exchange = "SMART"
         contract.currency = "USD"
+        _ibkr_rate_limiter.acquire()
         self.client.reqHistoricalData(
             req_id,
             contract,
@@ -264,6 +267,7 @@ class IBGatewaySync:
 
         # Generic tick 236 = shortable shares; save req_id for cancelMktData
         req_id = self._get_next_req_id()
+        _ibkr_rate_limiter.acquire()
         self.client.reqMktData(req_id, contract, "236", True, False, [])
 
         t0 = time.time()
@@ -304,6 +308,7 @@ class IBGatewaySync:
         contract.exchange = exchange
         contract.currency = currency
 
+        _ibkr_rate_limiter.acquire()
         self.client.reqFundamentalData(self._get_next_req_id(), contract, "CalendarReport", [])
 
         t0 = time.time()

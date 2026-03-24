@@ -5,6 +5,7 @@ from enum import Enum
 
 class EventType(Enum):
     """Trading event taxonomy."""
+
     TRADE_ENTRY = "TRADE_ENTRY"
     TRADE_EXIT = "TRADE_EXIT"
     RISK_VIOLATION = "RISK_VIOLATION"
@@ -14,9 +15,11 @@ class EventType(Enum):
     DRAWDOWN_WARNING = "DRAWDOWN_WARNING"
     STRATEGY_SIGNAL = "STRATEGY_SIGNAL"
 
+
 @dataclass
 class TradingEvent:
     """Immutable trade event record."""
+
     event_type: EventType
     timestamp: datetime
     symbol_pair: str
@@ -26,10 +29,16 @@ class TradingEvent:
     z_score: float | None = None
     pnl: float | None = None
     reason: str | None = None
-    
+    hedge_ratio: float | None = None
+    half_life: float | None = None
+    momentum_score: float | None = None
+    slippage_actual: float | None = None
+    bid_ask_spread: float | None = None
+    risk_tier: str | None = None
+
     def to_dict(self):
         """Convert event to dictionary for logging."""
         data = asdict(self)
-        data['event_type'] = self.event_type.value
-        data['timestamp'] = self.timestamp.isoformat()
+        data["event_type"] = self.event_type.value
+        data["timestamp"] = self.timestamp.isoformat()
         return data

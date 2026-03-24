@@ -1,4 +1,5 @@
-# EDGECORE — Leçons apprises (Self-Improvement Loop)
+﻿# EDGECORE — Leçons apprises
+**Création :** 2026-03-20 à 00:32   (Self-Improvement Loop)
 
 > Lire ce fichier au début de chaque session.
 > Mettre à jour après toute correction de l'utilisateur.
@@ -120,5 +121,14 @@
 **Erreur** : [À COMPLÉTER — décrire le problème exact]
 **Règle** : [À COMPLÉTER — décrire la règle à appliquer]
 **Ref** : `models/model_retraining.py`, `pair_selection/discovery.py` — commit `52e92ab` (2026-03-22)
+
+---
+
+## L-14 · perf(latence): C-01 to C-15 — audit latence complet (2787 tests) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `ee34f5c` : perf(latence): C-01 to C-15 — audit latence complet (2787 tests). Fichiers : backtester/__init__.py, backtester/runner.py
+**Erreur** : datetime.utcnow() utilisé au lieu de datetime.now(timezone.utc)
+**Règle** : Toujours utiliser datetime.now(timezone.utc). datetime.utcnow() est deprecated depuis Python 3.12.
+**Ref** : `backtester/__init__.py`, `backtester/runner.py`, `backtester/walk_forward.py` — commit `ee34f5c` (2026-03-23)
 
 ---
