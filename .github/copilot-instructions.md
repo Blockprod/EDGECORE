@@ -67,6 +67,28 @@ L'assertion `_assert_risk_tier_coherence()` vérifie T1 ≤ T2 ≤ T3 au démarr
 3. **B2-02** : `LiveTradingRunner._initialize()` instancie `PositionRiskManager`, `PortfolioRiskManager`, `KillSwitch` ET `RiskFacade` séparément — la `RiskFacade` devait unifier tout cela.
 4. **B4-05** : `backtester/` n'a pas de `__init__.py` — ne pas importer `from backtester import ...` sans l'avoir d'abord créé.
 
+### Fichiers `tasks/` — Template obligatoire
+
+Tout fichier créé dans `tasks/` (audits, plans, prompts) **doit** commencer par ce frontmatter YAML exact :
+
+```yaml
+---
+modele: sonnet-4.6
+mode: agent
+contexte: codebase
+produit: <nom_du_fichier_résultat>
+derniere_revision: YYYY-MM-DD
+creation: YYYY-MM-DD à HH:MM
+---
+```
+
+Les prompts d'audit (`tasks/audits/code/`) doivent se terminer par un bloc `SORTIE OBLIGATOIRE` avec :
+- Instruction de création du fichier résultat (`tasks/audits/resultats/audit_<type>_edgecore.md`)
+- Tableau synthèse `| ID | Bloc | Description | Fichier:Ligne | Sévérité | Impact | Effort |`
+- Confirmation dans le chat : `"✅ tasks/audits/resultats/audit_<type>_edgecore.md créé · 🔴 X · 🟠 X · 🟡 X"`
+
+**Ne jamais créer un fichier `tasks/` sans ce template.** Modèle de référence : `tasks/audits/code/audit_structural_prompt.md`.
+
 ---
 
 ## Interdictions absolues
