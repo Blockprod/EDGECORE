@@ -125,7 +125,25 @@ class StrategyBacktestSimulator:
         from execution.slippage import SlippageConfig, SlippageModel
 
         self.slippage_model = SlippageModel(SlippageConfig())
-        self.cost_model = cost_model or CostModel()
+        if cost_model is not None:
+            self.cost_model = cost_model
+        else:
+            # C-01: CostModel reads from get_settings().costs (single source of truth)
+            # so that changing costs.slippage_bps / commission_pct in YAML propagates
+            # to backtests without code changes.
+            from backtests.cost_model import CostModelConfig
+            from config.settings import get_settings as _gs_sim
+
+            _c = _gs_sim().costs
+            self.cost_model = CostModel(
+                CostModelConfig(
+                    base_slippage_bps=_c.slippage_bps,
+                    taker_fee_bps=_c.taker_fee_bps,
+                    maker_fee_bps=_c.maker_fee_bps,
+                    borrowing_cost_annual_pct=_c.borrowing_cost_annual * 100,
+                    slippage_model=_c.slippage_model,
+                )
+            )
         self.initial_capital = initial_capital
         self.allocation_pct = allocation_per_pair_pct
         self.pair_rediscovery_interval = pair_rediscovery_interval
@@ -184,11 +202,14 @@ class StrategyBacktestSimulator:
         # Phase 3.2: Intraday signal engine (fast MR + gap + volume)
         self.intraday_signal_engine = IntradaySignalEngine()
         # Phase 3.3: Algo execution (TWAP/VWAP) for realistic backtest fills
+        # C-12: impact_bps from CostConfig (single source of truth)
+        from config.settings import get_settings as _gs_algo
+
         self._algo_executor = TWAPExecutor(
             config=AlgoConfig(
                 algo_type=AlgoType.TWAP,
                 num_slices=10,
-                impact_bps=2.0,
+                impact_bps=_gs_algo().costs.taker_fee_bps,
                 max_participation=0.05,
             )
         )
@@ -1003,7 +1024,9 @@ class StrategyBacktestSimulator:
 
                         y = hist_prices[sym1]
                         x = hist_prices[sym2]
-                        model = SpreadModel(y, x)
+                        from config.settings import get_settings as _gs_k
+
+                        model = SpreadModel(y, x, kalman_delta=_gs_k().strategy.kalman_delta)
                         spread = model.compute_spread(y, x)
                         z_score_series = model.compute_z_score(spread)
                         current_z = float(z_score_series.iloc[-1])

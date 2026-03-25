@@ -141,3 +141,12 @@
 **Ref** : `backtests/strategy_simulator.py`, `execution/ibkr_sync_gateway.py`, `live_trading/runner.py` — commit `f29e6af` (2026-03-24)
 
 ---
+
+## L-16 · fix(ci): ignore CVE-2026-4539 (pygments, no fix available) in pip-audit [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `7af6ea6` : fix(ci): ignore CVE-2026-4539 (pygments, no fix available) in pip-audit. Fichiers : .github/workflows/ci.yml
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `.github/workflows/ci.yml` — commit `7af6ea6` (2026-03-24)
+
+---

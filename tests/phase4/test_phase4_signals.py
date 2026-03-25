@@ -613,6 +613,10 @@ class TestPhase4Integration:
         mock_settings.momentum.weight = 0.30
         mock_settings.momentum.min_strength = 0.30
         mock_settings.momentum.max_boost = 1.0
+        mock_settings.signal_combiner.zscore_weight = 0.70
+        mock_settings.signal_combiner.momentum_weight = 0.30
+        mock_settings.signal_combiner.entry_threshold = 0.60
+        mock_settings.signal_combiner.exit_threshold = 0.20
 
         with patch("strategies.pair_trading.get_settings", return_value=mock_settings):
             with patch("config.settings.get_settings", return_value=mock_settings):
@@ -655,6 +659,7 @@ class TestPhase4Integration:
 # C-06 — MarkovRegimeDetector concordance regression
 # =====================================================================
 
+
 class TestMarkovRegimeConcordance:
     """Verify concordance ≥ 60% between MarkovRegimeDetector and RegimeDetector."""
 
@@ -671,8 +676,8 @@ class TestMarkovRegimeConcordance:
 
         rng = np.random.default_rng(42)
         # Very distinct volatility blocks so HMM can separate them
-        low_vol = rng.normal(0, 0.1, 126).tolist()    # low: σ=0.1
-        high_vol = rng.normal(0, 4.0, 126).tolist()   # high: σ=4.0
+        low_vol = rng.normal(0, 0.1, 126).tolist()  # low: σ=0.1
+        high_vol = rng.normal(0, 4.0, 126).tolist()  # high: σ=4.0
 
         detector = MarkovRegimeDetector()
         low_regimes = []
@@ -696,8 +701,7 @@ class TestMarkovRegimeConcordance:
         # HIGH regime should be at least as frequent in the high-vol block as in low-vol block
         # (strict equality is too strict — allow ties, just ensure not reversed by large margin)
         assert high_high_count >= low_high_count, (
-            f"Expected more HIGH regime in high-vol block ({high_high_count}) "
-            f"than low-vol block ({low_high_count})"
+            f"Expected more HIGH regime in high-vol block ({high_high_count}) than low-vol block ({low_high_count})"
         )
 
     def test_markov_detector_uses_hmm_when_available(self):
@@ -735,4 +739,3 @@ class TestMarkovRegimeConcordance:
         with patch("config.settings.get_settings", return_value=mock_settings):
             gen = SignalGenerator()
             assert isinstance(gen.regime_detector, RegimeDetector)
-

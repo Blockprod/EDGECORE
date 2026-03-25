@@ -71,6 +71,8 @@ class StrategyConfig:
     fdr_q_level: float = 0.20  # Benjamini-Hochberg q-level (relaxed default)
     # C-07: Periodic model retraining interval (bars = trading days)
     retraining_interval_bars: int = 14  # Re-estimate hedge ratios every 2 weeks by default
+    # C-11: Kalman process noise — controls how fast the hedge ratio adapts (smaller = smoother)
+    kalman_delta: float = 1e-4
 
 
 @dataclass
@@ -128,7 +130,9 @@ class CostConfig:
     """
 
     slippage_bps: float = 3.0  # Base slippage (adaptive on top)
-    commission_pct: float = 0.00035  # IBKR US equity commission (0.035%)
+    commission_pct: float = (
+        0.00020  # IBKR Pro US equity commission (~2.0 bps/leg — aligned with CostModelConfig.taker_fee_bps)
+    )
     maker_fee_bps: float = 1.5  # Exchange maker rebate/fee
     taker_fee_bps: float = 2.0  # Exchange taker fee
     borrowing_cost_annual: float = 0.005  # Short-borrow GC rate (0.5%)
@@ -153,6 +157,8 @@ class TradingConfig:
     fallback_spread_vol: float = 0.02  # Fallback spread-vol if < 10 bars
     min_order_quantity: float = 1.0  # Floor on order quantity (shares)
     limit_price_offset_pct: float = 0.01  # Limit price = market * (1 - offset)
+    # C-13: Paper mode fill rate (1.0 = 100% fill; reduce to model partial fills)
+    paper_fill_rate: float = 1.0
 
 
 @dataclass
@@ -508,6 +514,9 @@ class Settings:
 
         if "scanner" in config:
             self._apply_section(self.scanner, config["scanner"], "scanner")
+
+        if "costs" in config:
+            self._apply_section(self.costs, config["costs"], "costs")
 
         if "trading" in config:
             self._apply_section(self.trading, config["trading"], "trading")

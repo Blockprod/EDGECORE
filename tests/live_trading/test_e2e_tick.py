@@ -82,6 +82,7 @@ class TestTickHappyPath:
         # Risk checks pass
         runner._position_risk.check.return_value = True
         runner._risk_facade.can_enter_trade.return_value = (True, None)
+        runner._portfolio_risk.can_open_position.return_value = (True, None)
 
         # Allocator returns the signal
         runner._allocator.size.return_value = mock_signal

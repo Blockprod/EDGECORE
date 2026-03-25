@@ -194,7 +194,6 @@ execution:
   engine: "ibkr"
   timeout_seconds: 30
   max_retries: 3
-  slippage_bps: 2.0
   use_sandbox: true               # IB paper trading gateway
   initial_capital: 100000.0
 
@@ -213,3 +212,11 @@ risk:
   max_daily_loss_pct: 0.02        # 2% daily drawdown circuit breaker
   max_leverage: 2.0
   max_drawdown_pct: 0.10          # 10% portfolio drawdown hard stop
+
+costs:
+  slippage_bps: 2.0               # Base slippage — aligné sur CostModelConfig large-cap (2 bps)
+  commission_pct: 0.00020         # ~2.0 bps par leg — IBKR Pro US equities (aligné sur backtest)
+  taker_fee_bps: 2.0              # Taker + exchange fees
+  maker_fee_bps: 1.5              # Maker rebate / exécution passive
+  borrowing_cost_annual: 0.005    # 0.5 % GC rate (general collateral ETB)
+  slippage_model: "almgren_chriss"  # Modèle institutionnel 3-composantes

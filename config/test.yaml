@@ -36,7 +36,6 @@ execution:
   engine: "ibkr"
   timeout_seconds: 10
   max_retries: 3
-  slippage_bps: 2.0
   use_sandbox: true
   paper_trading_loop_interval_seconds: 60
   initial_capital: 50000.0
@@ -51,7 +50,7 @@ backtest:
 
 costs:
   slippage_bps: 3.0
-  commission_pct: 0.00035
+  commission_pct: 0.00020         # ~2.0 bps — aligned with taker_fee_bps
   maker_fee_bps: 1.5
   taker_fee_bps: 2.0
   borrowing_cost_annual: 0.005

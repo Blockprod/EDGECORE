@@ -148,7 +148,21 @@ class ExecutionRouter:
         """Backtest mode: instant fill at limit price with cost model."""
         from config.settings import get_settings
 
-        price = order.limit_price or 0.0
+        price = order.limit_price or getattr(order, "market_price", None)
+        if not price:
+            order_type = getattr(order, "order_type", "LIMIT")
+            if order_type == "MARKET":
+                logger.warning(
+                    "market_order_no_price_fill_at_zero",
+                    symbol=order.symbol,
+                    hint="Set order.market_price for accurate P&L accounting",
+                )
+                price = 0.0
+            else:
+                raise ValueError(
+                    f"Cannot fill LIMIT order for {order.symbol}: limit_price=None. "
+                    "Set limit_price before submitting a LIMIT order."
+                )
         slippage = get_settings().costs.slippage_bps
         pair_key = getattr(order, "pair_key", None) or order.symbol
         side_str = order.side.value.lower() if hasattr(order.side, "value") else str(order.side).lower()
@@ -177,7 +191,21 @@ class ExecutionRouter:
             order.metadata.get("pair_key", order.symbol) if hasattr(order, "metadata") else order.symbol,
         )
         side_str = order.side.value.lower() if hasattr(order.side, "value") else str(order.side).lower()
-        price = order.limit_price or 0.0
+        price = order.limit_price or getattr(order, "market_price", None)
+        if not price:
+            order_type = getattr(order, "order_type", "LIMIT")
+            if order_type == "MARKET":
+                logger.warning(
+                    "market_order_no_price_fill_at_zero",
+                    symbol=order.symbol,
+                    hint="Set order.market_price for accurate P&L accounting",
+                )
+                price = 0.0
+            else:
+                raise ValueError(
+                    f"Cannot fill LIMIT order for {order.symbol}: limit_price=None. "
+                    "Set limit_price before submitting a LIMIT order."
+                )
         from config.settings import get_settings
 
         slippage = get_settings().costs.slippage_bps
@@ -190,12 +218,14 @@ class ExecutionRouter:
             with self._orders_lock:
                 self._pending_orders[order_id] = OrderStatus.FILLED
 
+        # C-13: apply configurable fill rate for partial-fill modelling in paper mode
+        _fill_rate = get_settings().trading.paper_fill_rate
         return TradeExecution(
             pair_key=pair_key,
             symbol=order.symbol,
             side=side_str,
             requested_qty=order.quantity,
-            filled_qty=order.quantity,
+            filled_qty=order.quantity * _fill_rate,
             fill_price=price * (1 + slippage / 10_000 if side_str == "buy" else 1 - slippage / 10_000),
             commission=order.quantity * price * get_settings().costs.commission_pct,
             slippage_bps=slippage,

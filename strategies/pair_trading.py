@@ -148,10 +148,14 @@ class PairTradingStrategy(BaseStrategy):
         self._options_flow = OptionsFlowSignal()
         self._sentiment_signal = SentimentSignal()
 
-        # ÔöÇÔöÇ SignalCombiner with all 9 sources ÔöÇÔöÇ
+        # ── SignalCombiner with all 9 sources ──
+        # C-02: read primary weights and thresholds from SignalCombinerConfig
+        from config.settings import get_settings as _gs_pt
+
+        _sc_cfg = _gs_pt().signal_combiner
         _sources = [
-            SignalSource("zscore", weight=0.35),
-            SignalSource("momentum", weight=0.08, enabled=self._momentum_enabled),
+            SignalSource("zscore", weight=_sc_cfg.zscore_weight),
+            SignalSource("momentum", weight=_sc_cfg.momentum_weight, enabled=self._momentum_enabled),
             SignalSource("ou", weight=0.15),
             SignalSource("vol_regime", weight=0.07),
             SignalSource("cross_sectional", weight=0.05),
@@ -162,8 +166,8 @@ class PairTradingStrategy(BaseStrategy):
         ]
         self._signal_combiner = SignalCombiner(
             sources=_sources,
-            entry_threshold=0.30,
-            exit_threshold=0.12,
+            entry_threshold=_sc_cfg.entry_threshold,
+            exit_threshold=_sc_cfg.exit_threshold,
         )
 
         # ÔöÇÔöÇ Leg-correlation monitoring state ÔöÇÔöÇ
@@ -930,7 +934,10 @@ class PairTradingStrategy(BaseStrategy):
                     continue
 
                 # Build/update spread model
-                model = SpreadModel(y, x)
+                # C-11: kalman_delta from config
+                from config.settings import get_settings as _gs_pt2
+
+                model = SpreadModel(y, x, kalman_delta=_gs_pt2().strategy.kalman_delta)
                 self.spread_models[pair_key] = model
 
                 # Hedge ratio drift monitoring

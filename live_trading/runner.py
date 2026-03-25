@@ -239,6 +239,7 @@ class LiveTradingRunner:
         from portfolio_engine import PortfolioAllocator
         from risk.facade import RiskFacade
         from risk_engine import KillSwitch, PortfolioRiskManager, PositionRiskManager
+        from risk_engine.portfolio_risk import PortfolioRiskConfig
         from signal_engine import SignalGenerator
         from signal_engine.adaptive import AdaptiveThresholdEngine
         from universe import UniverseManager
@@ -263,17 +264,38 @@ class LiveTradingRunner:
         )
 
         # Wire z-score thresholds into SignalGenerator
+        # C-03: activate momentum_overlay when config.momentum.enabled=True
+        from signal_engine.momentum import MomentumOverlay
+
+        _mom_cfg = get_settings().momentum
+        _overlay = (
+            MomentumOverlay(
+                lookback=_mom_cfg.lookback,
+                weight=_mom_cfg.weight,
+                min_strength=_mom_cfg.min_strength,
+                max_boost=_mom_cfg.max_boost,
+            )
+            if _mom_cfg.enabled
+            else None
+        )
         self._signal_gen = SignalGenerator(
             threshold_engine=AdaptiveThresholdEngine(
                 base_entry=getattr(strat, "entry_z_score", 2.0),
                 base_exit=getattr(strat, "exit_z_score", 0.5),
                 max_entry=getattr(strat, "z_score_stop", 3.5),
             ),
+            momentum_overlay=_overlay,
         )
 
         self._position_risk = PositionRiskManager()
+        _strat_risk = get_settings().risk
         self._portfolio_risk = PortfolioRiskManager(
             initial_equity=self.config.initial_capital,
+            config=PortfolioRiskConfig(
+                max_drawdown_pct=_strat_risk.max_drawdown_pct,  # T1 = 0.10
+                max_daily_loss_pct=_strat_risk.max_daily_loss_pct,
+                max_concurrent_positions=_strat_risk.max_concurrent_positions,
+            ),
         )
         self._kill_switch = KillSwitch(on_activate=self._on_kill_switch_activated)
         # Inject the shared KillSwitch into RiskFacade so both references
@@ -571,6 +593,13 @@ class LiveTradingRunner:
         # 4. Process each signal through risk checks, sizing, execution
         # C-10: fetch account balance once per tick instead of once per signal
         _tick_balance = self._router.get_account_balance() if self._router else self.config.initial_capital
+
+        # C-06: propagate live equity to risk managers so drawdown calculations stay current
+        if self._portfolio_risk is not None and _tick_balance > 0:
+            self._portfolio_risk.update_equity(_tick_balance)
+        if self._risk_facade is not None and _tick_balance > 0:
+            self._risk_facade.risk_engine.current_equity = _tick_balance
+
         self._step_execute_signals(signals, market_data, account_balance=_tick_balance)
 
         self._step_periodic_tasks(market_data, signals)
@@ -799,7 +828,23 @@ class LiveTradingRunner:
                         logger.info("live_trading_signal_blocked_risk_facade", pair=sig.pair_key, reason=facade_reason)
                         continue
 
-                # 4b. ML signal shadow mode (C-04)
+                # 4b. PortfolioRiskManager gate (T1: heat, position count, consecutive losses)
+                if self._portfolio_risk is not None:
+                    from config.settings import get_settings as _gs_prm
+
+                    _prm_risk_pct = _gs_prm().risk.max_risk_per_trade
+                    prm_ok, prm_reason = self._portfolio_risk.can_open_position(
+                        position_risk_pct=_prm_risk_pct,
+                    )
+                    if not prm_ok:
+                        logger.warning(
+                            "live_trade_blocked_portfolio_risk",
+                            pair=sig.pair_key,
+                            reason=prm_reason,
+                        )
+                        continue
+
+                # 4c. ML signal shadow mode (C-04)
                 if self._ml_combiner is not None:
                     from config.settings import get_settings as _gs_tick
 
