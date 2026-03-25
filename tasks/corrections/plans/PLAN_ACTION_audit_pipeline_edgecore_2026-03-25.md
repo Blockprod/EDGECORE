@@ -3,9 +3,8 @@ modele: sonnet-4.6
 mode: agent
 contexte: codebase
 produit: PLAN_ACTION_audit_pipeline_edgecore_2026-03-25.md
-source_audit: tasks/audits/resultats/audit_pipeline_edgecore.md
 derniere_revision: 2026-03-25
-creation: 2026-03-25
+creation: 2026-03-25 à 00:00
 ---
 
 # PLAN D'ACTION — EDGECORE — 2026-03-25

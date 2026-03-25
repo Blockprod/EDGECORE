@@ -1,8 +1,4 @@
-﻿# pyright: reportAttributeAccessIssue=false
-# pyright: reportAssignmentType=false
-# pyright: reportUnusedVariable=false
-
-"""
+﻿"""
 Tests for Sprint 4.4 ÔÇô Self-contained internal risk limits.
 
 Covers:
@@ -20,6 +16,17 @@ from unittest import mock
 import numpy as np
 import pandas as pd
 
+from strategies.trade_book import StrategyTradeBook
+
+
+def _trade_book(*keys: str) -> StrategyTradeBook:
+    """Build a StrategyTradeBook populated with empty trade dicts for each key."""
+    book = StrategyTradeBook()
+    for k in keys:
+        book[k] = {}
+    return book
+
+
 # ---------------------------------------------------------------------------
 # Helper: build a minimal PairTradingStrategy without full __init__
 # ---------------------------------------------------------------------------
@@ -32,7 +39,7 @@ def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
     with mock.patch.object(PairTradingStrategy, "__init__", lambda _self: None):
         strat = PairTradingStrategy()
     # Minimal attributes needed for risk checks
-    strat.active_trades = {}
+    strat.active_trades = StrategyTradeBook()
     strat.max_positions = max_positions
     strat.max_drawdown_pct = max_drawdown_pct
     strat.max_daily_trades = max_daily_trades
@@ -53,33 +60,33 @@ class TestMaxPositions:
 
     def test_allows_below_limit(self):
         strat = _make_strategy(max_positions=3)
-        strat.active_trades = {"A_B": {}, "C_D": {}}
+        strat.active_trades = _trade_book("A_B", "C_D")
         ok, reason = strat._check_internal_risk_limits()
         assert ok is True
         assert reason == ""
 
     def test_blocks_at_limit(self):
         strat = _make_strategy(max_positions=2)
-        strat.active_trades = {"A_B": {}, "C_D": {}}
+        strat.active_trades = _trade_book("A_B", "C_D")
         ok, reason = strat._check_internal_risk_limits()
         assert ok is False
         assert "max positions" in reason.lower()
 
     def test_blocks_above_limit(self):
         strat = _make_strategy(max_positions=2)
-        strat.active_trades = {"A_B": {}, "C_D": {}, "E_F": {}}
-        ok, reason = strat._check_internal_risk_limits()
+        strat.active_trades = _trade_book("A_B", "C_D", "E_F")
+        ok, _reason = strat._check_internal_risk_limits()
         assert ok is False
 
     def test_zero_positions_allowed(self):
         strat = _make_strategy(max_positions=8)
-        strat.active_trades = {}
+        strat.active_trades = _trade_book()
         ok, _ = strat._check_internal_risk_limits()
         assert ok is True
 
     def test_exactly_one_below_limit(self):
         strat = _make_strategy(max_positions=5)
-        strat.active_trades = {f"P{i}": {} for i in range(4)}
+        strat.active_trades = _trade_book(*[f"P{i}" for i in range(4)])
         ok, _ = strat._check_internal_risk_limits()
         assert ok is True
 
@@ -162,7 +169,7 @@ class TestDrawdownGuard:
         strat = _make_strategy(max_drawdown_pct=0.05)
         strat.peak_equity = 1_000
         strat.current_equity = 940  # 6% > 5%
-        ok, reason = strat._check_internal_risk_limits()
+        ok, _reason = strat._check_internal_risk_limits()
         assert ok is False
 
 
@@ -251,14 +258,14 @@ class TestCombinedLimits:
 
     def test_position_limit_takes_priority(self):
         strat = _make_strategy(max_positions=1, max_daily_trades=100)
-        strat.active_trades = {"A_B": {}}
+        strat.active_trades = _trade_book("A_B")
         ok, reason = strat._check_internal_risk_limits()
         assert ok is False
         assert "positions" in reason.lower()
 
     def test_all_limits_pass(self):
         strat = _make_strategy(max_positions=10, max_daily_trades=50, max_drawdown_pct=0.20)
-        strat.active_trades = {"A_B": {}}
+        strat.active_trades = _trade_book("A_B")
         strat.daily_trade_count = 5
         strat.daily_trade_date = datetime.now().date()
         strat.peak_equity = 100_000
@@ -286,7 +293,7 @@ class TestSignalEntryBlocking:
         strat.config = mock.MagicMock()
         strat.config.lookback_window = 100
         strat.spread_models = {}
-        strat.active_trades = {}
+        strat.active_trades = StrategyTradeBook()
         strat.historical_spreads = {}
         strat.hedge_ratio_tracker = mock.MagicMock()
         strat.hedge_ratio_tracker.is_pair_deprecated.return_value = False

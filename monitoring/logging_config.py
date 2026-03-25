@@ -110,7 +110,7 @@ def setup_logging(
     log_dir: str = "logs",
     level: int = logging.INFO,
     console_level: int = logging.WARNING,
-    max_bytes: int = 10 * 1024 * 1024,  # 10MB
+    _max_bytes: int = 10 * 1024 * 1024,  # 10MB — reserved for size-based rotation (handler is time-based)
     backup_count: int = 7,
     json_format: bool = True,
 ) -> logging.Logger:
@@ -121,7 +121,7 @@ def setup_logging(
         log_dir: Directory for log files
         level: Root logger level
         console_level: Console output level
-        max_bytes: Max file size before rotation
+        max_bytes: Max file size before rotation (reserved — handler is time-based)
         backup_count: Number of backup files to keep
         json_format: Use JSON formatting
 

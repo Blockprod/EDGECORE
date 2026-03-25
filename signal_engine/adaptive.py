@@ -28,6 +28,7 @@ logger = get_logger(__name__)
 @dataclass
 class ThresholdResult:
     """Adaptive threshold recommendation for a single pair."""
+
     entry_threshold: float
     exit_threshold: float
     regime: VolatilityRegime
@@ -127,3 +128,58 @@ class AdaptiveThresholdEngine:
         elif regime == VolatilityRegime.HIGH:
             return 0.5
         return 0.0
+
+    def apply_dispersion_adjustment(
+        self,
+        result: ThresholdResult,
+        disp_idx: float,
+        ideal_disp: float = 0.30,
+        min_disp: float = 0.15,
+        max_adj: float = 0.50,
+    ) -> ThresholdResult:
+        """C-09: Raise entry threshold when market dispersion is sub-ideal.
+
+        Maps the dispersion index to a z-score penalty:
+        - disp >= ideal_disp  → no adjustment
+        - min_disp <= disp < ideal_disp → linear ramp 0 → max_adj
+        - disp < min_disp     → should already be blocked by C-02
+
+        Args:
+            result: Base ThresholdResult from get_thresholds().
+            disp_idx: Current pairwise correlation std (dispersion index).
+            ideal_disp: Dispersion above which no adjustment applies.
+            min_disp: Dispersion floor (C-02 blocking threshold).
+            max_adj: Maximum z-score raise applied at min_disp boundary.
+
+        Returns:
+            New ThresholdResult with adjusted entry_threshold.
+        """
+        if disp_idx >= ideal_disp or ideal_disp <= min_disp:
+            return result
+
+        # Linear ramp: 0 at ideal_disp, max_adj at min_disp
+        t = (ideal_disp - disp_idx) / (ideal_disp - min_disp)
+        adj = max_adj * max(0.0, min(1.0, t))
+        new_entry = max(
+            self._config.min_entry_threshold,
+            min(result.entry_threshold + adj, self._config.max_entry_threshold),
+        )
+
+        new_adjustments = dict(result.adjustments)
+        new_adjustments["dispersion_adj"] = round(adj, 4)
+        new_adjustments["dispersion_idx"] = round(disp_idx, 4)
+
+        logger.debug(
+            "adaptive_threshold_dispersion_adj",
+            disp_idx=round(disp_idx, 4),
+            adj=round(adj, 4),
+            entry_before=round(result.entry_threshold, 4),
+            entry_after=round(new_entry, 4),
+        )
+
+        return ThresholdResult(
+            entry_threshold=new_entry,
+            exit_threshold=result.exit_threshold,
+            regime=result.regime,
+            adjustments=new_adjustments,
+        )

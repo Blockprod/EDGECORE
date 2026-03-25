@@ -1,7 +1,4 @@
-﻿# pyright: reportAttributeAccessIssue=false
-# pyright: reportUnusedVariable=false
-
-import numpy as np
+﻿import numpy as np
 import pandas as pd
 
 from strategies.base import Signal
@@ -106,10 +103,12 @@ class TestPairTradingStrategy:
 
         # Should have some state concept
         if hasattr(strategy, "positions"):
-            assert isinstance(strategy.positions, (dict, list))
+            positions = getattr(strategy, "positions")  # noqa: B009 — optional attribute, hasattr-guarded
+            assert isinstance(positions, (dict, list))
 
         if hasattr(strategy, "active_pairs"):
-            assert isinstance(strategy.active_pairs, (dict, list, set))
+            active_pairs = getattr(strategy, "active_pairs")  # noqa: B009 — optional attribute, hasattr-guarded
+            assert isinstance(active_pairs, (dict, list, set))
 
     def test_consistent_signal_generation(self):
         """Test that signal generation is consistent."""
@@ -149,7 +148,8 @@ class TestPairTradingStrategy:
         for signal in signals:
             # Should have timestamp or index info
             if hasattr(signal, "timestamp"):
-                assert signal.timestamp is not None
+                ts = getattr(signal, "timestamp")  # noqa: B009 — optional attribute, hasattr-guarded
+                assert ts is not None
 
             # Should identify entry or exit
             assert signal.side is not None
@@ -266,9 +266,9 @@ class TestZScoreControlledSignals:
         forced_spread = spread.copy()
         forced_spread.iloc[-1] = spread.mean() - 5 * spread.std()
 
-        signals, info = model.get_adaptive_signals(forced_spread)
+        signals, _info = model.get_adaptive_signals(forced_spread)
 
-        # Sprint 3.4: Negative z-score (far below mean) Ôåô long (1)
+        # Sprint 3.4: Negative z-score (far below mean) → long (1)
         assert signals.iloc[-1] == 1, f"Expected long signal (1) for very negative spread, got {signals.iloc[-1]}"
 
     def test_positive_zscore_produces_short_signal(self):
@@ -287,9 +287,9 @@ class TestZScoreControlledSignals:
         forced_spread = spread.copy()
         forced_spread.iloc[-1] = spread.mean() + 5 * spread.std()
 
-        signals, info = model.get_adaptive_signals(forced_spread)
+        signals, _info = model.get_adaptive_signals(forced_spread)
 
-        # Sprint 3.4: Positive z-score (far above mean) Ôåô short (-1)
+        # Sprint 3.4: Positive z-score (far above mean) → short (-1)
         assert signals.iloc[-1] == -1, f"Expected short signal (-1) for very positive spread, got {signals.iloc[-1]}"
 
     def test_near_zero_zscore_produces_hold(self):
@@ -309,9 +309,9 @@ class TestZScoreControlledSignals:
         forced_spread = spread.copy()
         forced_spread.iloc[-1] = rolling_mean.iloc[-1]
 
-        signals, info = model.get_adaptive_signals(forced_spread)
+        signals, _info = model.get_adaptive_signals(forced_spread)
 
-        # Sprint 3.4: z Ôëê 0 Ôåô hold (0)
+        # Sprint 3.4: z ≈ 0 → hold (0)
         assert signals.iloc[-1] == 0, f"Expected hold signal (0) for spread at mean, got {signals.iloc[-1]}"
 
     def test_zscore_signal_symmetry(self):

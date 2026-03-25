@@ -43,6 +43,8 @@ class BacktestMetrics:
     note: str | None = None
     daily_returns: pd.Series | None = None  # Raw daily returns for aggregation
     num_symbols: int | None = None  # Number of symbols in universe
+    per_pair: dict | None = None  # C-04: per-pair trade statistics
+    total_slippage: float | None = None  # C-04: cumulative slippage cost (entry + exit legs)
 
     @classmethod
     def from_returns(

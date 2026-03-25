@@ -230,6 +230,37 @@ class WalkForwardBacktester:
                 )
                 period_metrics = simulator.run(test_df, fixed_pairs=validated_pairs)
 
+                # STEP 3b — C-07: IS vs OOS degradation check
+                try:
+                    _is_simulator = StrategyBacktestSimulator(
+                        cost_model=cost_model,
+                        initial_capital=self.runner.config.initial_capital,
+                        pair_rediscovery_interval=999,
+                    )
+                    _is_metrics = _is_simulator.run(train_df.tail(min(len(train_df), 252)), fixed_pairs=validated_pairs)
+                    _is_sharpe = _is_metrics.sharpe_ratio or 0.0
+                    _oos_sharpe = period_metrics.sharpe_ratio or 0.0
+                    if abs(_is_sharpe) > 0.01:
+                        _degradation = (_oos_sharpe - _is_sharpe) / abs(_is_sharpe)
+                        if _degradation <= -0.50:
+                            logger.error(
+                                "oos_degradation_critical",
+                                period=period_idx + 1,
+                                is_sharpe=round(_is_sharpe, 3),
+                                oos_sharpe=round(_oos_sharpe, 3),
+                                degradation_pct=round(_degradation * 100, 1),
+                            )
+                        elif _degradation <= -0.30:
+                            logger.warning(
+                                "oos_degradation_high",
+                                period=period_idx + 1,
+                                is_sharpe=round(_is_sharpe, 3),
+                                oos_sharpe=round(_oos_sharpe, 3),
+                                degradation_pct=round(_degradation * 100, 1),
+                            )
+                except Exception as _e_is:
+                    logger.warning("is_comparison_failed", period=period_idx + 1, error=str(_e_is))
+
                 self.per_period_metrics.append(
                     {
                         "period": period_idx + 1,

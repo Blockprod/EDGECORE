@@ -150,3 +150,22 @@
 **Ref** : `.github/workflows/ci.yml` — commit `7af6ea6` (2026-03-24)
 
 ---
+
+## L-18 · RÈGLE D'OR — Un nouvel audit écrase l'ancien (même type)
+
+**Contexte** : Deux fichiers plan d'action du même type coexistaient dans `tasks/corrections/plans/` après régénération.
+**Erreur** : `PLAN_ACTION_audit_strategic_edgecore_2026-03-22.md` et `_2026-03-25.md` présents simultanément — l'agent lisait potentiellement l'ancien.
+**Règle** : Toujours supprimer le plan précédent du même type avant (ou après) création du nouveau. Un seul plan par type d'audit doit exister dans `tasks/corrections/plans/`. Le fichier le plus récent fait foi.
+**Règle (template)** : Tout fichier `tasks/` (plans, audits, prompts) doit commencer par le frontmatter YAML obligatoire des copilot-instructions. Champs requis : `modele`, `mode`, `contexte`, `produit`, `derniere_revision`, `creation` (format `YYYY-MM-DD à HH:MM`). Aucun champ supplémentaire non prévu par le template (`source_audit:`, etc.). Vérifier systématiquement à la création.
+**Ref** : `tasks/corrections/plans/` — 2026-03-25
+
+---
+
+## L-17 · fix(pipeline): C01-C13 — align config→backtest→live costs, risk gate, momentum, combiner weights [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `88284bb` : fix(pipeline): C01-C13 — align config→backtest→live costs, risk gate, momentum, combiner weights. Fichiers : backtests/strategy_simulator.py, config/settings.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `backtests/strategy_simulator.py`, `config/settings.py`, `execution_engine/router.py` — commit `88284bb` (2026-03-25)
+
+---

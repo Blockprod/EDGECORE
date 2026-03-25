@@ -182,9 +182,9 @@ class PairTradingStrategy(BaseStrategy):
         self.max_daily_trades: int = self._cfg_val(_c, "internal_max_daily_trades", 50)
         self.max_drawdown_pct: float = self._cfg_val(_c, "internal_max_drawdown_pct", 20.0)
         self.daily_trade_count: int = 0
-        self.daily_trade_date: date = date.today()
-        self.peak_equity: float = self._cfg_val(_c, "initial_capital", 100_000.0)
-        self.current_equity: float = self.peak_equity
+        self.daily_trade_date: date | None = date.today()
+        self.peak_equity: float | None = self._cfg_val(_c, "initial_capital", 100_000.0)
+        self.current_equity: float | None = self.peak_equity
 
     # ÔöÇÔöÇ Cache control methods ÔöÇÔöÇ
     def disable_cache(self) -> None:

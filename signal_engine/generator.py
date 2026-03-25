@@ -116,6 +116,7 @@ class SignalGenerator:
         self._spread_models: dict[str, SpreadModel] = {}
         self._spreads: dict[str, pd.Series] = {}
         self._break_detectors: dict[str, StructuralBreakDetector] = {}
+        self._current_disp_idx: float | None = None  # C-09: latest dispersion index
 
     # ------------------------------------------------------------------
     # Public API
@@ -155,6 +156,34 @@ class SignalGenerator:
 
         signals: list[Signal] = []
 
+        # C-02: Dispersion filter — block new entries in highly correlated markets
+        _block_entries = False
+        _disp_idx: float | None = None
+        try:
+            from config.settings import get_settings as _get_settings_gen2
+
+            _regime_cfg = _get_settings_gen2().regime
+            if _regime_cfg.dispersion_filter_enabled and len(active_pairs) >= 3:
+                _lookback = _regime_cfg.dispersion_filter_lookback
+                _min_idx = _regime_cfg.dispersion_filter_min_index
+                _syms = list({s for p in active_pairs for s in (p[0], p[1]) if s in market_data.columns})
+                if len(_syms) >= 3 and len(market_data) >= _lookback:
+                    _ret = market_data[_syms].iloc[-_lookback:].pct_change().dropna()
+                    _corr = _ret.corr()
+                    _upper = [_corr.iloc[i, j] for i in range(len(_syms)) for j in range(i + 1, len(_syms))]
+                    _disp_idx = float(pd.Series(_upper).std())
+                    self._current_disp_idx = _disp_idx  # C-09: persist for _process_pair
+                    if _disp_idx < _min_idx:
+                        _block_entries = True
+                        logger.info(
+                            "dispersion_filter_blocking_entries",
+                            dispersion_index=round(_disp_idx, 4),
+                            min_required=_min_idx,
+                            n_pairs=len(active_pairs),
+                        )
+        except Exception:
+            pass  # Never break signal generation for the dispersion filter
+
         for sym1, sym2, _pval, hl in active_pairs:
             pair_key = f"{sym1}_{sym2}"
 
@@ -168,6 +197,8 @@ class SignalGenerator:
                     active_positions,
                 )
                 if sig is not None:
+                    if _block_entries and sig.side in ("long", "short"):
+                        continue  # C-02: dispersion filter blocked entry
                     signals.append(sig)
             except Exception as exc:
                 logger.error(
@@ -255,7 +286,21 @@ class SignalGenerator:
             regime=regime,
         )
 
-        # 7. Signal logic
+        # 6b. C-09: Dispersion-adaptive threshold ramp
+        try:
+            if self._current_disp_idx is not None:
+                from config.settings import get_settings as _get_settings_disp
+
+                _dc = _get_settings_disp().regime
+                thresh = self.threshold_engine.apply_dispersion_adjustment(
+                    thresh,
+                    disp_idx=self._current_disp_idx,
+                    ideal_disp=_dc.dispersion_ideal_index,
+                    min_disp=_dc.dispersion_filter_min_index,
+                    max_adj=_dc.dispersion_max_entry_adj,
+                )
+        except Exception:
+            pass  # Never break signal generation for dispersion threshold adj
         in_position = pair_key in active_positions
 
         # EXIT signal (mean reversion reached)

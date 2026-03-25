@@ -284,18 +284,45 @@ class PairDiscoveryEngine:
             # Fast correlation pre-filter
             corr = float(series1.corr(series2))
             if abs(corr) < self.config.min_correlation:
+                logger.debug(
+                    "pair_rejected",
+                    pair=(sym1, sym2),
+                    reason="correlation_below_min",
+                    corr=round(corr, 4),
+                    min_required=self.config.min_correlation,
+                )
                 return None
 
             # Engle-Granger test
             eg = engle_granger_test(series1, series2)
             if not eg["is_cointegrated"]:
+                logger.debug(
+                    "pair_rejected",
+                    pair=(sym1, sym2),
+                    reason="eg_test_failed",
+                    adf_pvalue=round(eg.get("adf_pvalue", float("nan")), 4),
+                )
                 return None
             if eg["adf_pvalue"] > alpha:
+                logger.debug(
+                    "pair_rejected",
+                    pair=(sym1, sym2),
+                    reason="z_score_below_threshold",
+                    adf_pvalue=round(eg["adf_pvalue"], 4),
+                    alpha=round(alpha, 6),
+                )
                 return None
 
             # Half-life filter
             hl = half_life_mean_reversion(pd.Series(eg["residuals"]))
             if hl is None or hl <= 0 or hl > self.config.max_half_life:
+                logger.debug(
+                    "pair_rejected",
+                    pair=(sym1, sym2),
+                    reason="half_life_exceeds_max",
+                    half_life=hl,
+                    max_half_life=self.config.max_half_life,
+                )
                 return None
 
             # Optional: Newey-West consensus
@@ -307,6 +334,12 @@ class PairDiscoveryEngine:
                 except Exception:
                     nw_ok = False  # fail-closed: broken robustness check rejects pair
             if not nw_ok:
+                logger.debug(
+                    "pair_rejected",
+                    pair=(sym1, sym2),
+                    reason="i1_check_failed",
+                    detail="newey_west_consensus_failed",
+                )
                 return None
 
             # Optional: Johansen confirmation
@@ -321,6 +354,12 @@ class PairDiscoveryEngine:
 
             # Johansen hard gate: reject pair if Johansen says no cointegration
             if self._johansen is not None and not joh_ok:
+                logger.debug(
+                    "pair_rejected",
+                    pair=(sym1, sym2),
+                    reason="i1_check_failed",
+                    detail="johansen_confirmation_failed",
+                )
                 return None
 
             return CointegratedPair(

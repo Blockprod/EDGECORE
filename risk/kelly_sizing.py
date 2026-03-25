@@ -30,13 +30,13 @@ logger = get_logger(__name__)
 class KellySizerConfig:
     """Configuration for Kelly-based position sizing."""
 
-    kelly_fraction: float = 0.25           # Quarter-Kelly (institutional standard)
-    max_position_pct: float = 10.0         # Max 10% of equity per pair
-    min_position_pct: float = 2.0          # Min 2% (below this, skip the trade)
-    max_sector_pct: float = 25.0           # Max 25% gross exposure per sector
-    max_gross_leverage: float = 2.0        # Max 200% gross leverage
+    kelly_fraction: float = 0.25  # Quarter-Kelly (institutional standard)
+    max_position_pct: float = 10.0  # Max 10% of equity per pair
+    min_position_pct: float = 2.0  # Min 2% (below this, skip the trade)
+    max_sector_pct: float = 25.0  # Max 25% gross exposure per sector
+    max_gross_leverage: float = 2.0  # Max 200% gross leverage
     max_loss_per_trade_nav_pct: float = 0.75  # Max 0.75% of NAV loss per trade
-    default_allocation_pct: float = 8.0    # Fallback when no trade history
+    default_allocation_pct: float = 8.0  # Fallback when no trade history
 
 
 class KellySizer:
@@ -76,6 +76,12 @@ class KellySizer:
 
         # Estimate from trade history
         if len(self._trade_history) < 10:
+            logger.warning(
+                "kelly_sizer_insufficient_history",
+                n_trades=len(self._trade_history),
+                min_required=10,
+                using_fallback_pct=self.config.default_allocation_pct,
+            )
             return self.config.default_allocation_pct / 100.0
 
         wins = [t for t in self._trade_history if t > 0]
@@ -144,14 +150,11 @@ class KellySizer:
             proposed_notional = current_equity * alloc_pct / 100.0
             new_gross = current_gross_exposure + proposed_notional
             if new_gross / current_equity > self.config.max_gross_leverage:
-                available = (
-                    self.config.max_gross_leverage * current_equity
-                    - current_gross_exposure
-                )
+                available = self.config.max_gross_leverage * current_equity - current_gross_exposure
                 if available <= 0:
                     logger.debug(
                         "kelly_rejected_leverage_limit",
-                        gross_leverage=f"{new_gross/current_equity:.2f}",
+                        gross_leverage=f"{new_gross / current_equity:.2f}",
                         limit=f"{self.config.max_gross_leverage:.1f}",
                     )
                     return 0.0

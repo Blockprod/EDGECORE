@@ -277,6 +277,13 @@ class RegimeConfig:
     neutral_band_pct: float = 0.02  # MA spread % to distinguish NEUTRAL
     trend_favorable_sizing: float = 0.80  # Sizing for favorable side in trends
     neutral_sizing: float = 0.65  # Sizing for both sides in NEUTRAL
+    # C-02: Dispersion filter — block entries when market is highly correlated
+    dispersion_filter_enabled: bool = False  # Off by default; ON in dev.yaml
+    dispersion_filter_lookback: int = 60  # Rolling window (bars) for correlation computation
+    dispersion_filter_min_index: float = 0.15  # Min std of pairwise correlations to allow entries
+    # C-09: Adaptive threshold ramp above blocking floor
+    dispersion_ideal_index: float = 0.30  # Above this: no threshold penalty
+    dispersion_max_entry_adj: float = 0.50  # Max z-score raise at min_index boundary
 
 
 @dataclass

@@ -1,265 +1,495 @@
-﻿# Audit Stratégique EDGECORE — Stat-Arb Pairs Trading
-**Date :** 2026-05-14     
-**Création :** 2026-03-22 à 12:42  
-**Version codebase :** post-IA/ML (2681 tests, commit `52e92ab`)  
-**Auditeur :** GitHub Copilot (Claude Sonnet 4.6)  
-**Échelle sévérité :** P0 invalide le backtest · P1 surestimation forte · P2 surestimation modérée · P3 amélioration
+﻿---
+modele: sonnet-4.6
+mode: agent
+contexte: codebase
+produit: audit_strategic_edgecore.md
+derniere_revision: 2026-03-25
+creation: 2026-03-17 à 18:11
+---
+
+# AUDIT STRATÉGIQUE EDGECORE — Mean-Reversion Stat-Arb US Equities
+**Date** : 2026-03-25 | **Auditeur** : GitHub Copilot (Claude Sonnet 4.6)
+**Sources principales** : `results/bt_v36_output.json`, `results/bt_v35_output.json`, `results/v45b_p5_rerun.txt` (87 917 lignes)
 
 ---
 
-## BLOC 1 — INTÉGRITÉ STATISTIQUE DES SIGNAUX
+## BLOC 1 — VALIDITÉ STATISTIQUE DE L'EDGE
 
-### 1.1 Biais de look-ahead
+### 1.1 Taille d'échantillon
 
-| # | Point | Verdict | Référence | Notes |
-|---|-------|---------|-----------|-------|
-| 1.1a | Fenêtre expansive barre-par-barre | ✅ CONFORME | `backtests/strategy_simulator.py:343` `hist_prices = prices_df.iloc[:bar_idx + 1]` | Strictement causal — aucun accès aux données futures |
-| 1.1b | Filtre de Kalman (hedge ratio) | ✅ CONFORME | `models/kalman_hedge.py:update()` | Passe forward uniquement — `P` mis à jour sequentiellement, aucun lissage RTS |
-| 1.1c | Calcul du z-score (rolling causal) | ✅ CONFORME | `signal_engine/zscore.py:75-79` | `rolling(window).mean()/.std()` — strictement causal |
-| 1.1d | **Signal sur barre courante (timing exécution ambigu)** | ⚠️ À VÉRIFIER | `strategies/pair_trading.py:982` + `simulator:343` | `z_score.iloc[-1]` sur la barre `bar_idx` dont le close est inclus. Si exécution = ce même close → biais P1. Acceptable uniquement si slippage modélise correctement le fill au close+1 |
+**Source** : `results/bt_v36_output.json` + `results/v45b_p5_rerun.txt`
 
-**Détail 1.1d :** Le simulateur construit `hist_prices = prices_df.iloc[:bar_idx + 1]` (inclut la barre courante), puis `generate_signals()` lit `z_score.iloc[-1]` sur ce close. Si l'ordre est supposé être exécuté à **ce même close**, cela dépasse la convention market-on-close standard (signal non connu avant fin de barre). Le modèle de coût Almgren-Chriss inclut un composant slippage mais la synchronisation signal→fill n'est **nulle part documentée** comme décalée d'une barre.
+| Série | N trades | Seuil 100 | Statut |
+|-------|----------|-----------|--------|
+| bt_v36 (phase test IS) | 21 | ❌ | 🔴 N < 30 |
+| bt_v35 (baseline IS) | 21 | ❌ | 🔴 N < 30 |
+| bt_v34c (baseline précédent) | 22 | ❌ | 🔴 N < 30 |
+| v45b P1 2019H2 | 30 | ❌ | 🟠 30 ≤ N < 60 |
+| v45b P2 2020H2 | 18 | ❌ | 🔴 N < 30 |
+| v45b P3 2022H2 | 33 | ❌ | 🟠 30 ≤ N < 60 |
+| v45b P4 2023H2 | 34 | ❌ | 🟠 30 ≤ N < 60 |
+| v45b P5 2024H2 | 3 | ❌ | 🔴 N < 30 (effondrement total) |
+
+**Calcul IC 95% sur bt_v36** (WR = 66.7%, N = 21) :
+```
+IC = 0.667 ± 1.96 × √(0.667 × 0.333 / 21)
+   = 0.667 ± 1.96 × 0.1028
+   = 0.667 ± 0.201
+   = [0.466 ; 0.868]
+```
+→ L'IC à 95% **inclut 50%** — l'edge n'est **pas prouvé statistiquement**.
+
+**🔴 NON CONFORME** — N insuffisant dans tous les runs. Le plus récent OOS (P5) ne génère que 3 trades sur 382 jours de bourse, rendant toute statistique sans signification.
 
 ---
 
-### 1.2 Biais de data-snooping (surapprentissage paramétrique)
+### 1.2 Métriques d'edge
 
-| # | Point | Verdict | Référence |
-|---|-------|---------|-----------|
-| 1.2a | Walk-forward fenêtre expansive — pas de sélection du meilleur fold | ✅ CONFORME | `backtests/walk_forward.py:167-210` — `profitable_periods/total ≥ 50%` comme critère pass |
-| 1.2b | Instance fraîche par fold (`disable_cache()`) | ✅ CONFORME | `backtests/walk_forward.py` — `strategy = PairTradingStrategy(); strategy.disable_cache()` |
-| 1.2c | Paramètres non ré-optimisés intra-fold | ✅ CONFORME (à confirmer) | `backtests/parameter_cv.py` existe mais pas invoqué dans WalkForwardBacktester. Les paramètres viennent de `get_settings()` figés |
+**Source** : `results/bt_v36_output.json` + `results/bt_v35_output.json`
+
+| Métrique | bt_v36 (IS) | Seuil viable | Statut | v45b avg OOS | Statut OOS |
+|----------|-------------|-------------|--------|--------------|-----------|
+| Win Rate | 66.7% | — | — | voir par période | — |
+| Profit Factor | 4.22 | ≥ 1.5 | ✅ | À VÉRIFIER | — |
+| Sharpe annualisé | 1.33 | ≥ 1.5 | 🟠 | **-0.63** | 🔴 |
+| Calmar | 5.48 | — | ✅ | — | — |
+| Max Drawdown | -1.91% | ≤ 10% | ✅ | -7.09% (P1) | ✅ |
+
+**Walk-forward v45b — vue complète** (`results/v45b_p5_rerun.txt:87904-87917`) :
+```
+P1 2019H2   S=-1.57   -5.60%   t=30   DD=-7.09%   [FAIL]
+P2 2020H2   S=-0.66   -2.03%   t=18   DD=-4.27%   [FAIL]
+P3 2022H2   S= 2.21  +10.62%   t=33   DD=-2.71%   [PASS]
+P4 2023H2   S=-2.01   -4.14%   t=34   DD=-4.07%   [FAIL]
+P5 2024H2   S=-1.14   -3.90%   t= 3   DD=-4.49%   [FAIL]
+Moyenne :   S=-0.63   PASS=1/5 → ❌ FAIL
+```
+
+Runs de pertes consécutives : P1+P2 [FAIL], P4+P5 [FAIL] → 4 périodes sur 5 en perte. **🟠 Risque opérationnel live**.
+
+Expectancy $/trade : données per-trade non exportées dans `results/bt_v36_output.json` → **À VÉRIFIER** (absence d'observabilité granulaire).
+
+**🔴 NON CONFORME** — Sharpe IS < 1.5 et Sharpe OOS moyen = -0.63.
 
 ---
 
-### 1.3 Biais de survie
+### 1.3 Critère de Kelly
 
-| # | Point | Verdict | Sévérité |
-|---|-------|---------|---------|
-| 1.3a | **Univers hardcodé = snapshot actuel du marché** | ❌ NON CONFORME | **P0** |
-| 1.3b | `DelistingGuard` réactif (temps réel) — pas de filtrage rétroactif | ❌ NON CONFORME | **P0** |
+**Source** : `risk/kelly_sizing.py`
 
-**Détail critique P0 :**  
-`universe/manager.py` contient `DEFAULT_SECTOR_MAP` — un dictionnaire hardcodé de ~100 actions **actuellement cotées** (AAPL, MSFT, GS, JPM…). Les backtests exécutés sur 5-10 ans de données **ne sélectionnent que des survivantes** : aucune entreprise délistée pendant la période de test (faillite, OPA, radiation) n'est incluse dans l'univers.
+`KellySizerConfig` (`risk/kelly_sizing.py:38-44`) :
+- `kelly_fraction = 0.25` (quarter-Kelly institutionnel ✅)
+- `max_position_pct = 10.0`
+- `min_position_pct = 2.0`
+- `default_allocation_pct = 8.0` (fallback si < 10 trades en historique)
+
+Calcul de f* requis : avg_win / avg_loss non disponibles dans les sorties (`results/bt_v36_output.json` ne les exporte pas). → **À VÉRIFIER**.
+
+Risque opérationnel : avec P5 = 3 trades, `KellySizer._compute_kelly_fraction()` (`risk/kelly_sizing.py:63`) utilise le `default_allocation_pct = 8%` car `len(self._trade_history) < 10`. Le sizing n'est donc **pas fondé sur l'edge réalisé** lors d'une période signal-drought.
+
+**🟡 À VÉRIFIER** — Paramétrage fraction Kelly conforme, mais calcul f* impossible sans per-trade data.
+
+---
+
+### 1.4 Tests de cointégration — qualité des paires
+
+**Source** : `results/v45b_p5_rerun.txt:153-300`, `pair_selection/discovery.py:1-80`, `models/cointegration.py:1-150`
+
+Distribution des p-values EG dans v45b P5 (205 paires testées, extrait représentatif) :
+- p < 0.01 : ~12 paires (très forte cointégration)
+- 0.01 ≤ p < 0.05 : ~18 paires (cointégration confirmée)
+- p ≥ 0.05 (rejetées) : ~175 paires (85% du corpus)
+
+**Gate I(1) présent** : `models/cointegration.py:122-134` — vérification ADF+KPSS avant EG ✅
+
+**Confirmation Johansen** : `pair_selection/discovery.py:30` importe `JohansenCointegrationTest` — taux de confirmation exact non loggé dans v45b → **À VÉRIFIER**.
+
+**Demi-vie** : `max_half_life = 70` (`config/dev.yaml:24`) — distribution observée dans v45b : `half_life=13` à `half_life=55` dans les logs debug → la majorité des paires acceptées est bien sous le seuil ✅.
+
+**🟠 À VÉRIFIER** — Taux de confirmation Johansen non loggé (observabilité manquante).
+
+---
+
+## BLOC 2 — FRÉQUENCE ET CONTINUITÉ DU SIGNAL
+
+### 2.1 Taux de signal
+
+**Source** : `results/v45b_p5_rerun.txt:87907`, `results/bt_v36_output.json`
+
+| Période | Bars tradables | Trades | Trades/bar | Trades/mois equiv. |
+|---------|---------------|--------|------------|-------------------|
+| bt_v36 IS | ~252 | 21 | 0.083 | ~1.7/mois |
+| v45b P1 2019H2 | ~252 | 30 | 0.119 | ~2.5/mois |
+| v45b P2 2020H2 | ~252 | 18 | 0.071 | ~1.5/mois |
+| v45b P3 2022H2 | ~252 | 33 | 0.131 | ~2.8/mois |
+| v45b P4 2023H2 | ~252 | 34 | 0.135 | ~2.8/mois |
+| v45b P5 2024H2 | **382** | **3** | **0.008** | **0.1/mois** |
+
+**P5 (période la plus récente)** : 3 trades en 382 jours de bourse — silence de ~127 jours entre chaque trade en moyenne. Largement au-delà du seuil 🔴 (≥ 90 jours).
+
+`results/v45b_p5_rerun.txt:87907` : `total_bars=382 total_trades=19` — le moteur comptabilise 19 `trade_events` mais seulement 3 `round-trips` complets dans le résumé P5. Discordance entrées/sorties à investiguer.
+
+**🔴 NON CONFORME** — Silence effectif ≥ 90 jours sur la période OOS la plus récente. Stratégie inopérante en production actuelle.
+
+---
+
+### 2.2 Cascade de filtres — diagnostic du silence
+
+| Filtre | Fichier:Ligne | Seuil actif | Impact |
+|--------|--------------|-------------|--------|
+| `entry_z_score` | `config/dev.yaml:13` | 1.6 | Restrictif |
+| `max_half_life` | `config/dev.yaml:24` | 70 | Modéré |
+| `min_correlation` | `config/dev.yaml:26` | 0.60 | Modéré |
+| `signal_combiner.entry_threshold` | `config/dev.yaml:52` | 0.6 | Double-filtrage |
+| Rejection logging par motif | `pair_selection/discovery.py` | — | **ABSENT** |
+
+Les logs v45b montrent `pair_discovery_parallel_starting` et `eg_test_complete` mais **aucun motif de rejet** par filtre individuel (z-score trop bas, corrélation insuffisante). Un signal rejeté en live sera indiagnosticable.
+
+**🟠 NON CONFORME (observabilité)** — Silence en production indiagnosticable sans motifs de rejet granulaires.
+
+---
+
+### 2.3 Surrestrictivité des filtres
+
+La combinaison `entry_z_score = 1.6` ET `signal_combiner.entry_threshold = 0.6` crée un **double-gating** :
+1. Gate EG : le spread doit atteindre z ≥ 1.6
+2. Gate composite : `zscore×0.70 + momentum×0.30` ≥ 0.6
+
+En pratique, avec z=1.6 et momentum neutre : composite = 1.6×0.70 = 1.12 > 0.6 ✅. Le double-gating ne bloque pas en conditions neutres. La cause racine de P5=3 trades est l'**absence structurelle de spreads atteignant z ≥ 1.6** dans le régime bull-market 2024H2 (compression des primes de risque intrasectoriel).
+
+**🟠 CONFORME (logique)** — La fréquence est structurellement insuffisante dans le régime actuel.
+
+---
+
+## BLOC 3 — PERFORMANCE PAR PAIRE ET RÉGIME
+
+### 3.1 Performance par paire
+
+**Source** : `results/bt_v36_output.json`
+
+`bt_v36_output.json` ne contient **aucun détail per-paire** — uniquement les métriques agrégées. Idem pour `bt_v35_output.json`. Les logs v45b citent des paires (`META_XLK`, `UNH_CI`) sans P&L isolé.
+
+**🟠 NON CONFORME (observabilité)** — Absence de reporting per-paire, impossible d'identifier les paires destructrices de valeur (PF < 1.0) ou les paires concentration P&L.
+
+---
+
+### 3.2 Performance par direction (LONG vs SHORT spread)
+
+**À VÉRIFIER** — Aucune décomposition LONG/SHORT disponible dans les outputs JSON. Le `short_sizing_multiplier = 0.50` (`config/dev.yaml:16`) est un ajustement de sizing directionnel indépendant du P&L par direction.
+
+**🟡 À VÉRIFIER**
+
+---
+
+### 3.3 Évolution temporelle (edge decay)
+
+Depuis la timeline walk-forward v45b (`results/v45b_p5_rerun.txt:87908-87917`) :
+```
+2019H2 → FAIL   (régime pré-COVID, dispersion modérée)
+2020H2 → FAIL   (COVID high-vol — spread intra-sectoriel désynchronisé)
+2022H2 → PASS   (post-Fed hike, dispersion élevée) ← seul régime favorable
+2023H2 → FAIL   (soft landing, compression spreads)
+2024H2 → FAIL   (bull market 2024, spreads comprimés, 3 trades)
+```
+
+**Tendance claire** : l'edge est **conditionnellement dépendant** d'un régime de haute dispersion intrasectorielle. En bull-market comprimé, la stratégie est inopérante.
+
+**🔴 NON CONFORME** — Edge conditionnel non généralisable sur un cycle économique complet.
+
+---
+
+### 3.4 Concentration du P&L
+
+**À VÉRIFIER** — Données journalières non exportées. La seule période PASS (P3 2022H2) représente 100% du signal positif du walk-forward. La concentration est extrême au niveau des périodes.
+
+**🔴 NON CONFORME** — 100% du P&L positif du walk-forward concentré sur 1/5 périodes.
+
+---
+
+## BLOC 4 — ROBUSTESSE IS/OOS
+
+### 4.1 Validité du split IS/OOS
+
+**Source** : `results/v45b_p5_rerun.txt:46-48` (logs démarrage P5)
+
+Split P5 : `train 2023-01-03 → 2024-07-01 | OOS 2024-07-01 → 2025-01-01`
+- N_OOS (trades P5) : **3** → 🔴 N_OOS < 15
+
+Dégradation IS → OOS :
+
+| Métrique | bt_v36 IS | v45b P5 OOS | Dégradation |
+|----------|-----------|-------------|------------|
+| Sharpe | 1.33 | -1.14 | **-185%** 🔴 |
+| Return | +10.46% | -3.90% | **-137%** 🔴 |
+| Trades | 21 | 3 | **-86%** 🔴 |
+
+**🔴 NON CONFORME** — Dégradation IS→OOS catastrophique sur les 3 métriques clés.
+
+---
+
+### 4.2 Cohérence temporelle du split
+
+Split P5 macroéconomiquement cohérent : IS = régime standard (2023-2024H1), OOS = régime bull-market comprimé (2024H2). Les régimes sont distincts. La méthodologie est correcte — c'est la **stratégie elle-même** qui ne survit pas au changement de régime.
+
+**🟡 CONFORME (méthodologie split)** — Split IS/OOS macroéconomiquement distinct.
+
+---
+
+### 4.3 Walk-forward — branchement effectif
+
+**Source** : `backtester/walk_forward.py`, `backtests/walk_forward.py`
+
+`scripts/run_p5_v45b.py` invoque directement `strategy_simulation_starting` par période manuelle — ce n'est pas un `WalkForwardEngine` automatisé avec re-fitting des paramètres sur chaque fold IS.
+
+Les paramètres (`entry_z_score = 1.6`, poids signaux, etc.) sont **fixes sur les 5 périodes** — pas de ré-optimisation IS. La validation walk-forward est structurellement un test OOS séquentiel avec paramètres figés.
+
+**🟡 À VÉRIFIER** — WalkForwardEngine présent mais non branché en mode auto-refit.
+
+---
+
+## BLOC 5 — CALIBRATION DES SEUILS Z-SCORE
+
+### 5.1 Inventaire des paramètres actifs
+
+**Source** : `config/dev.yaml`
+
+| Paramètre | Section | Valeur active | Type |
+|-----------|---------|--------------|------|
+| `entry_z_score` | `strategy` (`dev.yaml:13`) | 1.6 | Fixe |
+| `exit_z_score` | `strategy` (`dev.yaml:14`) | 0.5 | Fixe |
+| `max_half_life` | `strategy` (`dev.yaml:24`) | 70 | Fixe |
+| `min_correlation` | `strategy` (`dev.yaml:26`) | 0.60 | Fixe |
+| `short_sizing_multiplier` | `strategy` (`dev.yaml:16`) | 0.50 | Fixe |
+| `zscore_weight` | `signal_combiner` (`dev.yaml:49`) | 0.70 | Fixe |
+| `momentum_weight` | `signal_combiner` (`dev.yaml:50`) | 0.30 | Fixe |
+| `entry_threshold` | `signal_combiner` (`dev.yaml:52`) | 0.6 | Fixe |
+| `exit_threshold` | `signal_combiner` (`dev.yaml:53`) | 0.2 | Fixe |
+
+**🟡 CONFORME** — Tous les paramètres clés sont dans `dev.yaml`, non hardcodés.
+
+---
+
+### 5.2 Cohérence live ↔ backtest par paramètre
+
+`signal_engine/combiner.py:106-113` : `SignalCombiner.__init__` accepte `sources`, `entry_threshold`, `exit_threshold` — injection via `get_settings()` à confirmer dans `live_trading/runner.py`.
+
+**Discordance critique** :
+- `results/bt_v36_output.json:5` : `"zscore 0.35, momentum 0.15, OU 0.20, vol 0.10, CS 0.10, intraday 0.10"` → **6 sources**, poids zscore=0.35
+- `config/dev.yaml:49-50` : `zscore_weight=0.70`, `momentum_weight=0.30` → **2 sources** actives
+
+**Le bt_v36 (run IS de référence) a été exécuté avec une configuration abandonnée.** Les performances IS (S=1.33, PF=4.22, WR=66.7%) ne sont pas reproductibles avec la configuration actuelle.
+
+**🔴 NON CONFORME** — Configuration SignalCombiner du run IS ≠ configuration live actuelle.
+
+---
+
+### 5.3 Analyse critique de `entry_z_score = 1.6`
+
+WR_min = 1 / (1 + avg_win/avg_loss) — non calculable sans per-trade data.
+
+Observation : `entry_z_score` a été abaissé de 2.0 à 1.6 (v31) sans augmentation notable de la fréquence en OOS récent (P5 = 3 trades). Le problème est structurel (dispersion intrasectorielle insuffisante en 2024H2), pas paramétrique. Abaisser davantage risque d'augmenter les faux positifs.
+
+**🟡 À VÉRIFIER** — Le seuil 1.6 n'est pas la cause du drought en OOS récent.
+
+---
+
+### 5.4 Seuils adaptatifs
+
+**Source** : `models/adaptive_thresholds.py` (fichier présent)
+
+Non référencé dans `config/dev.yaml`. Non utilisé ni en live ni en backtest v45b. Activation des seuils adaptatifs pourrait améliorer la fréquence de signal en régime comprimé.
+
+**🟡 À VÉRIFIER** — `adaptive_thresholds.py` présent mais inactif en live et backtest.
+
+---
+
+## BLOC 6 — MODÉLISATION DES COÛTS
+
+### 6.1 Slippage
+
+**Source** : `config/dev.yaml:217`, `execution_engine/router.py:162,189`
+
+Config YAML : `slippage_bps: 2.0`, `slippage_model: "almgren_chriss"` (`config/dev.yaml:217-222`) ✅
+
+**Debt B5-02** (connue) : `execution_engine/router.py:162,189` — slippage hardcodé `2.0` sans lecture de `get_settings().costs`. En live, le modèle Almgren-Chriss configuré est ignoré.
+
+Impact quantifié (N=21, ~42 legs, taille ~$8k/position) :
+```
+Slippage total ≈ 42 × $8 000 × 0.0002 = $67.2 total
+Impact sur P&L IS ($10 460) : marginal (< 1%)
+```
+La discordance est un risque de **gouvernance**, non un risque P&L majeur au niveau de fréquence actuel.
+
+**🟠 NON CONFORME (dette B5-02)** — `execution_engine/router.py:162,189` n'utilise pas `get_settings().costs`.
+
+---
+
+### 6.2 Coût de borrow — short selling
+
+**Source** : `config/dev.yaml:221`
+
+`borrowing_cost_annual: 0.005` (0.5% GC rate) configuré. Application effective dans `backtests/cost_model.py` : **À VÉRIFIER**. `short_sizing_multiplier = 0.50` (`dev.yaml:16`) est un ajustement de sizing, indépendant du coût de borrow.
+
+**🟡 À VÉRIFIER** — Config présente; application au simulateur non confirmée.
+
+---
+
+### 6.3 Impact des coûts sur l'expectancy nette
+
+IS estimé (bt_v36, N=21, return=$10 460) :
+```
+Expectancy brute ≈ $10 460 / 21 ≈ $498/trade
+Commission      ≈ 2 bps × 2 legs × $8k = $3.2/trade
+Slippage        ≈ 2 bps × 2 legs × $8k = $3.2/trade
+Expectancy nette ≈ $491/trade  ✅ (IS)
+```
+
+OOS P5 estimé (N=3, return=-$3 900) :
+```
+Expectancy OOS ≈ -$3 900 / 3 ≈ -$1 300/trade  🔴
+```
+
+Les coûts ne sont pas le problème — l'expectancy OOS est négative **avant** frais.
+
+**🔴 NON CONFORME (OOS)** — Expectancy nette OOS négative. Cause : absence d'edge, pas les coûts.
+
+---
+
+## BLOC 7 — RISK MANAGEMENT FINANCIER
+
+### 7.1 Sizing vs Kelly
+
+**Source** : `risk/kelly_sizing.py:38-44,63`
+
+`KellySizerConfig` :
+- `kelly_fraction = 0.25` ✅ (quarter-Kelly)
+- `max_position_pct = 10.0`, `min_position_pct = 2.0`
+- `default_allocation_pct = 8.0` → **fallback actif** quand < 10 trades en historique
+
+En v45b P5 (3 trades), l'allocateur est en mode fallback 8% permanent. Le Kelly adaptatif est inopérant en régime drought.
+
+`max_gross_leverage = 2.0` : avec ≤ 4 paires simultanées à 8% → levier ≤ 32% brut ≪ 200% ✅
+
+**🟡 CONFORME (paramétrage)** — Quarter-Kelly correct, inopérant en régime drought.
+
+---
+
+### 7.2 Garde-fous d'exécution — tiers de risque
+
+**Source** : `results/v45b_p5_rerun.txt:48-55`
 
 ```
-universe/manager.py → DEFAULT_SECTOR_MAP = {
-    "AAPL": "Technology", "MSFT": "Technology", ...  # ~100 titres, tous survivants
-}
+risk_tier_coherence: T1=10% T2=15% T3=20%  ← _assert_risk_tier_coherence() ✅
+drawdown_manager_tiers: T1=3% T2=5% T3=8% T4=12%  ✅
 ```
 
-`data/delisting_guard.py` effectue des vérifications réactives (crash de volume >80%, prix <$0.001, données périmées >3 jours) **en temps réel uniquement** — il ne reconstitue pas un univers point-in-time historique.
+- T1 (10% DD) → halt entrées : opérationnel ✅
+- T2 (15% DD) → halt global KillSwitch : opérationnel, aucun déclenchement v45b ✅
+- T3 (20% DD) → breaker stratégie : opérationnel ✅
+- `_assert_risk_tier_coherence()` : exécutée au démarrage ✅
 
-**Impact quantitatif estimé :** surestimation du Sharpe de **15-25%** (littérature académique sur le biais de survie equity long-short : Elton et al. 1996, Carhart 1997).
+Max DD observé : P1=-7.09%, P2=-4.27%, P3=-2.71%, P4=-4.07%, P5=-4.49% — tous sous T1 ✅
 
-**Correction requise :** Intégrer une base de données point-in-time (ex. CRSP, Compustat, ou fichier CSV avec dates d'ajout/retrait par symbole) et filtrer `get_universe()` par `universe_date`.
-
----
-
-### 1.4 Cohérence backtest ↔ live
-
-| # | Point | Verdict | Référence |
-|---|-------|---------|-----------|
-| 1.4a | Code path unique (`generate_signals()`) pour backtest et live | ✅ CONFORME | `backtests/strategy_simulator.py:4` "Uses `PairTradingStrategy.generate_signals()` as the **sole** source of trading logic" |
-| 1.4b | `SignalGenerator.generate()` partagé | ✅ CONFORME | `signal_engine/generator.py` — même instance en backtest et en live |
+**✅ CONFORME** — Risk tiers correctement configurés et opérationnels.
 
 ---
 
-## BLOC 2 — SOLIDITÉ DU MODÈLE STATISTIQUE
+### 7.3 Exposition simultanée multi-paires
 
-### 2.1 Sélection des paires
+`max_sector_pct=25.0` (`risk/kelly_sizing.py:43`). Sector logs v45b : max 4 secteurs actifs simultanément → levier sectoriel estimé ≤ 4 × 8% = 32% < 40% ✅
 
-| # | Point | Verdict | Référence |
-|---|-------|---------|-----------|
-| 2.1a | Correction de Bonferroni avant filtre half-life | ✅ CONFORME | `pair_selection/discovery.py:218-224` — `alpha_adj = significance_level / n_tests` |
-| 2.1b | Triple gate : EG + Johansen + Newey-West | ✅ CONFORME | `pair_selection/discovery.py:245-280` — `johansen_confirmation=True` par défaut |
-| 2.1c | Fenêtre IS-only pour la sélection | ✅ CONFORME | `data = price_data.tail(lb)` — lookback window uniquement |
-| 2.1d | Vérification de stationnarité ADF + break structurel CUSUM | ✅ CONFORME | `signal_engine/generator.py` steps 3 & 3b |
-
-**Point positif majeur :** La séquence Bonferroni → EG → NW → Johansen est rigoureuse et va au-delà de la pratique standard. Le gate triple réduit significativement les faux positifs de cointégration.
+**🟡 CONFORME** — Exposition dans les limites; vérification exacte À VÉRIFIER.
 
 ---
 
-### 2.2 Modèle de spread et hedge ratio
+## BLOC 8 — INTÉGRITÉ DU PIPELINE SIGNAL
 
-| # | Point | Verdict | Sévérité |
-|---|-------|---------|---------|
-| 2.2a | **Hedge ratio OLS statique (pas Kalman barre-par-barre)** | ❌ NON CONFORME | **P2** |
-| 2.2b | Z-score avec fenêtre adaptative (half-life) | ✅ CONFORME | `signal_engine/zscore.py:_resolve_lookback()` |
-| 2.2c | **Spread en prix niveau (non log-prix)** | ❌ NON CONFORME | P3 |
-| 2.2d | Thresholds adaptatifs via régime | ✅ CONFORME | `signal_engine/generator.py:252-258` → `AdaptiveThresholdEngine` |
+### 8.1 Pipeline all-or-nothing
 
-**Détail 2.2a — P2 :**  
-`models/spread.py` calcule le beta OLS à l'instanciation :
-```python
-beta = np.linalg.lstsq(X, y, rcond=None)[0]  # OLS statique
-```
-`reestimate_beta_if_needed()` fait une ré-estimation OLS périodique (fréquence : 7 jours), **pas barre-par-barre**. Or `models/kalman_hedge.py` (classe `KalmanHedgeRatio`) implante un filtre de Kalman en passe forward, mais `SpreadModel` ne l'utilise pas. Le drift du hedge ratio entre deux ré-estimations hebdomadaires peut générer un spread non-stationnaire artificiellement → faux signaux et drawdowns amplifiés.
-
-**Détail 2.2c — P3 :**  
-Le spread est calculé en prix niveau : `y - (intercept + beta*x)`. Pour des actions, les log-prix sont préférables (processus multiplicatif, stationnarité à long terme, interprétation en rendements). L'impact est surtout marqué sur les paires de prix très asymétriques.
+| Test | Statut | Evidence |
+|------|--------|---------|
+| KillSwitch → halt → aucune position | **CONFORME** | v45b: aucun déclenchement KS, nominal |
+| PositionRiskManager reject → aucun ordre | **CONFORME** | Risk tiers vérifiés au démarrage |
+| SignalCombiner score < entry_threshold → aucun signal | **CONFORME** | `signal_engine/combiner.py:103-117` |
 
 ---
 
-### 2.3 Modèle de coûts
+### 8.2 Paramètres live vs backtest
 
-| # | Point | Verdict | Sévérité |
-|---|-------|---------|---------|
-| 2.3a | Almgren-Chriss 3 composantes (spread + impact + timing) | ✅ CONFORME | `backtests/cost_model.py:_slippage()` |
-| 2.3b | **Borrowing cost 0.5% (GC rate — HTB sous-estimé)** | ❌ NON CONFORME | **P2** |
-| 2.3c | **Volume ADV = $10M par défaut (impact sous-estimé small-cap)** | ❌ NON CONFORME | **P2** |
+**Discordance confirmée** (voir Bloc 5.2) :
+- bt_v36 (IS de référence) : SignalCombiner 6 sources, poids zscore=0.35 (`results/bt_v36_output.json:5`)
+- Config actuelle : 2 sources, poids zscore=0.70 (`config/dev.yaml:49`, `signal_engine/combiner.py:106`)
 
-**Détail 2.3b — P2 :**  
-`backtests/cost_model.py:CostModelConfig` fixe `borrowing_cost_annual_pct = 0.005` (50 pb). Pour les actions GC (General Collateral) liquides, c'est correct. Mais la stratégie peut inclure des mid-caps à fort beta court impliquant des frais HTB (Hard-to-Borrow) de 1% à 20%+ par an. Aucun surcoût HTB n'est modélisé.
+Les performances IS du backtest de référence correspondent à un système **différent** du système live actuel.
 
-**Détail 2.3c — P2 :**  
-Dans `_execution_cost_one_leg()`, le paramètre `volume_24h` coûts de marché impact est passé avec default `1e7` ($10M). Si le backtest n'injecte pas le vrai ADV par symbole, le composant `η × σ × sqrt(Q/ADV)` est systématiquement sous-estimé pour tous les titres avec ADV < $10M.
+**🔴 NON CONFORME** — Configuration backtest IS de référence ≠ configuration live actuelle.
 
 ---
 
-### 2.4 Validation hors-échantillon
+### 8.3 Biais look-ahead
 
-| # | Point | Verdict | Référence |
-|---|-------|---------|-----------|
-| 2.4a | Split ancré (pas rolling) avec 21 jours OOS | ✅ CONFORME | `backtester/oos.py:validate()` — `is_data = price_data.loc[:split_ts]` / `oos_data = price_data.loc[split_ts:]` |
-| 2.4b | Gates : 70% persistance de cointégration + drift HL ±50% | ✅ CONFORME | `validation/oos_validator.py:acceptance_threshold=0.70` |
-| 2.4c | Gates calibrés indépendamment des résultats backtest ? | ⚠️ À VÉRIFIER | Risque de méta-surapprentissage si les seuils 70%/±50% ont été ajustés après observation des performances IS |
+**Source** : `models/kalman_hedge.py:80-120`, `models/cointegration.py:122`
 
----
+`KalmanHedgeRatio` : forward-only causal (`update(y, x)` bar-by-bar, pas de backward pass RTS) ✅
 
-## BLOC 3 — RISK MANAGEMENT FINANCIER
+`engle_granger_test` : I(1) pre-check gate avant estimation OLS (`models/cointegration.py:122-134`), fenêtre lookback stricte ✅
 
-### 3.1 Kill-switch
+**✅ CONFORME** — Aucun biais look-ahead détecté dans Kalman et EG.
 
-| # | Point | Verdict | Référence |
-|---|-------|---------|-----------|
-| 3.1a | 6 conditions kill (DRAWDOWN·DAILY_LOSS·CONSECUTIVE_LOSSES·VOLATILITY_EXTREME·DATA_STALE·MANUAL) | ✅ CONFORME | `risk_engine/kill_switch.py:KillReason` |
-| 3.1b | Persistance état JSON (survie aux redémarrages) | ✅ CONFORME | `risk_engine/kill_switch.py:_load_state()` |
-| 3.1c | Lock threading atomique | ✅ CONFORME | `risk_engine/kill_switch.py:_activation_lock = threading.Lock()` |
-| 3.1d | **Callback d'annulation des ordres IBKR à vérifier** | ⚠️ À VÉRIFIER | `risk_engine/kill_switch.py:on_activate` — le callback existe mais le câblage dans `live_trading/runner.py` pour annuler les ordres ouverts chez IBKR n'est pas vérifié |
+Cython engine manquant : `models/cointegration.py:14-22` — Python fallback actif, ~2085s/période en v45b P5. En live avec IBKR rate limits (50 req/s), la latence de découverte de paires est un risque opérationnel.
 
-**Risque opérationnel 3.1d :** Si le kill-switch déclenche mais que le callback `cancel_all_orders()` n'est pas correctement branché au `IBKRExecutionEngine`, des positions peuvent rester ouvertes alors que le système ne les monitore plus — risque de pertes illimitées.
+**🟠 ATTENTION** — Cython engine absent → latence 10x en pair discovery live.
 
 ---
 
-### 3.2 Sizing et concentration
+## SYNTHÈSE
 
-| # | Point | Verdict | Sévérité |
-|---|-------|---------|---------|
-| 3.2a | Limite par paire : max 30% du portefeuille | ✅ CONFORME | `portfolio_engine/allocator.py:max_allocation_pct=0.30` |
-| 3.2b | **Sizing EQUAL_WEIGHT par défaut (ignore la volatilité des spreads)** | ❌ NON CONFORME | **P2** |
-| 3.2c | Délimitation sectorielle (40%) | ✅ CONFORME | `portfolio_engine/concentration.py` → `ConcentrationLimitManager` |
-| 3.2d | Hedging bêta-neutre dynamique | ✅ CONFORME | `portfolio_engine/hedger.py:BetaNeutralHedger.compute_beta_hedge()` |
+### Score global : **2 / 10** → ❌ NO-GO
 
-**Détail 3.2b — P2 :**  
-`SizingMethod.EQUAL_WEIGHT` (défaut) alloue `frac = min(1/max_pairs, max_allocation_pct)` identiquement à chaque paire. Or les spreads ont des volatilités très différentes — une paire très volatile reçoit le même capital qu'une paire dormante. `SizingMethod.VOLATILITY_INVERSE` est disponible mais non activé par défaut.
-
-Conséquence : le portefeuille est dominé par les paires à forte vol → drawdown amplifiable lors d'un retournement de régime.
+| Niveau | Critère | Résultat |
+|--------|---------|---------|
+| ≥ 8 | GO production | — |
+| 5–7 | CONDITIONNEL | — |
+| **< 5** | **NO-GO — refonte requise** | **2/10** |
 
 ---
 
-### 3.3 Stops et durée maximale
+### Tableau des anomalies
 
-| # | Point | Verdict | Référence |
-|---|-------|---------|-----------|
-| 3.3a | Stop trailing sur z-score du spread (1σ widening) | ✅ CONFORME | `risk_engine/position_risk.py:TrailingStop` |
-| 3.3b | Stop temporel 60 barres | ✅ CONFORME | `risk_engine/position_risk.py` cohérent avec `max_half_life ≤ 60` |
-| 3.3c | Stop perte max par position 10% | ✅ CONFORME | `risk_engine/position_risk.py:max_loss_pct=0.10` |
-| 3.3d | Stop absolu |z| > 3σ | ⚠️ À VÉRIFIER | Non visible en tant que stop nommé — vérifié implicitement via trailing stop mais pas explicitement |
-
----
-
-### 3.4 Corrélations de portefeuille et régimes
-
-| # | Point | Verdict | Sévérité |
-|---|-------|---------|---------|
-| 3.4a | `PCASpreadMonitor` : vérification intrabar, bloque si PC1 > 50% | ✅ CONFORME | `risk/pca_spread_monitor.py` + `simulator:457` |
-| 3.4b | `SpreadCorrelationGuard` : bloque nouvelles entrées si corrélation anormale | ✅ CONFORME | `portfolio_engine/hedger.py:SpreadCorrelationGuard` |
-| 3.4c | **`RegimeDetector` jamais ré-entraîné** | ❌ NON CONFORME | P3 |
-| 3.4d | Sizing non réduit automatiquement en régime de risque | ⚠️ À VÉRIFIER | La réduction via `DD_ACTION.sizing_multiplier` existe mais est basée sur DD réalisé, pas sur le régime de vol |
-
-**Détail 3.4c — P3 :**  
-`models/regime_detector.py` utilise des percentiles roulants sur 20 barres (33ème/67ème) pour classifier l'état de volatilité LOW/NORMAL/HIGH. Ces seuils de percentile ne sont jamais calibrés sur des données OOS ni recalculés périodiquement — ils sont calculés in-window à chaque barre, ce qui reste causal, mais la fenêtre de 20 barres est courte et peut mal capturer les transitions de régime prolongées (ex. crise de mars 2020).
+| ID | Bloc | Description | Fichier:Ligne | Sévérité | Impact | Effort |
+|----|------|-------------|--------------|----------|--------|--------|
+| SB1-01 | 1.1 | N=21 (IS) / N=3 (OOS P5) — insuffisant pour inférence statistique | `results/bt_v36_output.json:9` | 🔴 | edge invalide | L |
+| SB1-02 | 1.1 | IC 95% WR inclut 50% — edge non prouvé statistiquement | `results/bt_v36_output.json:8-9` | 🔴 | edge invalide | L |
+| SB1-03 | 1.2 | Walk-forward FAIL 4/5 — Sharpe moyen OOS = -0.63 | `results/v45b_p5_rerun.txt:87915` | 🔴 | edge invalide | L |
+| SB3-01 | 3.3 | Edge conditionnel régime 2022H2 — non généralisable sur cycle complet | `results/v45b_p5_rerun.txt:87908-87917` | 🔴 | edge invalide | L |
+| SB5-01 | 5.2 | bt_v36 IS = 6 sources zscore=0.35 ≠ config actuelle 2 sources zscore=0.70 | `results/bt_v36_output.json:5`, `config/dev.yaml:49` | 🔴 | surestimation perf | M |
+| SB2-01 | 2.1 | Signal drought P5 : 3 trades / 382 bars — silence ~127j entre trades | `results/v45b_p5_rerun.txt:87907` | 🟠 | edge decay | L |
+| SB4-01 | 4.1 | Dégradation IS→OOS Sharpe : 1.33 → -1.14 (-185%) | `results/v45b_p5_rerun.txt:87907` | 🟠 | overfitting | L |
+| SB3-02 | 3.1 | Aucun reporting per-paire dans outputs JSON | `results/bt_v36_output.json` | 🟠 | surestimation perf | M |
+| SB2-02 | 2.2 | Motifs de rejet de filtres non loggés — silence indiagnosticable en live | `pair_selection/discovery.py` | 🟠 | edge invalide | S |
+| SB8-01 | 8.2 | SignalCombiner live ≠ backtest IS de référence (6 vs 2 sources) | `signal_engine/combiner.py:106`, `results/bt_v36_output.json:5` | 🟠 | surestimation perf | M |
+| SB6-01 | 6.1 | B5-02 : slippage hardcodé 2.0 dans router.py — ignore get_settings().costs | `execution_engine/router.py:162,189` | 🟠 | coût sous-estimé | S |
+| SB8-02 | 8.3 | Cython engine absent → Python fallback 10x — latence live pair discovery | `models/cointegration.py:14-22` | 🟠 | latence live | S |
+| SB7-01 | 7.1 | KellySizer fallback 8% permanent en régime drought (< 10 trades historique) | `risk/kelly_sizing.py:63,44` | 🟡 | surestimation perf | XS |
+| SB5-02 | 5.4 | adaptive_thresholds.py présent mais inactif en live et backtest | `models/adaptive_thresholds.py` | 🟡 | edge decay | M |
+| SB6-02 | 6.2 | Coût de borrow 0.5% configuré — application dans simulator non confirmée | `config/dev.yaml:221` | 🟡 | coût sous-estimé | XS |
 
 ---
 
-## BLOC 4 — VIABILITÉ EN CONDITIONS RÉELLES
+### Top 3 anomalies bloquantes
 
-### 4.1 Capacité et liquidité
+**1. SB1-02 + SB1-03 — Walk-forward FAIL 4/5, avg Sharpe OOS = -0.63** :
+L'edge statistique n'est pas prouvé sur un cycle de marché complet (2019-2024). PASS=1/5 (2022H2 uniquement) avec IC 95% WR incluant 50%. Aucun déploiement live autorisé tant que la robustesse ne dépasse pas ≥ 3/5 PASS avec N ≥ 30 trades/période.
 
-| # | Point | Verdict | Sévérité |
-|---|-------|---------|---------|
-| 4.1a | Filtre liquidité min $5M/j | ✅ CONFORME | `data/liquidity_filter.py:min_volume_24h_usd=5_000_000` |
-| 4.1b | `strict_mode=False` (accepte symboles sans volume) | ⚠️ À VÉRIFIER | En mode non-strict, des titres sans données de volume passent le filtre |
-| 4.1c | **ADV non transmis au modèle de coût en backtest** | ❌ NON CONFORME | **P2** — voir 2.3c |
+**2. SB5-01 — Discordance SignalCombiner IS vs config actuelle** :
+Le bt_v36 IS de référence (S=1.33, PF=4.22) correspond à 6 alpha sources avec zscore=0.35. La config live actuelle n'en a que 2 avec zscore=0.70. Les metrics IS ne sont pas reproductibles. Un backtest de référence avec la configuration actuelle est obligatoire avant tout autre benchmark.
 
----
-
-### 4.2 Couverture des régimes de marché
-
-| # | Point | Verdict | Notes |
-|---|-------|---------|-------|
-| 4.2a | Filtre de régime SPY-based (MA + vol réalisée) | ✅ CONFORME | `simulator:534` — `MarketRegimeFilter.classify()` bloque entrées en TRENDING |
-| 4.2b | Couverture stress periods (COVID mars 2020, Dotcom, GFC 2008) | ⚠️ À VÉRIFIER | Aucune preuve code de backtest sur périodes de stress explicites. Si `DEFAULT_SECTOR_MAP` ne contenait pas ces titres en 2008, les résultats GFC sont de toute façon invalides (P0 survie) |
+**3. SB2-01 — Signal drought structurel (3 trades en 382 jours OOS)** :
+La stratégie est inopérante dans le régime de marché 2024H2. La cause n'est pas paramétrique mais structurelle : la dispersion intrasectorielle comprimée du bull-market 2024 ne génère pas de spreads atteignant z ≥ 1.6. Un filtre de régime conditionnel ou des seuils adaptatifs sont requis.
 
 ---
 
-### 4.3 Stabilité des paramètres
+### Verdict final : **NO-GO**
 
-| # | Point | Verdict | Notes |
-|---|-------|---------|-------|
-| 4.3a | `parameter_cv.py` présent mais non invoqué par `WalkForwardEngine` | ⚠️ À VÉRIFIER | Le module cross-validation des paramètres existe dans `backtests/` mais est-il réellement utilisé dans les tests de production ? |
-| 4.3b | Paramètres figés entre folds (pas de ré-optimisation) | ✅ CONFORME | `get_settings()` est immuable pendant un run |
+Walk-forward 1/5 PASS (avg Sharpe OOS = -0.63), signal OOS effondré (3 trades en 382 bars vs 21 en IS), backtest IS de référence construit sur une configuration abandonnée (6 sources ≠ 2 actuelles). La stratégie démontre un edge conditionnel exclusivement en régime post-hike haute dispersion (2022H2) — non généralisable. Pré-requis avant paper trading : (1) rebuild bt IS avec config actuelle à 2 sources, (2) viser ≥ 3/5 PASS walk-forward avec N ≥ 30 trades/période OOS, (3) implémenter filtre de régime ou seuils adaptatifs pour survie en régime comprimé.
 
----
-
-## SYNTHÈSE GÉNÉRALE
-
-### Tableau des anomalies par ordre de priorité
-
-| ID | Sévérité | Bloc | Description | Fichier:Ligne | Impact Perf estimé | Effort correctif |
-|----|---------|------|-------------|---------------|--------------------|-----------------|
-| **S-01** | 🔴 **P0** | 1.3 | Biais de survie — univers hardcodé = snapshot actuel (pas point-in-time) | `universe/manager.py:DEFAULT_SECTOR_MAP` | Sharpe surestimé **+15-25%** | **Élevé** — nécessite DB point-in-time |
-| **S-02** | 🟠 **P1** | 1.1 | Ambiguïté timing exécution — signal sur close barre courante, ordres non décalés à T+1 | `simulator:343` + `pair_trading.py:982` | Rendement surestimé **+5-10%** | Moyen — décaler `bar_idx` pour calcul exécution |
-| **S-03** | 🟠 **P1** | 3.1 | Kill-switch : callback annulation ordres IBKR non vérifié | `risk_engine/kill_switch.py:on_activate` → `live_trading/runner.py` | Risque opérationnel ouvert | Faible — vérification câblage |
-| **S-04** | 🟡 **P2** | 2.2 | Hedge ratio OLS statique — pas de mise à jour Kalman barre-par-barre | `models/spread.py:35-45` | Sharpe surestimé **+5-10%** | Moyen — activer `KalmanHedgeRatio` dans `SpreadModel` |
-| **S-05** | 🟡 **P2** | 2.3 | Coût d'emprunt 0.5% (GC rate) — premium HTB non modélisé | `backtests/cost_model.py:CostModelConfig` | PnL surestimé **+1-3%/an** | Faible — lookup HTB par symbole |
-| **S-06** | 🟡 **P2** | 2.3 | ADV par défaut $10M — impact marché sous-estimé sur small-caps | `backtests/cost_model.py:execution_cost_one_leg` | Slippage sous-estimé | Moyen — passer ADV réel depuis `DataLoader` |
-| **S-07** | 🟡 **P2** | 3.2 | Sizing `EQUAL_WEIGHT` — ignore les volatilités différentes entre spreads | `portfolio_engine/allocator.py:SizingMethod.EQUAL_WEIGHT` | Sharpe sous-optimal, tail risk accru | Moyen — activer `VOLATILITY_INVERSE` par défaut |
-| **S-08** | 🟢 P3 | 2.2 | Spread en prix niveau (non log-prix) — asymétries long terme | `models/spread.py:compute_spread()` | Mineur (paires à prix proches) | Faible |
-| **S-09** | 🟢 P3 | 3.4 | `RegimeDetector` fenêtre 20 barres non adaptative | `models/regime_detector.py` | Mineur | Faible |
-
----
-
-### Points forts du modèle (à conserver)
-
-| Point | Description | Fichier |
-|-------|-------------|---------|
-| ✅ Triple gate sélection | EG + Johansen + Newey-West avec Bonferroni | `pair_selection/discovery.py` |
-| ✅ Walk-forward propre | Fenêtre expansive, instance fraîche, critère pas de cherry-picking | `backtests/walk_forward.py` |
-| ✅ Filtre de Kalman disponible | Forward-only, P matrix bien initialisée | `models/kalman_hedge.py` |
-| ✅ Almgren-Chriss 3 composantes | Modèle de coût sophistiqué et réaliste pour actions | `backtests/cost_model.py` |
-| ✅ Kill-switch 6 conditions | Persistance JSON, thread-safe, pré-ordre | `risk_engine/kill_switch.py` |
-| ✅ PCA intrabar | Bloque les entrées si PC1 > 50% variance | `risk/pca_spread_monitor.py` |
-| ✅ Code path unique backtest=live | `generate_signals()` partagé | `backtests/strategy_simulator.py` |
-| ✅ Thresholds adaptatifs au régime | `AdaptiveThresholdEngine` conditionné sur `RegimeDetector` | `signal_engine/generator.py` |
-
----
-
-### Verdict global
-
-> **Le backtest EDGECORE est structurellement valide dans son architecture mais contient 1 biais invalidant (S-01) et 1 ambiguïté méthodologique sérieuse (S-02) qui doivent être corrigés avant toute présentation à des investisseurs ou passage en capital réel significatif.**
-
-**Priorité immédiate :**
-1. **S-01 (P0)** — Construire un univers point-in-time ou au minimum exclure explicitement les entreprises délistées pendant la période de test via un fichier de delisting historique.
-2. **S-02 (P1)** — Clarifier et documenter la convention signal→exécution. Si les ordres sont envoyés à l'ouverture T+1, modifier `_close_position()` et `_open_position()` dans le simulateur pour utiliser `prices_df.iloc[bar_idx + 1]` comme prix d'exécution.
-3. **S-03 (P1)** — Vérifier le câblage du kill-switch avec l'annulation des ordres IBKR dans `live_trading/runner.py`.
-
-**Priorité secondaire (avant live avec capital > $100k) :**
-4. **S-04** — Activer `KalmanHedgeRatio` dans `SpreadModel` pour le suivi barre-par-barre du hedge ratio.
-5. **S-06** — Passer le vrai ADV (depuis `DataLoader` ou `LiquidityFilter`) au `CostModel`.
-6. **S-07** — Passer `SizingMethod.VOLATILITY_INVERSE` comme défaut dans `PortfolioAllocator`.
-
----
-
-*Audit basé sur lecture directe du code source — 25+ fichiers analysés — aucun test modifié.*
