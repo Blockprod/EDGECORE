@@ -376,7 +376,11 @@ class TestHTBPremium:
         """data/htb_rates.csv seed file loads without error."""
         from pathlib import Path
 
+        import pytest
+
         seed = Path(__file__).parent.parent.parent / "data" / "htb_rates.csv"
+        if not seed.exists():
+            pytest.skip("data/htb_rates.csv absent (gitignored — local only)")
         cfg = CostModelConfig.from_htb_csv(seed)
         assert len(cfg.htb_symbols) >= 10
         # GME is always the canonical HTB example
