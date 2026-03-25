@@ -33,13 +33,13 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 4 | [IA / ML](#4--ia--ml) | Modules ML orphelins · ML z-score/régime · Opportunités IBKR | Ask |
 | 5 | [Technique & Sécurité](#5--technique--sécurité) | Credentials IBKR · Thread-safety · Robustesse API · CI/CD | Ask |
 | 6 | [Cython & Build](#6--cython--build) | .pyx ↔ consommateurs · Fallback Python · Build reproductible · Tests | Ask |
-| 7 | [Stratégique](#7--stratégique) | Intégrité statistique · Walk-forward · Kalman · Risk management financier | Ask |
-| 8 | [Master](#8--master) | Audit complet toutes dimensions | Agent |
-| 9 | [Modernisation Python](#9--modernisation-python-syntax) | Ruff · Pylance · syntaxe 3.11.9 · ARG · Alignement Cython | Agent |
-| 10 | [Latence Institutionnel](#10--latence-institutionnel) | Chemin critique bar→ordre · Cython fallback · IBKR threading · Pipeline signal · Sources tierces | Agent |
-| 11 | [Best Practices AI](#11--best-practices-ai) | Claude · Copilot Pro+ · VSCode · fichiers contexte · patterns prompts | Agent |
-| 12 | [Trade Journal](#12--trade-journal) | AuditTrail · BrokerReconciler · persistance · réconciliation live↔backtest · crash recovery | Agent |
-| 13 | [Pipeline](#13--pipeline) | Cohérence config→live→backtest · All-or-nothing guards · Modèle coûts · RiskFacade · Routage IBKR | Agent |
+| 7 | [Pipeline](#7--pipeline) | Cohérence config→live→backtest · All-or-nothing guards · Modèle coûts · RiskFacade · Routage IBKR | Agent |
+| 8 | [Stratégique](#8--stratégique) | Intégrité statistique · Walk-forward · Kalman · Risk management financier | Ask |
+| 9 | [Master](#9--master) | Audit complet toutes dimensions | Agent |
+| 10 | [Modernisation Python](#10--modernisation-python-syntax) | Ruff · Pylance · syntaxe 3.11.9 · ARG · Alignement Cython | Agent |
+| 11 | [Latence Institutionnel](#11--latence-institutionnel) | Chemin critique bar→ordre · Cython fallback · IBKR threading · Pipeline signal · Sources tierces | Agent |
+| 12 | [Best Practices AI](#12--best-practices-ai) | Claude · Copilot Pro+ · VSCode · fichiers contexte · patterns prompts | Agent |
+| 13 | [Trade Journal](#13--trade-journal) | AuditTrail · BrokerReconciler · persistance · réconciliation live↔backtest · crash recovery | Agent |
 
 ---
 
@@ -199,7 +199,33 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
-## `7 · STRATÉGIQUE`
+## `7 · PIPELINE`
+
+> Cohérence des paramètres config→live→backtest · Pipeline all-or-nothing (guards KillSwitch/Risk/Allocator) · Modèle de coûts · Alignement RiskFacade · Routage d'exécution IBKR/Paper
+
+**Produit A** : `tasks/audits/resultats/audit_pipeline_edgecore.md`
+
+**A — Audit**
+```
+#file:tasks/audits/code/audit_pipeline_prompt.md
+Lance cet audit sur le workspace.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
+## `8 · STRATÉGIQUE`
 
 > Intégrité statistique des signaux · Biais backtest · Walk-forward · Cohérence backtest ↔ live · Kalman · Risk management financier
 
@@ -225,7 +251,7 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
-## `8 · MASTER`
+## `9 · MASTER`
 
 > Audit complet couvrant toutes les dimensions du projet en une seule passe
 
@@ -251,7 +277,7 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
-## `9 · MODERNISATION PYTHON SYNTAX`
+## `10 · MODERNISATION PYTHON SYNTAX`
 
 > Ruff auto-fix · Pylance erreurs résiduelles · syntaxe Python 3.11.9 · ARG orphelins · Alignement Cython · dossier par dossier
 
@@ -268,7 +294,7 @@ Lance cet audit sur le workspace.
 
 ---
 
-## `10 · LATENCE INSTITUTIONNEL`
+## `11 · LATENCE INSTITUTIONNEL`
 
 > Chemin critique bar → signal → ordre · Re-découverte de paires (O(N²)) · Cython fallback silencieux · Contention GIL/locks · I/O synchrones · Sources de données tierces (violation institutionnelle)
 
@@ -294,7 +320,7 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
-## `11 · BEST PRACTICES AI`
+## `12 · BEST PRACTICES AI`
 
 > Best practices Claude · Copilot Pro+ · VSCode · fichiers contexte AI-Driven · patterns prompts réutilisables
 
@@ -320,7 +346,7 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
-## `12 · TRADE JOURNAL`
+## `13 · TRADE JOURNAL`
 
 > AuditTrail · BrokerReconciler · persistance live · réconciliation live↔backtest · atomicité · crash recovery · contexte signal
 
@@ -329,32 +355,6 @@ Démarre l'exécution du plan d'action disponible.
 **A — Audit**
 ```
 #file:tasks/audits/code/audit_trade_journal_prompt.md
-Lance cet audit sur le workspace.
-```
-
-**B — Plan d'action**
-```
-#file:tasks/corrections/generate_action_plan_prompt.md
-Génère le plan d'action depuis l'audit disponible.
-```
-
-**C — Exécution**
-```
-#file:tasks/corrections/execute_corrections_prompt.md
-Démarre l'exécution du plan d'action disponible.
-```
-
----
-
-## `13 · PIPELINE`
-
-> Cohérence des paramètres config→live→backtest · Pipeline all-or-nothing (guards KillSwitch/Risk/Allocator) · Modèle de coûts · Alignement RiskFacade · Routage d'exécution IBKR/Paper
-
-**Produit A** : `tasks/audits/resultats/audit_pipeline_edgecore.md`
-
-**A — Audit**
-```
-#file:tasks/audits/code/audit_pipeline_prompt.md
 Lance cet audit sur le workspace.
 ```
 
@@ -476,11 +476,11 @@ tasks/
 │   │   ├── audit_email_alerts_prompt.md          ← audit #3 (alertes email)
 │   │   ├── audit_technical_prompt.md             ← audit #5 (sécurité & technique)
 │   │   ├── audit_cython_prompt.md                ← audit #6 (Cython + build)
-│   │   ├── audit_strategic_prompt.md             ← audit #7 (quant / statistiques)
-│   │   ├── audit_modernize_python_syntax_prompt.md ← audit #9 (ruff + Pylance)
-│   │   ├── audit_latence_prompt.md               ← audit #10 (latence)
-│   │   ├── audit_trade_journal_prompt.md          ← audit #12 (trade journal)
-│   │   └── audit_pipeline_prompt.md               ← audit #13 (pipeline stat-arb)
+│   │   ├── audit_pipeline_prompt.md               ← audit #7 (pipeline stat-arb)
+│   │   ├── audit_strategic_prompt.md             ← audit #8 (quant / statistiques)
+│   │   ├── audit_modernize_python_syntax_prompt.md ← audit #10 (ruff + Pylance)
+│   │   ├── audit_latence_prompt.md               ← audit #11 (latence)
+│   │   └── audit_trade_journal_prompt.md          ← audit #13 (trade journal)
 │   ├── methode/                                  ← prompts audit méthode / IA
 │   │   ├── audit_ai_driven_prompt.md             ← audit #2 (fichiers AI-Driven)
 │   │   ├── audit_ia_ml_prompt.md                 ← audit #4 (IA / ML)
