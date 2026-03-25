@@ -39,6 +39,7 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 10 | [Latence Institutionnel](#10--latence-institutionnel) | Chemin critique bar→ordre · Cython fallback · IBKR threading · Pipeline signal · Sources tierces | Agent |
 | 11 | [Best Practices AI](#11--best-practices-ai) | Claude · Copilot Pro+ · VSCode · fichiers contexte · patterns prompts | Agent |
 | 12 | [Trade Journal](#12--trade-journal) | AuditTrail · BrokerReconciler · persistance · réconciliation live↔backtest · crash recovery | Agent |
+| 13 | [Pipeline](#13--pipeline) | Cohérence config→live→backtest · All-or-nothing guards · Modèle coûts · RiskFacade · Routage IBKR | Agent |
 
 ---
 
@@ -345,6 +346,32 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
+## `13 · PIPELINE`
+
+> Cohérence des paramètres config→live→backtest · Pipeline all-or-nothing (guards KillSwitch/Risk/Allocator) · Modèle de coûts · Alignement RiskFacade · Routage d'exécution IBKR/Paper
+
+**Produit A** : `tasks/audits/resultats/audit_pipeline_edgecore.md`
+
+**A — Audit**
+```
+#file:tasks/audits/code/audit_pipeline_prompt.md
+Lance cet audit sur le workspace.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
 ## AJOUT D'UNE NOUVELLE STRATÉGIE
 
 **Procédure** : `tasks/corrections/add_strategy.md`  
@@ -452,7 +479,8 @@ tasks/
 │   │   ├── audit_strategic_prompt.md             ← audit #7 (quant / statistiques)
 │   │   ├── audit_modernize_python_syntax_prompt.md ← audit #9 (ruff + Pylance)
 │   │   ├── audit_latence_prompt.md               ← audit #10 (latence)
-│   │   └── audit_trade_journal_prompt.md          ← audit #12 (trade journal)
+│   │   ├── audit_trade_journal_prompt.md          ← audit #12 (trade journal)
+│   │   └── audit_pipeline_prompt.md               ← audit #13 (pipeline stat-arb)
 │   ├── methode/                                  ← prompts audit méthode / IA
 │   │   ├── audit_ai_driven_prompt.md             ← audit #2 (fichiers AI-Driven)
 │   │   ├── audit_ia_ml_prompt.md                 ← audit #4 (IA / ML)
