@@ -178,3 +178,12 @@
 **Ref** : `tests/backtests/test_cost_model_extended.py` — commit `2a6d635` (2026-03-25)
 
 ---
+
+## L-20 · QA finale EDGECORE : P3/P4 fixes validés, 12/12 checks passés, READY pour merge. (voir FINAL_QA_result.md) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `9f182e4` : QA finale EDGECORE : P3/P4 fixes validés, 12/12 checks passés, READY pour merge. (voir FINAL_QA_result.md). Fichiers : backtests/runner.py, backtests/simulation_loop.py
+**Erreur** : print() dans du code de production
+**Règle** : Utiliser structlog.get_logger(__name__) partout. print() interdit hors scripts/, examples/, research/.
+**Ref** : `backtests/runner.py`, `backtests/simulation_loop.py`, `backtests/strategy_simulator.py` — commit `9f182e4` (2026-03-26)
+
+---
