@@ -188,7 +188,7 @@ def run_daily_scan(args) -> dict:
     # Drop symbols with insufficient data
     min_points = args.lookback // 2
     valid_cols = [c for c in prices_df.columns if prices_df[c].dropna().shape[0] >= min_points]
-    prices_df = prices_df[valid_cols]
+    prices_df = pd.DataFrame(prices_df[valid_cols])
 
     logger.info(
         "phase_2_complete",

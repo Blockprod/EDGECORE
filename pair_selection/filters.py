@@ -73,8 +73,8 @@ class PairFilters:
             if sym1 not in available_cols or sym2 not in available_cols:
                 continue
 
-            s1 = price_data[sym1].dropna()
-            s2 = price_data[sym2].dropna()
+            s1 = pd.Series(price_data[sym1].dropna())
+            s2 = pd.Series(price_data[sym2].dropna())
 
             if not self._check_data_quality(s1, s2):
                 continue

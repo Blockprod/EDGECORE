@@ -305,7 +305,7 @@ class TestZScoreControlledSignals:
         spread = model.compute_spread(y, x)
 
         # Force the last spread to be exactly at the rolling mean
-        rolling_mean = spread.rolling(window=60).mean()
+        rolling_mean = pd.Series(spread.rolling(window=60).mean())
         forced_spread = spread.copy()
         forced_spread.iloc[-1] = rolling_mean.iloc[-1]
 

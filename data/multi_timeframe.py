@@ -279,7 +279,7 @@ class MultiTimeframeEngine:
                 continue
 
             try:
-                result = engle_granger_test(s1, s2)
+                result = engle_granger_test(pd.Series(s1), pd.Series(s2))
                 results[(sym1, sym2)] = result.get("adf_pvalue", 1.0)
             except Exception:
                 results[(sym1, sym2)] = 1.0
@@ -328,9 +328,9 @@ class MultiTimeframeEngine:
             return None
 
         try:
-            y = np.asarray(data[sym1].values, dtype=float)
-            x = data[sym2].values
-            x_with_const = np.column_stack([np.ones(len(x)), np.asarray(x, dtype=float)])
+            y = np.asarray(data[sym1], dtype=float)
+            x = np.asarray(data[sym2], dtype=float)
+            x_with_const = np.column_stack([np.ones(len(x)), x])
             beta = np.linalg.lstsq(x_with_const, y, rcond=None)[0]
             spread = y - x_with_const @ beta
 

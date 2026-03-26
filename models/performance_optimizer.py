@@ -190,10 +190,11 @@ class VectorizedSignalGenerator:
         exit_thresholds = {}
 
         for pair in z_current.index:
-            if pair_characteristics_dict and pair in pair_characteristics_dict:
-                entry_t, exit_t = self.get_thresholds_for_pair(pair, **pair_characteristics_dict[pair])
+            pair_str = str(pair)
+            if pair_characteristics_dict and pair_str in pair_characteristics_dict:
+                entry_t, exit_t = self.get_thresholds_for_pair(pair_str, **pair_characteristics_dict[pair_str])
             else:
-                entry_t, exit_t = self.get_thresholds_for_pair(pair)
+                entry_t, exit_t = self.get_thresholds_for_pair(pair_str)
 
             entry_thresholds[pair] = entry_t
             exit_thresholds[pair] = exit_t

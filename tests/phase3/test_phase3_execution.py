@@ -7,6 +7,8 @@ Tests for the 3 modules introduced in Phase 3:
   3.3 AlgoExecutor TWAP/VWAP (order slicing with impact model)
 """
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -66,7 +68,7 @@ class TestIntradayLoader:
     def test_synthetic_timestamps_are_intraday(self, daily_prices):
         intraday = IntradayLoader.generate_synthetic_intraday(daily_prices)
         # First bar should be at 9:30 AM
-        first_ts = intraday.index[0]
+        first_ts = cast(pd.Timestamp, intraday.index[0])
         assert first_ts.hour == 9
         assert first_ts.minute == 30
 

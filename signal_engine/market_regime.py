@@ -51,11 +51,13 @@ logger = get_logger(__name__)
 class MarketRegime(Enum):
     """Market-level regime classification (v30: adaptive bidirectional)."""
 
-    MEAN_REVERTING = "mean_reverting"    # High vol ÔåÆ both sides at 100%
-    TRENDING = "trending"               # Legacy alias for BULL_TRENDING (backward compat)
-    BULL_TRENDING = "bull_trending"      # Bull trend ÔåÆ longs only
-    BEAR_TRENDING = "bear_trending"     # Bear trend ÔåÆ longs blocked, shorts favored (v43a baseline; v44 neutral tested but reverted)
-    NEUTRAL = "neutral"                  # Crossover zone ÔåÆ both reduced
+    MEAN_REVERTING = "mean_reverting"  # High vol ÔåÆ both sides at 100%
+    TRENDING = "trending"  # Legacy alias for BULL_TRENDING (backward compat)
+    BULL_TRENDING = "bull_trending"  # Bull trend ÔåÆ longs only
+    BEAR_TRENDING = (
+        "bear_trending"  # Bear trend ÔåÆ longs blocked, shorts favored (v43a baseline; v44 neutral tested but reverted)
+    )
+    NEUTRAL = "neutral"  # Crossover zone ÔåÆ both reduced
 
 
 @dataclass
@@ -70,7 +72,7 @@ class MarketRegimeState:
     vol_threshold: float  # Configured threshold
     sizing_multiplier: float  # Legacy: 1.0 (MR), 0.0 (TRENDING), 0.5 (NEUTRAL)
     # v30: per-side sizing multipliers
-    long_sizing: float = 1.0   # Sizing multiplier for long entries
+    long_sizing: float = 1.0  # Sizing multiplier for long entries
     short_sizing: float = 1.0  # Sizing multiplier for short entries
 
 
@@ -133,10 +135,14 @@ class MarketRegimeFilter:
         if not self.enabled:
             state = MarketRegimeState(
                 regime=MarketRegime.MEAN_REVERTING,
-                ma_fast=0.0, ma_slow=0.0, ma_spread_pct=0.0,
-                realized_vol=0.0, vol_threshold=self.vol_threshold,
+                ma_fast=0.0,
+                ma_slow=0.0,
+                ma_spread_pct=0.0,
+                realized_vol=0.0,
+                vol_threshold=self.vol_threshold,
                 sizing_multiplier=1.0,
-                long_sizing=1.0, short_sizing=1.0,
+                long_sizing=1.0,
+                short_sizing=1.0,
             )
             self._last_state = state
             return state
@@ -145,8 +151,11 @@ class MarketRegimeFilter:
             # Not enough data -> default to NEUTRAL (cautious)
             state = MarketRegimeState(
                 regime=MarketRegime.NEUTRAL,
-                ma_fast=0.0, ma_slow=0.0, ma_spread_pct=0.0,
-                realized_vol=0.0, vol_threshold=self.vol_threshold,
+                ma_fast=0.0,
+                ma_slow=0.0,
+                ma_spread_pct=0.0,
+                realized_vol=0.0,
+                vol_threshold=self.vol_threshold,
                 sizing_multiplier=0.5,
                 long_sizing=self.neutral_sizing,
                 short_sizing=self.neutral_sizing,
@@ -155,18 +164,14 @@ class MarketRegimeFilter:
             return state
 
         # 1. Trend indicator: MA crossover (signed)
-        ma_f = float(spy_prices.rolling(self.ma_fast).mean().iloc[-1])
-        ma_s = float(spy_prices.rolling(self.ma_slow).mean().iloc[-1])
+        ma_f = float(pd.Series(spy_prices.rolling(self.ma_fast).mean()).iloc[-1])
+        ma_s = float(pd.Series(spy_prices.rolling(self.ma_slow).mean()).iloc[-1])
         ma_spread_pct = (ma_f - ma_s) / ma_s if ma_s != 0 else 0.0
 
         # 2. Volatility indicator: realized vol (annualized)
         returns = spy_prices.pct_change().dropna()
-        recent_returns = returns.iloc[-self.vol_window:]
-        realized_vol = (
-            float(recent_returns.std() * np.sqrt(252))
-            if len(recent_returns) >= 5
-            else 0.0
-        )
+        recent_returns = returns.iloc[-self.vol_window :]
+        realized_vol = float(recent_returns.std() * np.sqrt(252)) if len(recent_returns) >= 5 else 0.0
 
         # 3. Adaptive bidirectional classification
         #
@@ -201,7 +206,7 @@ class MarketRegimeFilter:
             # Reverted to v43a to use as v44b baseline comparison.
             regime = MarketRegime.BEAR_TRENDING
             sizing_mult = 0.0  # Legacy compat
-            long_sz = 0.0                           # Block longs in bear trend
+            long_sz = 0.0  # Block longs in bear trend
             short_sz = self.trend_favorable_sizing  # Favor shorts in bear
         else:
             # Near crossover -> neutral, both sides reduced

@@ -176,7 +176,7 @@ class ThresholdDataGenerator:
 
         # Autocorrelation: correlation with lagged series
         if len(spread) > 1:
-            autocorr = spread.corr(spread.shift(1))
+            autocorr = spread.corr(pd.Series(spread.shift(1)))
             if np.isnan(autocorr):
                 autocorr = 0.5
         else:
@@ -486,7 +486,7 @@ class ThresholdFeatureEngineer:
 
         # Normalize features
         X_scaled = self.scaler.fit_transform(X)
-        X_scaled = pd.DataFrame(X_scaled, columns=feature_cols)
+        X_scaled = pd.DataFrame(X_scaled, columns=pd.Index(feature_cols))
 
         logger.info(f"Engineered {len(feature_cols)} features from {len(examples)} examples")
 
@@ -502,7 +502,7 @@ class ThresholdFeatureEngineer:
         Returns:
             Scaled feature matrix
         """
-        return pd.DataFrame(self.scaler.transform(X), columns=self.feature_names)
+        return pd.DataFrame(self.scaler.transform(X), columns=pd.Index(self.feature_names))
 
 
 class MLThresholdOptimizer:
@@ -630,11 +630,8 @@ class MLThresholdOptimizer:
             return {}
 
         importances = self.entry_model.feature_importances_
-        feature_names = (
-            self.entry_model.feature_names_in_
-            if hasattr(self.entry_model, "feature_names_in_")
-            else [f"feature_{i}" for i in range(len(importances))]
-        )
+        _fn = getattr(self.entry_model, "feature_names_in_", None)
+        feature_names = list(_fn) if _fn is not None else [f"feature_{i}" for i in range(len(importances))]
 
         return dict(zip(feature_names, importances, strict=False))
 

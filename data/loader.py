@@ -176,7 +176,7 @@ class DataLoader:
             col_map = {"Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"}
             df.rename(columns=col_map, inplace=True)
             expected_cols = ["open", "high", "low", "close", "volume"]
-            df = df[[c for c in expected_cols if c in df.columns]].dropna()
+            df = pd.DataFrame(df[[c for c in expected_cols if c in df.columns]]).dropna()
 
             if validate and len(df) > 0:
                 validation_result = self.validator.validate(df, raise_on_error=True)

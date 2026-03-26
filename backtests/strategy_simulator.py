@@ -13,7 +13,7 @@ Key properties
   regime detection, adaptive thresholds, hedge-ratio tracking.
 """
 
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 import pandas as pd
@@ -383,7 +383,7 @@ class StrategyBacktestSimulator:
             _bar_ts = prices_df.index[bar_idx]
             # _clock should be a callable that returns the timestamp
             _clock_fn: Callable[[], Any] = lambda _ts=_bar_ts: _ts
-            strategy._clock = _clock_fn
+            strategy.set_clock(_clock_fn)
 
             # ---- Phase 4: Wire strategy equity tracker (activates DD guard) --
             strategy.update_equity(portfolio_values[-1])
@@ -645,7 +645,7 @@ class StrategyBacktestSimulator:
                         continue
 
                     # Post-v27 ├ëtape 3: Dynamic pair blacklist gate
-                    _bar_date = pd.Timestamp(prices_df.index[bar_idx]).date()
+                    _bar_date = cast(pd.Timestamp, pd.Timestamp(str(prices_df.index[bar_idx]))).date()
                     if self.pair_blacklist.is_blocked(pair_key, _bar_date):
                         logger.debug(
                             "entry_blocked_pair_blacklist",
@@ -1537,7 +1537,7 @@ class StrategyBacktestSimulator:
 
         # Post-v27 ├ëtape 3: Record outcome for dynamic pair blacklist
         try:
-            _exit_date = pd.Timestamp(prices_df.index[bar_idx]).date()
+            _exit_date = cast(pd.Timestamp, pd.Timestamp(str(prices_df.index[bar_idx]))).date()
             self.pair_blacklist.record_outcome(
                 f"{sym1}_{sym2}",
                 pnl=full_trade,

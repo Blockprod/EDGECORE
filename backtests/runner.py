@@ -3,6 +3,7 @@
 # Internal implementation — external callers SHOULD use backtester.runner.BacktestEngine
 # instead of importing from this module directly.
 import warnings
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -221,7 +222,7 @@ class BacktestRunner:
         price_data = {}
         failed_symbols = []
         start_buffer = pd.Timestamp(start_date) - pd.Timedelta(days=60)
-        start_buffer.isoformat().split("T")[0]
+        cast(pd.Timestamp, start_buffer).isoformat().split("T")[0]
 
         import logging
 
@@ -410,7 +411,7 @@ class BacktestRunner:
                     series2 = prices_df[sym2]
                     # Test cointegration (Engle-Granger avec correction Bonferroni)
                     result = engle_granger_test_cpp_optimized(
-                        series1, series2, num_symbols=len(symbols), apply_bonferroni=True
+                        pd.Series(series1), pd.Series(series2), num_symbols=len(symbols), apply_bonferroni=True
                     )
                     is_cointegrated = result["is_cointegrated"]
                     pvalue = result.get("pvalue", None)

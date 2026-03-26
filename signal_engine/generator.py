@@ -224,8 +224,8 @@ class SignalGenerator:
         active_positions: dict[str, dict],
     ) -> Signal | None:
         """Run the full signal pipeline for a single pair."""
-        y = market_data[sym1]
-        x = market_data[sym2]
+        y = pd.Series(market_data[sym1])
+        x = pd.Series(market_data[sym2])
 
         # 1. Re-use existing spread model to preserve Kalman state;
         #    only create a new one if the pair is seen for the first time.

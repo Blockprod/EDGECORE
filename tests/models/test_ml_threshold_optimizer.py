@@ -155,8 +155,8 @@ class TestThresholdFeatureEngineer:
         X, _, _ = engineer.engineer_features(examples)
 
         # Normalized features should have ~0 mean and ~1 std
-        X.mean(axis=0).abs()
-        stds = X.std(axis=0)
+        pd.Series(X.mean(axis=0)).abs()
+        stds = pd.Series(X.std(axis=0))
 
         # Most variable features should be close to 1.0 (constant ones have std=0)
         # We have 11 features, about 8 are variable in synthetic data

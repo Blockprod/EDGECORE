@@ -211,6 +211,7 @@ backtest:
   commission_bps: 2.0
   walk_forward_periods: 6
   out_of_sample_ratio: 0.2
+  feature_store_dir: data/feature_store/  # P2: versioned spread cache
 
 risk:
   max_concurrent_positions: 20    # v31: raised from 10 for more simultaneous trades

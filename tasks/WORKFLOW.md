@@ -3,7 +3,7 @@ type: guide
 projet: EDGECORE
 broker: Interactive Brokers (TWS/Gateway)
 stack: Python 3.11.9 · Cython 3.0 · ib_insync · Windows
-derniere_revision: 2026-03-24
+derniere_revision: 2026-03-26
 creation: 2026-03-18 à 00:53
 ---
 
@@ -40,6 +40,7 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 11 | [Latence Institutionnel](#11--latence-institutionnel) | Chemin critique bar→ordre · Cython fallback · IBKR threading · Pipeline signal · Sources tierces | Agent |
 | 12 | [Best Practices AI](#12--best-practices-ai) | Claude · Copilot Pro+ · VSCode · fichiers contexte · patterns prompts | Agent |
 | 13 | [Trade Journal](#13--trade-journal) | AuditTrail · BrokerReconciler · persistance · réconciliation live↔backtest · crash recovery | Agent |
+| 14 | [Fix Errors](#14--fix-errors) | Correction itérative ruff · pyright · ARG · Cython · pipeline 5 phases P1→P5 | Agent |
 
 ---
 
@@ -378,6 +379,92 @@ Démarre l'exécution du plan d'action disponible.
 **Mode**      : Agent  
 **Prérequis** : tests verts · audit structurel passé · `_assert_risk_tier_coherence()` OK
 
+---
+
+# UPGRADE PROJET PROMPT
+
+Séquence d'amélioration structurée en **5 phases ordonnées**.
+Exécuter **P1 → P2 → P3 → P4 → P5** dans l'ordre strict.
+Chaque phase produit un artefact qui est prérequis de la suivante.
+
+| Phase | Prompt | Mode | Produit |
+|:---:|---|:---:|---|
+| **P1** | `P1- Audit(LEAN).md` | Agent | `tasks/audits/resultats/audit_lean_edgecore.md` |
+| **P2** | `P2- feature_store.md` | Agent | `data/feature_store.py` |
+| **P3** | `P3- TESTS STATISTIQUES.md` | Agent | `tests/statistical/test_strategy_robustness.py` |
+| **P4** | `P4- REGRESSION PnL.md` | Agent | `tests/regression/test_pnl_regression.py` |
+| **P5** | `P5- QA GLOBAL + CI.md` | Agent | validation globale · 0 erreur · 0 drift PnL |
+
+---
+
+## `P1 · AUDIT LEAN (CARTOGRAPHIE)`
+
+> Cartographie de l'existant avant implémentation · Cache · Tests statistiques · Régression PnL · Zéro duplication
+
+**Produit** : `tasks/audits/resultats/audit_lean_edgecore.md`
+
+**P1 — Audit cartographie**
+```
+#file:tasks/audits/upgrade_project_prompt/P1- Audit(LEAN).md
+Lance cet audit sur le workspace.
+```
+
+---
+
+## `P2 · FEATURE STORE`
+
+> Implémentation d'un cache transparent versionné · Clé (pair, période, version) · Checksum · Injection pipeline sans modification comportement
+
+**Produit** : `data/feature_store.py`
+
+**P2 — Implémentation**
+```
+#file:tasks/audits/upgrade_project_prompt/P2- feature_store.md
+Lance cette implémentation sur le workspace.
+```
+
+---
+
+## `P3 · TESTS STATISTIQUES`
+
+> Robustesse Sharpe · Sensibilité entry_z / half-life · Périodes bull/bear/crash · Overfitting IS vs OOS (decay ≤ 40%)
+
+**Produit** : `tests/statistical/test_strategy_robustness.py`
+
+**P3 — Implémentation**
+```
+#file:tasks/audits/upgrade_project_prompt/P3- TESTS STATISTIQUES.md
+Lance cette implémentation sur le workspace.
+```
+
+---
+
+## `P4 · RÉGRESSION PnL`
+
+> Snapshots commités (source de vérité) · total_pnl · Sharpe · drawdown · trades · Tolérance 1e-4 · Flag --update-snapshots
+
+**Produit** : `tests/regression/test_pnl_regression.py`
+
+**P4 — Implémentation**
+```
+#file:tasks/audits/upgrade_project_prompt/P4- REGRESSION PnL.md
+Lance cette implémentation sur le workspace.
+```
+
+---
+
+## `P5 · QA GLOBAL + CI`
+
+> Validation finale enchaînée · Ruff · Pyright · Tests unitaires · Tests statistiques · Régression PnL · Makefile cible `qa`
+
+**Produit** : rapport QA + Makefile complet
+
+**P5 — Validation**
+```
+#file:tasks/audits/upgrade_project_prompt/P5- QA GLOBAL + CI.md
+Lance cette validation sur le workspace.
+```
+
 Copier-coller le prompt ci-dessous dans le chat Agent, en remplaçant
 `[SYM1/SYM2, ...]` par les paires cibles et `...` par les paramètres souhaités
 (laisser vide = valeurs `dev.yaml` par défaut) :
@@ -414,6 +501,100 @@ adaptive_window:  true
 start_date:       2020-01-01
 end_date:         2024-12-31
 ```
+
+---
+
+## `14 · FIX ERRORS`
+
+> Correction itérative des erreurs statiques · ruff · pyright · ARG · Cython · 0 régression
+> Pipeline séquentiel **P1 → P2 → P3 → P4 → P5** — ne jamais sauter une phase.
+
+| Phase | Prompt | Mode | Produit |
+|:---:|---|:---:|---|
+| **P1** | `P1- SCAN_prompt_edgecore.md` | Agent | `tasks/audits/fix_errors/SCAN_result.md` |
+| **P2** | `P2- PLAN_prompt_edgecore.md` | Agent | `tasks/audits/fix_errors/PLAN_result.md` |
+| **P3** | `P3- FIX_core_prompt_edgecore.md` | Agent | corrections appliquées · `BATCH_result.md` |
+| **P4** | `P4- VERIFY_prompt_edgecore.md` | Agent | `tasks/audits/fix_errors/VERIFY_result.md` |
+| **P5** | `P5- FINAL QA_prompt_edgecore.md` | Agent | `tasks/audits/fix_errors/FINAL_QA_result.md` |
+
+---
+
+## `P1 · SCAN (FIX ERRORS)`
+
+> Scanner tout le projet sans modifier — ruff · pyright · ARG · classification par type d'erreur
+
+**Produit** : `tasks/audits/fix_errors/SCAN_result.md`
+
+**P1 — Scan**
+```
+#file:tasks/audits/fix_errors/P1- SCAN_prompt_edgecore.md
+Lance ce scan sur le workspace.
+```
+
+---
+
+## `P2 · PLAN (FIX ERRORS)`
+
+> Créer un plan de correction optimal groupé par batch · priorité models → pair_selection → … → tests
+
+**Produit** : `tasks/audits/fix_errors/PLAN_result.md`
+
+**P2 — Plan**
+```
+#file:tasks/audits/fix_errors/P2- PLAN_prompt_edgecore.md
+Génère le plan de correction depuis SCAN_result.md.
+```
+
+> ⚠️ Prérequis : `SCAN_result.md` produit par P1.
+
+---
+
+## `P3 · FIX CORE (FIX ERRORS)`
+
+> Corriger un batch du plan · patterns EDGECORE stricts · max 3 itérations/fichier · vérification par fichier puis par batch
+
+**Produit** : corrections appliquées · `tasks/audits/fix_errors/BATCH_result.md`
+
+**P3 — Correction (indiquer le numéro de batch)**
+```
+#file:tasks/audits/fix_errors/P3- FIX_core_prompt_edgecore.md
+Corrige le batch 1 depuis PLAN_result.md.
+```
+
+> ⚠️ Relancer P3 pour chaque batch jusqu'à `remaining_errors: 0`.
+> P3 peut être relancé plusieurs fois — P4 et P5 seulement une fois tous les batches terminés.
+
+---
+
+## `P4 · VERIFY (FIX ERRORS)`
+
+> Validation indépendante complète · ruff · ARG · pyright 49 dossiers · pytest ≥ 2800 · risk tiers · config
+
+**Produit** : `tasks/audits/fix_errors/VERIFY_result.md`
+
+**P4 — Vérification**
+```
+#file:tasks/audits/fix_errors/P4- VERIFY_prompt_edgecore.md
+Lance la vérification complète.
+```
+
+> ⚠️ Si VERDICT = FAIL → relancer P3 sur les batches concernés avant P5.
+
+---
+
+## `P5 · FINAL QA (FIX ERRORS)`
+
+> Checklist release 12 points · DeprecationWarning · Cython import · smoke imports pipeline · interdictions grep · Docker · CI
+
+**Produit** : `tasks/audits/fix_errors/FINAL_QA_result.md`
+
+**P5 — QA finale**
+```
+#file:tasks/audits/fix_errors/P5- FINAL QA_prompt_edgecore.md
+Lance la QA finale.
+```
+
+> ⚠️ Prérequis : `VERIFY_result.md` avec VERDICT GLOBAL = PASS.
 
 ---
 

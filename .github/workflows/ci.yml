@@ -1,4 +1,4 @@
-﻿name: CI
+﻿name: EDGECORE CI
 
 on:
   push:
@@ -16,13 +16,56 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+
+  # ─────────────────────────────────────────────────────────────
+  # AUTOFIX — ruff check+format auto-commit (PR only)
+  # ─────────────────────────────────────────────────────────────
+  autofix:
+    name: Ruff autofix
+    if: github.event_name == 'pull_request' && github.actor != 'edgecore-bot'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff autofix
+        run: ruff check . --fix
+
+      - name: Ruff format
+        run: ruff format .
+
+      - name: Commit fixes
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "edgecore-bot"
+            git config user.email "bot@edgecore.ai"
+            git commit -am "auto-fix: ruff + format"
+            git push
+          fi
+
+  # ─────────────────────────────────────────────────────────────
+  # TESTS — lint + types + security + tests + coverage
+  # if: always() → s'exécute même si autofix est skippé (push main)
+  # ─────────────────────────────────────────────────────────────
   tests:
     name: Run tests
+    needs: autofix
+    if: always() && github.actor != 'edgecore-bot'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - 3.11
 
     steps:
       - name: Checkout
@@ -31,7 +74,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5.6.0
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
       - name: Cache pip
         uses: actions/cache@v5
@@ -43,22 +86,34 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          # Install package in editable mode if present
+          pip install ruff pyright "cython>=3.0,<4.0" numpy pip-audit
           python -m pip install -e . || true
 
+      # ─────────────────────────────
+      # Build Cython (critique)
+      # ─────────────────────────────
       - name: Build Cython extensions
-        run: |
-          pip install "cython>=3.0,<4.0" numpy
-          python setup.py build_ext --inplace
+        run: python setup.py build_ext --inplace
 
+      # ─────────────────────────────
+      # Lint & Types (fail fast)
+      # ─────────────────────────────
       - name: Lint (ruff)
-        run: |
-          ruff check .
+        run: ruff check .
 
-      - name: Type check (mypy)
-        run: |
-          mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary
+      - name: Type check (mypy — scoped)
+        run: mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary
 
+      - name: Type check (pyright — P2-P4 scope)
+        run: |
+          pyright data/feature_store.py models/spread.py \
+            tests/statistical/test_strategy_robustness.py \
+            tests/regression/test_pnl_regression.py \
+            tests/regression/conftest.py
+
+      # ─────────────────────────────
+      # Security
+      # ─────────────────────────────
       - name: Security audit (pip-audit)
         run: |
           # CVE-2026-4539 (pygments transitive dep): no fix version available yet — tracked, ignore until patch released
@@ -72,10 +127,25 @@ jobs:
           head: HEAD
           extra_args: --only-verified
 
-      - name: Run tests with coverage
+      # ─────────────────────────────
+      # Tests + Coverage
+      # ─────────────────────────────
+      - name: Core tests + coverage
         run: |
-          pytest -q --cov=. --cov-report=term-missing --cov-fail-under=70
+          pytest -q -m "not slow" \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-fail-under=70
 
+      - name: Statistical tests
+        run: pytest tests/statistical/ -q -m slow
+
+      - name: Regression tests
+        run: pytest tests/regression/ -q
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCKER — build gate (pas de push)
+  # ─────────────────────────────────────────────────────────────
   docker-build:
     name: Docker build
     runs-on: ubuntu-latest

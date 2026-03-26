@@ -203,7 +203,7 @@ class TestJohansenConfirmPair:
     def test_cointegrated_pair_confirmed(self):
         """Known cointegrated pair should be confirmed."""
         data = _make_cointegrated_pair()
-        result = johansen_confirm_pair(data["y"], data["x"])
+        result = johansen_confirm_pair(pd.Series(data["y"]), pd.Series(data["x"]))
 
         assert result["is_cointegrated"] is True
         assert result["rank"] >= 1
@@ -212,7 +212,7 @@ class TestJohansenConfirmPair:
     def test_random_pair_rejected(self):
         """Independent random walks should be rejected."""
         data = _make_random_pair()
-        result = johansen_confirm_pair(data["y"], data["x"])
+        result = johansen_confirm_pair(pd.Series(data["y"]), pd.Series(data["x"]))
 
         assert result["is_cointegrated"] is False
         assert result["rank"] == 0

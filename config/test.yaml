@@ -47,6 +47,7 @@ backtest:
   commission_bps: 2.0
   walk_forward_periods: 4
   out_of_sample_ratio: 0.2
+  feature_store_dir: data/feature_store_test/  # P2: isolated test cache
 
 costs:
   slippage_bps: 3.0

@@ -20,6 +20,7 @@ LoopState
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import cast
 
 import pandas as pd
 
@@ -61,8 +62,8 @@ class OOSTracker:
         """
         if self.oos_start_date is None:
             return
-        _ts = pd.Timestamp(self.oos_start_date)
-        candidates = [i for i, ts in enumerate(prices_df.index) if pd.Timestamp(ts) >= _ts]
+        _ts = cast(pd.Timestamp, pd.Timestamp(self.oos_start_date))
+        candidates = [i for i, ts in enumerate(prices_df.index) if cast(pd.Timestamp, pd.Timestamp(ts)) >= _ts]
         if candidates:
             self._start_bar_idx = max(lookback_min, candidates[0])
 

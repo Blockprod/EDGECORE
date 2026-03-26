@@ -24,7 +24,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
 from structlog import get_logger
@@ -1045,8 +1045,8 @@ class LiveTradingRunner:
                     col = df[sym].dropna()
                     if col.empty:
                         continue
-                    last_ts = col.index[-1]
-                    if hasattr(last_ts, "tzinfo") and last_ts.tzinfo is None:
+                    last_ts = cast(pd.Timestamp, pd.Timestamp(str(col.index[-1])))
+                    if last_ts.tzinfo is None:
                         last_ts = last_ts.tz_localize("UTC")
                     lag = now - last_ts
                     if lag > _MAX_DATA_LAG:

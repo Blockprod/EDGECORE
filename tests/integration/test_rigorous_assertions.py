@@ -12,6 +12,8 @@ DoD: Every assertion checks exact values; no `isinstance`-only or `is not None`
 guards without follow-up value checks.
 """
 
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -85,7 +87,7 @@ class TestFullPipelineNoLeakage:
                 assert len(overlap) == 0, (
                     f"Leakage: {len(overlap)} overlapping dates in split {i} (num_periods={num_periods})"
                 )
-                assert train.index.max() < test.index.min(), (
+                assert cast(pd.Timestamp, train.index.max()) < cast(pd.Timestamp, test.index.min()), (
                     f"Temporal leakage: train ends {train.index.max()}, test starts {test.index.min()} in split {i}"
                 )
 
@@ -274,7 +276,7 @@ class TestDynamicSpreadModelExactSignals:
         spread = model.compute_spread(y, x)
 
         # Force spread to rolling mean
-        rolling_mean = spread.rolling(window=60).mean()
+        rolling_mean = pd.Series(spread.rolling(window=60).mean())
         forced = spread.copy()
         forced.iloc[-1] = rolling_mean.iloc[-1]
 

@@ -186,6 +186,7 @@ class BacktestConfig:
     commission_bps: float = 2.0
     walk_forward_periods: int = 4
     out_of_sample_ratio: float = 0.2
+    feature_store_dir: str = "data/feature_store/"  # P2: versioned spread cache
 
 
 @dataclass

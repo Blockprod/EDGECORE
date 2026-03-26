@@ -242,8 +242,8 @@ class ModelRetrainingManager:
                 if sym1 not in recent_data.columns or sym2 not in recent_data.columns:
                     continue
 
-                y = recent_data[sym1].values
-                x = recent_data[sym2].values
+                y = np.asarray(recent_data[sym1], dtype=float)
+                x = np.asarray(recent_data[sym2], dtype=float)
 
                 # Test cointegration
                 try:
@@ -313,8 +313,8 @@ class ModelRetrainingManager:
             if sym1 not in recent_data.columns or sym2 not in recent_data.columns:
                 continue
 
-            y = recent_data[sym1].values
-            x = recent_data[sym2].values
+            y = np.asarray(recent_data[sym1], dtype=float)
+            x = np.asarray(recent_data[sym2], dtype=float)
 
             try:
                 # Test cointegration with recent data

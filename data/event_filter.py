@@ -15,6 +15,7 @@ around detected events to prevent entering trades during high-IV periods.
 """
 
 from dataclasses import dataclass
+from typing import cast
 
 import pandas as pd
 from structlog import get_logger
@@ -117,7 +118,7 @@ class EventFilter:
         total_events = 0
 
         for symbol in prices_df.columns:
-            series = prices_df[symbol].dropna()
+            series = pd.Series(prices_df[symbol].dropna())
             if len(series) < self.config.rolling_window + 5:
                 continue
 
@@ -162,7 +163,10 @@ class EventFilter:
         if symbol not in self._blackout_dates:
             return False
 
-        ts = pd.Timestamp(date).normalize()
+        _ts = pd.Timestamp(date)
+        if not isinstance(_ts, pd.Timestamp):
+            return False
+        ts = _ts.normalize()
         return ts in self._blackout_dates[symbol]
 
     def is_pair_blackout(self, sym1: str, sym2: str, date) -> bool:
@@ -193,7 +197,7 @@ class EventFilter:
                         idx + self.config.blackout_days_after,
                     )
                     for i in range(start, end + 1):
-                        self._blackout_dates[symbol].add(self._trading_dates[i].normalize())
+                        self._blackout_dates[symbol].add(cast(pd.Timestamp, self._trading_dates[i]).normalize())
                 else:
                     # Fallback to calendar-day offsets
                     self._add_calendar_blackout(symbol, event_date)
@@ -206,5 +210,5 @@ class EventFilter:
             -self.config.blackout_days_before,
             self.config.blackout_days_after + 1,
         ):
-            d = pd.Timestamp(event_date).normalize() + pd.Timedelta(days=offset)
+            d = cast(pd.Timestamp, event_date.normalize() + pd.Timedelta(days=offset))
             self._blackout_dates[symbol].add(d)

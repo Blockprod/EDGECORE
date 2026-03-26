@@ -21,6 +21,7 @@ Data source strategy:
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -32,10 +33,11 @@ logger = get_logger(__name__)
 @dataclass
 class EarningsEvent:
     """Detected earnings event for a single symbol."""
+
     date: pd.Timestamp
-    gap_pct: float        # overnight return (close-to-open gap proxy)
+    gap_pct: float  # overnight return (close-to-open gap proxy)
     surprise_score: float  # normalised surprise in [-1, 1]
-    drift_days: int        # days since the event
+    drift_days: int  # days since the event
 
 
 class EarningsSurpriseSignal:
@@ -125,11 +127,7 @@ class EarningsSurpriseSignal:
                 continue
 
             # Volume confirmation (if available)
-            if (
-                volumes_df is not None
-                and sym in volumes_df.columns
-                and self.volume_confirm_mult > 0
-            ):
+            if volumes_df is not None and sym in volumes_df.columns and self.volume_confirm_mult > 0:
                 vol_series = volumes_df[sym].dropna()
                 if len(vol_series) >= 21:
                     avg_vol = vol_series.iloc[-21:-1].mean()
@@ -140,7 +138,7 @@ class EarningsSurpriseSignal:
             # Create event
             surprise = float(np.clip(daily_ret / (self.gap_threshold * 3), -1.0, 1.0))
             event = EarningsEvent(
-                date=prices_df.index[-1] if hasattr(prices_df.index, '__getitem__') else pd.Timestamp.now(),
+                date=cast(pd.Timestamp, prices_df.index[-1]) if len(prices_df.index) > 0 else pd.Timestamp.now(),
                 gap_pct=daily_ret,
                 surprise_score=surprise,
                 drift_days=0,
@@ -154,7 +152,7 @@ class EarningsSurpriseSignal:
             if event.date not in existing_dates:
                 self._events[sym].insert(0, event)
                 # Keep only max_events
-                self._events[sym] = self._events[sym][:self.max_events]
+                self._events[sym] = self._events[sym][: self.max_events]
                 logger.debug(
                     "earnings_event_detected",
                     symbol=sym,

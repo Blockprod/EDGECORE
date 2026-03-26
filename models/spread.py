@@ -189,6 +189,21 @@ class SpreadModel:
                 self.intercept = self._kalman.intercept
             return pd.Series(spread_vals, index=y_vals.index)
 
+        # OLS path — deterministic: cache via FeatureStore when pair_key is set.
+        # Kalman path (stateful) is excluded from caching: the filter mutates
+        # self._kalman state bar-by-bar and cannot be replayed from a snapshot.
+        if self.pair_key is not None:
+            from data.feature_store import get_feature_store as _get_fs
+
+            _store = _get_fs()
+            _key = _store.build_key(self.pair_key, "spread_ols", y_vals, x_vals)
+            _cached = _store.get(_key)
+            if _cached is not None:
+                return _cached
+            spread = y_vals - (self.intercept + self.beta * x_vals)
+            _store.set(_key, spread)
+            return spread
+
         return y_vals - (self.intercept + self.beta * x_vals)
 
     def reestimate_beta_if_needed(self, y: pd.Series, x: pd.Series, bar_time=None) -> bool:

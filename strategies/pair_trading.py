@@ -2,7 +2,7 @@
 from datetime import date, datetime, timedelta
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import numpy as np
 import pandas as pd
@@ -65,7 +65,7 @@ class PairTradingStrategy(BaseStrategy):
         self.use_cache: bool = True
         self.sector_map: dict[str, str] | None = None
 
-        # REPR-1: Injectable clock ÔÇö datetime.now in live, bar timestamp in backtest
+        # REPR-1: Injectable clock — datetime.now in live, bar timestamp in backtest
         self._clock: ClockFn = clock or datetime.now
 
         # Initialize cache directory
@@ -498,6 +498,10 @@ class PairTradingStrategy(BaseStrategy):
         except Exception:
             return None
 
+    def set_clock(self, clock_fn: Callable[[], Any]) -> None:
+        """Override the clock function (used by backtester for determinism)."""
+        self._clock = cast(ClockFn, clock_fn)
+
     def find_cointegrated_pairs_parallel(
         self,
         price_data: pd.DataFrame,
@@ -546,7 +550,7 @@ class PairTradingStrategy(BaseStrategy):
         # appears in multiple pairs.  Saves ~67% of statsmodels calls.
         i1_cache: dict[str, bool] = {}
         for sym in symbols:
-            io = verify_integration_order(data[sym], name=sym)
+            io = verify_integration_order(pd.Series(data[sym]), name=sym)
             i1_cache[sym] = io["is_I1"]
 
         i1_symbols = [s for s in symbols if i1_cache.get(s, False)]
@@ -580,7 +584,7 @@ class PairTradingStrategy(BaseStrategy):
                 max_pairs_per_sector=500,
             )
             candidate_pairs = corr_prefilter.filter_pairs(
-                data[symbols],
+                pd.DataFrame(data[symbols]),
                 sector_map=sector_map,
             )
         else:
@@ -741,7 +745,7 @@ class PairTradingStrategy(BaseStrategy):
         if volume_data is not None:
             min_vol = getattr(self.liquidity_filter, "min_volume_24h_usd", 5_000_000)
             liquid_symbols = [s for s in price_data.columns if volume_data.get(s, 0) >= min_vol]
-            price_data = price_data[liquid_symbols]
+            price_data = pd.DataFrame(price_data[liquid_symbols])
 
         # Effective cache flag: explicit param AND instance setting
         _use_cache = use_cache and self.use_cache
@@ -832,14 +836,14 @@ class PairTradingStrategy(BaseStrategy):
             for _j, sym2 in enumerate(symbols[i + 1 :], start=i + 1):
                 try:
                     # Normalize prices for correlation
-                    corr = data[sym1].corr(data[sym2])
+                    corr = pd.Series(data[sym1]).corr(pd.Series(data[sym2]))
 
                     if abs(corr) < self.config.min_correlation:
                         continue
 
                     result = engle_granger_test(
-                        data[sym1],
-                        data[sym2],
+                        pd.Series(data[sym1]),
+                        pd.Series(data[sym2]),
                         apply_bonferroni=getattr(self.config, "bonferroni_correction", False),
                         num_symbols=len(symbols),
                     )
@@ -911,8 +915,8 @@ class PairTradingStrategy(BaseStrategy):
                 continue
 
             try:
-                y = market_data[sym1]
-                x = market_data[sym2]
+                y = pd.Series(market_data[sym1])
+                x = pd.Series(market_data[sym2])
 
                 # Leg-correlation stability check
                 corr_ok = self._check_leg_correlation_stability(y, x, pair_key)
@@ -1165,7 +1169,7 @@ class PairTradingStrategy(BaseStrategy):
                         side="short",
                         entry_z=float(current_z),
                         entry_spread=float(spread.iloc[-1]),
-                        entry_time=pd.Timestamp(self._clock()),
+                        entry_time=cast(pd.Timestamp, pd.Timestamp(str(self._clock()))),
                     )
                     self._record_trade()
 
@@ -1200,7 +1204,7 @@ class PairTradingStrategy(BaseStrategy):
                         side="long",
                         entry_z=float(current_z),
                         entry_spread=float(spread.iloc[-1]),
-                        entry_time=pd.Timestamp(self._clock()),
+                        entry_time=cast(pd.Timestamp, pd.Timestamp(str(self._clock()))),
                     )
                     self._record_trade()
 

@@ -46,7 +46,7 @@ class TestEndToEndPipeline:
             assert len(df) == n
             assert "Close" in df.columns or "close" in df.columns
             close_col = "Close" if "Close" in df.columns else "close"
-            assert not df[close_col].isna().all()
+            assert not pd.Series(df[close_col]).isna().to_numpy().all()
 
     def test_strategy_signal_generation_pipeline(self):
         """Test data loading  signal generation."""
@@ -200,7 +200,7 @@ class TestIntegrationWithMockData:
 
             assert len(df) == n
             close_col = "Close" if "Close" in df.columns else "close"
-            assert not df[close_col].isna().all()
+            assert not pd.Series(df[close_col]).isna().to_numpy().all()
 
             strategy = PairTradingStrategy()
             signals = strategy.generate_signals(pd.DataFrame({"AAPL": df[close_col].values}))

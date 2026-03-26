@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import cast
 
 import pandas as pd
 from structlog import get_logger
@@ -71,7 +72,7 @@ class IntradayLoader:
             try:
                 df = self._load_symbol(sym, start_date, end_date, bar_size)
                 if df is not None and not df.empty:
-                    frames[sym] = df["close"]
+                    frames[sym] = pd.Series(df["close"])
             except Exception as exc:
                 logger.warning("intraday_load_failed", symbol=sym, error=str(exc)[:200])
 
@@ -139,8 +140,8 @@ class IntradayLoader:
                 existing = pd.read_parquet(path)
                 if not isinstance(existing.index, pd.DatetimeIndex):
                     existing.index = pd.to_datetime(existing.index)
-                df = pd.concat([existing, df])
-                df = df[~df.index.duplicated(keep="last")].sort_index()
+                df = cast(pd.DataFrame, pd.concat([existing, df]))
+                df = cast(pd.DataFrame, df[~df.index.duplicated(keep="last")].sort_index())
             except Exception:
                 pass  # overwrite on error
         df.to_parquet(path, engine="pyarrow")
@@ -167,8 +168,8 @@ class IntradayLoader:
         all_bars: list = []
         try:
             # IBKR pacing: 5-min bars come in max 30-day chunks
-            chunk_start = pd.Timestamp(start_date)
-            chunk_end = pd.Timestamp(end_date)
+            chunk_start: pd.Timestamp = cast(pd.Timestamp, pd.Timestamp(start_date))
+            chunk_end: pd.Timestamp = cast(pd.Timestamp, pd.Timestamp(end_date))
 
             while chunk_start < chunk_end:
                 req_end = min(chunk_start + pd.Timedelta(days=_CHUNK_DAYS), chunk_end)
@@ -189,7 +190,7 @@ class IntradayLoader:
                         chunk_start=str(chunk_start)[:10],
                         error=str(chunk_exc)[:120],
                     )
-                chunk_start = req_end
+                chunk_start = cast(pd.Timestamp, req_end)
                 time.sleep(_SLEEP_BETWEEN_CHUNKS)
         finally:
             engine.disconnect()
@@ -255,7 +256,8 @@ class IntradayLoader:
             _cython_bb = False
 
         if _cython_bb:
-            syms = [s for s in daily_prices.columns if daily_prices[s].count() >= 2]
+            all_cols: list[str] = [str(c) for c in daily_prices.columns]
+            syms: list[str] = [c for c in all_cols if daily_prices[c].count() >= 2]
             if not syms:
                 return pd.DataFrame()
             mat = daily_prices[syms].ffill().dropna(how="all")
@@ -273,15 +275,16 @@ class IntradayLoader:
 
             # Build timestamp index once (same for all symbols)
             timestamps: list = []
-            for day in mat.index[1:]:
-                market_open = pd.Timestamp(day).replace(hour=9, minute=30, second=0)
+            for day in pd.DatetimeIndex(mat.index[1:]):
+                day_ts = cast(pd.Timestamp, day)
+                market_open = day_ts.replace(hour=9, minute=30, second=0)
                 for j in range(bars_per_day):
                     timestamps.append(market_open + pd.Timedelta(minutes=5 * j))
 
             return pd.DataFrame(
                 out,
                 index=pd.DatetimeIndex(timestamps),
-                columns=syms,
+                columns=pd.Index(syms),
             ).sort_index()
 
         # ---- Python fallback (original, per-symbol loop) ----------------
@@ -308,7 +311,9 @@ class IntradayLoader:
                 vol = max(abs(daily_ret) * 0.5, 0.002)
                 path = prev_close * (1 + daily_ret * t + vol * bridge)
 
-                market_open = pd.Timestamp(day).replace(hour=9, minute=30, second=0)
+                market_open = cast(pd.Timestamp, pd.Timestamp(str(closes.index[i]))).replace(
+                    hour=9, minute=30, second=0
+                )
                 timestamps = [market_open + pd.Timedelta(minutes=5 * j) for j in range(bars_per_day)]
                 all_times.extend(timestamps)
                 all_prices.extend(path.tolist())

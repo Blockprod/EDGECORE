@@ -13,7 +13,7 @@ Usage:
         print(f"Rank: {result['rank']}")
 """
 
-
+import numpy as np
 import pandas as pd
 from structlog import get_logger
 
@@ -83,40 +83,32 @@ class JohansenCointegrationTest:
             return self._error_result("Input must be a pandas DataFrame")
 
         if data.shape[1] < 2:
-            return self._error_result(
-                f"Need at least 2 columns, got {data.shape[1]}"
-            )
+            return self._error_result(f"Need at least 2 columns, got {data.shape[1]}")
 
         min_rows = max(20, 2 * k_ar_diff + data.shape[1] + 5)
         if len(data) < min_rows:
-            return self._error_result(
-                f"Need at least {min_rows} rows, got {len(data)}"
-            )
+            return self._error_result(f"Need at least {min_rows} rows, got {len(data)}")
 
-        if data.isna().any().any():
+        if data.isna().values.any():
             return self._error_result("Data contains NaN values")
 
-        if (data.std() < 1e-10).any():
-            return self._error_result(
-                "One or more series have near-zero variance"
-            )
+        if np.any(np.asarray(data.std()) < 1e-10):
+            return self._error_result("One or more series have near-zero variance")
 
         # --- Run Johansen test ---
         try:
             from statsmodels.tsa.vector_ar.vecm import coint_johansen
 
-            result = coint_johansen(
-                data.values, det_order=det_order, k_ar_diff=k_ar_diff
-            )
+            result = coint_johansen(data.values, det_order=det_order, k_ar_diff=k_ar_diff)
         except Exception as e:
             logger.error("johansen_test_failed", error=str(e)[:200])
             return self._error_result(f"Johansen test failed: {str(e)[:100]}")
 
         # --- Extract results ---
-        trace_stat = result.lr1          # Trace statistics
-        trace_crit = result.cvt          # Trace critical values (90%, 95%, 99%)
-        max_eig_stat = result.lr2        # Max eigenvalue statistics
-        max_eig_crit = result.cvm        # Max-eig critical values (90%, 95%, 99%)
+        trace_stat = result.lr1  # Trace statistics
+        trace_crit = result.cvt  # Trace critical values (90%, 95%, 99%)
+        max_eig_stat = result.lr2  # Max eigenvalue statistics
+        max_eig_crit = result.cvm  # Max-eig critical values (90%, 95%, 99%)
 
         # Map significance level to critical value column index
         # cvt columns: 90%, 95%, 99%

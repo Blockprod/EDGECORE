@@ -169,3 +169,12 @@
 **Ref** : `backtests/strategy_simulator.py`, `config/settings.py`, `execution_engine/router.py` — commit `88284bb` (2026-03-25)
 
 ---
+
+## L-19 · fix(ci): skip test_from_htb_csv_with_real_seed_file si data/htb_rates.csv absent (gitignored) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `2a6d635` : fix(ci): skip test_from_htb_csv_with_real_seed_file si data/htb_rates.csv absent (gitignored). Fichiers : tests/backtests/test_cost_model_extended.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `tests/backtests/test_cost_model_extended.py` — commit `2a6d635` (2026-03-25)
+
+---

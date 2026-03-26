@@ -285,10 +285,12 @@ class TestThresholdAdaptationScenarios:
         volatility_profile = pd.concat([calm_part, volatile_part], ignore_index=True)
 
         # Threshold on calm part
-        entry_calm, _, _details_calm = calc.calculate_threshold(volatility_profile[:120], half_life=20.0)
+        entry_calm, _, _details_calm = calc.calculate_threshold(pd.Series(volatility_profile[:120]), half_life=20.0)
 
         # Threshold on volatile part
-        entry_volatile, _, _details_volatile = calc.calculate_threshold(volatility_profile[100:200], half_life=20.0)
+        entry_volatile, _, _details_volatile = calc.calculate_threshold(
+            pd.Series(volatility_profile[100:200]), half_life=20.0
+        )
 
         # Volatile should have higher (or equal) threshold
         assert entry_volatile >= entry_calm or np.isclose(entry_volatile, entry_calm)

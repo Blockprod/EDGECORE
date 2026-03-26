@@ -194,8 +194,11 @@ class DelistingGuard:
         """
         results = {}
         for sym in symbols:
-            price_s = price_data[sym] if price_data is not None and sym in price_data.columns else None
-            vol_s = volume_data[sym] if volume_data is not None and sym in volume_data.columns else None
+            price_s: pd.Series | None = (
+                pd.Series(price_data[sym]) if price_data is not None and sym in price_data.columns else None
+            )
+            vol_s: pd.Series | None = (
+                pd.Series(volume_data[sym]) if volume_data is not None and sym in volume_data.columns else None
+            )
             results[sym] = self.is_safe(sym, price_s, vol_s)
         return results
-

@@ -129,12 +129,12 @@ class TestHedgeRatioStability:
         y, x = self.create_cointegrated_pair(hedge_ratio=1.5, periods=500)
 
         # Estimate on first half
-        y1, x1 = y[:250], x[:250]
+        y1, x1 = pd.Series(y[:250]), pd.Series(x[:250])
         result1 = engle_granger_test(y1, x1)
         hedge1 = result1.get("hedge_ratio")
 
         # Estimate on second half
-        y2, x2 = y[250:], x[250:]
+        y2, x2 = pd.Series(y[250:]), pd.Series(x[250:])
         result2 = engle_granger_test(y2, x2)
         hedge2 = result2.get("hedge_ratio")
 

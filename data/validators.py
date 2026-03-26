@@ -12,6 +12,7 @@ Ensures:
 import math
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -126,7 +127,7 @@ class OHLCVValidator:
             checks_passed += 1
 
         # Check 3: No NaN values in price/volume
-        if df[["open", "high", "low", "close", "volume"]].isna().any().any():
+        if df[["open", "high", "low", "close", "volume"]].isna().to_numpy().any():
             nan_count = df[["open", "high", "low", "close", "volume"]].isna().sum().sum()
             errors.append(f"Found {nan_count} NaN values in OHLCV data")
             checks_failed += 1
@@ -203,18 +204,12 @@ class OHLCVValidator:
 
         # Check 11: Data not stale (timestamp age)
         if len(df) > 0:
-            latest_timestamp = df.index[-1]
-            # Handle both datetime and pd.Timestamp
-            if hasattr(latest_timestamp, "to_pydatetime"):
-                latest_dt = latest_timestamp.to_pydatetime()
-            else:
-                latest_dt = latest_timestamp
-
+            latest_ts = cast(pd.Timestamp, pd.Timestamp(str(df.index[-1])))
             # Ensure timezone-aware comparison
-            if latest_dt.tzinfo is None:
-                latest_dt = latest_dt.replace(tzinfo=UTC)
+            if latest_ts.tzinfo is None:
+                latest_ts = latest_ts.replace(tzinfo=UTC)
 
-            age_hours = (datetime.now(UTC) - latest_dt).total_seconds() / 3600
+            age_hours = (datetime.now(UTC) - latest_ts).total_seconds() / 3600
 
             if age_hours > max_age_hours:
                 errors.append(f"Latest data is {age_hours:.1f}h old (max allowed: {max_age_hours}h)")
