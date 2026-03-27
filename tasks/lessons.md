@@ -201,3 +201,12 @@
   - Toujours garantir que le code d’initialisation contextuelle et hooks AI est strictement dans main() ou protégé par if __name__ == "__main__".
   - Versionner systématiquement tout prompt d’audit et vérifier la checklist RGPD/sécurité à chaque ajout.
 - Issues closes : [BP-01], [BP-02], [BP-03], [BP-04], [BP-05]
+
+## L-21 · Nettoyage imports inutiles + correction style stress_testing.py ; doc activation venv PowerShell [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `ee899c0` : Nettoyage imports inutiles + correction style stress_testing.py ; doc activation venv PowerShell. Fichiers : backtests/stress_testing.py, common/context_memory.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `backtests/stress_testing.py`, `common/context_memory.py`, `main.py` — commit `ee899c0` (2026-03-27)
+
+---
