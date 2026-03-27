@@ -210,3 +210,9 @@
 **Ref** : `backtests/stress_testing.py`, `common/context_memory.py`, `main.py` — commit `ee899c0` (2026-03-27)
 
 ---
+
+## 2026-03-27 — Corrections Process & Documentation
+- Ce qui a fonctionné : Centralisation de la documentation technique, création d’un index, checklist RGPD/sécurité, versioning des runbooks/prompts, début de centralisation monitoring.
+- Ce qui a bloqué : Documentation technique initialement dispersée, nécessité de créer plusieurs nouveaux fichiers pour la centralisation.
+- À retenir pour la prochaine fois : Prévoir un dossier OPERATIONS dès la conception, versionner explicitement tous les runbooks/prompts critiques, maintenir une checklist RGPD/sécurité à jour.
+- Issues closes : [audit_process_doc_edgecore.md — 🔴 1 · 🟠 3]

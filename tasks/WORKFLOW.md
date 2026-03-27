@@ -42,6 +42,32 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 13 | [Trade Journal](#13--trade-journal) | AuditTrail · BrokerReconciler · persistance · réconciliation live↔backtest · crash recovery | Agent |
 | 14 | [Fix Errors](#14--fix-errors) | Correction itérative ruff · pyright · ARG · Cython · pipeline 5 phases P1→P5 | Agent |
 | 15 | [Best Practices AI](#15--best-practices-ai) | Claude · Copilot · HyperAgents · mémoire · hooks · orchestration · prompts · CI/CD · sécurité | Agent |
+| 16 | [Process & Documentation](#16--process--documentation) | CI/CD · Automatisation build/tests · Sécurité · Exploitation · Documentation onboarding/usage/monitoring | Agent |
+
+
+## `16 · PROCESS & DOCUMENTATION`
+
+> CI/CD · Automatisation build/tests · Sécurité · Exploitation · Documentation onboarding/usage/monitoring
+
+**Produit A** : `tasks/audits/resultats/audit_process_doc_edgecore.md`
+
+**A — Audit**
+```
+#file:tasks/audits/code/audit_process_doc_prompt.md
+Lance cet audit sur le workspace.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
 
 ---
 
