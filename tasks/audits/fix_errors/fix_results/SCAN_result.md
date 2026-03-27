@@ -20,27 +20,19 @@ creation: 2026-03-26
 ---
 
 ## FILES_TO_FIX
-
-```
-FILES_TO_FIX = [
-
   {
-    file: "models/johansen.py",
-    errors: ["typing"],
-    count: 2,
-    lines: [96, 99],
-    detail: ".any() sur bool — résultat d'un test numpy (toutes/any) retourné comme bool"
+    file: "backtests/stress_testing.py",
+    errors: ["ruff", "ARG"],
+    count: 49,
+    lines: [36, 37, 39, 40, 41, 100, 101, 103, 105, 106, 107, 110, 111, 112, 114, 118, 119, 120, 121, 123, 127, 128, 151, 152, 154, 156, 158, 159, 160, 161, 163, 167, 169, 193, 194, 196, 198, 200, 202, 204, 206, 209, 210, 211, 213, 234, 237],
   },
+]
 
-  {
-    file: "models/ml_threshold_optimizer.py",
-    errors: ["typing"],
-    count: 4,
-    lines: [179, 489, 505, 634],
-    detail: [
-      "L179 : Series | DataFrame → Series dans corr() — df subscript non typé",
-      "L489 : list[str] → columns: Axes | None dans pd.DataFrame.__init__",
-      "L505 : list[str] → columns: Axes | None dans pd.DataFrame.__init__",
+TOTAUX:
+  ruff      : 0 violation(s)
+  ARG       : 0 violation(s)
+  pyright   : 49 erreur(s) dans 1 fichiers
+  dossiers_propres: ["tests/backtests/058_test_walk_forward_integration.py"]
       "L634 : feature_names_in_ absent de RandomForestRegressor (sklearn stubs)"
     ]
   },

@@ -127,7 +127,7 @@ STOP RULE
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
 ─────────────────────────────────────────────
-Mettre à jour `tasks/audits/fix_errors/BATCH_result.md` avec :
+Mettre à jour `C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results\BATCH_result.md` avec :
 
 ```
 BATCH_RESULT:
@@ -137,6 +137,9 @@ BATCH_RESULT:
   blockers       : ["fichier:ligne — raison"]
   tests          : X passed / Y failed
 ```
-
 Confirmer dans le chat :
 "✅ Batch N terminé · X fixes · Y erreurs restantes · Z tests pass"
+
+SORTIE OBLIGATOIRE :
+Tous les résultats doivent être enregistrés dans :
+C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results

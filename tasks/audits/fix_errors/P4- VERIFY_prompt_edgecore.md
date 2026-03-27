@@ -76,7 +76,7 @@ SEUIL DE RÉUSSITE
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
 ─────────────────────────────────────────────
-Créer `tasks/audits/fix_errors/VERIFY_result.md` avec :
+Créer `C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results\VERIFY_result.md` avec :
 
 ```
 VERIFY_STATUS:
@@ -96,3 +96,5 @@ Confirmer dans le chat :
 "✅ VERIFY terminé · ruff OK · pyright OK · N tests pass" 
 ou
 "❌ VERIFY : X blockers — relancer P3 batch Y"
+
+

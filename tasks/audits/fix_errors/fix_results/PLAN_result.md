@@ -72,24 +72,39 @@ PLAN = [
 
 ## RÉSUMÉ
 
-```
-total_batches    : 2
-total_files      : 7
-estimated_fixes  : 22
-ordre_validation : pyright fichier → tests batch → pyright dossier
-```
-
----
-
-## DÉTAIL PAR FICHIER
-
+PLAN = [
+  {
+    batch      : 1,
+    module     : "models/",
+    files      : [
+      "models/model_retraining.py",
+      "models/performance_optimizer.py"
+    ],
+    error_types    : ["typing"],
+    estimated_fixes: 5,
+    difficulty     : "Moyen"
+  },
+  {
+    batch      : 2,
+    module     : "backtests/",
+    files      : [
+      "backtests/stress_testing.py",
+      "backtests/runner.py",
+      "backtests/simulation_loop.py",
+      "backtests/strategy_simulator.py"
+    ],
+    error_types    : ["ruff", "ARG", "Timestamp", "typing"],
+    estimated_fixes: 57,
+    difficulty     : "Moyen"
+  }
+]
 ### Batch 1 — `models/`
 
-| Fichier | Lignes | Pattern | Difficulté |
-|---------|--------|---------|-----------|
-| `johansen.py` | 96, 99 | `.any()` sur `bool` retourné par opération numpy | Facile |
-| `ml_threshold_optimizer.py` | 179 | `df[col]` → `pd.Series()` pour `.corr()` | Facile |
-| `ml_threshold_optimizer.py` | 489, 505 | `list[str]` → `columns` : utiliser `pd.Index(cols)` | Facile |
+RÉSUMÉ:
+  total_batches    : 2
+  total_files      : 6
+  estimated_fixes  : 62
+  ordre_validation : pytest → ruff → pyright par batch
 | `ml_threshold_optimizer.py` | 634 | `feature_names_in_` absent du stub sklearn → `getattr()` ou `hasattr` guard | Moyen |
 | `model_retraining.py` | 245, 246, 316, 317 | `recent_data[sym].values` → `np.asarray(recent_data[sym], dtype=float)` | Facile |
 | `performance_optimizer.py` | 196 | `Unknown \| Index` → `str` → `str(pair_key)` ou `cast(str, ...)` | Facile |

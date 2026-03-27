@@ -79,7 +79,7 @@ CATALOGUE DE PATTERNS CONNUS EDGECORE
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
 ─────────────────────────────────────────────
-Créer `tasks/audits/fix_errors/PLAN_result.md` avec :
+Créer `C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results\PLAN_result.md` avec :
 
 ```
 PLAN = [
@@ -100,7 +100,9 @@ RÉSUMÉ:
   estimated_fixes  : Z
   ordre_validation : pytest → ruff → pyright par batch
 ```
-
+SORTIE OBLIGATOIRE :
+Tous les résultats doivent être enregistrés dans :
+C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results
 ─────────────────────────────────────────────
 CONTRAINTES ABSOLUES
 ─────────────────────────────────────────────

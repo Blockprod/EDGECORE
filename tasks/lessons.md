@@ -187,3 +187,17 @@
 **Ref** : `backtests/runner.py`, `backtests/simulation_loop.py`, `backtests/strategy_simulator.py` — commit `9f182e4` (2026-03-26)
 
 ---
+
+## 2026-03-27 — Corrections Best Practices AI
+- Ce qui a fonctionné :
+  - Ajout d’une infrastructure de hooks AI (main.py) et d’une mémoire contextuelle persistante (common/context_memory.py) accessible à tous les agents/hooks.
+  - Mise en place d’un versioning automatique des prompts (PROMPTS_CHANGELOG.md) et d’une checklist RGPD/sécurité dans les prompts critiques.
+  - Intégration d’une étape CI pour la traçabilité des modifications de prompts.
+  - Validation globale : 2800 tests passés, aucune régression.
+- Ce qui a bloqué :
+  - Bloc context initialisé hors fonction dans main.py, provoquant des erreurs d’import lors des tests (résolu en déplaçant tout dans main()).
+- À retenir pour la prochaine fois :
+  - Ne jamais initialiser de variables dépendant d’arguments CLI ou d’objets runtime (args, settings, alerters) au niveau module.
+  - Toujours garantir que le code d’initialisation contextuelle et hooks AI est strictement dans main() ou protégé par if __name__ == "__main__".
+  - Versionner systématiquement tout prompt d’audit et vérifier la checklist RGPD/sécurité à chaque ajout.
+- Issues closes : [BP-01], [BP-02], [BP-03], [BP-04], [BP-05]

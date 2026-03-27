@@ -195,7 +195,6 @@ class StressScenarioGenerator:
         if start_bar is None:
             start_bar = n // 2
 
-        actual_affected: list[str]
         if affected_columns is None:
             actual_affected = [str(df.columns[i]) for i in range(1, len(df.columns), 2)]
         else:

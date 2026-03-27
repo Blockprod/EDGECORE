@@ -78,7 +78,7 @@ Pour chaque fichier en erreur, identifier le TYPE :
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
 ─────────────────────────────────────────────
-Créer `tasks/audits/fix_errors/SCAN_result.md` avec :
+Créer `C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results\SCAN_result.md` avec :
 
 ```
 FILES_TO_FIX = [
@@ -99,9 +99,3 @@ TOTAUX:
 ```
 
 ─────────────────────────────────────────────
-CONTRAINTES ABSOLUES
-─────────────────────────────────────────────
-- Aucun fix, aucun code modifié
-- Aucune ouverture massive de fichiers (utiliser grep/pyright ciblé)
-- Ne pas écrire `# type: ignore` même dans les commentaires
-- Confirmer dans le chat : "✅ SCAN_result.md créé · 🔴 X pyright · 🟠 X ARG · 🟡 X ruff"

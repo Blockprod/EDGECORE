@@ -13,12 +13,13 @@ import sys
 import threading
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 from structlog import get_logger
 
 from backtests.runner import BacktestRunner
+from common.context_memory import ContextMemory
 from common.errors import DataError, ErrorCategory
 from config.settings import get_settings
 from data.delisting_guard import DelistingGuard
@@ -54,6 +55,26 @@ try:
 except Exception:
     pass  # fallback: structlog works without explicit setup
 logger = get_logger("main")
+
+# --- HOOKS AI ORCHESTRATION (BP-01) ---
+# Permet d'injecter dynamiquement des hooks d'orchestration AI (HyperAgents, fallback, etc.)
+AI_HOOKS: list[Callable] = []
+
+
+def register_ai_hook(hook: Callable):
+    """Ajoute un hook d'orchestration AI à la pipeline principale."""
+    AI_HOOKS.append(hook)
+    logger.info("ai_hook_registered", hook=str(hook))
+
+
+# Appel des hooks à chaque démarrage de main()
+def _run_ai_hooks(context: dict):
+    for hook in AI_HOOKS:
+        try:
+            hook(context)
+            logger.info("ai_hook_executed", hook=str(hook))
+        except Exception as e:
+            logger.error("ai_hook_failed", hook=str(hook), error=str(e))
 
 
 def _load_market_data_for_symbols(symbols: list[str], loader: DataLoader, settings: Any) -> dict[str, pd.Series]:
@@ -862,6 +883,18 @@ def main():
     # Email: requires EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_SMTP_USER,
     #        EMAIL_SMTP_PASS, EMAIL_RECIPIENTS
     email_alerter = EmailAlerter.from_env()
+
+    # --- Initialisation mémoire contextuelle AI (BP-02) ---
+    context = {
+        "args": args,
+        "settings": settings,
+        "logger": logger,
+        "slack_alerter": slack_alerter,
+        "email_alerter": email_alerter,
+        "context_memory": ContextMemory(),
+    }
+    # --- Appel hooks AI (BP-01) ---
+    _run_ai_hooks(context)
 
     logger.info(
         "edgecore_startup",

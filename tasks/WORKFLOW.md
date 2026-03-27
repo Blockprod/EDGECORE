@@ -41,6 +41,7 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 12 | [Best Practices AI](#12--best-practices-ai) | Claude · Copilot Pro+ · VSCode · fichiers contexte · patterns prompts | Agent |
 | 13 | [Trade Journal](#13--trade-journal) | AuditTrail · BrokerReconciler · persistance · réconciliation live↔backtest · crash recovery | Agent |
 | 14 | [Fix Errors](#14--fix-errors) | Correction itérative ruff · pyright · ARG · Cython · pipeline 5 phases P1→P5 | Agent |
+| 15 | [Best Practices AI](#15--best-practices-ai) | Claude · Copilot · HyperAgents · mémoire · hooks · orchestration · prompts · CI/CD · sécurité | Agent |
 
 ---
 
@@ -373,137 +374,6 @@ Démarre l'exécution du plan d'action disponible.
 
 ---
 
-## AJOUT D'UNE NOUVELLE STRATÉGIE
-
-**Procédure** : `tasks/corrections/add_strategy.md`  
-**Mode**      : Agent  
-**Prérequis** : tests verts · audit structurel passé · `_assert_risk_tier_coherence()` OK
-
----
-
-# UPGRADE PROJET PROMPT
-
-Séquence d'amélioration structurée en **5 phases ordonnées**.
-Exécuter **P1 → P2 → P3 → P4 → P5** dans l'ordre strict.
-Chaque phase produit un artefact qui est prérequis de la suivante.
-
-| Phase | Prompt | Mode | Produit |
-|:---:|---|:---:|---|
-| **P1** | `P1- Audit(LEAN).md` | Agent | `tasks/audits/resultats/audit_lean_edgecore.md` |
-| **P2** | `P2- feature_store.md` | Agent | `data/feature_store.py` |
-| **P3** | `P3- TESTS STATISTIQUES.md` | Agent | `tests/statistical/test_strategy_robustness.py` |
-| **P4** | `P4- REGRESSION PnL.md` | Agent | `tests/regression/test_pnl_regression.py` |
-| **P5** | `P5- QA GLOBAL + CI.md` | Agent | validation globale · 0 erreur · 0 drift PnL |
-
----
-
-## `P1 · AUDIT LEAN (CARTOGRAPHIE)`
-
-> Cartographie de l'existant avant implémentation · Cache · Tests statistiques · Régression PnL · Zéro duplication
-
-**Produit** : `tasks/audits/resultats/audit_lean_edgecore.md`
-
-**P1 — Audit cartographie**
-```
-#file:tasks/audits/upgrade_project_prompt/P1- Audit(LEAN).md
-Lance cet audit sur le workspace.
-```
-
----
-
-## `P2 · FEATURE STORE`
-
-> Implémentation d'un cache transparent versionné · Clé (pair, période, version) · Checksum · Injection pipeline sans modification comportement
-
-**Produit** : `data/feature_store.py`
-
-**P2 — Implémentation**
-```
-#file:tasks/audits/upgrade_project_prompt/P2- feature_store.md
-Lance cette implémentation sur le workspace.
-```
-
----
-
-## `P3 · TESTS STATISTIQUES`
-
-> Robustesse Sharpe · Sensibilité entry_z / half-life · Périodes bull/bear/crash · Overfitting IS vs OOS (decay ≤ 40%)
-
-**Produit** : `tests/statistical/test_strategy_robustness.py`
-
-**P3 — Implémentation**
-```
-#file:tasks/audits/upgrade_project_prompt/P3- TESTS STATISTIQUES.md
-Lance cette implémentation sur le workspace.
-```
-
----
-
-## `P4 · RÉGRESSION PnL`
-
-> Snapshots commités (source de vérité) · total_pnl · Sharpe · drawdown · trades · Tolérance 1e-4 · Flag --update-snapshots
-
-**Produit** : `tests/regression/test_pnl_regression.py`
-
-**P4 — Implémentation**
-```
-#file:tasks/audits/upgrade_project_prompt/P4- REGRESSION PnL.md
-Lance cette implémentation sur le workspace.
-```
-
----
-
-## `P5 · QA GLOBAL + CI`
-
-> Validation finale enchaînée · Ruff · Pyright · Tests unitaires · Tests statistiques · Régression PnL · Makefile cible `qa`
-
-**Produit** : rapport QA + Makefile complet
-
-**P5 — Validation**
-```
-#file:tasks/audits/upgrade_project_prompt/P5- QA GLOBAL + CI.md
-Lance cette validation sur le workspace.
-```
-
-Copier-coller le prompt ci-dessous dans le chat Agent, en remplaçant
-`[SYM1/SYM2, ...]` par les paires cibles et `...` par les paramètres souhaités
-(laisser vide = valeurs `dev.yaml` par défaut) :
-
-```
-#file:tasks/corrections/add_strategy.md
-
-En suivant exactement la procédure définie dans tasks/corrections/add_strategy.md,
-implémente une stratégie stat-arb sur les paires [SYM1/SYM2, SYM3/SYM4]
-avec les paramètres suivants :
-
-entry_z_score:    <valeur>   # laisser vide = dev.yaml par défaut (1.6)
-exit_z_score:     <valeur>   # laisser vide = dev.yaml par défaut (0.5)
-lookback_window:  <valeur>   # laisser vide = dev.yaml par défaut (120)
-use_kalman:       true|false
-adaptive_window:  true|false
-start_date:       YYYY-MM-DD
-end_date:         YYYY-MM-DD
-```
-
-**Exemple concret — paires énergie + banques :**
-```
-#file:tasks/corrections/add_strategy.md
-
-En suivant exactement la procédure définie dans tasks/corrections/add_strategy.md,
-implémente une stratégie stat-arb sur les paires [XOM/CVX, BAC/JPM]
-avec les paramètres suivants :
-
-entry_z_score:    1.6
-exit_z_score:     0.5
-lookback_window:  120
-use_kalman:       true
-adaptive_window:  true
-start_date:       2020-01-01
-end_date:         2024-12-31
-```
-
----
-
 ## `14 · FIX ERRORS`
 
 > Correction itérative des erreurs statiques · ruff · pyright · ARG · Cython · 0 régression
@@ -595,6 +465,31 @@ Lance la QA finale.
 ```
 
 > ⚠️ Prérequis : `VERIFY_result.md` avec VERDICT GLOBAL = PASS.
+
+
+## `15 · BEST PRACTICES AI`
+
+> Claude · Copilot · HyperAgents · mémoire · hooks · orchestration · prompts · CI/CD · sécurité
+
+**Produit A** : `tasks/audits/resultats/audit_best_practices_ai_edgecore.md`
+
+**A — Audit (Best Practices AI)**
+```
+#file:tasks/audits/code/audit_best_practices_ai_prompt.md
+Lance cet audit sur le workspace en t'appuyant sur les images référencées dans la section SOURCES VISUELLES du prompt.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
 
 ---
 

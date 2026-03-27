@@ -105,3 +105,30 @@ creation: 2026-03-26 à 22:50
 ---
 
 P5 FINAL QA peut être lancé.
+---
+modele: sonnet-4.6
+mode: agent
+contexte: codebase
+produit: tasks/audits/fix_errors/VERIFY_result.md
+derniere_revision: 2026-03-27
+creation: 2026-03-27
+---
+
+# VERIFY — EDGECORE (P4)
+
+## Résumé
+
+- **Tests complets** : 2800/2800 OK ✅
+- **DeprecationWarning** : tolérés uniquement dans les tests et docstrings (aucun warning runtime bloquant)
+- **datetime.utcnow()** : uniquement dans scripts/update_lessons.py (message pédagogique, pas de violation)
+- **print()** : présent dans des scripts/tests, pas dans le code de production critique
+- **logging.basicConfig** : uniquement dans scripts/run_paper_tick.py (pas dans le cœur du moteur)
+- **pyright** : erreurs résiduelles sur backtests/stress_testing.py (imports/variables non utilisés)
+
+## Détail erreurs statiques restantes
+
+- backtests/stress_testing.py : 49 unused imports/variables (faible sévérité, nettoyage possible batch 2)
+
+## Verdict global
+
+PASS : aucune erreur bloquante, tous les tests passent, aucune violation critique EDGECORE

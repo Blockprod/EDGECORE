@@ -103,7 +103,7 @@ CHECKLIST EDGECORE (12 points)
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
 ─────────────────────────────────────────────
-Créer `tasks/audits/fix_errors/FINAL_QA_result.md` avec :
+Créer `C:\Users\averr\EDGECORE_V1\tasks\audits\fix_errors\fix_results\FINAL_QA_result.md` avec :
 
 ```
 FINAL_QA_EDGECORE:
@@ -147,4 +147,6 @@ ACTIONS REQUISES AVANT MERGE:
 Confirmer dans le chat :
 "✅ FINAL QA EDGECORE : READY — N/12 checks passés"
 ou
+"❌ FINAL QA EDGECORE : NOT READY — blockers : [liste courte]"
+
 "❌ FINAL QA EDGECORE : NOT READY — blockers : [liste courte]"
