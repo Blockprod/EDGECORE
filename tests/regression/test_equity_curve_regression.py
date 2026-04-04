@@ -13,8 +13,7 @@ from pathlib import Path
 
 import pytest
 
-_RESULTS_DIR = Path(__file__).parent.parent.parent / "results"
-_BASELINE_FILE = _RESULTS_DIR / "bt_v36_output.json"
+_BASELINE_FILE = Path(__file__).parent / "fixtures" / "bt_v36_output.json"
 _TOLERANCE = 0.10  # ±10%
 
 

@@ -1,0 +1,30 @@
+{
+  "version": "v36",
+  "phase": "Phase 3 - Fr\u00e9quence & Ex\u00e9cution Algorithmique",
+  "modules": [
+    "IntradayLoader (5-min bars, Parquet cache)",
+    "IntradaySignalEngine (fast MR + gap reversion + volume profile)",
+    "AlgoExecutor TWAP/VWAP (10 slices, 2bps impact, 5% participation)",
+    "SignalCombiner 6-source (zscore 0.35, momentum 0.15, OU 0.20, vol 0.10, CS 0.10, intraday 0.10)"
+  ],
+  "universe_size": 39,
+  "metrics": {
+    "return_pct": 10.46,
+    "sharpe": 1.33,
+    "pf": 4.22,
+    "win_rate": 66.7,
+    "trades": 21,
+    "max_dd": -1.91,
+    "calmar": 5.48
+  },
+  "baseline_v35": {
+    "return_pct": 10.17,
+    "sharpe": 1.29,
+    "pf": 4.04,
+    "win_rate": 66.7,
+    "trades": 21,
+    "max_dd": -1.98,
+    "calmar": 5.13
+  },
+  "elapsed_s": 714.6
+}
