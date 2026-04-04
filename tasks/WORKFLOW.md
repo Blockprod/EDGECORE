@@ -3,7 +3,7 @@ type: guide
 projet: EDGECORE
 broker: Interactive Brokers (TWS/Gateway)
 stack: Python 3.11.9 · Cython 3.0 · ib_insync · Windows
-derniere_revision: 2026-03-26
+derniere_revision: 2026-04-04
 creation: 2026-03-18 à 00:53
 ---
 
@@ -43,33 +43,8 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 14 | [Fix Errors](#14--fix-errors) | Correction itérative ruff · pyright · ARG · Cython · pipeline 5 phases P1→P5 | Agent |
 | 15 | [Best Practices AI](#15--best-practices-ai) | Claude · Copilot · HyperAgents · mémoire · hooks · orchestration · prompts · CI/CD · sécurité | Agent |
 | 16 | [Process & Documentation](#16--process--documentation) | CI/CD · Automatisation build/tests · Sécurité · Exploitation · Documentation onboarding/usage/monitoring | Agent |
+| 17 | [Validation Plan Grok](#17--validation-plan-grok) | Vérification point par point du plan Grok · Docker prod · Backtester événementiel · Observabilité · Scalabilité · Preuves de performance | Agent |
 
-
-## `16 · PROCESS & DOCUMENTATION`
-
-> CI/CD · Automatisation build/tests · Sécurité · Exploitation · Documentation onboarding/usage/monitoring
-
-**Produit A** : `tasks/audits/resultats/audit_process_doc_edgecore.md`
-
-**A — Audit**
-```
-#file:tasks/audits/code/audit_process_doc_prompt.md
-Lance cet audit sur le workspace.
-```
-
-**B — Plan d'action**
-```
-#file:tasks/corrections/generate_action_plan_prompt.md
-Génère le plan d'action depuis l'audit disponible.
-```
-
-**C — Exécution**
-```
-#file:tasks/corrections/execute_corrections_prompt.md
-Démarre l'exécution du plan d'action disponible.
-```
-
----
 
 ## `1 · STRUCTUREL`
 
@@ -503,6 +478,58 @@ Lance la QA finale.
 ```
 #file:tasks/audits/code/audit_best_practices_ai_prompt.md
 Lance cet audit sur le workspace en t'appuyant sur les images référencées dans la section SOURCES VISUELLES du prompt.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
+## `16 · PROCESS & DOCUMENTATION`
+
+> CI/CD · Automatisation build/tests · Sécurité · Exploitation · Documentation onboarding/usage/monitoring
+
+**Produit A** : `tasks/audits/resultats/audit_process_doc_edgecore.md`
+
+**A — Audit**
+```
+#file:tasks/audits/code/audit_process_doc_prompt.md
+Lance cet audit sur le workspace.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
+## `17 · VALIDATION PLAN GROK`
+
+> Vérification point par point du plan Grok (04 avril 2026) · Docker prod · Backtester événementiel · Observabilité · Scalabilité · Preuves de performance · Omissions critiques non mentionnées par Grok
+
+**Produit A** : `tasks/audits/resultats/audit_grok_plan_validation_edgecore.md`
+
+**A — Audit**
+```
+#file:tasks/audits/code/audit_grok_plan_validation_prompt.md
+Lance cet audit sur le workspace.
 ```
 
 **B — Plan d'action**

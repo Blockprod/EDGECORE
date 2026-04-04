@@ -25,17 +25,20 @@ logger = get_logger(__name__)
 @dataclass
 class PortfolioRiskConfig:
     """Portfolio-level risk limits."""
+
     max_drawdown_pct: float = 0.15
     max_daily_loss_pct: float = 0.03
     max_consecutive_losses: int = 5
     max_concurrent_positions: int = 10
     max_portfolio_heat: float = 0.95
     circuit_breaker_cooldown_bars: int = 10
+    max_avg_pair_correlation: float = 0.85  # C-05: halt entries if avg inter-pair corr exceeds this
 
 
 @dataclass
 class PortfolioRiskState:
     """Current portfolio risk state ÔÇö snapshot."""
+
     current_equity: float
     peak_equity: float
     drawdown_pct: float
@@ -73,8 +76,10 @@ class PortfolioRiskManager:
         self,
         initial_equity: float = 100_000.0,
         config: PortfolioRiskConfig | None = None,
+        correlation_monitor=None,
     ):
         self.config = config or PortfolioRiskConfig()
+        self._correlation_monitor = correlation_monitor  # C-05: optional CorrelationMonitor
         self._initial_equity = initial_equity
         self._current_equity = initial_equity
         self._peak_equity = initial_equity
@@ -199,6 +204,20 @@ class PortfolioRiskManager:
         if current_heat >= self.config.max_portfolio_heat:
             return False, f"Portfolio heat {current_heat:.2%} >= {self.config.max_portfolio_heat:.0%}"
 
+        # C-05: Inter-pair correlation guard
+        if self._correlation_monitor is not None:
+            try:
+                avg_corr = self._correlation_monitor.get_average_correlation()
+                if avg_corr is not None and avg_corr > self.config.max_avg_pair_correlation:
+                    logger.warning(
+                        "portfolio_risk_correlation_too_high",
+                        avg_correlation=round(avg_corr, 3),
+                        limit=self.config.max_avg_pair_correlation,
+                    )
+                    return False, f"Avg pair correlation {avg_corr:.2f} > {self.config.max_avg_pair_correlation:.2f}"
+            except Exception as exc:
+                logger.debug("portfolio_risk_correlation_check_failed", error=str(exc)[:80])
+
         return True, ""
 
     # ------------------------------------------------------------------
@@ -214,11 +233,7 @@ class PortfolioRiskManager:
     def get_state(self) -> PortfolioRiskState:
         """Return current portfolio risk snapshot."""
         self._maybe_reset_daily()
-        daily_pct = (
-            self._daily_loss / self._current_equity
-            if self._current_equity > 0
-            else 0.0
-        )
+        daily_pct = self._daily_loss / self._current_equity if self._current_equity > 0 else 0.0
         return PortfolioRiskState(
             current_equity=self._current_equity,
             peak_equity=self._peak_equity,

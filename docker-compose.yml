@@ -36,6 +36,7 @@ services:
       - ./logs:/app/logs
       - ./cache:/app/cache
       - ./config:/app/config:ro
+      - ./persistence:/app/persistence
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]

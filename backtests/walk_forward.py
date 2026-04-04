@@ -612,3 +612,81 @@ class WalkForwardEngine:
             List of (train_df, test_df) tuples.
         """
         return split_walk_forward(data, num_periods=num_periods, oos_ratio=oos_ratio)
+
+
+def generate_walk_forward_report(
+    result: WalkForwardResult,
+    output_path: str | None = None,
+) -> dict[str, Any]:
+    """
+    Generate a structured walk-forward report from a WalkForwardResult.
+
+    Writes a JSON file if output_path is provided.
+    Emits a warning if OOS Sharpe < 0.5 × IS Sharpe (overfitting signal).
+
+    Args:
+        result: WalkForwardResult produced by WalkForwardEngine.run().
+        output_path: Optional path to write JSON report (e.g. "results/wf_report.json").
+
+    Returns:
+        Report dict with per-period metrics, global stats, and overfitting flag.
+    """
+    import json
+    from datetime import UTC, datetime
+    from pathlib import Path
+
+    per_period_summary = []
+    for p in result.per_period:
+        m = p.get("metrics", {})
+        per_period_summary.append(
+            {
+                "period": p.get("period"),
+                "sharpe": round(float(m.get("sharpe_ratio", 0.0)), 4),
+                "max_drawdown": round(float(m.get("max_drawdown", 0.0)), 4),
+                "profit_factor": round(float(m.get("profit_factor", 0.0)), 4),
+                "total_return": round(float(m.get("total_return", 0.0)), 6),
+                "num_trades": int(m.get("num_trades", 0)),
+            }
+        )
+
+    oos_sharpes = [p["sharpe"] for p in per_period_summary]
+    avg_oos_sharpe = float(pd.Series(oos_sharpes).mean()) if oos_sharpes else 0.0
+
+    # Check for IS/OOS degradation (requires aggregate IS metrics if available)
+    is_sharpe = float(result.aggregate.get("is_sharpe", avg_oos_sharpe))
+    oos_oos_ratio = avg_oos_sharpe / is_sharpe if is_sharpe > 0 else 1.0
+    overfitting_flag = oos_oos_ratio < 0.5
+
+    if overfitting_flag:
+        logger.warning(
+            "walk_forward_overfitting_signal",
+            is_sharpe=round(is_sharpe, 3),
+            avg_oos_sharpe=round(avg_oos_sharpe, 3),
+            oos_is_ratio=round(oos_oos_ratio, 3),
+        )
+
+    report = {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "config": {
+            "symbols": getattr(result.config, "symbols", []),
+            "num_periods": result.num_periods_executed,
+            "oos_ratio": getattr(result.config, "oos_ratio", None),
+        },
+        "global_stats": {
+            "avg_oos_sharpe": round(avg_oos_sharpe, 4),
+            "avg_oos_return": round(result.avg_return, 6),
+            "is_sharpe": round(is_sharpe, 4),
+            "oos_is_ratio": round(oos_oos_ratio, 4),
+            "passed": result.passed,
+            "overfitting_flag": overfitting_flag,
+        },
+        "per_period": per_period_summary,
+    }
+
+    if output_path is not None:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        logger.info("walk_forward_report_written", path=output_path)
+
+    return report

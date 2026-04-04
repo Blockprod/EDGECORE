@@ -57,11 +57,11 @@ spread_cost_bps = 2.0  # ~2 bps pour mega-caps US
 ```
 
 **Livrables :**
-- [ ] `SlippageModel` class avec 3 composantes
-- [ ] Int├®gration dans `strategy_simulator.py` (chaque entry/exit)
-- [ ] Chargement ADV (Average Daily Volume) depuis IBKR
-- [ ] Re-backtest v31h avec slippage ÔåÆ nouveau baseline r├®aliste
-- [ ] **Crit├¿re de validation** : v31h + slippage doit rester PF > 1.5
+- [x] `SlippageModel` class avec 3 composantes  
+- [x] Intégration dans `strategy_simulator.py` (chaque entry/exit)  
+- [ ] Chargement ADV (Average Daily Volume) depuis IBKR  
+- [x] Re-backtest v31h avec slippage → nouveau baseline réaliste  
+- [ ] **Critère de validation** : v31h + slippage doit rester PF > 1.5
 
 ### ├ëtape 0.2 ÔÇö Position Sizing Kelly/Risque
 **50% du capital par paire = risque de ruine. Inacceptable.**
@@ -86,19 +86,19 @@ max_gross_leverage = 2.0     # Levier brut max 200% (Phase 0)
 ```
 
 **Livrables :**
-- [ ] `KellySizer` class avec Kelly fractionnel
-- [ ] Plafonds par position, par secteur, levier brut
+- [ ] `KellySizer` class avec Kelly fractionnel  
+- [ ] Plafonds par position, par secteur, levier brut  
 - [ ] **Stop-loss par trade en % du NAV total** (pas du notionnel) :
   ```
   max_loss_per_trade_nav = 0.75%   # du NAV total
-  # Exemple : NAV = 100KÔé¼, max perte par trade = 750Ôé¼
-  # Actuel : stop 7% ├ù 50% alloc = 3.5% du NAV = 3 500Ôé¼ ÔåÆ trop ├®lev├®
-  # Avec Kelly 10% alloc : stop 7% ├ù 10% = 0.7% du NAV Ô£ô
-  # Le plafond NAV garantit la limite m├¬me si le sizing change
+  # Exemple : NAV = 100K€, max perte par trade = 750€
+  # Actuel : stop 7% × 50% alloc = 3.5% du NAV = 3 500€ → trop élevé
+  # Avec Kelly 10% alloc : stop 7% × 10% = 0.7% du NAV ✓
+  # Le plafond NAV garantit la limite même si le sizing change
   ```
-- [ ] Int├®gration dans le simulator
-- [ ] Re-backtest v31h avec Kelly sizing ÔåÆ comparer
-- [ ] **Crit├¿re** : DD < 5%, Sharpe stable ou am├®lior├®
+- [ ] Intégration dans le simulator  
+- [ ] Re-backtest v31h avec Kelly sizing → comparer  
+- [ ] **Critère** : DD < 5%, Sharpe stable ou amélioré
 
 ### ├ëtape 0.3 ÔÇö Earnings & Dividende Filter
 **Les firmes ne tradent JAMAIS autour des earnings.**
@@ -110,10 +110,10 @@ Fichiers : data/event_filter.py (NOUVEAU)
 ```
 
 **Livrables :**
-- [ ] Calendrier earnings via API (Yahoo Finance gratuit)
-- [ ] Blackout ┬▒3 jours autour de la date de reporting
-- [ ] Filtre ex-dividende (spread pollu├® J-1/J+1)
-- [ ] Int├®gration dans `generate_signals()` comme gate
+- [ ] Calendrier earnings via API (Yahoo Finance gratuit)  
+- [ ] Blackout ±3 jours autour de la date de reporting  
+- [ ] Filtre ex-dividende (spread pollué J-1/J+1)  
+- [ ] Intégration dans `generate_signals()` comme gate  
 - [ ] Re-backtest pour mesurer impact
 
 ### ├ëtape 0.4 ÔÇö Short Borrow Availability Check
@@ -139,10 +139,10 @@ Fichiers : execution/borrow_check.py (NOUVEAU)
 ```
 
 **Livrables :**
-- [ ] `BorrowChecker` : query IBKR shortable shares + fee rate
-- [ ] Gate dans l'ex├®cution : rejeter si non-shortable ou fee > 3%
-- [ ] Logging : tracker les rejets pour identifier les symboles probl├®matiques
-- [ ] Int├®gration backtest : flag HTB historique (approximation via market cap)
+- [ ] `BorrowChecker` : query IBKR shortable shares + fee rate  
+- [ ] Gate dans l'exécution : rejeter si non-shortable ou fee > 3%  
+- [ ] Logging : tracker les rejets pour identifier les symboles problématiques  
+- [ ] Intégration backtest : flag HTB historique (approximation via market cap)
 
 ---
 

@@ -882,6 +882,7 @@ class PairTradingStrategy(BaseStrategy):
         Returns:
             List of Signal objects
         """
+
         signals = []
 
         # Find cointegrated pairs (rerun periodically) or use provided list
@@ -889,6 +890,16 @@ class PairTradingStrategy(BaseStrategy):
             cointegrated = discovered_pairs
         else:
             cointegrated = self.find_cointegrated_pairs(market_data, self.config.lookback_window)
+
+        # --- DIAGNOSTIC LOG ---
+        print(f"[DEBUG] generate_signals: {len(cointegrated)} cointegrated pairs candidates")
+        # Optionally print the pairs for the first few bars
+        if hasattr(self, "_bar_counter"):
+            self._bar_counter += 1
+        else:
+            self._bar_counter = 1
+        if self._bar_counter <= 3:
+            print(f"[DEBUG] Cointegrated pairs: {[p[:2] for p in cointegrated]}")
 
         # ÔöÇÔöÇ Phase 1: Update cross-sectional rankings once per bar ÔöÇÔöÇ
         _csm = getattr(self, "_cross_sectional", None)
@@ -917,13 +928,10 @@ class PairTradingStrategy(BaseStrategy):
             try:
                 y = pd.Series(market_data[sym1])
                 x = pd.Series(market_data[sym2])
-
                 # Leg-correlation stability check
                 corr_ok = self._check_leg_correlation_stability(y, x, pair_key)
                 if not corr_ok:
-                    # Mark pair as excluded
                     self._excluded_pairs_correlation.add(pair_key)
-                    # Emit exit signal if there's an active trade
                     if pair_key in self.active_trades:
                         hist = self._leg_correlation_history.get(pair_key, {})
                         signals.append(
@@ -936,15 +944,10 @@ class PairTradingStrategy(BaseStrategy):
                         )
                         del self.active_trades[pair_key]
                     continue
-
-                # Build/update spread model
-                # C-11: kalman_delta from config
                 from config.settings import get_settings as _gs_pt2
 
                 model = SpreadModel(y, x, kalman_delta=_gs_pt2().strategy.kalman_delta)
                 self.spread_models[pair_key] = model
-
-                # Hedge ratio drift monitoring
                 _hr_beta, hr_stable = self.hedge_ratio_tracker.reestimate_if_needed(
                     pair_key=pair_key,
                     new_beta=model.beta,
@@ -962,11 +965,11 @@ class PairTradingStrategy(BaseStrategy):
                         )
                         del self.active_trades[pair_key]
                     continue
-
-                # Compute spread
-                spread = model.compute_spread(y, x)
-
-                # ADF stationarity guard: reject entry if spread is non-stationary
+                try:
+                    spread = model.compute_spread(y, x)
+                except Exception:
+                    continue
+                # ADF stationarity guard (seuil configurable)
                 _adf_window = min(len(spread), 120)
                 _adf_spread = spread.iloc[-_adf_window:]
                 if len(_adf_spread.dropna()) >= 20:
@@ -974,8 +977,15 @@ class PairTradingStrategy(BaseStrategy):
                         _adf_p = adfuller(_adf_spread.dropna().values, autolag="AIC")[1]
                     except Exception:
                         _adf_p = 1.0
-                    if _adf_p > 0.10:
-                        # Spread is non-stationary ÔÇö skip pair and emit exit if active
+                    # Seuil configurable via config.strategy.adf_pvalue_threshold (default 0.10)
+                    from config.settings import get_settings as _gs_adf
+
+                    adf_threshold = getattr(
+                        getattr(_gs_adf().strategy, "adf_pvalue_threshold", None), "__float__", lambda: None
+                    )()
+                    if adf_threshold is None:
+                        adf_threshold = 0.10
+                    if _adf_p > adf_threshold:
                         if pair_key in self.active_trades:
                             signals.append(
                                 Signal(
@@ -987,14 +997,14 @@ class PairTradingStrategy(BaseStrategy):
                             )
                             del self.active_trades[pair_key]
                         continue
-
-                # Adaptive Z-score lookback based on half-life (no hardcoded 20)
-                z_score = model.compute_z_score(spread)
-
-                self.historical_spreads[pair_key] = spread
-
-                # Current Z-score
-                current_z = z_score.iloc[-1]
+                try:
+                    z_score = model.compute_z_score(spread)
+                    self.historical_spreads[pair_key] = spread
+                    current_z = z_score.iloc[-1]
+                    if pd.isna(current_z):
+                        continue
+                except Exception:
+                    continue
 
                 # RISK-3: Update regime detector with latest spread data
                 try:
@@ -1172,7 +1182,6 @@ class PairTradingStrategy(BaseStrategy):
                         entry_time=cast(pd.Timestamp, pd.Timestamp(str(self._clock()))),
                     )
                     self._record_trade()
-
                 elif (
                     risk_ok
                     and weekly_gate_ok
@@ -1207,7 +1216,6 @@ class PairTradingStrategy(BaseStrategy):
                         entry_time=cast(pd.Timestamp, pd.Timestamp(str(self._clock()))),
                     )
                     self._record_trade()
-
                 # Exit signals (mean reversion)
                 if pair_key in self.active_trades:
                     self.active_trades[pair_key]

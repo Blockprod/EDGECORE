@@ -1028,6 +1028,7 @@ class LiveTradingRunner:
             DataFrame with columns = symbols, rows = time bars.
         """
         try:
+            from common.errors import DataUnavailableError
             from data.loader import load_price_data
 
             symbols = self.config.symbols
@@ -1036,7 +1037,20 @@ class LiveTradingRunner:
                 if active:
                     symbols = active
             lookback = getattr(self, "_lookback", 252)
-            df = load_price_data(symbols=symbols, limit=lookback)
+            try:
+                df = load_price_data(symbols=symbols, limit=lookback)
+            except DataUnavailableError as duc:
+                logger.critical("live_trading_data_unavailable", error=str(duc)[:200])
+                if self._kill_switch is not None:
+                    elapsed = (
+                        (datetime.now(UTC) - self._data_load_at.replace(tzinfo=UTC)).total_seconds()
+                        if self._data_load_at is not None
+                        else self._kill_switch.config.max_data_stale_seconds + 1
+                    )
+                    self._kill_switch.check(seconds_since_last_data=elapsed)
+                self._data_symbols_loaded = 0
+                self._data_load_at = datetime.now()
+                return None
             # C-09: freshness guard — warn if any symbol's latest bar is stale (> 10 min)
             _MAX_DATA_LAG = timedelta(minutes=10)
             if df is not None and not df.empty:

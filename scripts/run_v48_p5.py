@@ -320,6 +320,21 @@ def main():
         dd = metrics.max_drawdown * 100
         v = "PASS" if sh >= 1.2 else ("S-PASS" if sh >= 0.8 else "FAIL")
         print(f"  -> S={sh:5.2f}  {ret:+6.2f}%  WR={wr:5.1f}%  t={t:2d}  DD={dd:+6.2f}%  [{v}/{elapsed}s]")
+
+        # Export automatique des résultats dans results/v48_p5_results.txt
+        results_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "results")
+        os.makedirs(results_dir, exist_ok=True)
+        results_path = os.path.join(results_dir, "v48_p5_results.txt")
+        with open(results_path, "w", encoding="utf-8") as f:
+            f.write("v48 P5 2024H2\n")
+            f.write(f"Sharpe ratio: {sh:.4f}\n")
+            f.write(f"Total return: {ret:.2f}%\n")
+            f.write(f"Win rate: {wr:.2f}%\n")
+            f.write(f"Total trades: {t}\n")
+            f.write(f"Max drawdown: {dd:.2f}%\n")
+            f.write(f"Verdict: {v}\n")
+            f.write(f"Elapsed: {elapsed}s\n")
+        print(f"[Résultat exporté] {results_path}")
     except Exception as e:
         elapsed = int(time.time() - t0)
         sh = None

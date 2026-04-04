@@ -57,6 +57,16 @@ class DataValidationError(DataError):
         super().__init__(message, original_error, ErrorCategory.TRANSIENT)
 
 
+class DataUnavailableError(DataError):
+    """No data could be loaded from any source (IBKR down, cache absent or stale).
+
+    This is a NON_RETRYABLE condition: the caller must halt trading immediately.
+    """
+
+    def __init__(self, message: str, original_error: Exception | None = None):
+        super().__init__(message, original_error, ErrorCategory.NON_RETRYABLE)
+
+
 class BrokerError(TradingError):
     """Error communicating with broker API."""
 

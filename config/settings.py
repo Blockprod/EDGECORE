@@ -170,10 +170,14 @@ class ExecutionConfig:
     max_retries: int = 3
     slippage_bps: float = 2.0  # Basis points
     use_sandbox: bool = True
+    # C-10: Explicit trading mode discriminant read by EDGECORE_MODE env var.
+    # Values: "live" | "paper". "paper" forces use_sandbox=True and is merged
+    # from config/paper.yaml when EDGECORE_MODE=paper.
+    mode: str = "live"
     paper_trading_loop_interval_seconds: int = 10  # Loop sleep interval
     initial_capital: float = 100000.0  # Starting capital for paper/live trading
     paper_slippage_model: str = "fixed_bps"  # fixed_bps, adaptive, volume_based
-    paper_commission_pct: float = 0.005  # Commission percentage (0.005% Ôëê $0.005/share IBKR)
+    paper_commission_pct: float = 0.005  # Commission percentage (0.005% ≈ $0.005/share IBKR)
 
 
 @dataclass
@@ -357,6 +361,24 @@ class Settings:
             self._load_yaml(config_path)
         else:
             logger.warning("config_not_found", env=self.env, path=str(config_path))
+
+        # C-10: Merge paper.yaml overrides when EDGECORE_MODE=paper.
+        # paper.yaml is applied ON TOP of the active env config so paper-mode
+        # risk limits (lower position sizes, use_sandbox=True, mode="paper")
+        # cannot be accidentally overridden by prod.yaml.
+        trading_mode = (os.getenv("EDGECORE_MODE") or "").lower()
+        if trading_mode == "paper":
+            paper_path = Path(__file__).parent / "paper.yaml"
+            if paper_path.exists():
+                logger.info("applying_paper_mode_overrides", path=str(paper_path))
+                self._load_yaml(paper_path)
+            else:
+                logger.warning("paper_yaml_not_found", path=str(paper_path))
+            # Always enforce sandbox + mode when EDGECORE_MODE=paper,
+            # regardless of whether paper.yaml was found.
+            self.execution.use_sandbox = True
+            self.execution.mode = "paper"
+            logger.info("paper_mode_active", use_sandbox=True)
 
         # Validate configuration using Pydantic schemas
         self._validate_config()

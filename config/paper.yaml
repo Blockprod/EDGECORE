@@ -1,0 +1,53 @@
+# EDGECORE — Paper Trading Configuration
+# Loaded via EDGECORE_MODE=paper on top of the active EDGECORE_ENV config.
+#
+# Purpose: override production/dev risk limits and execution settings for
+# paper-trading sessions so operators cannot accidentally trade real money with
+# live-sized positions.
+#
+# How it is applied:
+#   Settings.__init__() loads dev.yaml / prod.yaml first (selected by EDGECORE_ENV),
+#   then merges THIS file on top when EDGECORE_MODE=paper. execution.use_sandbox
+#   and execution.mode are forced to True / "paper" programmatically even without
+#   this file, but the overrides below add tighter risk limits.
+#
+# Usage:
+#   $env:EDGECORE_MODE = "paper"
+#   venv\Scripts\python.exe main.py
+#
+# Note: EDGECORE_ENV still selects the universe and strategy params (dev vs prod).
+# This file only touches risk, execution, and trading operational limits.
+
+execution:
+  engine: "ibkr"
+  use_sandbox: true                 # Always true in paper mode
+  mode: "paper"                     # Discriminant read by callers
+  # IBKR paper-trading TWS port (7497 paper vs 7496 live)
+  timeout_seconds: 30
+  max_retries: 3
+  initial_capital: 100000.0
+  paper_trading_loop_interval_seconds: 15
+  paper_slippage_model: "adaptive"
+  paper_commission_pct: 0.005
+
+risk:
+  # C-10: Tighter risk limits for paper mode — prevents inflated position sizing
+  # that would shock the operator if they switch to live accidentally.
+  max_concurrent_positions: 6       # Half of prod to stay conservative
+  max_risk_per_trade: 0.005         # 0.5% of equity per trade
+  max_consecutive_losses: 5
+  max_daily_loss_pct: 0.02          # 2% daily loss circuit breaker
+  max_drawdown_pct: 0.10            # 10% — must satisfy T1 ≤ T2 ≤ T3
+  max_leverage: 1.0                 # No leverage in paper mode
+
+trading:
+  max_loop_iterations: 999999       # Run indefinitely in paper mode
+  max_consecutive_errors: 10
+  data_max_age_hours: 4.0           # Accept up to 4h stale data in paper
+  max_allocation_pct: 0.20          # 20% per pair
+  equity_tolerance_pct: 0.01
+  reconciliation_divergence_pct: 0.10
+  fallback_spread_vol: 0.02
+  min_order_quantity: 1.0
+  limit_price_offset_pct: 0.01
+  paper_fill_rate: 0.95             # 95% fill rate — model partial fills

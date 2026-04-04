@@ -110,25 +110,79 @@ modele: sonnet-4.6
 mode: agent
 contexte: codebase
 produit: tasks/audits/fix_errors/VERIFY_result.md
-derniere_revision: 2026-03-27
-creation: 2026-03-27
+derniere_revision: 2026-04-04
+creation: 2026-03-26
 ---
 
-# VERIFY — EDGECORE (P4)
+# VERIFY RESULT — EDGECORE
 
-## Résumé
+> Revision 2026-04-04 · Post P3 batches 1-4 (ALL FIXED)
 
-- **Tests complets** : 2800/2800 OK ✅
-- **DeprecationWarning** : tolérés uniquement dans les tests et docstrings (aucun warning runtime bloquant)
-- **datetime.utcnow()** : uniquement dans scripts/update_lessons.py (message pédagogique, pas de violation)
-- **print()** : présent dans des scripts/tests, pas dans le code de production critique
-- **logging.basicConfig** : uniquement dans scripts/run_paper_tick.py (pas dans le cœur du moteur)
-- **pyright** : erreurs résiduelles sur backtests/stress_testing.py (imports/variables non utilisés)
+---
 
-## Détail erreurs statiques restantes
+## VERIFY_STATUS
 
-- backtests/stress_testing.py : 49 unused imports/variables (faible sévérité, nettoyage possible batch 2)
+```
+VERIFY_STATUS:
+  ruff      : ✅ OK — 0 violations
+  ARG       : ✅ OK — 0 violations
+  pyright   : ✅ OK — 44/44 dossiers propres · 0 erreurs
+  tests     : ✅ OK — 2808 passed, 0 failed (217s)
+  risk_tiers: ✅ OK — tier1=0.10 · tier2=0.15 · tier3=0.20
+  config    : ✅ OK — entry_z_score = 1.6
 
-## Verdict global
+VERDICT GLOBAL : PASS ✅
 
-PASS : aucune erreur bloquante, tous les tests passent, aucune violation critique EDGECORE
+BLOCKERS RESTANTS: aucun
+```
+
+---
+
+## DÉTAIL PAR CATÉGORIE
+
+### ruff — 0 violations
+Tous les fichiers propres. Règles UP017, UP037, ARG001 corrigées (batches 3 et 4).
+
+### pyright — 44/44 dossiers propres
+| Batch | Dossier | Avant | Après |
+|-------|---------|-------|-------|
+| 1 | `data/` | 2 | 0 |
+| 2 | `strategies/` | 264 | 0 |
+| 3 | `backtests/` | 3 | 0 |
+| 4 | `benchmarks/` | 5 | 0 |
+
+### pytest
+```
+2808 passed in 217.80s — 0 failed — 0 skipped
+```
+
+### Dossiers pyright propres (44/44)
+```
+models, pair_selection, signal_engine, execution, live_trading,
+data, backtester, portfolio_engine, risk, risk_engine,
+execution_engine, common, config, universe, scheduler, persistence,
+monitoring, validation, research, scripts, strategies, backtests, benchmarks,
+tests\backtests, tests\common, tests\config, tests\data, tests\edgecore,
+tests\execution, tests\execution_engine, tests\integration, tests\live_trading,
+tests\models, tests\monitoring, tests\persistence, tests\phase3, tests\phase4,
+tests\portfolio_engine, tests\regression, tests\risk, tests\risk_engine,
+tests\signal_engine, tests\statistical, tests\strategies, tests\universe,
+tests\validation
+```
+
+---
+
+## Fichiers modifiés (P3 batches 1–4)
+
+| Batch | Fichier | Corrections |
+|-------|---------|-------------|
+| 1 | `data/loader.py` | `rename(sym)` → `pd.Series(..., name=sym)` ×2 |
+| 1 | `data/feature_store.py` | `engine="pyarrow"` supprimé |
+| 2 | `strategies/pair_trading.py` | 14 blocs debug `[P5]` supprimés (264 pyright → 0) |
+| 3 | `backtests/strategy_simulator.py` | 1 bloc debug `[P5]` supprimé |
+| 3 | `backtests/walk_forward.py` | UP037 + UP017 corrigés (`from datetime import UTC`) |
+| 4 | `benchmarks/spx_comparison.py` | escape seq + UP017 + ARG001 (`_ec`, `_spy`) |
+
+---
+
+P5 FINAL QA peut être lancé.

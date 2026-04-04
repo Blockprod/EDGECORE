@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 
 import structlog
-from flask import Flask, request
+from flask import Flask, render_template_string, request
 
 from monitoring.api_security import (
     add_security_headers,
@@ -208,6 +208,145 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
         stats = get_request_stats()
         return stats, 200
 
+    @app.route("/api/public/summary", methods=["GET"])
+    @require_rate_limit
+    @log_api_call
+    def api_public_summary() -> tuple[dict[str, Any], int]:
+        """
+        Public summary endpoint — no auth required.
+
+        Returns a minimal subset of metrics safe for unauthenticated access:
+        mode, equity, daily_return, sharpe_ratio, trades_today, system status.
+        Intended for the /dashboard HTML page and internal Prometheus scraping.
+        """
+        from monitoring.metrics import SystemMetrics
+
+        metrics: SystemMetrics = getattr(app, "_system_metrics", None) or SystemMetrics()
+        mode = "unknown"
+        status = "running"
+
+        if dashboard is not None:
+            try:
+                sys_status = dashboard._system_status()
+                mode = sys_status.get("mode", "unknown")
+                status = sys_status.get("status", "running")
+            except Exception:
+                pass
+
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "status": status,
+            "mode": mode,
+            "equity": metrics.equity,
+            "daily_return_pct": round(metrics.daily_return * 100, 4),
+            "max_drawdown_pct": round(metrics.max_drawdown * 100, 4),
+            "sharpe_ratio": round(metrics.sharpe_ratio, 4),
+            "trades_total": metrics.trades_total,
+            "trades_today": metrics.trades_today,
+            "risk_violations": metrics.risk_violations,
+        }, 200
+
+    _DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="10">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EDGECORE — Live Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Courier New', monospace; background: #0d1117; color: #c9d1d9; padding: 24px; }
+    h1 { font-size: 1.4rem; color: #58a6ff; margin-bottom: 4px; }
+    .subtitle { font-size: 0.8rem; color: #6e7681; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+    .card .label { font-size: 0.72rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .card .value { font-size: 1.6rem; font-weight: bold; color: #f0f6fc; }
+    .card .value.positive { color: #3fb950; }
+    .card .value.negative { color: #f85149; }
+    .card .value.neutral { color: #58a6ff; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+    .badge.live { background: #1f3d2e; color: #3fb950; border: 1px solid #3fb950; }
+    .badge.paper { background: #1e2d3d; color: #58a6ff; border: 1px solid #58a6ff; }
+    .badge.unknown { background: #2d2d2d; color: #8b949e; border: 1px solid #8b949e; }
+    .footer { font-size: 0.72rem; color: #484f58; text-align: center; margin-top: 16px; }
+    .error { color: #f85149; background: #1f1b1b; border: 1px solid #f85149; border-radius: 6px; padding: 12px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>EDGECORE &mdash; Live Dashboard</h1>
+  <p class="subtitle">Auto-refresh every 10s &bull; Source: <code>/api/public/summary</code></p>
+  <div class="grid" id="grid">
+    <div class="card"><div class="label">Loading&hellip;</div><div class="value neutral">&mdash;</div></div>
+  </div>
+  <div class="footer" id="footer">Last update: &mdash;</div>
+  <div id="error-box"></div>
+
+  <script>
+    function colorClass(label, value) {
+      if (label.includes('return') || label.includes('sharpe')) return value >= 0 ? 'positive' : 'negative';
+      if (label.includes('drawdown') || label.includes('violations')) return value > 0 ? 'negative' : 'positive';
+      return 'neutral';
+    }
+
+    function fmt(label, value) {
+      if (label.includes('equity')) return '$' + value.toLocaleString('en-US', {maximumFractionDigits: 0});
+      if (label.includes('pct') || label.includes('return') || label.includes('drawdown')) return value.toFixed(2) + '%';
+      if (label.includes('sharpe')) return value.toFixed(3);
+      return value;
+    }
+
+    const LABELS = {
+      equity: 'Equity',
+      daily_return_pct: 'Daily Return',
+      max_drawdown_pct: 'Max Drawdown',
+      sharpe_ratio: 'Sharpe Ratio',
+      trades_total: 'Trades (Total)',
+      trades_today: 'Trades (Today)',
+      risk_violations: 'Risk Violations',
+    };
+
+    async function refresh() {
+      const errBox = document.getElementById('error-box');
+      try {
+        const r = await fetch('/api/public/summary');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        errBox.innerHTML = '';
+
+        const mode = d.mode || 'unknown';
+        const modeClass = ['live','paper'].includes(mode) ? mode : 'unknown';
+        let html = `<div class="card"><div class="label">Mode</div><div class="value"><span class="badge ${modeClass}">${mode.toUpperCase()}</span></div></div>`;
+        html += `<div class="card"><div class="label">Status</div><div class="value neutral">${d.status || '?'}</div></div>`;
+        for (const [key, label] of Object.entries(LABELS)) {
+          const v = d[key];
+          if (v === undefined) continue;
+          const cls = colorClass(key, v);
+          html += `<div class="card"><div class="label">${label}</div><div class="value ${cls}">${fmt(key, v)}</div></div>`;
+        }
+        document.getElementById('grid').innerHTML = html;
+        document.getElementById('footer').textContent = 'Last update: ' + new Date(d.timestamp).toLocaleTimeString();
+      } catch(e) {
+        errBox.innerHTML = '<div class="error">&#9888; Failed to fetch summary: ' + e.message + '</div>';
+      }
+    }
+    refresh();
+  </script>
+</body>
+</html>"""
+
+    @app.route("/dashboard", methods=["GET"])
+    @require_rate_limit
+    @log_api_call
+    def dashboard_ui():
+        """
+        Browser-accessible live dashboard (G3-01).
+
+        No auth required. Pulls live metrics from /api/public/summary
+        via JavaScript and auto-refreshes every 10 seconds.
+        """
+        return render_template_string(_DASHBOARD_HTML)
+
     @app.route("/metrics", methods=["GET"])
     def prometheus_metrics():
         """
@@ -235,6 +374,8 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
             "available_endpoints": [
                 "/health",
                 "/metrics",
+                "/dashboard",
+                "/api/public/summary",
                 "/api/dashboard",
                 "/api/dashboard/system",
                 "/api/dashboard/risk",

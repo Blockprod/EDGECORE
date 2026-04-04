@@ -1,11 +1,12 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
 from structlog import get_logger
 
+from common.errors import DataUnavailableError
 from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 from data.validators import DataValidationError, OHLCVValidator
 
@@ -16,8 +17,13 @@ def load_price_data(
     symbols: list[str],
     timeframe: str = "1d",
     limit: int = 252,
+    cache_dir: str = "data/cache",
+    max_staleness_multiplier: int = 2,
 ) -> pd.DataFrame:
     """Convenience function for live/paper trading: load latest prices.
+
+    Cache-first strategy: on IBKR failure, falls back to disk cache.
+    Raises DataUnavailableError if no symbol yields fresh data from any source.
 
     Returns a DataFrame with columns = symbols, values = close prices.
     Uses IBGatewaySync (port 4002) with a single sequential connection.
@@ -29,37 +35,99 @@ def load_price_data(
     bar_size = bar_size_map.get(timeframe, "1 day")
     duration = f"{max(1, limit // 252)} Y" if timeframe == "1d" else f"{limit} D"
 
-    engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30)
-    engine.connect()
+    _staleness_map = {"1d": timedelta(days=3), "4h": timedelta(hours=8), "1h": timedelta(hours=2)}
+    max_stale = _staleness_map.get(timeframe, timedelta(hours=max_staleness_multiplier))
+
+    _cache_dir = Path(cache_dir)
+    _cache_dir.mkdir(parents=True, exist_ok=True)
+
+    ibkr_ok = True
+    try:
+        engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30)
+        engine.connect()
+    except Exception as exc:
+        logger.warning("load_price_data_ibkr_connect_failed", error=str(exc)[:120])
+        ibkr_ok = False
+        engine = None
 
     frames: dict[str, pd.Series] = {}
     try:
         for sym in symbols:
-            try:
-                _ibkr_rate_limiter.acquire()
-                bars = engine.get_historical_data(
-                    symbol=sym,
-                    duration=duration,
-                    bar_size=bar_size,
-                    what_to_show="ADJUSTED_LAST",
-                )
-                if bars:
-                    s = pd.Series(
-                        [b.close for b in bars],
-                        index=pd.DatetimeIndex([b.date for b in bars]),
-                        name=sym,
+            s: pd.Series | None = None
+            data_source = "ibkr_live"
+
+            # --- Try IBKR ---
+            if ibkr_ok and engine is not None:
+                try:
+                    _ibkr_rate_limiter.acquire()
+                    bars = engine.get_historical_data(
+                        symbol=sym,
+                        duration=duration,
+                        bar_size=bar_size,
+                        what_to_show="ADJUSTED_LAST",
                     )
-                    frames[sym] = s
-                    logger.debug("load_price_data_ok", symbol=sym, bars=len(bars))
+                    if bars:
+                        s = pd.Series(
+                            [b.close for b in bars],
+                            index=pd.DatetimeIndex([b.date for b in bars]),
+                            name=sym,
+                        )
+                        # Persist to cache for future fallback
+                        try:
+                            _cache_file = _cache_dir / f"{sym}_{timeframe}.parquet"
+                            s.to_frame(name="close").to_parquet(_cache_file)
+                        except Exception:
+                            pass
+                        logger.debug("load_price_data_ok", symbol=sym, bars=len(bars), data_source=data_source)
+                    else:
+                        logger.warning("load_price_data_empty", symbol=sym)
+                except Exception as exc:
+                    logger.warning("load_price_data_ibkr_failed", symbol=sym, error=str(exc)[:120])
+
+            # --- Fallback: disk cache ---
+            if s is None:
+                data_source = "ibkr_cache"
+                _cache_file = _cache_dir / f"{sym}_{timeframe}.parquet"
+                if _cache_file.exists():
+                    try:
+                        cached_df = pd.read_parquet(_cache_file)
+                        if "close" in cached_df.columns:
+                            s = pd.Series(cached_df["close"], name=sym)
+                        elif not cached_df.empty:
+                            s = pd.Series(cached_df.iloc[:, 0], name=sym)
+                        logger.warning("load_price_data_cache_hit", symbol=sym, data_source=data_source)
+                    except Exception as exc:
+                        logger.error("load_price_data_cache_read_failed", symbol=sym, error=str(exc)[:120])
+
+            if s is not None and not s.empty:
+                # Freshness check: reject data older than max_stale
+                last_ts = pd.Timestamp(str(s.index[-1]))
+                if last_ts.tzinfo is None:
+                    last_ts = last_ts.tz_localize("UTC")
+                age = datetime.now(UTC) - last_ts
+                if age > max_stale:
+                    logger.warning(
+                        "load_price_data_stale_rejected",
+                        symbol=sym,
+                        age_hours=round(age.total_seconds() / 3600, 1),
+                        max_stale_hours=round(max_stale.total_seconds() / 3600, 1),
+                        data_source=data_source,
+                    )
                 else:
-                    logger.warning("load_price_data_empty", symbol=sym)
-            except Exception as exc:
-                logger.error("load_price_data_failed", symbol=sym, error=str(exc)[:120])
+                    frames[sym] = s
     finally:
-        engine.disconnect()
+        if engine is not None:
+            try:
+                engine.disconnect()
+            except Exception:
+                pass
 
     if not frames:
-        return pd.DataFrame()
+        raise DataUnavailableError(
+            f"No fresh data available for any of {symbols} "
+            f"(IBKR {'down' if not ibkr_ok else 'empty'}, cache absent or stale). "
+            "Trading halted."
+        )
     return pd.DataFrame(frames).dropna(how="all")
 
 

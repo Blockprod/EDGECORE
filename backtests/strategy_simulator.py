@@ -1,4 +1,9 @@
-﻿"""
+﻿import os
+import sys
+
+if __name__ == "__main__":
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+"""
 Unified backtest simulator ÔÇô Sprint 1.1 (fixes C-01: backtest/live divergence).
 
 Uses ``PairTradingStrategy.generate_signals()`` as the **sole** source of
@@ -122,9 +127,10 @@ class StrategyBacktestSimulator:
                 notional (e.g. 0.03 = 3%).  Positions hitting this are
                 force-closed.  Set to 0 to disable.
         """
-        from execution.slippage import SlippageConfig, SlippageModel
+        from execution.slippage import SlippageModel, conservative_equity_slippage
 
-        self.slippage_model = SlippageModel(SlippageConfig())
+        # Utilise la config institutionnelle conservatrice pour tous les backtests
+        self.slippage_model = SlippageModel(conservative_equity_slippage())
         if cost_model is not None:
             self.cost_model = cost_model
         else:
@@ -308,6 +314,12 @@ class StrategyBacktestSimulator:
         """
         strategy = self._create_fresh_strategy()
 
+        # === DIAGNOSTIC : Afficher bornes de dates et config avant la boucle ===
+        print("[DEBUG][PRE-BOUCLE] prices_df.index.min=", prices_df.index.min())
+        print("[DEBUG][PRE-BOUCLE] prices_df.index.max=", prices_df.index.max())
+        print("[DEBUG][PRE-BOUCLE] len(prices_df)=", len(prices_df))
+        print(f"[DEBUG][PRE-BOUCLE] oos_start_date={oos_start_date}")
+
         # ---- Set sector map on strategy for intra-sector pair discovery ----
         if sector_map is not None:
             object.__setattr__(strategy, "sector_map", sector_map)
@@ -376,6 +388,8 @@ class StrategyBacktestSimulator:
         from tqdm import tqdm
 
         print("[BACKTEST] D├®marrage du backtest principal...")
+        print("\n[DEBUG] Début du run de la stratégie (signal flow diagnostics)")
+        print(f"[DEBUG] lookback_min = {lookback_min}, len(prices_df) = {len(prices_df)}")
         for bar_idx in tqdm(range(lookback_min, len(prices_df)), desc="Backtest", ncols=80):
             hist_prices = prices_df.iloc[: bar_idx + 1]
 
@@ -473,6 +487,16 @@ class StrategyBacktestSimulator:
                         date=str(prices_df.index[bar_idx])[:10],
                         pairs_found=len(current_pairs) if current_pairs else 0,
                     )
+                    print(f"[DEBUG] Paires cointégrées candidates (bar {bar_idx}): {len(current_pairs)}")
+                    if not current_pairs:
+                        print(f"[DEBUG] Colonnes disponibles: {_discovery_prices.columns.tolist()}")
+                        print(f"[DEBUG] Aperçu données: {_discovery_prices.head(2)}")
+                        from config.settings import get_settings
+
+                        s = get_settings()
+                        print(
+                            f"[DEBUG] entry_z_score={s.strategy.entry_z_score} min_correlation={s.strategy.min_correlation} lookback_window={s.strategy.lookback_window}"
+                        )
                 else:
                     bars_since_discovery += 1
 
@@ -566,6 +590,7 @@ class StrategyBacktestSimulator:
                 discovered_pairs=current_pairs,
                 weekly_prices=weekly_prices,
             )
+            print(f"[DEBUG] Bar {bar_idx}: {len(signals)} signaux générés")
 
             # ---- Post-v27: Market regime filter (SPY-based) ---------
             # Classify the current market regime using SPY data.
@@ -596,7 +621,25 @@ class StrategyBacktestSimulator:
             # ---- Process signals (entries & exits) ------------------
             # realized_pnl is already initialized above (before pre-signal P&L stop)
 
+            # --- Initialisation du log synthétique du flux de signaux ---
+            signal_stats = {
+                "total_signals_generated": 0,
+                "total_entries_accepted": 0,
+                "total_entries_rejected": 0,
+                "rejected_event_blackout": 0,
+                "rejected_borrow": 0,
+                "rejected_kelly": 0,
+                "rejected_sector": 0,
+                "rejected_var": 0,
+                "rejected_heat": 0,
+                "rejected_spread_corr": 0,
+                "rejected_pca": 0,
+                "rejected_momentum": 0,
+                "rejected_risk_engine": 0,
+            }
+
             for signal in signals:
+                signal_stats["total_signals_generated"] += 1
                 pair_key = signal.symbol_pair
                 parts = pair_key.split("_")
                 if len(parts) != 2:
@@ -622,6 +665,7 @@ class StrategyBacktestSimulator:
                         _side_sizing = 1.0
 
                     if _side_sizing <= 0.0:
+                        signal_stats["total_entries_rejected"] += 1
                         logger.debug(
                             "entry_blocked_regime_adaptive",
                             pair=pair_key,
@@ -637,6 +681,7 @@ class StrategyBacktestSimulator:
                     # v47: Cross-sectional dispersion gate (bar-level, computed above).
                     # Block when universe returns are too synchronized (smooth bull).
                     if not _dispersion_ok:
+                        signal_stats["total_entries_rejected"] += 1
                         logger.debug(
                             "entry_blocked_low_dispersion",
                             pair=pair_key,
@@ -647,6 +692,7 @@ class StrategyBacktestSimulator:
                     # Post-v27 ├ëtape 3: Dynamic pair blacklist gate
                     _bar_date = cast(pd.Timestamp, pd.Timestamp(str(prices_df.index[bar_idx]))).date()
                     if self.pair_blacklist.is_blocked(pair_key, _bar_date):
+                        signal_stats["total_entries_rejected"] += 1
                         logger.debug(
                             "entry_blocked_pair_blacklist",
                             pair=pair_key,
@@ -656,6 +702,8 @@ class StrategyBacktestSimulator:
 
                     # Phase 0.3 ÔÇô Earnings/event blackout gate
                     if self.event_filter.is_pair_blackout(sym1, sym2, _bar_date):
+                        signal_stats["total_entries_rejected"] += 1
+                        signal_stats["rejected_event_blackout"] += 1
                         logger.debug(
                             "entry_blocked_event_blackout",
                             pair=pair_key,
@@ -667,6 +715,8 @@ class StrategyBacktestSimulator:
                     _short_sym = sym2 if signal.side == "long" else sym1
                     _borrow_ok, _borrow_fee = self.borrow_checker.check_shortable(_short_sym, side="short")
                     if not _borrow_ok:
+                        signal_stats["total_entries_rejected"] += 1
+                        signal_stats["rejected_borrow"] += 1
                         logger.debug(
                             "entry_rejected_borrow_check",
                             pair=pair_key,
@@ -680,6 +730,8 @@ class StrategyBacktestSimulator:
                     if candidate_spread is not None:
                         allowed, reject_reason = self.spread_corr_guard.check_entry(pair_key, candidate_spread)
                         if not allowed:
+                            signal_stats["total_entries_rejected"] += 1
+                            signal_stats["rejected_spread_corr"] += 1
                             logger.debug(
                                 "entry_rejected_spread_correlation",
                                 pair=pair_key,
@@ -688,6 +740,8 @@ class StrategyBacktestSimulator:
                             continue
                         pca_ok, pca_reason = self.pca_monitor.check_entry(pair_key, candidate_spread)
                         if not pca_ok:
+                            signal_stats["total_entries_rejected"] += 1
+                            signal_stats["rejected_pca"] += 1
                             logger.debug(
                                 "entry_rejected_pca_factor",
                                 pair=pair_key,
@@ -701,6 +755,8 @@ class StrategyBacktestSimulator:
                     if self.momentum_filter is not None:
                         _mom_ok, _mom_reason = self.momentum_filter.check_entry_allowed(sym1, sym2, hist_prices)
                         if not _mom_ok:
+                            signal_stats["total_entries_rejected"] += 1
+                            signal_stats["rejected_momentum"] += 1
                             logger.debug(
                                 "entry_rejected_momentum_divergence",
                                 pair=pair_key,
@@ -772,6 +828,8 @@ class StrategyBacktestSimulator:
                         )
 
                         if kelly_alloc <= 0:
+                            signal_stats["total_entries_rejected"] += 1
+                            signal_stats["rejected_kelly"] += 1
                             logger.debug(
                                 "entry_rejected_kelly",
                                 pair=pair_key,
@@ -796,6 +854,8 @@ class StrategyBacktestSimulator:
                         current_heat + (notional / portfolio_values[-1] if portfolio_values[-1] > 0 else 0)
                         > self.max_portfolio_heat
                     ):
+                        signal_stats["total_entries_rejected"] += 1
+                        signal_stats["rejected_heat"] += 1
                         logger.debug(
                             "entry_rejected_portfolio_heat",
                             pair=pair_key,
@@ -809,6 +869,8 @@ class StrategyBacktestSimulator:
                         pair_key, notional, portfolio_values[-1], positions._positions
                     )
                     if not _sec_ok:
+                        signal_stats["total_entries_rejected"] += 1
+                        signal_stats["rejected_sector"] += 1
                         logger.debug(
                             "entry_rejected_sector_exposure",
                             pair=pair_key,
@@ -819,6 +881,8 @@ class StrategyBacktestSimulator:
                     # Phase 2.3 ÔÇô VaR limit gate
                     _var_ok, _var_breach = self.var_monitor.check_limit(portfolio_values[-1])
                     if not _var_ok:
+                        signal_stats["total_entries_rejected"] += 1
+                        signal_stats["rejected_var"] += 1
                         logger.debug(
                             "entry_rejected_var_limit",
                             pair=pair_key,
@@ -866,6 +930,8 @@ class StrategyBacktestSimulator:
                             )
                             re_allowed, re_reason = False, str(re_exc)
                         if not re_allowed:
+                            signal_stats["total_entries_rejected"] += 1
+                            signal_stats["rejected_risk_engine"] += 1
                             logger.debug(
                                 "entry_rejected_risk_engine",
                                 pair=pair_key,
@@ -941,6 +1007,7 @@ class StrategyBacktestSimulator:
                     if self.kelly_sizer is not None:
                         _nav_stop_pct = self.kelly_sizer.compute_nav_stop_price_distance(notional, portfolio_values[-1])
 
+                    signal_stats["total_entries_accepted"] += 1
                     positions[pair_key] = {
                         "side": signal.side,
                         "sym1": sym1,
@@ -997,89 +1064,112 @@ class StrategyBacktestSimulator:
                 strategy.active_trades.pop(gk, None)
 
             # ---- Simulator-level Z-score exit (mean reversion) ----------
-            # CRITICAL: generate_signals() only iterates pairs in the
-            # current discovery list.  When a pair drops from discoveries
-            # (e.g., BH-FDR rejects it next window), the strategy code
-            # never checks the z-score for that position.  This block
-            # independently monitors ALL open positions and closes them
-            # when the spread reverts to the exit threshold OR diverges
-            # beyond the z-score stop-loss (more natural than % stop for
-            # stat-arb ÔÇö aligns with the z-score entry framework).
-            z_stop_threshold = getattr(strategy.config, "z_score_stop", 3.5)
-            for pair_key in list(positions.keys_list()):
-                pos = positions[pair_key]
-                sym1, sym2 = pos["sym1"], pos["sym2"]
-                try:
-                    if _compute_zscore_last_fast is not None:
-                        # Cython fast path: inline OLS + last rolling z-score.
-                        # Avoids SpreadModel construction (lstsq + HalfLifeEstimator)
-                        # and pandas rolling overhead ÔÇö ~10-20x faster per call.
-                        _y = hist_prices[sym1].values
-                        _x = hist_prices[sym2].values
-                        _xm = _x.mean()
-                        _ym = _y.mean()
-                        _xc = _x - _xm
-                        _xx = float(np.dot(_xc, _xc))
-                        _beta = float(np.dot(_xc, _y - _ym)) / (_xx if _xx > 1e-10 else 1e-10)
-                        _icpt = _ym - _beta * _xm
-                        _spread = np.ascontiguousarray(_y - (_icpt + _beta * _x), dtype=np.float64)
-                        current_z = _compute_zscore_last_fast(_spread, 60)
-                    else:
-                        from models.spread import SpreadModel
 
-                        y = hist_prices[sym1]
-                        x = hist_prices[sym2]
-                        from config.settings import get_settings as _gs_k
+        # ---- Log synthétique du flux de signaux (P5) -------------------
+        # Compte total signaux générés, acceptés, rejetés, motifs de rejet
+        logger.info(
+            "signal_flow_summary",
+            total_signals_generated=signal_stats["total_signals_generated"],
+            total_entries_accepted=signal_stats["total_entries_accepted"],
+            total_entries_rejected=signal_stats["total_entries_rejected"],
+            rejected_event_blackout=signal_stats["rejected_event_blackout"],
+            rejected_borrow=signal_stats["rejected_borrow"],
+            rejected_kelly=signal_stats["rejected_kelly"],
+            rejected_sector=signal_stats["rejected_sector"],
+            rejected_var=signal_stats["rejected_var"],
+            rejected_heat=signal_stats["rejected_heat"],
+            rejected_spread_corr=signal_stats["rejected_spread_corr"],
+            rejected_pca=signal_stats["rejected_pca"],
+            rejected_momentum=signal_stats["rejected_momentum"],
+            rejected_risk_engine=signal_stats["rejected_risk_engine"],
+        )
+        # Impression synthétique en console pour debug immédiat
+        print("\n=== SIGNAL FLOW SUMMARY ===")
+        for k, v in signal_stats.items():
+            print(f"{k}: {v}")
+        print("==========================\n")
+        print("[DEBUG] Fin du run de la stratégie (signal flow diagnostics)\n")
+        # CRITICAL: generate_signals() only iterates pairs in the
+        # current discovery list.  When a pair drops from discoveries
+        # (e.g., BH-FDR rejects it next window), the strategy code
+        # never checks the z-score for that position.  This block
+        # independently monitors ALL open positions and closes them
+        # when the spread reverts to the exit threshold OR diverges
+        # beyond the z-score stop-loss (more natural than % stop for
+        # stat-arb ÔÇö aligns with the z-score entry framework).
+        z_stop_threshold = getattr(strategy.config, "z_score_stop", 3.5)
+        for pair_key in list(positions.keys_list()):
+            pos = positions[pair_key]
+            sym1, sym2 = pos["sym1"], pos["sym2"]
+            try:
+                if _compute_zscore_last_fast is not None:
+                    # ...existing code...
+                    _y = hist_prices[sym1].values
+                    _x = hist_prices[sym2].values
+                    _xm = _x.mean()
+                    _ym = _y.mean()
+                    _xc = _x - _xm
+                    _xx = float(np.dot(_xc, _xc))
+                    _beta = float(np.dot(_xc, _y - _ym)) / (_xx if _xx > 1e-10 else 1e-10)
+                    _icpt = _ym - _beta * _xm
+                    _spread = np.ascontiguousarray(_y - (_icpt + _beta * _x), dtype=np.float64)
+                    current_z = _compute_zscore_last_fast(_spread, 60)
+                else:
+                    from models.spread import SpreadModel
 
-                        model = SpreadModel(y, x, kalman_delta=_gs_k().strategy.kalman_delta)
-                        spread = model.compute_spread(y, x)
-                        z_score_series = model.compute_z_score(spread)
-                        current_z = float(z_score_series.iloc[-1])
+                    y = hist_prices[sym1]
+                    x = hist_prices[sym2]
+                    from config.settings import get_settings as _gs_k
 
-                    # Mean-reversion exit: z reverted to near zero
-                    if abs(current_z) <= strategy.config.exit_z_score:
-                        pos_closed = positions.pop(pair_key)
-                        close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
-                        realized_pnl += close_pnl
-                        trades_pnl.append(trade_pnl)
-                        _per_pair_trades.setdefault(pair_key, []).append(trade_pnl)
-                        _trade_durations.append(_dur)
-                        strategy.active_trades.pop(pair_key, None)
-                        self.spread_corr_guard.remove_spread(pair_key)
-                        self.pca_monitor.remove_spread(pair_key)
-                        self.partial_profit.remove(pair_key)
-                        logger.debug(
-                            "z_score_exit",
-                            pair=pair_key,
-                            z_score=round(float(current_z), 3),
-                            exit_threshold=strategy.config.exit_z_score,
-                            trade_pnl=round(trade_pnl, 2),
-                        )
-                    # Z-score stop: spread diverged far beyond entry
-                    elif abs(current_z) > z_stop_threshold:
-                        pos_closed = positions.pop(pair_key)
-                        close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
-                        realized_pnl += close_pnl
-                        trades_pnl.append(trade_pnl)
-                        _per_pair_trades.setdefault(pair_key, []).append(trade_pnl)
-                        _trade_durations.append(_dur)
-                        strategy.active_trades.pop(pair_key, None)
-                        self.spread_corr_guard.remove_spread(pair_key)
-                        self.pca_monitor.remove_spread(pair_key)
-                        self.partial_profit.remove(pair_key)
-                        logger.debug(
-                            "z_score_stop_exit",
-                            pair=pair_key,
-                            z_score=round(float(current_z), 3),
-                            z_stop=z_stop_threshold,
-                            trade_pnl=round(trade_pnl, 2),
-                        )
-                except Exception as e:
+                    model = SpreadModel(y, x, kalman_delta=_gs_k().strategy.kalman_delta)
+                    spread = model.compute_spread(y, x)
+                    z_score_series = model.compute_z_score(spread)
+                    current_z = float(z_score_series.iloc[-1])
+
+                # Mean-reversion exit: z reverted to near zero
+                if abs(current_z) <= strategy.config.exit_z_score:
+                    pos_closed = positions.pop(pair_key)
+                    close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
+                    realized_pnl += close_pnl
+                    trades_pnl.append(trade_pnl)
+                    _per_pair_trades.setdefault(pair_key, []).append(trade_pnl)
+                    _trade_durations.append(_dur)
+                    strategy.active_trades.pop(pair_key, None)
+                    self.spread_corr_guard.remove_spread(pair_key)
+                    self.pca_monitor.remove_spread(pair_key)
+                    self.partial_profit.remove(pair_key)
                     logger.debug(
-                        "z_score_exit_check_failed",
+                        "z_score_exit",
                         pair=pair_key,
-                        error=str(e),
+                        z_score=round(float(current_z), 3),
+                        exit_threshold=strategy.config.exit_z_score,
+                        trade_pnl=round(trade_pnl, 2),
                     )
+                # Z-score stop: spread diverged far beyond entry
+                elif abs(current_z) > z_stop_threshold:
+                    pos_closed = positions.pop(pair_key)
+                    close_pnl, trade_pnl, _dur = self._close_position(pos_closed, prices_df, bar_idx)
+                    realized_pnl += close_pnl
+                    trades_pnl.append(trade_pnl)
+                    _per_pair_trades.setdefault(pair_key, []).append(trade_pnl)
+                    _trade_durations.append(_dur)
+                    strategy.active_trades.pop(pair_key, None)
+                    self.spread_corr_guard.remove_spread(pair_key)
+                    self.pca_monitor.remove_spread(pair_key)
+                    self.partial_profit.remove(pair_key)
+                    logger.debug(
+                        "z_score_stop_exit",
+                        pair=pair_key,
+                        z_score=round(float(current_z), 3),
+                        z_stop=z_stop_threshold,
+                        trade_pnl=round(trade_pnl, 2),
+                    )
+            except Exception as e:
+                logger.debug(
+                    "z_score_exit_check_failed",
+                    pair=pair_key,
+                    error=str(e),
+                )
 
             # ---- Partial profit-taking (Phase 3 ÔÇô ┬º4.4 fix) -------
             for pair_key in list(positions.keys_list()):

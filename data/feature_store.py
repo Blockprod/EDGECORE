@@ -120,7 +120,7 @@ class FeatureStore:
         if not path.exists():
             return None
         try:
-            series = pd.read_parquet(path, engine="pyarrow")["value"]
+            series = pd.read_parquet(path)["value"]
             logger.debug("feature_store_hit", key=key[:8])
             return series
         except Exception as exc:
