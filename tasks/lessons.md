@@ -216,3 +216,12 @@
 - Ce qui a bloqué : Documentation technique initialement dispersée, nécessité de créer plusieurs nouveaux fichiers pour la centralisation.
 - À retenir pour la prochaine fois : Prévoir un dossier OPERATIONS dès la conception, versionner explicitement tous les runbooks/prompts critiques, maintenir une checklist RGPD/sécurité à jour.
 - Issues closes : [audit_process_doc_edgecore.md — 🔴 1 · 🟠 3]
+
+## L-22 · fix(mypy): add type annotation + get_average_correlation() — CI check passes [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `0f58ad4` : fix(mypy): add type annotation + get_average_correlation() — CI check passes. Fichiers : monitoring/correlation_monitor.py, risk_engine/portfolio_risk.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/correlation_monitor.py`, `risk_engine/portfolio_risk.py` — commit `0f58ad4` (2026-04-04)
+
+---
