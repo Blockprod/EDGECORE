@@ -36,6 +36,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -240,13 +241,14 @@ def run_standalone(args):
                 time.sleep(max(60, sleep_sec))
                 continue
 
-            if not hasattr(run_standalone, "_scanned_today"):
-                setattr(run_standalone, "_scanned_today", None)
+            _rs: Any = run_standalone
+            if not hasattr(_rs, "_scanned_today"):
+                _rs._scanned_today = None
 
-            if getattr(run_standalone, "_scanned_today") != now.date():
+            if _rs._scanned_today != now.date():
                 logger.info("running_pre_market_scan")
                 run_daily_scan(args.python, args.sec_only)
-                setattr(run_standalone, "_scanned_today", now.date())
+                _rs._scanned_today = now.date()
 
             # Market hours monitoring
             if is_market_hours():
