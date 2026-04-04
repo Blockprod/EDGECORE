@@ -225,10 +225,14 @@ class StrategyBacktestSimulator:
         self.options_flow_signal = OptionsFlowSignal()
         # Phase 4.3: Sentiment signal (backtest proxy)
         self.sentiment_signal = SentimentSignal()
-        # Phase 4.4: ML signal combiner (walk-forward GBM)
+        # Phase 4.4: ML signal combiner (walk-forward GBM).
+        # Entry gate: ML composite score ≥ ml_entry_threshold (scale 0–1, not raw z-score).
+        # ARCHITECTURAL NOTE: This is different from the live entry gate (entry_z_score=2.0).
+        # Backtest Sharpe/PF metrics assume ML signal gating. Live runs in shadow mode.
+        _sc_cfg = _gs_algo().signal_combiner
         self.ml_combiner = MLSignalCombiner(
-            entry_threshold=0.30,
-            exit_threshold=0.12,
+            entry_threshold=_sc_cfg.ml_entry_threshold,
+            exit_threshold=_sc_cfg.ml_exit_threshold,
             min_samples=15,
             retrain_interval=63,
         )
@@ -387,9 +391,14 @@ class StrategyBacktestSimulator:
 
         from tqdm import tqdm
 
-        print("[BACKTEST] D├®marrage du backtest principal...")
-        print("\n[DEBUG] Début du run de la stratégie (signal flow diagnostics)")
-        print(f"[DEBUG] lookback_min = {lookback_min}, len(prices_df) = {len(prices_df)}")
+        logger.info("backtest_starting", lookback_min=lookback_min, bars=len(prices_df))
+        # Pre-initialize loop variables so pyright (standard mode) does not flag
+        # them as possibly-unbound when the iteration range is empty.
+        bar_idx: int = lookback_min
+        hist_prices: pd.DataFrame = prices_df.iloc[:lookback_min]
+        realized_pnl: float = 0.0
+        _disp_reason: str = ""
+        signal_stats: dict[str, int] = {}
         for bar_idx in tqdm(range(lookback_min, len(prices_df)), desc="Backtest", ncols=80):
             hist_prices = prices_df.iloc[: bar_idx + 1]
 
@@ -472,7 +481,10 @@ class StrategyBacktestSimulator:
                     if self.universe_manager is not None:
                         _bar_date = prices_df.index[bar_idx]
                         _pit_syms = set(self.universe_manager.get_symbols_as_of(_bar_date))
-                        _discovery_prices = hist_prices[[c for c in hist_prices.columns if c in _pit_syms]]
+                        _discovery_prices: pd.DataFrame = cast(
+                            pd.DataFrame,
+                            hist_prices[[c for c in hist_prices.columns if c in _pit_syms]],
+                        )
                     else:
                         _discovery_prices = hist_prices
                     current_pairs = strategy.find_cointegrated_pairs(
@@ -602,7 +614,7 @@ class StrategyBacktestSimulator:
                     _spy_col = _c
                     break
             if _spy_col is not None:
-                _regime_state = self.market_regime_filter.classify(hist_prices[_spy_col])
+                _regime_state = self.market_regime_filter.classify(pd.Series(hist_prices[_spy_col]))
                 _regime_sizing = _regime_state.sizing_multiplier
             else:
                 # No SPY data available ÔÇö skip regime filter
@@ -1083,12 +1095,7 @@ class StrategyBacktestSimulator:
             rejected_momentum=signal_stats["rejected_momentum"],
             rejected_risk_engine=signal_stats["rejected_risk_engine"],
         )
-        # Impression synthétique en console pour debug immédiat
-        print("\n=== SIGNAL FLOW SUMMARY ===")
-        for k, v in signal_stats.items():
-            print(f"{k}: {v}")
-        print("==========================\n")
-        print("[DEBUG] Fin du run de la stratégie (signal flow diagnostics)\n")
+        logger.debug("signal_flow_summary_dict", **signal_stats)
         # CRITICAL: generate_signals() only iterates pairs in the
         # current discovery list.  When a pair drops from discoveries
         # (e.g., BH-FDR rejects it next window), the strategy code
@@ -1104,8 +1111,8 @@ class StrategyBacktestSimulator:
             try:
                 if _compute_zscore_last_fast is not None:
                     # ...existing code...
-                    _y = hist_prices[sym1].values
-                    _x = hist_prices[sym2].values
+                    _y = np.asarray(hist_prices[sym1], dtype=np.float64)
+                    _x = np.asarray(hist_prices[sym2], dtype=np.float64)
                     _xm = _x.mean()
                     _ym = _y.mean()
                     _xc = _x - _xm
@@ -1117,8 +1124,8 @@ class StrategyBacktestSimulator:
                 else:
                     from models.spread import SpreadModel
 
-                    y = hist_prices[sym1]
-                    x = hist_prices[sym2]
+                    y = pd.Series(hist_prices[sym1])
+                    x = pd.Series(hist_prices[sym2])
                     from config.settings import get_settings as _gs_k
 
                     model = SpreadModel(y, x, kalman_delta=_gs_k().strategy.kalman_delta)

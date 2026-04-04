@@ -84,11 +84,17 @@ class TestTickHappyPath:
         runner._risk_facade.can_enter_trade.return_value = (True, None)
         runner._portfolio_risk.can_open_position.return_value = (True, None)
 
-        # Allocator returns the signal
-        runner._allocator.size.return_value = mock_signal
+        # Allocator returns an allocation result with non-zero notional
+        _mock_alloc = MagicMock()
+        _mock_alloc.notional = 10_000.0
+        runner._allocator.allocate.return_value = _mock_alloc
 
         # Router returns order ID
-        runner._router.submit_order.return_value = "ORD-001"
+        _mock_exec_result = MagicMock()
+        _mock_exec_result.fill_price = 150.0
+        _mock_exec_result.slippage_bps = 2.0
+        _mock_exec_result.filled_qty = 66.0
+        runner._router.submit_order.return_value = _mock_exec_result
         runner._router.get_account_balance.return_value = 100_000.0
 
         return runner

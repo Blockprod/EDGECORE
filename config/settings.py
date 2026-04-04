@@ -73,6 +73,10 @@ class StrategyConfig:
     retraining_interval_bars: int = 14  # Re-estimate hedge ratios every 2 weeks by default
     # C-11: Kalman process noise — controls how fast the hedge ratio adapts (smaller = smoother)
     kalman_delta: float = 1e-4
+    # C-11 (plan): Cointegration stability filter — min fraction of rolling windows that confirm coint.
+    cointegration_stability_threshold: float = 0.8
+    # C-13 (plan): OOS acceptance threshold — min fraction of pairs that must pass OOS validation.
+    oos_acceptance_threshold: float = 0.70
 
 
 @dataclass
@@ -231,6 +235,13 @@ class SignalCombinerConfig:
     entry_threshold: float = 0.6  # Composite score threshold for entry
     exit_threshold: float = 0.2  # Composite score threshold for exit
     ml_combiner_shadow_mode: bool = True  # True=log ML predictions only; False=gate signals
+    # ML combiner entry/exit thresholds (applied to composite ML score, scale 0–1).
+    # NOTE: These govern the BACKTEST gate (ML composite ≥ threshold → enter).
+    # In LIVE trading, ml_combiner_shadow_mode=True means these thresholds are NOT
+    # used for entry decisions — the live gate is StrategyConfig.entry_z_score (raw z-score).
+    # Backtest metrics (Sharpe, PF) reflect ML-gated performance; live uses z-score alone.
+    ml_entry_threshold: float = 0.30  # ML composite score threshold for entry (backtest-calibrated)
+    ml_exit_threshold: float = 0.12  # ML composite score threshold for exit (backtest-calibrated)
     use_markov_regime: bool = False  # True=use MarkovRegimeDetector (HMM) instead of RegimeDetector
 
 

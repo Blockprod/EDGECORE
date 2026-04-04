@@ -53,6 +53,7 @@ def test_t1_5():
 
     # Step 4: Check main.py code quality
     print("\n[TEST] Checking main.py structure...")
+    main_content: str = ""  # pre-init; overwritten below if main.py is readable
     try:
         with open("main.py", encoding="utf-8") as f:
             main_content = f.read()

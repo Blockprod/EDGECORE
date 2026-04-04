@@ -44,6 +44,7 @@ Chaque audit suit le même pipeline en **3 étapes** :
 | 15 | [Best Practices AI](#15--best-practices-ai) | Claude · Copilot · HyperAgents · mémoire · hooks · orchestration · prompts · CI/CD · sécurité | Agent |
 | 16 | [Process & Documentation](#16--process--documentation) | CI/CD · Automatisation build/tests · Sécurité · Exploitation · Documentation onboarding/usage/monitoring | Agent |
 | 17 | [Validation Plan Grok](#17--validation-plan-grok) | Vérification point par point du plan Grok · Docker prod · Backtester événementiel · Observabilité · Scalabilité · Preuves de performance | Agent |
+| 18 | [Final Upgrade](#18--final-upgrade) | Architecture réelle vs documentée · Choix techniques · Robustesse code · Cohérence système de trading · Points de rupture · Améliorations à fort levier | Agent |
 
 
 ## `1 · STRUCTUREL`
@@ -529,6 +530,32 @@ Démarre l'exécution du plan d'action disponible.
 **A — Audit**
 ```
 #file:tasks/audits/code/audit_grok_plan_validation_prompt.md
+Lance cet audit sur le workspace.
+```
+
+**B — Plan d'action**
+```
+#file:tasks/corrections/generate_action_plan_prompt.md
+Génère le plan d'action depuis l'audit disponible.
+```
+
+**C — Exécution**
+```
+#file:tasks/corrections/execute_corrections_prompt.md
+Démarre l'exécution du plan d'action disponible.
+```
+
+---
+
+## `18 · FINAL UPGRADE`
+
+> Architecture réelle vs documentée · Graphe de dépendances · Choix techniques · Robustesse code · Cohérence système de trading · Points de rupture critiques · Améliorations à fort levier · Score /10 · Verdict PROTOTYPE → PRODUCTION-READY
+
+**Produit A** : `tasks/audits/resultats/audit_final_upgrade_edgecore.md`
+
+**A — Audit**
+```
+#file:tasks/audits/code/audit_final_upgrade.md
 Lance cet audit sur le workspace.
 ```
 

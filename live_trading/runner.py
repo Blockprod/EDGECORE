@@ -225,6 +225,14 @@ class LiveTradingRunner:
         that parameters set before ``start()`` (e.g. entry_z_score=1.5)
         propagate to all sub-modules.
         """
+        # C-09: Guard — Cython extension required for live trading performance.
+        from models import CYTHON_AVAILABLE
+
+        if not CYTHON_AVAILABLE and self.config.mode == "live":
+            raise RuntimeError(
+                "Cython extension not compiled. Run 'python setup.py build_ext --inplace' before starting live trading."
+            )
+
         from config.settings import get_settings
         from execution.partial_profit import PartialProfitManager
         from execution.reconciler import BrokerReconciler
@@ -335,14 +343,22 @@ class LiveTradingRunner:
 
         self._state = TradingState.INITIALIZING
 
-        # C-04: Instantiate ML combiner in shadow mode and restore persisted model
+        # C-04: Instantiate ML combiner in shadow mode and restore persisted model.
+        # In live mode, entry is gated by entry_z_score (raw z-score), NOT the ML threshold.
+        # ml_combiner_shadow_mode=True means ML predictions are logged but do not block trades.
+        # ml_entry_threshold/ml_exit_threshold are passed for consistency with backtest config;
+        # they only take effect if shadow_mode is disabled (gate mode).
         from pathlib import Path
 
         from config.settings import get_settings as _gs
         from signal_engine.ml_combiner import MLSignalCombiner
 
         _sc = _gs().signal_combiner
-        self._ml_combiner = MLSignalCombiner(enabled=True)
+        self._ml_combiner = MLSignalCombiner(
+            enabled=True,
+            entry_threshold=_sc.ml_entry_threshold,
+            exit_threshold=_sc.ml_exit_threshold,
+        )
         _model_dir = Path("data/models")
         _model_dir.mkdir(parents=True, exist_ok=True)
         self._ml_combiner.load(_model_dir / "ml_combiner_live.joblib")
@@ -395,9 +411,10 @@ class LiveTradingRunner:
                 internal_positions={k: v for k, v in self._positions.items()},
                 equity_tolerance_pct=0.02,
             )
-            broker_positions = {}
+            broker_positions: dict[str, dict[str, Any]] = {}
             try:
-                broker_positions = self._router._engine.get_positions() if hasattr(self._router, "_engine") else {}  # type: ignore[attr-defined]
+                _raw_pos = self._router.get_positions() if self._router else {}
+                broker_positions = {sym: {"quantity": qty} for sym, qty in _raw_pos.items()}
             except Exception as exc:
                 if self.config.mode == "live":
                     raise RuntimeError(f"Cannot start live trading: broker position fetch failed: {exc}") from exc
@@ -446,9 +463,10 @@ class LiveTradingRunner:
                 else self.config.initial_capital
             )
             self._reconciler.internal_positions = {k: v for k, v in self._positions.items()}
-            broker_positions = {}
+            broker_positions: dict[str, dict[str, Any]] = {}
             try:
-                broker_positions = self._router._engine.get_positions() if hasattr(self._router, "_engine") else {}  # type: ignore[attr-defined]
+                _raw_pos = self._router.get_positions() if self._router else {}
+                broker_positions = {sym: {"quantity": qty} for sym, qty in _raw_pos.items()}
             except Exception as exc:
                 logger.warning("periodic_reconciliation_positions_unavailable", error=str(exc)[:200])
                 return  # skip ce tick, réessayer au prochain intervalle
@@ -641,15 +659,13 @@ class LiveTradingRunner:
                 pos_info["holding_bars"] = holding_bars + 1  # increment
 
                 half_life = pos_info.get("half_life")
-                entry_z = pos_info.get("entry_z", 0.0)
                 current_z = pos_info.get("current_z", 0.0)
                 unrealized_pnl_pct = pos_info.get("unrealized_pnl_pct", 0.0)
 
                 # Trailing stop: exit if Z-score diverges too far from entry
                 if self._trailing_stop:
-                    ts_exit, ts_reason = self._trailing_stop.check(  # type: ignore[attr-defined]
-                        pair_key=pair_key,
-                        entry_z=entry_z,
+                    ts_exit, ts_reason = self._trailing_stop.should_exit_on_trailing_stop(
+                        symbol_pair=pair_key,
                         current_z=current_z,
                     )
                     if ts_exit:
@@ -668,15 +684,18 @@ class LiveTradingRunner:
 
                 # Partial profit: take profit on portion of position
                 if self._partial_profit:
-                    pp_action = self._partial_profit.check(  # type: ignore[call-arg]
+                    _entry_notional = float(pos_info.get("entry_notional", 0.0))
+                    _unrealised_pnl = unrealized_pnl_pct * _entry_notional
+                    pp_close_frac, _pp_force = self._partial_profit.check(
                         pair_key=pair_key,
-                        unrealized_pnl_pct=unrealized_pnl_pct,  # type: ignore[call-arg]
+                        unrealised_pnl=_unrealised_pnl,
+                        notional=_entry_notional,
                     )
-                    if pp_action and pp_action.get("close_fraction", 0) > 0:
+                    if pp_close_frac > 0:
                         logger.info(
                             "live_trading_partial_profit",
                             pair=pair_key,
-                            close_fraction=pp_action["close_fraction"],
+                            close_fraction=pp_close_frac,
                         )
 
                 # Ongoing correlation monitor: exit if pair correlation degrades
@@ -874,19 +893,35 @@ class LiveTradingRunner:
                         continue
 
                 # 4c. Size the position via allocator
+                from uuid import uuid4 as _uuid4
+
+                from execution.base import Order as _Order
+                from execution.base import OrderSide as _OrderSide
+
+                _sized_order: _Order | None = None
                 if self._allocator:
-                    sized_order = self._allocator.size(  # type: ignore[attr-defined]
-                        signal=sig,
-                        capital=_balance,
-                        max_positions=self.config.max_positions,
-                        current_positions=self._positions,
+                    self._allocator.update_equity(_balance)
+                    _alloc = self._allocator.allocate(
+                        pair_key=sig.pair_key,
+                        signal_strength=sig.strength,
+                        spread_vol=getattr(sig, "spread_vol", None),
+                        half_life=getattr(sig, "half_life", None),
                     )
-                else:
-                    sized_order = sig  # fallback: raw signal
+                    if _alloc.notional > 0:
+                        _sym1 = sig.pair_key.split("_")[0]
+                        _leg_side = _OrderSide.BUY if sig.side == "long" else _OrderSide.SELL
+                        _sized_order = _Order(
+                            order_id=str(_uuid4()),
+                            symbol=_sym1,
+                            side=_leg_side,
+                            quantity=_alloc.notional,
+                            limit_price=None,
+                            order_type="MARKET",
+                        )
 
                 # 4d. Submit order through execution router
-                if self._router and sized_order:
-                    _exec_result = self._router.submit_order(sized_order)  # type: ignore[arg-type]
+                if self._router and _sized_order:
+                    _exec_result = self._router.submit_order(_sized_order)
                     logger.info(
                         "live_trading_order_submitted",
                         pair=sig.pair_key,
@@ -905,7 +940,7 @@ class LiveTradingRunner:
                             if sig.timestamp.tzinfo is None
                             else sig.timestamp,
                             symbol_pair=sig.pair_key,
-                            position_size=_exec_result.filled_qty or getattr(sized_order, "quantity", 0.0),
+                            position_size=_exec_result.filled_qty or (_sized_order.quantity if _sized_order else 0.0),
                             entry_price=_exec_result.fill_price or None,
                             z_score=sig.z_score,
                             hedge_ratio=getattr(sig, "hedge_ratio", None),

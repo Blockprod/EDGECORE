@@ -1,11 +1,14 @@
-﻿import numpy as np
+﻿from typing import Any
+
+import numpy as np
 import pandas as pd
 from structlog import get_logger
 
 from models.half_life_estimator import SpreadHalfLifeEstimator
 from models.kalman_hedge import KalmanHedgeRatio
 
-# Module-level Cython import ÔÇö avoids per-call dict lookup in hot path
+# Module-level Cython import — avoids per-call dict lookup in hot path
+_half_life_fast_cython: Any = None  # pre-init; overwritten if Cython module is available
 try:
     from models.cointegration_fast import half_life_fast as _half_life_fast_cython
 

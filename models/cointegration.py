@@ -9,6 +9,7 @@ from structlog import get_logger
 logger = get_logger(__name__)
 
 # Try to load Cython acceleration for cointegration testing
+_engle_granger_fast: Any = None  # pre-init; overwritten if Cython module is available
 try:
     from models.cointegration_fast import engle_granger_fast as _engle_granger_fast
 

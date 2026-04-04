@@ -509,7 +509,8 @@ def use_secret(secret_name: str):
     Example:
         @use_secret('API_KEY')
         def my_function(api_key, other_arg):
-            print(api_key)  # Secret value
+            # Use api_key securely — never log or print it
+            ...
     """
 
     def decorator(func):

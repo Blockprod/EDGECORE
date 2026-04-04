@@ -24,7 +24,7 @@
     "ARCHIVED_*"
   ],
 
-  "typeCheckingMode": "basic",
+  "typeCheckingMode": "standard",
 
   "reportMissingImports": "warning",
   "reportMissingModuleSource": "none",

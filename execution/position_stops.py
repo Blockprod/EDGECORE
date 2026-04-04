@@ -474,9 +474,4 @@ def reset_stop_manager() -> None:
 
 
 if __name__ == "__main__":
-    print("ԣ� Position Stop Management module loaded")
-    print("- PositionStop class for individual stops")
-    print("- PositionStopManager for multi-position management")
-    print("- Stop types: stop loss, take profit, trailing stop")
-    print("- Features: hard exit, breakeven protection, trailing stops")
-
+    pass  # Module self-test removed — use pytest tests/execution/ instead

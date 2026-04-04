@@ -219,5 +219,5 @@ if __name__ == "__main__":
     hl = estimator.estimate_half_life_from_spread(spread)
     params = estimator.compute_ou_process_parameters(spread)
 
-    print(f"Estimated Half-Life: {hl:.1f} days")
-    print(f"OU Parameters: {params}")
+    hl_str = f"{hl:.1f}" if hl is not None else "None"
+    logger.info("half_life_estimate: %s days, ou_params: %s", hl_str, params)

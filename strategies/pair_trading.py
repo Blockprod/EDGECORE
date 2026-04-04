@@ -691,7 +691,7 @@ class PairTradingStrategy(BaseStrategy):
         # ÔöÇÔöÇ Cointegration stability filter ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
         # Only keep pairs that are stable across rolling windows
         stability_windows = [60, 120, 180]
-        stability_threshold = 0.8
+        stability_threshold = self.config.cointegration_stability_threshold
         stable_pairs = []
         for sym1, sym2, pvalue, hl in cointegrated_pairs:
             if is_cointegration_stable(
@@ -892,14 +892,13 @@ class PairTradingStrategy(BaseStrategy):
             cointegrated = self.find_cointegrated_pairs(market_data, self.config.lookback_window)
 
         # --- DIAGNOSTIC LOG ---
-        print(f"[DEBUG] generate_signals: {len(cointegrated)} cointegrated pairs candidates")
-        # Optionally print the pairs for the first few bars
+        logger.debug("generate_signals_count", cointegrated_count=len(cointegrated))
         if hasattr(self, "_bar_counter"):
             self._bar_counter += 1
         else:
             self._bar_counter = 1
         if self._bar_counter <= 3:
-            print(f"[DEBUG] Cointegrated pairs: {[p[:2] for p in cointegrated]}")
+            logger.debug("cointegrated_pairs_sample", pairs=[p[:2] for p in cointegrated])
 
         # ÔöÇÔöÇ Phase 1: Update cross-sectional rankings once per bar ÔöÇÔöÇ
         _csm = getattr(self, "_cross_sectional", None)

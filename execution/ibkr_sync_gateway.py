@@ -40,9 +40,9 @@ class IBWrapper(EWrapper):
         self._hist_done_event: threading.Event = threading.Event()
         self._hist_req_id: int | None = None  # set by IBGatewaySync before each request
 
-    def currentTime(self, time_: int) -> None:
+    def currentTime(self, time: int) -> None:  # noqa: A002 — EWrapper signature uses 'time'
         with self._lock:
-            self.current_time = time_
+            self.current_time = time
 
     def contractDetails(self, reqId: int, contractDetails: Any) -> None:
         with self._lock:

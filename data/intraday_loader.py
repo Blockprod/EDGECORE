@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import pandas as pd
 from structlog import get_logger
@@ -248,6 +248,7 @@ class IntradayLoader:
 
         # ---- Cython fast path -------------------------------------------
         # Import direct intentionnel — façade (models.cointegration) ne réexpose pas brownian_bridge_batch_fast
+        _bb_fast: Any = None  # pre-init; overwritten if Cython module is available
         try:
             from models.cointegration_fast import brownian_bridge_batch_fast as _bb_fast
 

@@ -254,8 +254,8 @@ class CachedFunction:
 
             return result
 
-        wrapper._cache_key_func = self._generate_key
-        wrapper._cache_manager = self.cache_manager
+        setattr(wrapper, "_cache_key_func", self._generate_key)
+        setattr(wrapper, "_cache_manager", self.cache_manager)
         return wrapper
 
     @staticmethod

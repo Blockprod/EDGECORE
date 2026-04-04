@@ -20,6 +20,7 @@ from typing import Any, Callable
 from flask import Response, g, jsonify, request
 from structlog import get_logger
 
+jwt: Any = None  # pre-init; overwritten if PyJWT is available
 try:
     import jwt
 

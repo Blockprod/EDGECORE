@@ -59,6 +59,7 @@ from models.regime_detector import RegimeState, VolatilityRegime
 logger = get_logger(__name__)
 
 # ÔôÇÔôÇ Optional HMM import ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
+GaussianHMM: Any = None  # pre-init; overwritten if hmmlearn is available
 try:
     from hmmlearn.hmm import GaussianHMM  # type: ignore[import-untyped]
 

@@ -268,6 +268,7 @@ class TestRegimeStateMetrics:
         """Test that regime duration in bars is tracked."""
         detector = RegimeDetector()
 
+        state = detector.update(spread=100.0)
         for i in range(10):
             state = detector.update(spread=100.0 + np.random.normal(0, 0.01))
 
@@ -430,6 +431,7 @@ class TestTransitionProbability:
         """Test that transition probability is between 0 and 1."""
         detector = RegimeDetector()
 
+        state = detector.update(spread=100.0)
         for i in range(20):
             state = detector.update(spread=100.0 + np.random.normal(0, 0.02))
 
@@ -441,10 +443,12 @@ class TestTransitionProbability:
         detector_high_vol = RegimeDetector()
 
         # Low vol data (very small changes)
+        state_low = detector_low_vol.update(spread=100.0)
         for i in range(20):
             state_low = detector_low_vol.update(spread=100.0 + np.random.normal(0, 0.0001))
 
         # High vol data (large changes)
+        state_high = detector_high_vol.update(spread=100.0)
         for i in range(20):
             state_high = detector_high_vol.update(spread=100.0 + np.random.normal(0, 0.05))
 
@@ -460,6 +464,7 @@ class TestConfidenceCalculation:
         """Test that confidence is between 0 and 1."""
         detector = RegimeDetector()
 
+        state = detector.update(spread=100.0)
         for i in range(20):
             state = detector.update(spread=100.0 + np.random.normal(0, 0.02))
 
@@ -470,6 +475,7 @@ class TestConfidenceCalculation:
         detector = RegimeDetector()
 
         # Very uniform volatility
+        state = detector.update(spread=100.0)
         for i in range(20):
             state = detector.update(spread=100.0 + 0.02)  # Constant spread
 
@@ -492,6 +498,7 @@ class TestEdgeCases:
         detector = RegimeDetector()
 
         # All same price
+        state = detector.update(spread=100.0)
         for i in range(10):
             state = detector.update(spread=100.0)
 
@@ -503,6 +510,7 @@ class TestEdgeCases:
 
         # Extreme moves
         spreads = [100.0, 150.0, 50.0, 200.0, 10.0, 500.0]
+        state = detector.update(spread=100.0)
         for spread in spreads:
             state = detector.update(spread=spread)
 
@@ -514,6 +522,7 @@ class TestEdgeCases:
         detector = RegimeDetector()
         base = 100.0
 
+        state = detector.update(spread=base)
         for i in range(20):
             state = detector.update(spread=base * (1.0 + np.random.normal(0, 0.01)))
 
@@ -536,6 +545,7 @@ class TestVolatilityHistory:
         """Test that RegimeState includes recent volatility history."""
         detector = RegimeDetector()
 
+        state = detector.update(spread=100.0)
         for i in range(20):
             state = detector.update(spread=100.0 + np.random.normal(0, 0.02))
 

@@ -3,8 +3,10 @@ Diagnostic script to identify backtest issues.
 Tests each component independently.
 """
 
-import pandas as pd
+from typing import Any
+
 import numpy as np
+import pandas as pd
 import sys
 from structlog import get_logger
 
@@ -64,6 +66,7 @@ except Exception as e:
 
 # Step 3: Test cointegration detection
 print("\n[STEP 3] Testing cointegration detection...")
+engle_granger_test_cpp_optimized: Any = None  # pre-init; overwritten in Step 3 try block
 try:
     from models.cointegration import engle_granger_test_cpp_optimized
 

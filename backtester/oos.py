@@ -82,7 +82,11 @@ class OOSValidationEngine:
     """
 
     def __init__(self, config: OOSConfig | None = None):
-        self.config = config or OOSConfig()
+        if config is None:
+            from config.settings import get_settings
+
+            config = OOSConfig(acceptance_threshold=get_settings().strategy.oos_acceptance_threshold)
+        self.config = config
         self._validator = OutOfSampleValidator(
             oos_acceptance_threshold=self.config.acceptance_threshold,
             hl_drift_tolerance=self.config.half_life_drift_tolerance,

@@ -417,3 +417,17 @@ class ExecutionRouter:
                 pass
         # Fallback: no engine initialized yet
         return 0.0
+
+    def get_positions(self) -> dict[str, float]:
+        """Return open positions from the active execution engine."""
+        if self._mode == ExecutionMode.LIVE and self._ibkr_engine is not None:
+            try:
+                return self._ibkr_engine.get_positions()
+            except Exception:
+                pass
+        if self._paper_engine is not None:
+            try:
+                return self._paper_engine.get_positions()
+            except Exception:
+                pass
+        return {}

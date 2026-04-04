@@ -296,6 +296,10 @@ def main():
     oos_start, oos_end = "2024-07-01", "2025-01-01"
 
     print(f"\n  Running {label} (train {train_start} -> {train_end} | OOS {oos_start} -> {oos_end})")
+    ret: float = 0.0
+    wr: float = 0.0
+    t: int = 0
+    dd: float = 0.0
     t0 = time.time()
     try:
         metrics = runner.run_unified(

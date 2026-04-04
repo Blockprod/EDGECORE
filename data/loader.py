@@ -190,6 +190,7 @@ class DataLoader:
 
             # Calculate IB duration string: prefer since-date if provided, else derive from limit
             _use_limit = True
+            duration: str = ""  # sentinel; always overwritten below
             if since is not None:
                 from datetime import datetime
 

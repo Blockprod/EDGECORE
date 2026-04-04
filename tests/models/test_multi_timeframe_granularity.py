@@ -240,6 +240,7 @@ class TestRegimeDetectorTransitions:
     def test_regime_state_has_duration(self):
         """RegimeState should track bars in current regime."""
         detector = RegimeDetector(min_regime_duration=1)
+        state = detector.update(spread=100.0)
         for i in range(5):
             state = detector.update(spread=100 + i * 0.1)
         assert state.regime_duration_bars >= 0

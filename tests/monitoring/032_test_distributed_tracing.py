@@ -286,6 +286,7 @@ class TestDistributedTracer:
         """Test trace operation catches exceptions."""
         tracer = DistributedTracer("test_service")
 
+        span: Span | None = None
         try:
             with tracer.trace_operation("failing_op") as span:
                 raise ValueError("Test error")
@@ -293,6 +294,7 @@ class TestDistributedTracer:
             pass
 
         # Span should be marked as error
+        assert span is not None
         assert span.status == "ERROR"
         assert len(span.events) > 0
 

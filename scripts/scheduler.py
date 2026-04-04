@@ -56,27 +56,37 @@ PRE_MARKET_SCAN_MINUTE = 0
 def parse_args():
     parser = argparse.ArgumentParser(description="EDGECORE Scheduler")
     parser.add_argument(
-        "--mode", choices=["standalone", "cron"], default="cron",
+        "--mode",
+        choices=["standalone", "cron"],
+        default="cron",
         help="Scheduling mode",
     )
     parser.add_argument(
-        "--action", choices=["scan", "monitor", "full"], default="full",
+        "--action",
+        choices=["scan", "monitor", "full"],
+        default="full",
         help="Action to execute (cron mode only)",
     )
     parser.add_argument(
-        "--sec-only", action="store_true",
+        "--sec-only",
+        action="store_true",
         help="SEC-only scan (no IBKR validation)",
     )
     parser.add_argument(
-        "--dry-run", action="store_true",
+        "--dry-run",
+        action="store_true",
         help="Dry run mode (no IBKR connection for monitoring)",
     )
     parser.add_argument(
-        "--monitor-interval", type=int, default=30,
+        "--monitor-interval",
+        type=int,
+        default=30,
         help="Monitoring poll interval in seconds",
     )
     parser.add_argument(
-        "--python", type=str, default=sys.executable,
+        "--python",
+        type=str,
+        default=sys.executable,
         help="Python interpreter path",
     )
     return parser.parse_args()
@@ -96,12 +106,8 @@ def is_market_day() -> bool:
 def is_market_hours() -> bool:
     """Check if current time is within US market hours."""
     now = datetime.now()
-    market_open = now.replace(
-        hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0
-    )
-    market_close = now.replace(
-        hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE, second=0
-    )
+    market_open = now.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0)
+    market_close = now.replace(hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE, second=0)
     return market_open <= now <= market_close
 
 
@@ -116,7 +122,10 @@ def run_daily_scan(python: str, sec_only: bool = False) -> bool:
 
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=3600,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=3600,
         )
         if result.returncode == 0:
             logger.info("daily_scan_completed_successfully")
@@ -142,7 +151,9 @@ def run_daily_scan(python: str, sec_only: bool = False) -> bool:
 
 
 def run_live_monitor(
-    python: str, interval: int, dry_run: bool = False,
+    python: str,
+    interval: int,
+    dry_run: bool = False,
 ) -> None:
     """Execute live_monitor.py as a subprocess (blocks until market close)."""
     script = str(Path(__file__).parent / "live_monitor.py")
@@ -204,7 +215,9 @@ def run_standalone(args):
                 if days_until_monday == 0:
                     days_until_monday = 7
                 next_monday = now.replace(
-                    hour=PRE_MARKET_SCAN_HOUR, minute=0, second=0,
+                    hour=PRE_MARKET_SCAN_HOUR,
+                    minute=0,
+                    second=0,
                 ) + timedelta(days=days_until_monday)
                 sleep_sec = (next_monday - now).total_seconds()
                 time.sleep(max(60, sleep_sec))
@@ -212,10 +225,12 @@ def run_standalone(args):
 
             now = datetime.now()
             pre_market = now.replace(
-                hour=PRE_MARKET_SCAN_HOUR, minute=PRE_MARKET_SCAN_MINUTE,
+                hour=PRE_MARKET_SCAN_HOUR,
+                minute=PRE_MARKET_SCAN_MINUTE,
             )
             market_close = now.replace(
-                hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE,
+                hour=MARKET_CLOSE_HOUR,
+                minute=MARKET_CLOSE_MINUTE,
             )
 
             # Pre-market scan
@@ -225,13 +240,13 @@ def run_standalone(args):
                 time.sleep(max(60, sleep_sec))
                 continue
 
-            if not hasattr(run_standalone, '_scanned_today'):
-                run_standalone._scanned_today = None
+            if not hasattr(run_standalone, "_scanned_today"):
+                setattr(run_standalone, "_scanned_today", None)
 
-            if run_standalone._scanned_today != now.date():
+            if getattr(run_standalone, "_scanned_today") != now.date():
                 logger.info("running_pre_market_scan")
                 run_daily_scan(args.python, args.sec_only)
-                run_standalone._scanned_today = now.date()
+                setattr(run_standalone, "_scanned_today", now.date())
 
             # Market hours monitoring
             if is_market_hours():

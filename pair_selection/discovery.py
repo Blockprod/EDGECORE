@@ -114,7 +114,7 @@ class PairDiscoveryEngine:
             candidate_pairs=[("AAPL", "MSFT"), ("JPM", "BAC"), ...],
         )
         for p in pairs:
-            print(p.pair_key, p.half_life)
+            logger.debug("pair_discovery_candidate", pair_key=p.pair_key, half_life=p.half_life)
     """
 
     def __init__(self, config: DiscoveryConfig | None = None):

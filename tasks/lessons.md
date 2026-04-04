@@ -225,3 +225,12 @@
 **Ref** : `monitoring/correlation_monitor.py`, `risk_engine/portfolio_risk.py` — commit `0f58ad4` (2026-04-04)
 
 ---
+
+## L-23 · fix(ci): move bt_v36 baseline out of LFS — tests/regression/fixtures/ [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `3194dec` : fix(ci): move bt_v36 baseline out of LFS — tests/regression/fixtures/. Fichiers : tests/regression/test_equity_curve_regression.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `tests/regression/test_equity_curve_regression.py` — commit `3194dec` (2026-04-04)
+
+---
