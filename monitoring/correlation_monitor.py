@@ -141,6 +141,13 @@ class CorrelationMonitor:
         """Get latest correlation for all tracked pairs."""
         return {k: t.last_correlation for k, t in self._trackers.items()}
 
+    def get_average_correlation(self) -> float | None:
+        """Return the average absolute correlation across all tracked pairs, or None if no data."""
+        values = [v for v in self.get_all_correlations().values() if v is not None]
+        if not values:
+            return None
+        return sum(abs(v) for v in values) / len(values)
+
     def get_degraded_pairs(self) -> list[str]:
         """Get pair keys whose correlation is below threshold."""
         degraded = []

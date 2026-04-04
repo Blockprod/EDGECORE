@@ -16,8 +16,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from typing import TYPE_CHECKING
 
 from structlog import get_logger
+
+if TYPE_CHECKING:
+    from monitoring.correlation_monitor import CorrelationMonitor
 
 logger = get_logger(__name__)
 
@@ -76,7 +80,7 @@ class PortfolioRiskManager:
         self,
         initial_equity: float = 100_000.0,
         config: PortfolioRiskConfig | None = None,
-        correlation_monitor=None,
+        correlation_monitor: CorrelationMonitor | None = None,
     ):
         self.config = config or PortfolioRiskConfig()
         self._correlation_monitor = correlation_monitor  # C-05: optional CorrelationMonitor
