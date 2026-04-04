@@ -234,3 +234,21 @@
 **Ref** : `tests/regression/test_equity_curve_regression.py` — commit `3194dec` (2026-04-04)
 
 ---
+
+## L-24 · C-04/C-07/C-08/C-09/C-11/C-12/C-13 + PROBLEMS 0: audit #18 sprint 2 complete [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `caccc81` : C-04/C-07/C-08/C-09/C-11/C-12/C-13 + PROBLEMS 0: audit #18 sprint 2 complete. Fichiers : backtester/oos.py, backtests/strategy_simulator.py
+**Erreur** : print() dans du code de production
+**Règle** : Utiliser structlog.get_logger(__name__) partout. print() interdit hors scripts/, examples/, research/.
+**Ref** : `backtester/oos.py`, `backtests/strategy_simulator.py`, `common/secrets.py` — commit `caccc81` (2026-04-05)
+
+---
+
+## L-25 · fix(ruff): B009/B010 setattr/getattr -> cast Any + direct access [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `8eae0c3` : fix(ruff): B009/B010 setattr/getattr -> cast Any + direct access. Fichiers : monitoring/cache.py, scripts/scheduler.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/cache.py`, `scripts/scheduler.py` — commit `8eae0c3` (2026-04-05)
+
+---
