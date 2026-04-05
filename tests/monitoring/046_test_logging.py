@@ -243,16 +243,26 @@ class TestJSONFormatter:
         record = logging.LogRecord(
             name="test", level=logging.INFO, pathname="test.py", lineno=1, msg="Test", args=(), exc_info=None
         )
+<<<<<<< HEAD
         record.extra_fields = {"symbol": "AAPL", "price": 45000}
+=======
+        record.extra_fields = {'symbol': 'AAPL', 'price': 45000}
+>>>>>>> origin/main
         record.duration_ms = 123.45
         record.cache_hit = True
 
         formatted = formatter.format(record)
         data = json.loads(formatted)
 
+<<<<<<< HEAD
         assert data["extra"] == {"symbol": "AAPL", "price": 45000}
         assert data["duration_ms"] == 123.45
         assert data["cache_hit"] is True
+=======
+        assert data['extra'] == {'symbol': 'AAPL', 'price': 45000}
+        assert data['duration_ms'] == 123.45
+        assert data['cache_hit'] is True
+>>>>>>> origin/main
 
     def test_json_formatter_preserves_types(self):
         """Test that JSON formatter preserves data types."""
@@ -323,8 +333,13 @@ class TestLogPerformance:
 
     def test_log_performance(self):
         """Test logging performance metrics."""
+<<<<<<< HEAD
         logger = get_logger("test")
         log_performance(logger, duration_ms=123.45, symbol="AAPL", qty=1.5)
+=======
+        logger = get_logger('test')
+        log_performance(logger, duration_ms=123.45, symbol='AAPL', qty=1.5)
+>>>>>>> origin/main
 
     def test_log_performance_with_metrics(self):
         """Test log_with_metrics decorator."""

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Tests for signal_engine.combiner ÔÇö SignalCombiner + SignalSource (v31 Etape 3).
+=======
+"""
+Tests for signal_engine.combiner — SignalCombiner + SignalSource (v31 Etape 3).
+>>>>>>> origin/main
 
 Covers:
     - SignalSource validation
@@ -14,7 +19,12 @@ Covers:
 
 import pytest
 
+<<<<<<< HEAD
 from signal_engine.combiner import SignalCombiner, SignalSource
+=======
+from signal_engine.combiner import SignalCombiner, SignalSource, CompositeSignal
+
+>>>>>>> origin/main
 
 # ---------------------------------------------------------------------------
 # TestSignalSource

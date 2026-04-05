@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 0.3 ÔÇô Earnings & Dividend Event Filter (IBKR-only).
 
 Backtest mode:
     Detects earnings events from price gap anomalies (>3¤â overnight moves)
+=======
+"""
+Phase 0.3 – Earnings & Dividend Event Filter (IBKR-only).
+
+Backtest mode:
+    Detects earnings events from price gap anomalies (>3σ overnight moves)
+>>>>>>> origin/main
     in historical IBKR ADJUSTED_LAST data.  Adjusted prices already
     neutralise dividend effects.
 
@@ -10,6 +18,7 @@ Live mode:
     Uses ``IBGatewaySync.get_earnings_calendar()`` which calls
     ``reqFundamentalData("CalendarReport")`` via IBKR API.
 
+<<<<<<< HEAD
 Both modes apply a configurable blackout window (default ┬▒3 trading days)
 around detected events to prevent entering trades during high-IV periods.
 """
@@ -17,6 +26,16 @@ around detected events to prevent entering trades during high-IV periods.
 from dataclasses import dataclass
 from typing import cast
 
+=======
+Both modes apply a configurable blackout window (default ±3 trading days)
+around detected events to prevent entering trades during high-IV periods.
+"""
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set
+
+import numpy as np
+>>>>>>> origin/main
 import pandas as pd
 from structlog import get_logger
 
@@ -26,18 +45,29 @@ logger = get_logger(__name__)
 @dataclass
 class EventFilterConfig:
     """Configuration for the earnings/event filter."""
+<<<<<<< HEAD
 
     gap_sigma_threshold: float = 3.0  # overnight gap threshold (std devs)
     blackout_days_before: int = 3  # days to block before event
     blackout_days_after: int = 3  # days to block after event
     rolling_window: int = 60  # window for gap ¤â estimation
+=======
+    gap_sigma_threshold: float = 3.0       # overnight gap threshold (std devs)
+    blackout_days_before: int = 3          # days to block before event
+    blackout_days_after: int = 3           # days to block after event
+    rolling_window: int = 60               # window for gap σ estimation
+>>>>>>> origin/main
     enabled: bool = True
 
 
 class EarningsDetector:
     """Detect probable earnings events from overnight price gaps."""
 
+<<<<<<< HEAD
     def __init__(self, config: EventFilterConfig | None = None):
+=======
+    def __init__(self, config: Optional[EventFilterConfig] = None):
+>>>>>>> origin/main
         self.config = config or EventFilterConfig()
 
     def detect_from_prices(
@@ -45,7 +75,11 @@ class EarningsDetector:
         prices: pd.Series,
         symbol: str = "",
     ) -> pd.DatetimeIndex:
+<<<<<<< HEAD
         """Return dates of detected earnings-like gaps (>3¤â overnight moves).
+=======
+        """Return dates of detected earnings-like gaps (>3σ overnight moves).
+>>>>>>> origin/main
 
         Args:
             prices: Daily close prices (ADJUSTED_LAST) for a single symbol.
@@ -62,10 +96,19 @@ class EarningsDetector:
         if len(returns) < self.config.rolling_window:
             return pd.DatetimeIndex([])
 
+<<<<<<< HEAD
         # Rolling ¤â of returns
         rolling_std = returns.rolling(window=self.config.rolling_window, min_periods=20).std()
 
         # An earnings-like event = |return| > gap_sigma_threshold * rolling ¤â
+=======
+        # Rolling σ of returns
+        rolling_std = returns.rolling(
+            window=self.config.rolling_window, min_periods=20
+        ).std()
+
+        # An earnings-like event = |return| > gap_sigma_threshold * rolling σ
+>>>>>>> origin/main
         abs_ret = returns.abs()
         threshold = self.config.gap_sigma_threshold * rolling_std
         gap_mask = abs_ret > threshold
@@ -97,6 +140,7 @@ class EventFilter:
         2. Call ``is_blackout(symbol, date)`` before entering.
     """
 
+<<<<<<< HEAD
     def __init__(self, config: EventFilterConfig | None = None):
         self.config = config or EventFilterConfig()
         self._detector = EarningsDetector(self.config)
@@ -104,6 +148,15 @@ class EventFilter:
         self._blackout_dates: dict[str, set[pd.Timestamp]] = {}
         # Trading calendar (built from prices_df index)
         self._trading_dates: pd.DatetimeIndex | None = None
+=======
+    def __init__(self, config: Optional[EventFilterConfig] = None):
+        self.config = config or EventFilterConfig()
+        self._detector = EarningsDetector(self.config)
+        # symbol → set of blackout dates (as pd.Timestamp)
+        self._blackout_dates: Dict[str, Set[pd.Timestamp]] = {}
+        # Trading calendar (built from prices_df index)
+        self._trading_dates: Optional[pd.DatetimeIndex] = None
+>>>>>>> origin/main
 
     def build_blackout_from_prices(self, prices_df: pd.DataFrame) -> None:
         """Pre-compute blackout windows for all symbols from historical prices.
@@ -114,11 +167,19 @@ class EventFilter:
         if not self.config.enabled:
             return
 
+<<<<<<< HEAD
         self._trading_dates = pd.DatetimeIndex(prices_df.index)
         total_events = 0
 
         for symbol in prices_df.columns:
             series = pd.Series(prices_df[symbol].dropna())
+=======
+        self._trading_dates = prices_df.index
+        total_events = 0
+
+        for symbol in prices_df.columns:
+            series = prices_df[symbol].dropna()
+>>>>>>> origin/main
             if len(series) < self.config.rolling_window + 5:
                 continue
 
@@ -140,7 +201,11 @@ class EventFilter:
         self,
         symbol: str,
         event_dates: pd.DatetimeIndex,
+<<<<<<< HEAD
         trading_dates: pd.DatetimeIndex | None = None,
+=======
+        trading_dates: Optional[pd.DatetimeIndex] = None,
+>>>>>>> origin/main
     ) -> None:
         """Add known event dates (e.g. from IBKR CalendarReport) for a symbol."""
         if trading_dates is not None:
@@ -163,10 +228,14 @@ class EventFilter:
         if symbol not in self._blackout_dates:
             return False
 
+<<<<<<< HEAD
         _ts = pd.Timestamp(date)
         if not isinstance(_ts, pd.Timestamp):
             return False
         ts = _ts.normalize()
+=======
+        ts = pd.Timestamp(date).normalize()
+>>>>>>> origin/main
         return ts in self._blackout_dates[symbol]
 
     def is_pair_blackout(self, sym1: str, sym2: str, date) -> bool:
@@ -177,7 +246,13 @@ class EventFilter:
     # Internals
     # ------------------------------------------------------------------
 
+<<<<<<< HEAD
     def _expand_blackout(self, symbol: str, event_dates: pd.DatetimeIndex) -> None:
+=======
+    def _expand_blackout(
+        self, symbol: str, event_dates: pd.DatetimeIndex
+    ) -> None:
+>>>>>>> origin/main
         """Expand event dates into blackout windows using trading calendar."""
         if symbol not in self._blackout_dates:
             self._blackout_dates[symbol] = set()
@@ -186,7 +261,13 @@ class EventFilter:
             if self._trading_dates is not None and len(self._trading_dates) > 0:
                 # Use trading calendar for accurate business-day offsets
                 try:
+<<<<<<< HEAD
                     idx = self._trading_dates.get_indexer(pd.DatetimeIndex([event_date]), method="nearest")[0]
+=======
+                    idx = self._trading_dates.get_indexer(
+                        [event_date], method="nearest"
+                    )[0]
+>>>>>>> origin/main
                 except Exception:
                     idx = -1
 
@@ -197,18 +278,34 @@ class EventFilter:
                         idx + self.config.blackout_days_after,
                     )
                     for i in range(start, end + 1):
+<<<<<<< HEAD
                         self._blackout_dates[symbol].add(cast(pd.Timestamp, self._trading_dates[i]).normalize())
+=======
+                        self._blackout_dates[symbol].add(
+                            self._trading_dates[i].normalize()
+                        )
+>>>>>>> origin/main
                 else:
                     # Fallback to calendar-day offsets
                     self._add_calendar_blackout(symbol, event_date)
             else:
                 self._add_calendar_blackout(symbol, event_date)
 
+<<<<<<< HEAD
     def _add_calendar_blackout(self, symbol: str, event_date: pd.Timestamp) -> None:
+=======
+    def _add_calendar_blackout(
+        self, symbol: str, event_date: pd.Timestamp
+    ) -> None:
+>>>>>>> origin/main
         """Fallback: use calendar days when no trading calendar available."""
         for offset in range(
             -self.config.blackout_days_before,
             self.config.blackout_days_after + 1,
         ):
+<<<<<<< HEAD
             d = cast(pd.Timestamp, event_date.normalize() + pd.Timedelta(days=offset))
+=======
+            d = pd.Timestamp(event_date).normalize() + pd.Timedelta(days=offset)
+>>>>>>> origin/main
             self._blackout_dates[symbol].add(d)

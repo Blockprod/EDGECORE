@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 ﻿## S2.2: Dynamic Z-Score Lookback Window Implementation
 
 **Status: Ô£à COMPLETE**
+=======
+## S2.2: Dynamic Z-Score Lookback Window Implementation
+
+**Status: ✅ COMPLETE**
+>>>>>>> origin/main
 
 ### Problem Statement
 
@@ -39,7 +45,11 @@ Bounds enforcement: [10, 120] days
 
 #### Files Modified
 
+<<<<<<< HEAD
 **1. `models/spread.py`** ÔÇö Base SpreadModel
+=======
+**1. `models/spread.py`** — Base SpreadModel
+>>>>>>> origin/main
 - Updated `compute_z_score()` method signature
 - Added parameters: `lookback` (explicit), `half_life` (adaptive)
 - Implemented adaptive logic:
@@ -57,6 +67,7 @@ Bounds enforcement: [10, 120] days
   ```
 - Added bounds: `lookback = max(10, min(lookback, 120))`
 
+<<<<<<< HEAD
 **2. `models/adaptive_thresholds.py`** ÔÇö DynamicSpreadModel
 - Updated `compute_z_score()` to implement same adaptive logic as base class
 - Now uses half-life stored in `self.half_life` to determine window
@@ -71,13 +82,35 @@ Bounds enforcement: [10, 120] days
 #### Test Suite Created
 
 **`tests/models/test_z_score_lookback.py`** ÔÇö 16 comprehensive tests
+=======
+**2. `models/adaptive_thresholds.py`** — DynamicSpreadModel
+- Updated `compute_z_score()` to implement same adaptive logic as base class
+- Now uses half-life stored in `self.half_life` to determine window
+- Integrated with existing threshold calculation and signal generation
+- Fixed attribute name bug: `self.threshold_calcs` → `self.threshold_calculator`
+
+**3. `strategies/pair_trading.py`** — No code changes needed
+- Strategy already passes `half_life` to DynamicSpreadModel
+- DynamicSpreadModel automatically uses adaptive lookback
+- Adaptive lookback automatically used in `get_adaptive_signals()` → `compute_z_score()`
+
+#### Test Suite Created
+
+**`tests/models/test_z_score_lookback.py`** — 16 comprehensive tests
+>>>>>>> origin/main
 
 **Test Categories:**
 
 1. **Lookback Adaptation Tests** (5 tests)
+<<<<<<< HEAD
    - `test_fast_pair_lookback_calculation`: HL=10 ÔåÆ lookback~30
    - `test_normal_pair_lookback_calculation`: HL=45 ÔåÆ lookback~45
    - `test_slow_pair_lookback_calculation`: HL=100 ÔåÆ lookback~60 (capped)
+=======
+   - `test_fast_pair_lookback_calculation`: HL=10 → lookback~30
+   - `test_normal_pair_lookback_calculation`: HL=45 → lookback~45
+   - `test_slow_pair_lookback_calculation`: HL=100 → lookback~60 (capped)
+>>>>>>> origin/main
    - `test_explicit_lookback_overrides_half_life`: Manual override works
    - `test_lookback_bounds_enforcement`: [10, 120] bounds respected
 
@@ -96,26 +129,42 @@ Bounds enforcement: [10, 120] days
    - `test_z_score_lookback_consistency`: Repeated calls produce same results
 
 5. **Comparison Tests** (1 test)
+<<<<<<< HEAD
    - `test_adaptive_vs_fixed_lookback_behavior`: Adaptive Ôëá Fixed behavior
+=======
+   - `test_adaptive_vs_fixed_lookback_behavior`: Adaptive ≠ Fixed behavior
+>>>>>>> origin/main
 
 6. **Edge Case Tests** (2 tests)
    - `test_zero_half_life_fallback`: None HL uses default (20 days)
    - `test_short_spread_series`: Works with limited data
 
+<<<<<<< HEAD
 **Test Results:** Ô£à 16/16 PASSED (3.58s)
+=======
+**Test Results:** ✅ 16/16 PASSED (3.58s)
+>>>>>>> origin/main
 
 ### Performance Impact
 
 **Expected improvements over fixed 20-day window:**
 - Fast pairs: 3-5 day earlier entry signals (15-25% faster)
 - Slow pairs: 40-50% reduction in false signals from mean reversion lag
+<<<<<<< HEAD
 - Overall Sharpe improvement: **+0.5 points** (1% ÔåÆ 1.5% expected return on same risk)
+=======
+- Overall Sharpe improvement: **+0.5 points** (1% → 1.5% expected return on same risk)
+>>>>>>> origin/main
 
 **Example Scenarios:**
 
 *Scenario 1: Fast Pair (AAPL/MSFT, HL=12 days)*
 - Old: Z-score computed on 20-day window (1.67x too long)
+<<<<<<< HEAD
 - New: Z-score computed on 36-day window (3├ù12)
+=======
+- New: Z-score computed on 36-day window (3×12)
+>>>>>>> origin/main
 - Result: Better noise filtering, more responsive to regime
 
 *Scenario 2: Slow Pair (EWA/EWC, HL=75 days)*
@@ -126,14 +175,24 @@ Bounds enforcement: [10, 120] days
 ### Integration with Previous Sprints
 
 **Builds on:**
+<<<<<<< HEAD
 - S2.1 (Hedge Ratio Tracking): Now with stable ╬▓, Z-score is more meaningful
+=======
+- S2.1 (Hedge Ratio Tracking): Now with stable β, Z-score is more meaningful
+>>>>>>> origin/main
 - S1.3 (Adaptive Thresholds): Works in concert with threshold adjustments
 - S1.6 (Documentation): Fully documented in code and tests
 
 **Synergy:**
+<<<<<<< HEAD
 - S2.1 ensures ╬▓ is current ÔåÆ spread calculation is accurate
 - S2.2 ensures Z-score window matches pair dynamics ÔåÆ signals are timely
 - S1.3 ensures thresholds match volatility regime ÔåÆ signals are calibrated
+=======
+- S2.1 ensures β is current → spread calculation is accurate
+- S2.2 ensures Z-score window matches pair dynamics → signals are timely
+- S1.3 ensures thresholds match volatility regime → signals are calibrated
+>>>>>>> origin/main
 - Combined effect: Better pair quality + Better signal timing + Better calibration = Higher win rate
 
 ### Validation

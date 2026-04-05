@@ -2,13 +2,24 @@
 Comprehensive end-to-end integration tests.
 
 Tests complete trading flows:
+<<<<<<< HEAD
 - Data load Ôåô Signal generation Ôåô Risk check Ôåô Order submission Ôåô Position management
+=======
+- Data load ↓ Signal generation ↓ Risk check ↓ Order submission ↓ Position management
+>>>>>>> origin/main
 - Error recovery at each step
 - State consistency (local vs broker)
 - Monitoring and alerting
 """
 
+<<<<<<< HEAD
 from datetime import UTC, datetime
+=======
+import pytest
+from datetime import datetime
+import pandas as pd
+import numpy as np
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -19,6 +30,12 @@ from data.validators import OHLCVValidator
 from execution.modes_legacy import ExecutionEngine, ModeType  # C-09: archived, tests pending migration
 from models.cointegration import engle_granger_test
 from models.spread import SpreadModel
+<<<<<<< HEAD
+=======
+from risk.engine import RiskEngine
+from execution.modes import ExecutionEngine, ModeType
+from data.validators import OHLCVValidator
+>>>>>>> origin/main
 from monitoring.alerter import AlertManager
 from risk.engine import RiskEngine
 
@@ -66,11 +83,31 @@ def cointegrated_pair_data():
     # X and Y are cointegrated
     X = 100 + np.cumsum(np.random.randn(200) * 0.5)
     Y = 200 + 2 * X + np.random.randn(200) * 5  # Y = 2X + noise
+<<<<<<< HEAD
 
     df_x = pd.DataFrame({"open": X * 0.99, "high": X * 1.01, "low": X * 0.98, "close": X, "volume": 1000}, index=dates)
 
     df_y = pd.DataFrame({"open": Y * 0.99, "high": Y * 1.01, "low": Y * 0.98, "close": Y, "volume": 1000}, index=dates)
 
+=======
+    
+    df_x = pd.DataFrame({
+        'open': X * 0.99,
+        'high': X * 1.01,
+        'low': X * 0.98,
+        'close': X,
+        'volume': 1000
+    }, index=dates)
+    
+    df_y = pd.DataFrame({
+        'open': Y * 0.99,
+        'high': Y * 1.01,
+        'low': Y * 0.98,
+        'close': Y,
+        'volume': 1000
+    }, index=dates)
+    
+>>>>>>> origin/main
     return {"AAPL": df_x, "MSFT": df_y}
 
 
@@ -103,7 +140,11 @@ class TestEndToEndDataLoadingFlow:
     def test_load_ohlcv_and_validate(self, sample_ohlcv_data):
         """Test loading and validating OHLCV data."""
         validator = OHLCVValidator(symbol="AAPL")
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         result = validator.validate(sample_ohlcv_data)
 
         assert result.is_valid
@@ -113,6 +154,7 @@ class TestEndToEndDataLoadingFlow:
     def test_reject_corrupted_data(self):
         """Test rejection of corrupted data."""
         # Create data with NaN
+<<<<<<< HEAD
         dates = pd.date_range("2024-01-01", periods=10, freq="1h")
         df = pd.DataFrame(
             {
@@ -125,6 +167,17 @@ class TestEndToEndDataLoadingFlow:
             index=dates,
         )
 
+=======
+        dates = pd.date_range('2024-01-01', periods=10, freq='1h')
+        df = pd.DataFrame({
+            'open': [100, np.nan, 100, 100, 100, 100, 100, 100, 100, 100],
+            'high': [102] * 10,
+            'low': [98] * 10,
+            'close': [101] * 10,
+            'volume': [1000] * 10
+        }, index=dates)
+        
+>>>>>>> origin/main
         validator = OHLCVValidator(symbol="AAPL")
         result = validator.validate(df)
 
@@ -134,9 +187,15 @@ class TestEndToEndDataLoadingFlow:
     def test_multiple_symbols_all_valid(self, sample_ohlcv_data):
         """Test loading multiple symbols."""
         validator = OHLCVValidator(symbol="AAPL")
+<<<<<<< HEAD
 
         symbols = ["AAPL", "MSFT", "JPM"]
         for _symbol in symbols:
+=======
+        
+        symbols = ["AAPL", "MSFT", "JPM"]
+        for symbol in symbols:
+>>>>>>> origin/main
             result = validator.validate(sample_ohlcv_data)
             assert result.is_valid
 
@@ -146,9 +205,15 @@ class TestSignalGenerationFlow:
 
     def test_cointegration_detection(self, cointegrated_pair_data):
         """Test detecting cointegrated pairs."""
+<<<<<<< HEAD
         x_data = cointegrated_pair_data["AAPL"]["close"]
         y_data = cointegrated_pair_data["MSFT"]["close"]
 
+=======
+        x_data = cointegrated_pair_data["AAPL"]['close']
+        y_data = cointegrated_pair_data["MSFT"]['close']
+        
+>>>>>>> origin/main
         # Should detect cointegration (since data is cointegrated)
         result = engle_granger_test(y_data, x_data)
 
@@ -159,9 +224,15 @@ class TestSignalGenerationFlow:
 
     def test_spread_analysis(self, cointegrated_pair_data):
         """Test spread analysis on cointegrated pair."""
+<<<<<<< HEAD
         x_data = cointegrated_pair_data["AAPL"]["close"]
         y_data = cointegrated_pair_data["MSFT"]["close"]
 
+=======
+        x_data = cointegrated_pair_data["AAPL"]['close']
+        y_data = cointegrated_pair_data["MSFT"]['close']
+        
+>>>>>>> origin/main
         # Create spread model
         model = SpreadModel(y_data, x_data)
 
@@ -172,9 +243,15 @@ class TestSignalGenerationFlow:
 
     def test_z_score_signal_generation(self, cointegrated_pair_data):
         """Test Z-score based signal generation."""
+<<<<<<< HEAD
         x_data = cointegrated_pair_data["AAPL"]["close"]
         y_data = cointegrated_pair_data["MSFT"]["close"]
 
+=======
+        x_data = cointegrated_pair_data["AAPL"]['close']
+        y_data = cointegrated_pair_data["MSFT"]['close']
+        
+>>>>>>> origin/main
         # Create spread model
         model = SpreadModel(y_data, x_data)
 
@@ -207,8 +284,16 @@ class TestRiskGatingFlow:
             risk_engine.positions[f"PAIR{i}"] = position
 
         # Now try to enter another trade (should be rejected)
+<<<<<<< HEAD
         can_enter, _reason = risk_engine.can_enter_trade(
             symbol_pair="AAPL", position_size=1.0, current_equity=100000.0, volatility=0.5
+=======
+        can_enter, reason = risk_engine.can_enter_trade(
+            symbol_pair="AAPL",
+            position_size=1.0,
+            current_equity=100000.0,
+            volatility=0.5
+>>>>>>> origin/main
         )
 
         # Should be rejected due to position limit
@@ -233,12 +318,24 @@ class TestRiskGatingFlow:
     def test_risk_engine_blocks_after_consecutive_losses(self):
         """Test risk engine blocks after consecutive losses."""
         risk_engine = RiskEngine(initial_equity=100000.0)
+<<<<<<< HEAD
 
         # Simulate losses at the configured maximum (equity dev: max_consecutive_losses=5)
         risk_engine.loss_streak = risk_engine.config.max_consecutive_losses
 
         can_enter, _reason = risk_engine.can_enter_trade(
             symbol_pair="AAPL", position_size=1.0, current_equity=95000.0, volatility=0.5
+=======
+        
+        # Simulate losses at the configured maximum (equity dev: max_consecutive_losses=5)
+        risk_engine.loss_streak = risk_engine.config.max_consecutive_losses
+
+        can_enter, reason = risk_engine.can_enter_trade(
+            symbol_pair="AAPL",
+            position_size=1.0,
+            current_equity=95000.0,
+            volatility=0.5
+>>>>>>> origin/main
         )
 
         # Should be blocked due to consecutive loss limit
@@ -252,10 +349,22 @@ class TestOrderExecutionFlow:
         """Test complete order lifecycle."""
         # Setup market price
         execution_engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         # 1. Submit order
         order_id = execution_engine.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+        
+        # 1. Submit order
+        order_id = execution_engine.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            order_type="market"
+        )
+        
+>>>>>>> origin/main
         assert order_id is not None
 
         # 2. Check order filled
@@ -266,6 +375,7 @@ class TestOrderExecutionFlow:
     def test_position_opened_after_order(self, execution_engine):
         """Test position opened after successful order."""
         execution_engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         # Submit and fill order
         execution_engine.submit_order(symbol="AAPL", side="buy", quantity=2.0, order_type="market")
@@ -273,6 +383,24 @@ class TestOrderExecutionFlow:
         # Open position
         success = execution_engine.open_position(symbol="AAPL", quantity=2.0, entry_price=50000.0)
 
+=======
+        
+        # Submit and fill order
+        execution_engine.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=2.0,
+            order_type="market"
+        )
+        
+        # Open position
+        success = execution_engine.open_position(
+            symbol="AAPL",
+            quantity=2.0,
+            entry_price=50000.0
+        )
+        
+>>>>>>> origin/main
         assert success is True
 
         # Verify position exists
@@ -286,14 +414,31 @@ class TestOrderExecutionFlow:
         execution_engine.context.cash = 100000.0
 
         # Open position
+<<<<<<< HEAD
         execution_engine.open_position(symbol="AAPL", quantity=1.0, entry_price=50000.0)
 
+=======
+        execution_engine.open_position(
+            symbol="AAPL",
+            quantity=1.0,
+            entry_price=50000.0
+        )
+        
+>>>>>>> origin/main
         # Price goes up 5%
         exit_price = 52500.0
 
         # Close position
+<<<<<<< HEAD
         success, pnl = execution_engine.close_position(symbol="AAPL", exit_price=exit_price)
 
+=======
+        success, pnl = execution_engine.close_position(
+            symbol="AAPL",
+            exit_price=exit_price
+        )
+        
+>>>>>>> origin/main
         assert success is True
         assert pnl is not None
         # Will be close to profitable (may include slippage)
@@ -311,13 +456,21 @@ class TestMonitoringAndAlerting:
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
             title="AAPL position opened",
+<<<<<<< HEAD
             message="Opened position of 1.0 AAPL at 50000.0",
+=======
+            message="Opened position of 1.0 AAPL at 50000.0"
+>>>>>>> origin/main
         )
 
         # Should generate alert
         assert alert is not None
         assert alert.title == "AAPL position opened"
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     def test_alert_on_position_closed(self, alerter):
         """Test alert generated when position closed."""
         from monitoring.alerter import AlertCategory, AlertSeverity
@@ -326,7 +479,11 @@ class TestMonitoringAndAlerting:
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
             title="AAPL position closed",
+<<<<<<< HEAD
             message="Closed position with P&L: +1000.0",
+=======
+            message="Closed position with P&L: +1000.0"
+>>>>>>> origin/main
         )
 
         # Should generate alert
@@ -358,8 +515,17 @@ class TestStateConsistencyFlow:
         """Test that reconciliation catches state mismatch."""
         # Setup local position
         execution_engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
         execution_engine.open_position(symbol="AAPL", quantity=1.0, entry_price=50000.0)
 
+=======
+        execution_engine.open_position(
+            symbol="AAPL",
+            quantity=1.0,
+            entry_price=50000.0
+        )
+        
+>>>>>>> origin/main
         # Simulate broker has different position
         mock_broker_positions = {
             "AAPL": {"quantity": 2.0, "entry_price": 50000.0}  # Different!
@@ -368,7 +534,11 @@ class TestStateConsistencyFlow:
         # Check for mismatch
         local_pos = execution_engine.context.get_position("AAPL")
         assert local_pos.quantity != mock_broker_positions["AAPL"]["quantity"]
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     def test_equity_tracking_consistency(self, execution_engine):
         """Test equity tracking consistency."""
         initial_equity = 100000.0
@@ -377,8 +547,17 @@ class TestStateConsistencyFlow:
 
         # Open position (cost: 50000)
         execution_engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
         execution_engine.open_position(symbol="AAPL", quantity=1.0, entry_price=50000.0)
 
+=======
+        execution_engine.open_position(
+            symbol="AAPL",
+            quantity=1.0,
+            entry_price=50000.0
+        )
+        
+>>>>>>> origin/main
         # Position value + cash should equal equity
         position = execution_engine.context.get_position("AAPL")
         position_value = position.quantity * position.current_price
@@ -438,10 +617,17 @@ class TestBacktestIntegration:
         engine.context.cash = 100000.0
 
         # Setup initial prices
+<<<<<<< HEAD
         prices = sample_ohlcv_data["close"].iloc[:5]
         for _i, price in enumerate(prices):
             engine.context.update_market_price("AAPL", float(price))
 
+=======
+        prices = sample_ohlcv_data['close'].iloc[:5]
+        for i, price in enumerate(prices):
+            engine.context.update_market_price("AAPL", float(price))
+        
+>>>>>>> origin/main
         # Open position at first price
         entry_price = float(prices.iloc[0])
         success = engine.open_position("AAPL", 1.0, entry_price)
@@ -458,10 +644,22 @@ class TestBacktestIntegration:
         assert test_config is not None  # Ensure test config is loaded
         engine = ExecutionEngine(mode=ModeType.BACKTEST)
         engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         # Submit buy order at market
         order_id = engine.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+        
+        # Submit buy order at market
+        order_id = engine.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            order_type="market"
+        )
+        
+>>>>>>> origin/main
         # Check that filled price includes slippage
         order = engine.context.get_order(order_id)
         assert order is not None
@@ -484,6 +682,7 @@ class TestCompleteStrategyFlow:
         assert validation.is_valid
 
         # Step 2: Analyze cointegration
+<<<<<<< HEAD
         btc_prices = btc_data["close"]
         eth_prices = cointegrated_pair_data["MSFT"]["close"]
         engle_granger_test(eth_prices, btc_prices)
@@ -493,6 +692,17 @@ class TestCompleteStrategyFlow:
         execution_engine.context.update_market_price("AAPL", current_price)
 
         can_trade, _reason = risk_engine.can_enter_trade(
+=======
+        btc_prices = btc_data['close']
+        eth_prices = cointegrated_pair_data["MSFT"]['close']
+        engle_granger_test(eth_prices, btc_prices)
+        
+        # Step 3: Check risk
+        current_price = float(btc_prices.iloc[-1])
+        execution_engine.context.update_market_price("AAPL", current_price)
+        
+        can_trade, reason = risk_engine.can_enter_trade(
+>>>>>>> origin/main
             symbol_pair="AAPL",
             position_size=0.5,
             current_equity=100000.0,
@@ -501,11 +711,28 @@ class TestCompleteStrategyFlow:
         assert can_trade is True
 
         # Step 4: Enter trade
+<<<<<<< HEAD
         order_id = execution_engine.submit_order(symbol="AAPL", side="buy", quantity=0.5, order_type="market")
+=======
+        order_id = execution_engine.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=0.5,
+            order_type="market"
+        )
+>>>>>>> origin/main
         assert order_id is not None
 
         # Step 5: Open position
+<<<<<<< HEAD
         success = execution_engine.open_position(symbol="AAPL", quantity=0.5, entry_price=current_price)
+=======
+        success = execution_engine.open_position(
+            symbol="AAPL",
+            quantity=0.5,
+            entry_price=current_price
+        )
+>>>>>>> origin/main
         assert success is True
 
         # Step 6: Generate alert
@@ -515,14 +742,25 @@ class TestCompleteStrategyFlow:
             severity=AlertSeverity.INFO,
             category=AlertCategory.POSITION,
             title="Position opened: AAPL",
+<<<<<<< HEAD
             message=f"Opened 0.5 AAPL long at {current_price}",
+=======
+            message=f"Opened 0.5 AAPL long at {current_price}"
+>>>>>>> origin/main
         )
 
         assert alert is not None
 
         # Step 7: Close position
         exit_price = current_price * 1.02  # 2% profit
+<<<<<<< HEAD
         success, pnl = execution_engine.close_position(symbol="AAPL", exit_price=exit_price)
+=======
+        success, pnl = execution_engine.close_position(
+            symbol="AAPL",
+            exit_price=exit_price
+        )
+>>>>>>> origin/main
         assert success is True
         assert pnl > 0
 

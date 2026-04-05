@@ -17,15 +17,22 @@ Main Features:
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
+<<<<<<< HEAD
 from typing import Any
 
 from structlog import get_logger
+=======
+>>>>>>> origin/main
 
 logger = get_logger(__name__)
 
 
 class OrderStatus(Enum):
+<<<<<<< HEAD
     """Order lifecycle status ��� aligned with execution.base.OrderStatus."""
+=======
+    """Order lifecycle status — aligned with execution.base.OrderStatus."""
+>>>>>>> origin/main
     PENDING = "PENDING"
     PARTIALLY_FILLED = "PARTIALLY_FILLED"
     FILLED = "FILLED"

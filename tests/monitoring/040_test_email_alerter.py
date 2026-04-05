@@ -2,6 +2,12 @@
 
 # pyright: reportUnusedVariable=false
 
+<<<<<<< HEAD
+=======
+from unittest.mock import patch, MagicMock
+from monitoring.email_alerter import EmailAlerter
+import smtplib
+>>>>>>> origin/main
 import os
 import smtplib
 from unittest.mock import MagicMock, patch
@@ -170,7 +176,16 @@ class TestEmailAlerterContent:
             recipient_emails=["recipient@example.com"],
         )
 
+<<<<<<< HEAD
         data = {"symbol": "AAPL", "current_price": 45000.50, "loss": -5000.00, "loss_percent": -45.2}
+=======
+        data = {
+            'symbol': 'AAPL',
+            'current_price': 45000.50,
+            'loss': -5000.00,
+            'loss_percent': -45.2
+        }
+>>>>>>> origin/main
 
         alerter.send_alert(level="ERROR", title="Max Loss Exceeded", message="Position closed", data=data)
 

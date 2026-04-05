@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
+=======
+#!/usr/bin/env python3
+>>>>>>> origin/main
 """Detailed analysis of potentially obsolete test files."""
 
 import re
@@ -9,7 +13,11 @@ test_dir = Path("C:\\Users\\averr\\EDGECORE\\tests")
 def count_lines(filepath):
     """Count lines in a file."""
     try:
+<<<<<<< HEAD
         with open(filepath, encoding='utf-8') as f:
+=======
+        with open(filepath, 'r', encoding='utf-8') as f:
+>>>>>>> origin/main
             return len(f.readlines())
     except:
         return 0
@@ -17,7 +25,11 @@ def count_lines(filepath):
 def check_imports(filepath):
     """Check imports and find broken ones."""
     try:
+<<<<<<< HEAD
         with open(filepath, encoding='utf-8') as f:
+=======
+        with open(filepath, 'r', encoding='utf-8') as f:
+>>>>>>> origin/main
             content = f.read()
             imports = re.findall(r'^(?:from|import)\s+([^\s\.]+)', content, re.MULTILINE)
             return imports
@@ -49,7 +61,11 @@ for filepath, desc, action in obsolete_candidates:
     path = Path(filepath)
     
     if not path.exists():
+<<<<<<< HEAD
         print(f"\nÔØî NOT FOUND: {filepath}")
+=======
+        print(f"\n❌ NOT FOUND: {filepath}")
+>>>>>>> origin/main
         continue
     
     lines = count_lines(path)
@@ -63,7 +79,11 @@ for filepath, desc, action in obsolete_candidates:
     
     # Show first few lines
     try:
+<<<<<<< HEAD
         with open(path, encoding='utf-8') as f:
+=======
+        with open(path, 'r', encoding='utf-8') as f:
+>>>>>>> origin/main
             lines_content = f.readlines()[:5]
             if lines_content:
                 print("   First lines:")

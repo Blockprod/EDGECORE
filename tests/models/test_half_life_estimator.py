@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Half-Life Estimation Tests (S3.2c - Validation).
 
 Tests for SpreadHalfLifeEstimator:
@@ -8,11 +12,21 @@ Tests for SpreadHalfLifeEstimator:
 - Edge cases
 """
 
+<<<<<<< HEAD
 import numpy as np
 import pandas as pd
 import pytest
 
 from models.half_life_estimator import SpreadHalfLifeEstimator, estimate_half_life
+=======
+import pytest
+import numpy as np
+import pandas as pd
+from models.half_life_estimator import (
+    SpreadHalfLifeEstimator,
+    estimate_half_life
+)
+>>>>>>> origin/main
 
 
 class TestOUProcessHalfLife:
@@ -47,7 +61,11 @@ class TestOUProcessHalfLife:
         
         # Should estimate something reasonable
         assert estimated_hl is not None, "Should return a value for mean-reverting OU"
+<<<<<<< HEAD
         # Within ┬▒60% for short estimation window (centered AR(1) estimation)
+=======
+        # Within ±60% for short estimation window (centered AR(1) estimation)
+>>>>>>> origin/main
         error_pct = abs(estimated_hl - true_hl) / true_hl
         assert error_pct < 0.60, f"Error {error_pct:.2%} too large (est={estimated_hl:.1f}, true={true_hl})"
     
@@ -89,7 +107,11 @@ class TestNonStationaryRejection:
         estimator = SpreadHalfLifeEstimator(lookback=500)
         estimated_hl = estimator.estimate_half_life_from_spread(pd.Series(rw), validate=False)
         
+<<<<<<< HEAD
         # A true random walk has rho Ôëê 1, so either None
+=======
+        # A true random walk has rho ≈ 1, so either None
+>>>>>>> origin/main
         # or HL is very long (>50 days).  With validate=True bounds
         # [5,200] would reject anyway.
         assert estimated_hl is None or estimated_hl > 50, (
@@ -104,7 +126,11 @@ class TestNonStationaryRejection:
         estimator = SpreadHalfLifeEstimator()
         estimated_hl = estimator.estimate_half_life_from_spread(pd.Series(trend))
         
+<<<<<<< HEAD
         # Linear trend has rho Ôëê 1, should reject
+=======
+        # Linear trend has rho ≈ 1, should reject
+>>>>>>> origin/main
         assert estimated_hl is None
     
     def test_constant_series_rejection(self):

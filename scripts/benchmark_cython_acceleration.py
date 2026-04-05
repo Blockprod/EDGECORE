@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
+=======
+#!/usr/bin/env python3
+>>>>>>> origin/main
 """
 Benchmark Cython vs Pure Python Cointegration Testing.
 Shows performance improvement with Cython acceleration.

@@ -29,7 +29,7 @@
 
 **Acceptance criteria:**
 ```bash
-python main.py --mode backtest --symbols BTC/USDT
+python main.py --mode backtest --symbols AAPL
 # Log doit afficher: risk_engine_initialized initial_equity=100000.0
 ```
 
@@ -109,7 +109,7 @@ if attempt % 10 == 0:
 
 **Acceptance criteria:**
 ```bash
-python main.py --mode paper --symbols BTC/USDT 2>&1 | grep "startup_reconciliation_passed"
+python main.py --mode paper --symbols AAPL 2>&1 | grep "startup_reconciliation_passed"
 # Doit afficher sans crash
 ```
 
@@ -221,8 +221,8 @@ def validate(self, df: pd.DataFrame, raise_on_error: bool = False,
 
 - [ ] Mettre à jour `_load_market_data_for_symbols()` dans main.py:
 ```python
-df = loader.load_ccxt_data(
-    settings.execution.exchange,
+df = loader.load_IBKR API_data(
+    settings.execution.broker,
     symbol,
     timeframe='1h',
     limit=100
@@ -268,7 +268,7 @@ print(f'Errors: {result.errors}')
 
 **Completed Tasks:**
 - ✅ Created `execution/paper_execution.py` (147 lines, NEW)
-  - PaperExecutionEngine extends CCXTExecutionEngine
+  - PaperExecutionEngine extends IBKR APIExecutionEngine
   - Injects realistic slippage (fixed/adaptive/volume-based)
   - Applies commission (percent-based)
   - Enum conversion: `_parse_slippage_model()` converts string→SlippageModel enum
@@ -540,7 +540,7 @@ print('Walk-forward framework ready')
 tail -f logs/main_*.log | grep -E 'CRITICAL|ERROR|equity|position'
 
 # Run
-python main.py --mode paper --symbols BTC/USDT ETH/USDT LTC/USDT
+python main.py --mode paper --symbols AAPL MSFT BAC
 ```
 
 - [ ] Checks quotidiens:
@@ -558,7 +558,7 @@ python main.py --mode paper --symbols BTC/USDT ETH/USDT LTC/USDT
 
 **Acceptance criteria:**
 ```
-- 14 days of 24/7 paper trading
+- 14 days of market hours paper trading
 - 0 unrecoverable crashes
 - 0 reconciliation failures
 - <1% error rate
@@ -693,7 +693,7 @@ config = get_settings().secrets
 ```
 
 **Rotation Procedure (Manual):**
-1. Generate new API key on exchange
+1. Generate new API key on broker
 2. Test in paper trading mode for 1 week
 3. Update .env with new key
 4. Call vault.rotate_secret("API_KEY", new_value)
@@ -944,7 +944,7 @@ Annual:   Archival, performance analysis, strategy review
 **Next Steps for Ops Team:**
 
 1. **Execute T2.2** (Paper Trading - 14 days concurrent with T2.3)
-   - Start: `python main.py --mode paper --symbols BTC/USDT ETH/USDT LTC/USDT`
+   - Start: `python main.py --mode paper --symbols AAPL MSFT BAC`
    - Monitor: Daily equity, reconciliation, error rate
    - Duration: 14 consecutive days minimum
 
@@ -1175,7 +1175,7 @@ APPROVAL STATUS: GO FOR PRODUCTION
 **Team:** 1 senior engineer (full-time)  
 **Infrastructure:** Linux server (2 CPU, 4GB RAM minimum)  
 **Monitoring:** Slack workspace + email account  
-**Exchange:** Testnet API keys (Binance testnet)  
+**broker:** Testnet API keys (IBKR testnet)  
 **Documentation:** 8-10 hours total
 
 ---

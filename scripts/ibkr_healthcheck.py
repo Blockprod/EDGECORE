@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Test IBKR Gateway connection and data access using IBGatewaySync
 """
 import sys

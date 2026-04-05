@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# EDGECORE
+=======
+# EDGECORE
+>>>>>>> origin/main
 
 **Production-Grade Automated Trading System**
 
@@ -9,7 +13,11 @@ A robust, enterprise-ready trading platform with comprehensive risk management, 
 ## Features
 
 - **Trading Engine**: Advanced execution with dynamic market analysis
+<<<<<<< HEAD
 - **Multi-Mode Execution**: Backtest ÔåÆ Paper Trading ÔåÆ Live (with kill-switches)
+=======
+- **Multi-Mode Execution**: Backtest → Paper Trading → Live (with kill-switches)
+>>>>>>> origin/main
 - **Risk Management**: 
   - Position sizing and concentration controls
   - Dynamic loss monitoring and drawdown protection
@@ -144,7 +152,11 @@ python main.py --mode backtest --symbols AAPL MSFT
 
 ### Live Trading
 
+<<<<<<< HEAD
 **ÔÜá´©Å PRODUCTION MODE - EXTREME CAUTION REQUIRED**
+=======
+**⚠️ PRODUCTION MODE - EXTREME CAUTION REQUIRED**
+>>>>>>> origin/main
 
 ```bash
 # Deploy live trading (only after Phase 2 & 3 complete)
@@ -163,6 +175,7 @@ python main.py --mode live --symbols AAPL MSFT --enable-live-trading
 
 ```
 EDGECORE/
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ main.py                    # Entry point
 Ôö£ÔöÇÔöÇ config/                    # Settings and configuration schemas
 Ôö£ÔöÇÔöÇ strategies/                # Trading strategy implementations
@@ -179,6 +192,24 @@ EDGECORE/
 Ôö£ÔöÇÔöÇ examples/                  # Usage examples
 Ôö£ÔöÇÔöÇ tests/                     # Test suite (1200+ tests)
 ÔööÔöÇÔöÇ docs/                      # Technical documentation
+=======
+├── main.py                    # Entry point
+├── config/                    # Settings and configuration schemas
+├── strategies/                # Trading strategy implementations
+├── execution/                 # Order execution engines (IBKR API, brokers)
+├── risk/                      # Risk management and constraints
+├── backtests/                 # Backtest engine and analytics
+├── data/                      # Market data loading and processing
+├── models/                    # Analysis models
+├── monitoring/                # Dashboard API, alerts, logging
+├── persistence/               # Audit trails and data storage
+├── research/                  # Analysis and parameter research
+├── common/                    # Shared utilities (errors, validators, circuit breaker)
+├── scripts/                   # Development tools (validation, health checks)
+├── examples/                  # Usage examples
+├── tests/                     # Test suite (1200+ tests)
+└── docs/                      # Technical documentation
+>>>>>>> origin/main
 ```
 
 ---
@@ -311,6 +342,7 @@ pytest tests/ -v --tb=short
 
 ### Production Requirements
 **NEVER deploy live trading without:**
+<<<<<<< HEAD
 1. Ô£à 2+ weeks of successful paper trading
 2. Ô£à All tests passing (80%+ coverage)
 3. Ô£à Risk limits reviewed by team
@@ -318,6 +350,15 @@ pytest tests/ -v --tb=short
 5. Ô£à Initial capital Ôëñ $5,000
 6. Ô£à 24-hour continuous monitoring capability
 7. Ô£à Disaster recovery procedures in place
+=======
+1. ✅ 2+ weeks of successful paper trading
+2. ✅ All tests passing (80%+ coverage)
+3. ✅ Risk limits reviewed by team
+4. ✅ Kill-switches tested and verified
+5. ✅ Initial capital ≤ $5,000
+6. ✅ 24-hour continuous monitoring capability
+7. ✅ Disaster recovery procedures in place
+>>>>>>> origin/main
 
 ---
 
@@ -332,7 +373,11 @@ pytest tests/ -v --tb=short
 
 ---
 
+<<<<<<< HEAD
 ## ´┐¢ Deployment
+=======
+## � Deployment
+>>>>>>> origin/main
 
 ### Docker Deployment
 

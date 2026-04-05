@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Test suite for MarketRegimeFilter (v30 adaptive bidirectional).
 
 Verifies:
@@ -15,6 +19,10 @@ Verifies:
 
 import numpy as np
 import pandas as pd
+<<<<<<< HEAD
+=======
+import pytest
+>>>>>>> origin/main
 
 from signal_engine.market_regime import (
     MarketRegime,
@@ -22,7 +30,12 @@ from signal_engine.market_regime import (
     MarketRegimeState,
 )
 
+<<<<<<< HEAD
 # ÔöÇÔöÇ Helpers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+
+# ── Helpers ──────────────────────────────────────────────────────────────
+>>>>>>> origin/main
 
 
 def _make_spy_series(
@@ -84,7 +97,11 @@ def _make_sideways_market(n: int = 300) -> pd.Series:
     )
 
 
+<<<<<<< HEAD
 # ÔöÇÔöÇ Tests ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+# ── Tests ────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
 
 
 class TestMarketRegimeFilter:

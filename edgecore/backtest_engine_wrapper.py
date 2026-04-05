@@ -4,7 +4,11 @@ Now using Python-only implementation (C++ approach deprecated).
 """
 
 import logging
+<<<<<<< HEAD
 from typing import Any, Callable
+=======
+from typing import Dict, List, Callable, Any
+>>>>>>> origin/main
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +25,14 @@ class BacktestEngineWrapper:
     def __init__(self, initial_equity: float = 100000.0):
         self.initial_equity = initial_equity
         self.use_cpp = False  # Python-only now
+<<<<<<< HEAD
         self._engine = None
         logger.debug("Using Python BacktestEngine")
 
+=======
+        logger.debug("Using Python BacktestEngine")
+    
+>>>>>>> origin/main
     def run(
         self,
         prices: list[list[float]],
@@ -45,10 +54,17 @@ class BacktestEngineWrapper:
         Returns:
             Dictionary with equity, daily_returns, positions
         """
+<<<<<<< HEAD
 
         # Use Python implementation
         return self._run_python(prices, symbols, strategy_callback, risk_callback, lookback=lookback)
 
+=======
+        
+        # Use Python implementation
+        return self._run_python(prices, symbols, strategy_callback, risk_callback)
+    
+>>>>>>> origin/main
     def _run_python(
         self,
         prices: list[list[float]],

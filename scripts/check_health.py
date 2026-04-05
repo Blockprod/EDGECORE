@@ -49,7 +49,11 @@ def check_configuration():
     
     config_dir = Path("config")
     if not config_dir.exists():
+<<<<<<< HEAD
         print("    Ô£ù config/ directory not found")
+=======
+        print("    ✗ config/ directory not found")
+>>>>>>> origin/main
         return False
     
     required_configs = [

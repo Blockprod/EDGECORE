@@ -3,7 +3,10 @@ Metrics and monitoring hooks for Prometheus compatibility.
 """
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 
 @dataclass
 class SystemMetrics:

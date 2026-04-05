@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
+=======
+#!/usr/bin/env python3
+>>>>>>> origin/main
 """Analyze test files for obsolete/redundant files."""
 
 import re

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 3 Tests ÔÇö Fr├®quence & Ex├®cution Algorithmique
+=======
+"""
+Phase 3 Tests — Fréquence & Exécution Algorithmique
+>>>>>>> origin/main
 ====================================================
 Tests for the 3 modules introduced in Phase 3:
   3.1 IntradayLoader (5-min bar loading + synthetic generation)
@@ -7,21 +12,40 @@ Tests for the 3 modules introduced in Phase 3:
   3.3 AlgoExecutor TWAP/VWAP (order slicing with impact model)
 """
 
+<<<<<<< HEAD
 from typing import cast
 
+=======
+>>>>>>> origin/main
 import numpy as np
 import pandas as pd
 import pytest
 
 from data.intraday_loader import IntradayLoader
+<<<<<<< HEAD
 from execution.algo_executor import (
     AlgoConfig,
     AlgoResult,
     AlgoType,
+=======
+from signal_engine.intraday_signals import (
+    IntradayMeanReversionSignal,
+    GapReversionSignal,
+    VolumeProfileSignal,
+    IntradaySignalEngine,
+    IntradaySignalResult,
+)
+from execution.algo_executor import (
+    AlgoType,
+    AlgoConfig,
+    SliceFill,
+    AlgoResult,
+>>>>>>> origin/main
     TWAPExecutor,
     VWAPExecutor,
     create_algo_executor,
 )
+<<<<<<< HEAD
 from signal_engine.intraday_signals import (
     GapReversionSignal,
     IntradayMeanReversionSignal,
@@ -35,6 +59,14 @@ from signal_engine.intraday_signals import (
 # ===================================================================
 
 
+=======
+
+
+# ===================================================================
+# 3.1: IntradayLoader — Synthetic Intraday Data Generation
+# ===================================================================
+
+>>>>>>> origin/main
 class TestIntradayLoader:
     """Test synthetic intraday data generation from daily prices."""
 
@@ -61,14 +93,22 @@ class TestIntradayLoader:
     def test_synthetic_bars_per_day(self, daily_prices):
         intraday = IntradayLoader.generate_synthetic_intraday(daily_prices, bars_per_day=78)
         # Each trading day after the first generates 78 intraday bars
+<<<<<<< HEAD
         # 59 days (all except first) ├ù 78 bars = 4602 bars expected
+=======
+        # 59 days (all except first) × 78 bars = 4602 bars expected
+>>>>>>> origin/main
         expected = (len(daily_prices) - 1) * 78
         assert len(intraday) == expected
 
     def test_synthetic_timestamps_are_intraday(self, daily_prices):
         intraday = IntradayLoader.generate_synthetic_intraday(daily_prices)
         # First bar should be at 9:30 AM
+<<<<<<< HEAD
         first_ts = cast(pd.Timestamp, intraday.index[0])
+=======
+        first_ts = intraday.index[0]
+>>>>>>> origin/main
         assert first_ts.hour == 9
         assert first_ts.minute == 30
 
@@ -84,10 +124,16 @@ class TestIntradayLoader:
 
 
 # ===================================================================
+<<<<<<< HEAD
 # 3.2: IntradaySignalEngine ÔÇö Intraday Signal Generators
 # ===================================================================
 
 
+=======
+# 3.2: IntradaySignalEngine — Intraday Signal Generators
+# ===================================================================
+
+>>>>>>> origin/main
 class TestIntradayMeanReversionSignal:
     """Fast z-score on 5-min spread."""
 
@@ -99,7 +145,11 @@ class TestIntradayMeanReversionSignal:
         assert -1.0 <= score <= 1.0
 
     def test_high_z_gives_nonzero_score(self):
+<<<<<<< HEAD
         # Spread that shoots up ÔåÆ should get negative score (sell)
+=======
+        # Spread that shoots up → should get negative score (sell)
+>>>>>>> origin/main
         spread = pd.Series([0.0] * 20 + [0.0, 0.0, 0.0, 0.0, 0.5])
         sig = IntradayMeanReversionSignal(lookback=15, scale=2.0)
         score = sig.compute_score(spread)
@@ -129,7 +179,11 @@ class TestGapReversionSignal:
         spread = pd.Series([1.0, 1.001, 0.999, 1.002, 1.0])
         sig = GapReversionSignal(gap_threshold=0.005)
         score = sig.compute_score(spread, bars_since_open=2)
+<<<<<<< HEAD
         # Small gap ÔåÆ below threshold ÔåÆ 0
+=======
+        # Small gap → below threshold → 0
+>>>>>>> origin/main
         assert score == 0.0
 
     def test_outside_window_returns_zero(self):
@@ -171,10 +225,16 @@ class TestVolumeProfileSignal:
         score = sig.compute_score(spread, vol_a, vol_b)
         assert -1.0 <= score <= 1.0
 
+<<<<<<< HEAD
     def test_low_volume_returns_zero(self, volume_data):  # noqa: ARG002 — fixture dep not used; volumes constructed locally
         _ = volume_data  # fixture dependency declared for test isolation
         spread = pd.Series(np.random.randn(30) * 0.01)
         vol_a = pd.Series([100.0] * 30)  # constant low ÔåÆ ratio = 1.0
+=======
+    def test_low_volume_returns_zero(self, volume_data):
+        spread = pd.Series(np.random.randn(30) * 0.01)
+        vol_a = pd.Series([100.0] * 30)  # constant low → ratio = 1.0
+>>>>>>> origin/main
         vol_b = pd.Series([100.0] * 30)
         sig = VolumeProfileSignal(lookback=20, volume_threshold=1.5)
         score = sig.compute_score(spread, vol_a, vol_b)
@@ -213,15 +273,26 @@ class TestIntradaySignalEngine:
         vol_a = pd.Series(np.random.randint(1000, 10000, n).astype(float))
         vol_b = pd.Series(np.random.randint(1000, 10000, n).astype(float))
         engine = IntradaySignalEngine(mr_lookback=15, vol_lookback=20)
+<<<<<<< HEAD
         result = engine.compute(spread, bars_since_open=5, volume_a=vol_a, volume_b=vol_b)
+=======
+        result = engine.compute(spread, bars_since_open=5,
+                                volume_a=vol_a, volume_b=vol_b)
+>>>>>>> origin/main
         assert isinstance(result.volume_score, float)
 
 
 # ===================================================================
+<<<<<<< HEAD
 # 3.3: AlgoExecutor ÔÇö TWAP and VWAP Order Slicing
 # ===================================================================
 
 
+=======
+# 3.3: AlgoExecutor — TWAP and VWAP Order Slicing
+# ===================================================================
+
+>>>>>>> origin/main
 class TestTWAPExecutor:
     """TWAP order simulation."""
 
@@ -262,7 +333,11 @@ class TestTWAPExecutor:
         config = AlgoConfig(num_slices=5, max_participation=0.01)
         twap = TWAPExecutor(config)
         result = twap.simulate("AAPL", "BUY", 100000, 150.0, adv=50000)
+<<<<<<< HEAD
         # Large order relative to ADV ÔåÆ quantity should be reduced
+=======
+        # Large order relative to ADV → quantity should be reduced
+>>>>>>> origin/main
         # Total filled should be less than target due to participation cap
         assert result.total_filled_qty < 100000
 
@@ -277,7 +352,12 @@ class TestVWAPExecutor:
         assert result.algo_type == AlgoType.VWAP
 
     def test_fills_quantity(self):
+<<<<<<< HEAD
         config = AlgoConfig(algo_type=AlgoType.VWAP, num_slices=10, max_participation=1.0)
+=======
+        config = AlgoConfig(algo_type=AlgoType.VWAP, num_slices=10,
+                            max_participation=1.0)
+>>>>>>> origin/main
         vwap = VWAPExecutor(config)
         result = vwap.simulate("MSFT", "BUY", 500, 300.0, adv=2e6)
         assert result.total_filled_qty == pytest.approx(500, rel=0.01)
@@ -295,7 +375,12 @@ class TestVWAPExecutor:
     def test_custom_volume_profile(self):
         profile = np.array([0.3, 0.2, 0.1, 0.1, 0.3])
         vwap = VWAPExecutor(
+<<<<<<< HEAD
             config=AlgoConfig(algo_type=AlgoType.VWAP, num_slices=5, max_participation=1.0),
+=======
+            config=AlgoConfig(algo_type=AlgoType.VWAP, num_slices=5,
+                              max_participation=1.0),
+>>>>>>> origin/main
             volume_profile=profile,
         )
         result = vwap.simulate("MSFT", "BUY", 500, 300.0, adv=2e6)

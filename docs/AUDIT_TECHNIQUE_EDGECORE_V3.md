@@ -10,11 +10,11 @@
 
 ### 1.1 Objectif réel du projet
 
-EDGECORE est un **système statistique d'arbitrage par pair-trading** (spread-based mean reversion) basé sur **cointegration** des paires de crypto-monnaies. L'architecture supporte trois modes :
+EDGECORE est un **système statistique d'arbitrage par pair-trading** (spread-based mean reversion) basé sur **cointegration** des paires de actions US (equities). L'architecture supporte trois modes :
 
 - **Backtest**: Analyse historique vectorisée
 - **Paper**: Trading simulé sur données réelles (sandbox)
-- **Live**: Trading réel sur Binance (avec sandboxing forcé par défaut)
+- **Live**: Trading réel sur IBKR (avec sandboxing forcé par défaut)
 
 ### 1.2 Type de système
 
@@ -24,7 +24,7 @@ Production-grade **trading quantitatif en temps réel** exécutant :
 - Génération de signaux Z-score
 - Entrée/sortie mean-reversion basée sur spread
 - Gestion des risques stricte (per-trade, limites quotidiennes, limites de position)
-- Exécution via CCXT (Binance, +200 autres exchanges)
+- Exécution via IBKR API (IBKR, +200 autres brokers)
 
 **Format de capital:** Petit capital initial (100k-1M$ indiqué en config)
 
@@ -115,7 +115,7 @@ EDGECORE/
 ```
 main.py (orchestrator)
    ├─→ DataLoader
-   │    └─→ CCXT API (fetch_ohlcv)
+   │    └─→ IBKR API API (fetch_ohlcv)
    │
    ├─→ PairTradingStrategy
    │    ├─→ engle_granger_test (statsmodels)
@@ -125,9 +125,9 @@ main.py (orchestrator)
    │    ├─→ can_enter_trade() → APPROVE/REJECT
    │    └─→ AuditTrail (CSV log)
    │
-   ├─→ CCXTExecutionEngine
+   ├─→ IBKR APIExecutionEngine
    │    ├─→ CircuitBreaker (5 failures → timeout 60s)
-   │    └─→ CCXT API (create_limit_order)
+   │    └─→ IBKR API API (create_limit_order)
    │
    └─→ OrderLifecycleManager
         └─→ Timeout detection + force cancel
@@ -152,8 +152,8 @@ except Exception as e:
 
 **Problème:**
 - Si `load_from_audit_trail()` échoue → log warning = pas de crash = STATE DIVERGENCE
-- Aucune call à exchange pour vérifier "ai-je vraiment ces positions?"
-- Un exchange peut avoir fermé les positions manuellement mais le code croit qu'elles existent
+- Aucune call à broker pour vérifier "ai-je vraiment ces positions?"
+- Un broker peut avoir fermé les positions manuellement mais le code croit qu'elles existent
 
 **Risque:** Capital loss, confused P&L, over-leverage
 
@@ -216,7 +216,7 @@ Le framework utilise `multiprocessing.Pool` mais la découverte reste O(n²):
 
 - **Strategy logic** (pair_trading.py): AUCUN effet de side (pure generation)
 - **Risk decisions** (risk/engine.py): Gatekeeper validator
-- **Execution** (execution/ccxt_engine.py): Isolation des API calls
+- **Execution** (execution/IBKR API_engine.py): Isolation des API calls
 - **Monitoring** (monitoring/): Observation only (no side effects besides logging)
 
 Mais **RiskEngine est un singleton problématique:**
@@ -261,7 +261,7 @@ Deux singletons = couplage fort = hard to test in isolation
 Fichiers complexes:
 - `main.py`: run_paper_trading() = 250+ lignes, 8+ niveaux imbrication
 - `risk/engine.py`: can_enter_trade() = raisonnable, 6 checks séquentiels
-- `execution/ccxt_engine.py`: submit_order() = 5 exception types = OK
+- `execution/IBKR API_engine.py`: submit_order() = 5 exception types = OK
 
 **Duplication:** Minimal
 
@@ -367,7 +367,7 @@ can_enter, reason = risk_engine.can_enter_trade(
 Scenario:
 1. System crashes after order submitted but before trade recorded
 2. On restart: `load_from_audit_trail()` fails silently
-3. Exchange has position, local code doesn't
+3. broker has position, local code doesn't
 4. next trade logic doesn't account for it → over-leverage
 
 **Mitigation présente:**
@@ -382,7 +382,7 @@ Scenario:
 
 ### 4.2 Résilience aux données manquantes
 
-**Cas:** Exchange retourne vide (network issue, no data)
+**Cas:** broker retourne vide (network issue, no data)
 
 ```python
 # main.py line 310
@@ -418,22 +418,22 @@ Max 60 seconds = 10 retries × avg 30s = 5 mins stuck = 5+ minutes de capital ex
 | Component | SPOF? | Note |
 |-----------|-------|------|
 | RiskEngine | YES | All trades blocked if init fails |
-| DataLoader | YES | No fallback if CCXT down |
+| DataLoader | YES | No fallback if IBKR API down |
 | OrderLifecycleManager | NO | Can skip; only protection |
 | AuditTrail | PARTIAL | CSV write can fail; logged but continues |
 | ShutdownManager | NO | Graceful teardown; not blocking |
-| Secrets loading | YES | If EXCHANGE_API_KEY missing = crash |
+| Secrets loading | YES | If broker_API_KEY missing = crash |
 
 **Critical SPOF:** API credentials missing
 
 ```python
-# execution/ccxt_engine.py line 33-39
-api_key = os.getenv('EXCHANGE_API_KEY')
-api_secret = os.getenv('EXCHANGE_API_SECRET')
+# execution/IBKR API_engine.py line 33-39
+api_key = os.getenv('broker_API_KEY')
+api_secret = os.getenv('broker_API_SECRET')
 
 if not api_key or not api_secret:
     raise ValueError(
-        "EXCHANGE_API_KEY and EXCHANGE_API_SECRET must be set in .env file."
+        "broker_API_KEY and broker_API_SECRET must be set in .env file."
     )
 ```
 
@@ -441,9 +441,9 @@ if not api_key or not api_secret:
 
 ### 4.5 Scénarios dangereux non couverts
 
-#### 🔴 Scenario 1: Exchange closes position; code doesn't know
+#### 🔴 Scenario 1: broker closes position; code doesn't know
 
-1. Exchange manual intervention closes BTC/USDT long
+1. broker manual intervention closes AAPL long
 2. System still believes position is open
 3. Monitoring shows "Max concurrent positions" = 10
 4. Next signal rejec
@@ -455,8 +455,8 @@ ted: "Max concurrent"
 
 #### 🔴 Scenario 2: Partial fill scenario
 
-1. Order submitted for 1.0 BTC at $45000
-2. 0.5 BTC fills at $45000, 0.5 BTC still pending
+1. Order submitted for 1.0 AAPL at $45000
+2. 0.5 AAPL fills at $45000, 0.5 AAPL still pending
 3. Loop timeout → force-cancel pending 0.5
 4. Risk engine thinks entry was 1.0 @ $45000
 5. Actual position: 0.5 @ $45000
@@ -467,7 +467,7 @@ ted: "Max concurrent"
 #### 🟠 Scenario 3: Stuck order in paper mode
 
 1. Paper trading submits order
-2. CCXT returns order_id but order never appears in get_orders()
+2. IBKR API returns order_id but order never appears in get_orders()
 3. OrderLifecycleManager timeout after 5 min
 4. Force-cancel issued but order "doesn't exist" → error logged
 5. Risk engine still thinks position might fill
@@ -486,7 +486,7 @@ ted: "Max concurrent"
 | **Pair discovery test** (n>500) | O(n²) | 30+ sec | ⚠️ YES |
 | **Signal generation** | O(n × window) | 1-2 sec | No |
 | **Risk checks** (per trade) | O(1) | <1 ms | No |
-| **Order submission** | O(1) + network | 100-500 ms | Depends on CCXT |
+| **Order submission** | O(1) + network | 100-500 ms | Depends on IBKR API |
 
 **Goulot principal:** Pair discovery O(n²)
 
@@ -505,7 +505,7 @@ with Pool(cpu_count()) as pool:
 |----------|-------|-------|
 | CPU | Moderate | ~30% for pair discovery |
 | Memory | Moderate | ~200-500 MB (price dataframes) |
-| I/O | Network (CCXT API) | Rate-limited by exchange |
+| I/O | Network (IBKR API API) | Rate-limited by broker |
 | Storage | Audit trail CSV | Unbounded (no rotation) |
 
 **Audit trail CSV concerns:**
@@ -653,8 +653,8 @@ API keys masked in logs: `k1v2***xyZz`
 
 ✅ **Env vars used:**
 ```bash
-EXCHANGE_API_KEY=...
-EXCHANGE_API_SECRET=...
+broker_API_KEY=...
+broker_API_SECRET=...
 ```
 
 🟠 **Mais:** No rotation, no expiration tracking
@@ -667,15 +667,15 @@ EXCHANGE_API_SECRET=...
 | API keys in logs | ✅ YES | MaskedString |
 | Secrets in memory | ⚠️ PARTIAL | No mem encryption |
 | Config secrets exposed | ⚠️ PARTIAL | dev.yaml has no secrets but prod.yaml might |
-| API responses logged | 🟠 NO | CCXT errors might contain balance info |
+| API responses logged | 🟠 NO | IBKR API errors might contain balance info |
 
 ### 7.3 Mauvaises pratiques evidentes
 
 **None critical** but:
 
 ```python
-# execution/ccxt_engine.py line 43-51
-exchange = exchange_class({
+# execution/IBKR API_engine.py line 43-51
+broker = broker_class({
     'enableRateLimit': True,
     'sandbox': self.config.use_sandbox,
     'apiKey': api_key,  # ← Passed as config dict
@@ -744,7 +744,7 @@ pytest tests/ -x --tb=no -q
 | Module | Coverage | Gap |
 |--------|----------|-----|
 | risk/engine.py | 90%+ | ✅ |
-| execution/ccxt_engine.py | 60% | ⚠️ Missing error paths |
+| execution/IBKR API_engine.py | 60% | ⚠️ Missing error paths |
 | strategies/pair_trading.py | 50% | ⚠️ Cointegration test failure paths |
 | main.py (paper trading mode) | 30% | 🔴 Main loop not directly testable |
 | persistence/audit_trail.py | 70% | ⚠️ Recovery edge cases |
@@ -757,7 +757,7 @@ pytest tests/ -x --tb=no -q
 
 🔴 **Live trading flow**
 - Protected by `ENABLE_LIVE_TRADING=true` flag
-- No automated test (requires real exchange connection)
+- No automated test (requires real broker connection)
 
 🟠 **Main loop stability**
 - Paper trading loop run in manual tests
@@ -929,7 +929,7 @@ class AlertManager:
 
 **What:** Call `execution_engine.get_positions()` at startup and compare with audit trail
 
-**Why:** Prevents capital loss from exchange-side position changes
+**Why:** Prevents capital loss from broker-side position changes
 
 **Implementation:**
 ```python
@@ -981,7 +981,7 @@ risk_engine = RiskEngine(
 
 **Check:**
 ```bash
-python main.py --mode backtest --symbols BTC/USDT
+python main.py --mode backtest --symbols AAPL
 # Should log: "risk_engine_initialized initial_equity=100000.0"
 ```
 
@@ -1012,7 +1012,7 @@ def can_enter_trade(...) -> tuple[bool, Optional[str]]:
 **Config addition:**
 ```yaml
 risk:
-  max_leverage: 3.0  # For crypto (typical = 2-5x depending on risk appetite)
+  max_leverage: 3.0  # For equity (typical = 2-5x depending on risk appetite)
 ```
 
 ---
@@ -1099,7 +1099,7 @@ SLACK_WEBHOOK_URL=https://hooks.slack.com/... python -m pytest
 1. Config management: Move to TOML + secrets in env
 2. Distributed tracing: Full OpenTelemetry integration
 3. Advanced monitoring: Prometheus metrics + Grafana dashboard
-4. Paper mode improvements: More realistic CCXT simulation
+4. Paper mode improvements: More realistic IBKR API simulation
 
 ---
 
@@ -1192,7 +1192,7 @@ Timeline to LIVE READY (with fixes + testing):
 - [main.py](main.py) — Entry point, orchestration
 - [config/settings.py](config/settings.py) — Configuration loading
 - [risk/engine.py](risk/engine.py) — Risk gatekeeper
-- [execution/ccxt_engine.py](execution/ccxt_engine.py) — Order submission
+- [execution/IBKR API_engine.py](execution/IBKR API_engine.py) — Order submission
 - [execution/order_lifecycle.py](execution/order_lifecycle.py) — Timeout protection
 - [persistence/audit_trail.py](persistence/audit_trail.py) — Crash recovery
 - [monitoring/alerter.py](monitoring/alerter.py) — Alert system

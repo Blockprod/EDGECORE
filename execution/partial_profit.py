@@ -1,5 +1,9 @@
 """
+<<<<<<< HEAD
 Partial profit-taking (Phase 3 ��� addresses audit -�4.4).
+=======
+Partial profit-taking (Phase 3 – addresses audit §4.4).
+>>>>>>> origin/main
 
 Problem
 -------
@@ -24,7 +28,11 @@ on every bar *before* processing exit signals.
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 
+=======
+from typing import Dict, Optional, Tuple
+>>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -39,7 +47,11 @@ class PartialProfitConfig:
     take-profit (default 1.5 %)."""
 
     first_tp_fraction: float = 0.50
+<<<<<<< HEAD
     """Fraction of the position to close at first take-profit (0���1)."""
+=======
+    """Fraction of the position to close at first take-profit (0↓1)."""
+>>>>>>> origin/main
 
     remainder_stop_pct: float = 0.005
     """If remaining position profit falls below this fraction of notional
@@ -72,6 +84,7 @@ class PartialProfitManager:
     On every bar the simulator calls :pymeth:`check` for each position.
     The return value tells the simulator:
 
+<<<<<<< HEAD
     * ``(0.0, False)`` ��� do nothing.
     * ``(fraction, False)`` ��� close *fraction* of the position and keep
       the remainder open.
@@ -82,6 +95,18 @@ class PartialProfitManager:
     def __init__(self, config: PartialProfitConfig | None = None):
         self.config = config or PartialProfitConfig()
         self._states: dict[str, _PositionTPState] = {}
+=======
+    * ``(0.0, False)`` – do nothing.
+    * ``(fraction, False)`` – close *fraction* of the position and keep
+      the remainder open.
+    * ``(1.0, True)`` – close the *entire* remaining position (remainder
+      stop triggered).
+    """
+
+    def __init__(self, config: Optional[PartialProfitConfig] = None):
+        self.config = config or PartialProfitConfig()
+        self._states: Dict[str, _PositionTPState] = {}
+>>>>>>> origin/main
 
     def register(self, pair_key: str) -> None:
         """Register a new position."""
@@ -96,7 +121,11 @@ class PartialProfitManager:
         pair_key: str,
         unrealised_pnl: float,
         notional: float,
+<<<<<<< HEAD
     ) -> tuple[float, bool]:
+=======
+    ) -> Tuple[float, bool]:
+>>>>>>> origin/main
         """
         Check whether a partial (or full remainder) close should happen.
 
@@ -108,7 +137,11 @@ class PartialProfitManager:
 
         Returns:
             (close_fraction, force_close_all)
+<<<<<<< HEAD
             - close_fraction: fraction of current position to close (0���1).
+=======
+            - close_fraction: fraction of current position to close (0↓1).
+>>>>>>> origin/main
             - force_close_all: if True, close the entire remaining position.
         """
         if not self.config.enabled or notional <= 0:
@@ -168,4 +201,7 @@ __all__ = [
     "PartialProfitConfig",
     "PartialProfitManager",
 ]
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main

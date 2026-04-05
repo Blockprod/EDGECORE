@@ -11,10 +11,15 @@ class OrderSide(Enum):
     BUY = "BUY"
     SELL = "SELL"
 
+<<<<<<< HEAD
 
 class OrderStatus(StrEnum):
     """Canonical order state ��� single source of truth for the project."""
 
+=======
+class OrderStatus(str, Enum):
+    """Canonical order state — single source of truth for the project."""
+>>>>>>> origin/main
     PENDING = "PENDING"
     SUBMITTED = "SUBMITTED"
     FILLED = "FILLED"
@@ -26,7 +31,10 @@ class OrderStatus(StrEnum):
     TIMEOUT = "TIMEOUT"
     ERROR = "ERROR"
     UNKNOWN = "UNKNOWN"
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 
 @dataclass
 class Order:

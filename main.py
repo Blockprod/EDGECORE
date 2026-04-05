@@ -17,7 +17,12 @@ from typing import Any, Callable
 
 import pandas as pd
 from structlog import get_logger
+<<<<<<< HEAD
 
+=======
+from monitoring.logging_config import setup_logging as setup_production_logging
+from config.settings import get_settings
+>>>>>>> origin/main
 from backtests.runner import BacktestRunner
 from common.context_memory import ContextMemory
 from common.errors import DataError, ErrorCategory
@@ -26,12 +31,20 @@ from data.delisting_guard import DelistingGuard
 from data.liquidity_filter import LiquidityFilter
 from data.loader import DataLoader
 from data.validators import OHLCVValidator
+<<<<<<< HEAD
+=======
+from strategies.pair_trading import PairTradingStrategy
+from risk.engine import RiskEngine
+from execution.ibkr_engine import IBKRExecutionEngine
+from execution.paper_execution import PaperExecutionEngine
+>>>>>>> origin/main
 from execution.base import Order, OrderSide
 from execution.ibkr_engine import IBKRExecutionEngine
 from execution.order_lifecycle_integration import OrderLifecycleIntegration
 from execution.paper_execution import PaperExecutionEngine
 from execution.reconciler import BrokerReconciler
 from execution.shutdown_manager import ShutdownManager
+<<<<<<< HEAD
 from monitoring.api import initialize_dashboard_api
 from monitoring.dashboard import DashboardGenerator
 from monitoring.email_alerter import EmailAlerter
@@ -40,14 +53,32 @@ from monitoring.slack_alerter import SlackAlerter
 from portfolio_engine.allocator import PortfolioAllocator, SizingMethod
 from risk.engine import RiskEngine
 from strategies.pair_trading import PairTradingStrategy
+=======
+from execution.order_lifecycle_integration import OrderLifecycleIntegration
+from common.errors import DataError, ErrorCategory
+from monitoring.slack_alerter import SlackAlerter
+from monitoring.email_alerter import EmailAlerter
+from monitoring.dashboard import DashboardGenerator
+from monitoring.api import initialize_dashboard_api
+from data.delisting_guard import DelistingGuard
+from data.liquidity_filter import LiquidityFilter
+from portfolio_engine.allocator import PortfolioAllocator, SizingMethod
+import threading
+>>>>>>> origin/main
 
 # Load .env variables (SMTP, Slack, IBKR, etc.)
 try:
     from dotenv import load_dotenv
+<<<<<<< HEAD
 
     load_dotenv()
 except ImportError:
     pass  # python-dotenv not installed ÔÇö rely on system env vars
+=======
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed — rely on system env vars
+>>>>>>> origin/main
 
 # Use production-grade structured logging with rotation and JSON output
 try:
@@ -55,10 +86,13 @@ try:
 except Exception:
     pass  # fallback: structlog works without explicit setup
 logger = get_logger("main")
+<<<<<<< HEAD
 
 # --- HOOKS AI ORCHESTRATION (BP-01) ---
 # Permet d'injecter dynamiquement des hooks d'orchestration AI (HyperAgents, fallback, etc.)
 AI_HOOKS: list[Callable] = []
+=======
+>>>>>>> origin/main
 
 
 def register_ai_hook(hook: Callable):
@@ -100,12 +134,27 @@ def _load_market_data_for_symbols(symbols: list[str], loader: DataLoader, settin
 
     for symbol in symbols:
         try:
+<<<<<<< HEAD
             df = loader.load_ibkr_data(symbol, timeframe="1h", limit=100)
 
             if df is not None and len(df) > 0:
                 # Validate data quality including staleness
                 validation = OHLCVValidator(symbol).validate(
                     df, max_age_hours=settings.trading.data_max_age_hours, raise_on_error=False
+=======
+            df = loader.load_ibkr_data(
+                symbol,
+                timeframe='1h',
+                limit=100
+            )
+            
+            if df is not None and len(df) > 0:
+                # Validate data quality including staleness
+                validation = OHLCVValidator(symbol).validate(
+                    df,
+                    max_age_hours=settings.trading.data_max_age_hours,
+                    raise_on_error=False
+>>>>>>> origin/main
                 )
 
                 if not validation.is_valid:
@@ -138,6 +187,7 @@ def _load_market_data_for_symbols(symbols: list[str], loader: DataLoader, settin
     return prices
 
 
+<<<<<<< HEAD
 def _close_all_positions(risk_engine: RiskEngine, execution_engine, positions_to_close: dict) -> None:
     """
     Close all open positions gracefully.
@@ -146,13 +196,31 @@ def _close_all_positions(risk_engine: RiskEngine, execution_engine, positions_to
     stale limit orders from filling after a kill-switch halt.
     Then submits market/limit close orders for each open position.
 
+=======
+def _close_all_positions(
+    risk_engine: RiskEngine,
+    execution_engine,
+    positions_to_close: dict
+) -> None:
+    """
+    Close all open positions gracefully.
+    
+    First cancels ALL pending orders at the broker to prevent
+    stale limit orders from filling after a kill-switch halt.
+    Then submits market/limit close orders for each open position.
+    
+>>>>>>> origin/main
     Args:
         risk_engine: Risk engine with position tracking
         execution_engine: Execution engine for order submission
         positions_to_close: Dict of positions to close
     """
     # RISK-1: Cancel all pending orders at broker FIRST
+<<<<<<< HEAD
     if hasattr(execution_engine, "cancel_all_pending"):
+=======
+    if hasattr(execution_engine, 'cancel_all_pending'):
+>>>>>>> origin/main
         try:
             cancelled = execution_engine.cancel_all_pending()
             logger.warning("pending_orders_cancelled_on_halt", count=cancelled)
@@ -210,7 +278,11 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
         mode: Trading mode ("paper" or "live")
     """
     logger.info("paper_trading_mode_starting", symbols=symbols)
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # Filter symbols through DelistingGuard and LiquidityFilter
     delist_guard = DelistingGuard()
     liq_filter = LiquidityFilter()
@@ -226,16 +298,28 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
     if safe_symbols:
         logger.info("symbols_after_filtering", original=len(symbols), filtered=len(safe_symbols))
         symbols = safe_symbols
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # Validate sandbox mode
     if not settings.execution.use_sandbox:
         logger.error("sandbox_not_enabled")
         raise ValueError("Paper trading requires sandbox mode. Set use_sandbox=True in config")
+<<<<<<< HEAD
 
     if settings.execution.engine != "ibkr":
         logger.error("invalid_engine_for_paper_trading", engine=settings.execution.engine)
         raise ValueError("Paper trading requires ibkr engine")
 
+=======
+    
+    if settings.execution.engine != "ibkr":
+        logger.error("invalid_engine_for_paper_trading", engine=settings.execution.engine)
+        raise ValueError("Paper trading requires ibkr engine")
+    
+>>>>>>> origin/main
     # Initialize trading components
     try:
         loader = DataLoader()
@@ -246,6 +330,7 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
         # Sector classification for US universe (mirrors config.yaml groupings)
         _SECTOR_MAP = {
             # Technology
+<<<<<<< HEAD
             "AAPL": "Tech",
             "MSFT": "Tech",
             "GOOGL": "Tech",
@@ -301,11 +386,39 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
         }
         risk_engine.sector_map = _SECTOR_MAP
 
+=======
+            "AAPL": "Tech", "MSFT": "Tech", "GOOGL": "Tech", "META": "Tech",
+            "NVDA": "Tech", "AMD": "Tech", "INTC": "Tech", "AVGO": "Tech",
+            "CRM": "Tech", "ADBE": "Tech",
+            # Financials
+            "JPM": "Financials", "BAC": "Financials", "GS": "Financials",
+            "MS": "Financials", "WFC": "Financials", "C": "Financials",
+            "BLK": "Financials", "SCHW": "Financials",
+            # Healthcare
+            "JNJ": "Healthcare", "PFE": "Healthcare", "UNH": "Healthcare",
+            "MRK": "Healthcare", "ABBV": "Healthcare", "LLY": "Healthcare",
+            "TMO": "Healthcare", "ABT": "Healthcare",
+            # Consumer Staples
+            "KO": "Consumer", "PEP": "Consumer", "PG": "Consumer",
+            "CL": "Consumer", "WMT": "Consumer", "COST": "Consumer",
+            # Energy
+            "XOM": "Energy", "CVX": "Energy", "COP": "Energy",
+            "SLB": "Energy", "EOG": "Energy",
+            # Industrials
+            "CAT": "Industrials", "DE": "Industrials", "HON": "Industrials",
+            "GE": "Industrials", "RTX": "Industrials", "LMT": "Industrials",
+            # Utilities
+            "NEE": "Utilities", "DUK": "Utilities", "SO": "Utilities",
+        }
+        risk_engine.sector_map = _SECTOR_MAP
+        
+>>>>>>> origin/main
         # Use PaperExecutionEngine for realistic paper trading, IBKRExecutionEngine for live
         if mode == "paper":
             execution_engine = PaperExecutionEngine(
                 slippage_model=settings.costs.slippage_model,
                 fixed_bps=settings.costs.slippage_bps,
+<<<<<<< HEAD
                 commission_pct=settings.costs.commission_pct
                 * 100,  # CostConfig stores as fraction, PaperEngine expects %
             )
@@ -324,6 +437,25 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
             sizing_method=SizingMethod.VOLATILITY_INVERSE,
         )
 
+=======
+                commission_pct=settings.costs.commission_pct * 100  # CostConfig stores as fraction, PaperEngine expects %
+            )
+        else:
+            execution_engine = IBKRExecutionEngine()
+        
+        logger.info("paper_trading_initialized",
+                    sandbox=settings.execution.use_sandbox,
+                    engine=settings.execution.engine)
+        
+        # Initialize portfolio allocator for dynamic position sizing
+        allocator = PortfolioAllocator(
+            equity=settings.execution.initial_capital,
+            max_pairs=getattr(settings.risk, 'max_concurrent_positions', 10),
+            max_allocation_pct=settings.trading.max_allocation_pct,
+            sizing_method=SizingMethod.VOLATILITY_INVERSE,
+        )
+        
+>>>>>>> origin/main
         # HOTFIX 1.1: Crash recovery - restore persisted state
         logger.info("attempting_state_recovery_from_audit_trail")
         try:
@@ -425,7 +557,11 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
     max_attempts = settings.trading.max_loop_iterations
     consecutive_errors = 0
     max_consecutive_errors = settings.trading.max_consecutive_errors
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     try:
         while attempt < max_attempts:
             attempt += 1
@@ -433,7 +569,15 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
             # FEATURE 2: Check for shutdown request (signal or file-based)
             if shutdown_mgr.is_shutdown_requested():
                 shutdown_reason = shutdown_mgr.get_shutdown_reason() or "unknown reason"
+<<<<<<< HEAD
                 logger.warning("shutdown_signal_detected", reason=shutdown_reason, iteration=attempt)
+=======
+                logger.warning(
+                    "shutdown_signal_detected",
+                    reason=shutdown_reason,
+                    iteration=attempt
+                )
+>>>>>>> origin/main
                 # Alert: kill-switch / shutdown
                 for _alerter in (email_alerter, slack_alerter):
                     if _alerter:
@@ -556,7 +700,11 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                         # Get current account balance
                         equity = execution_engine.get_account_balance()
                         logger.info("account_balance_check", equity=equity)
+<<<<<<< HEAD
 
+=======
+                        
+>>>>>>> origin/main
                         # Compute realized spread volatility for this pair
                         pair_syms = signal.symbol_pair.split("_")
                         pair_vol = settings.trading.fallback_spread_vol  # fallback
@@ -578,7 +726,11 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
 
                         # Check if we can enter this trade
                         can_enter, reason = risk_engine.can_enter_trade(
+<<<<<<< HEAD
                             symbol_pair=signal.symbol_pair,
+=======
+                            symbol=signal.symbol_pair,
+>>>>>>> origin/main
                             position_size=alloc.notional,
                             current_equity=equity,
                             volatility=pair_vol,
@@ -596,6 +748,7 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             allocator.release(signal.symbol_pair)
                             logger.warning("price_not_available", pair=signal.symbol_pair)
                             continue
+<<<<<<< HEAD
 
                         # Compute quantity from allocated notional
                         order_quantity = (
@@ -603,6 +756,11 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             if current_price > 0
                             else settings.trading.min_order_quantity
                         )
+=======
+                        
+                        # Compute quantity from allocated notional
+                        order_quantity = max(settings.trading.min_order_quantity, round(alloc.notional / current_price, 0)) if current_price > 0 else settings.trading.min_order_quantity
+>>>>>>> origin/main
 
                         # Create order
                         order = Order(
@@ -610,8 +768,12 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                             symbol=signal.symbol_pair,
                             side=OrderSide.BUY if signal.side == "long" else OrderSide.SELL,
                             quantity=order_quantity,
+<<<<<<< HEAD
                             limit_price=current_price
                             * (1.0 - settings.trading.limit_price_offset_pct),  # configurable offset
+=======
+                            limit_price=current_price * (1.0 - settings.trading.limit_price_offset_pct)  # configurable offset
+>>>>>>> origin/main
                         )
 
                         # Submit order
@@ -648,7 +810,11 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
                                         )
                                     except Exception:
                                         pass
+<<<<<<< HEAD
 
+=======
+                            
+>>>>>>> origin/main
                     except Exception as e:
                         logger.error("signal_processing_error", pair=signal.symbol_pair, error=str(e))
                         continue
@@ -699,7 +865,14 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
 
                 else:
                     # Non-retryable or fatal: stop immediately
+<<<<<<< HEAD
                     logger.critical("data_error_fatal_or_non_retryable", message=e.message)
+=======
+                    logger.critical(
+                        "data_error_fatal_or_non_retryable",
+                        message=e.message
+                    )
+>>>>>>> origin/main
                     # Alert: fatal data error
                     for _alerter in (email_alerter, slack_alerter):
                         if _alerter:
@@ -733,7 +906,14 @@ def run_paper_trading(symbols, settings, slack_alerter=None, email_alerter=None,
 
                 # Break loop if too many consecutive errors
                 if consecutive_errors >= max_consecutive_errors:
+<<<<<<< HEAD
                     logger.error("paper_trading_max_consecutive_errors_exceeded", max_allowed=max_consecutive_errors)
+=======
+                    logger.error(
+                        "paper_trading_max_consecutive_errors_exceeded",
+                        max_allowed=max_consecutive_errors
+                    )
+>>>>>>> origin/main
                     # Alert: max consecutive errors
                     for _alerter in (email_alerter, slack_alerter):
                         if _alerter:
@@ -804,20 +984,37 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
     if settings.execution.use_sandbox:
         logger.error("live_mode_with_sandbox_enabled")
         raise ValueError("Live trading cannot run with sandbox mode enabled")
+<<<<<<< HEAD
 
     if settings.execution.engine != "ibkr":
         logger.error("invalid_engine_for_live_trading", engine=settings.execution.engine)
         raise ValueError("Live trading requires ibkr engine")
 
+=======
+    
+    if settings.execution.engine != "ibkr":
+        logger.error("invalid_engine_for_live_trading", engine=settings.execution.engine)
+        raise ValueError("Live trading requires ibkr engine")
+    
+>>>>>>> origin/main
     # Display warning and require explicit confirmation
     print("\n" + "=" * 70)
     print("[!] LIVE TRADING ALERT - REAL MONEY AT RISK [!]")
+<<<<<<< HEAD
     print("=" * 70)
     print("You are about to start LIVE TRADING with REAL MONEY")
     print(f"Trading Pairs: {', '.join(symbols)}")
     print(f"Engine: {settings.execution.engine}")
     print(f"Risk per trade: {settings.risk.max_risk_per_trade * 100:.2f}% of equity")
     print(f"Daily loss limit: {settings.risk.max_daily_loss_pct * 100:.2f}%")
+=======
+    print("="*70)
+    print("You are about to start LIVE TRADING with REAL MONEY")
+    print(f"Trading Pairs: {', '.join(symbols)}")
+    print(f"Engine: {settings.execution.engine}")
+    print(f"Risk per trade: {settings.risk.max_risk_per_trade*100:.2f}% of equity")
+    print(f"Daily loss limit: {settings.risk.max_daily_loss_pct*100:.2f}%")
+>>>>>>> origin/main
     print(f"Max concurrent positions: {settings.risk.max_concurrent_positions}")
     print("=" * 70)
     print("\nThis action is IRREVERSIBLE. Losses may occur.")
@@ -840,9 +1037,18 @@ def run_live_trading(symbols, settings, slack_alerter=None, email_alerter=None):
         return
 
     # Log critical event
+<<<<<<< HEAD
     logger.critical("live_trading_starting", symbols=symbols, engine=settings.execution.engine, user_email=confirm2)
 
     print("\n" + "!" * 70)
+=======
+    logger.critical("live_trading_starting",
+                   symbols=symbols,
+                   engine=settings.execution.engine,
+                   user_email=confirm2)
+    
+    print("\n" + "!"*70)
+>>>>>>> origin/main
     print("LIVE TRADING NOW ACTIVE - REAL MONEY IS AT RISK")
     print("!" * 70 + "\n")
 
@@ -856,25 +1062,41 @@ def main():
         "--mode",
         choices=["backtest", "paper", "live", "live-runner"],
         default="backtest",
+<<<<<<< HEAD
         help="Operating mode. 'live-runner' uses the production LiveTradingRunner.",
+=======
+        help="Operating mode. 'live-runner' uses the production LiveTradingRunner."
+>>>>>>> origin/main
     )
     parser.add_argument(
         "--symbols",
         nargs="+",
         default=None,  # Will load from config if not provided
+<<<<<<< HEAD
         help="Trading pairs (if not provided, uses config/dev.yaml trading_universe.symbols)",
+=======
+        help="Trading pairs (if not provided, uses config/dev.yaml trading_universe.symbols)"
+>>>>>>> origin/main
     )
     parser.add_argument("--start-date", default=None, help="Backtest start date (YYYY-MM-DD)")
     parser.add_argument("--end-date", default=None, help="Backtest end date (YYYY-MM-DD)")
 
     args = parser.parse_args()
     settings = get_settings()
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # If symbols not provided via CLI, use config
     if args.symbols is None:
         args.symbols = settings.trading_universe.symbols
         logger.info("using_symbols_from_config", num_symbols=len(args.symbols))
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # Initialize alerters (optional - based on environment variables)
     # Slack: requires SLACK_WEBHOOK_URL
     slack_webhook = os.getenv("SLACK_WEBHOOK_URL")
@@ -883,6 +1105,7 @@ def main():
     # Email: requires EMAIL_SMTP_SERVER, EMAIL_SMTP_PORT, EMAIL_SMTP_USER,
     #        EMAIL_SMTP_PASS, EMAIL_RECIPIENTS
     email_alerter = EmailAlerter.from_env()
+<<<<<<< HEAD
 
     # --- Initialisation mémoire contextuelle AI (BP-02) ---
     context = {
@@ -904,13 +1127,25 @@ def main():
         email_enabled=email_alerter is not None and email_alerter.enabled,
     )
 
+=======
+    
+    logger.info("edgecore_startup", 
+                mode=args.mode, 
+                env=settings.env, 
+                slack_enabled=slack_alerter is not None and slack_alerter.enabled,
+                email_enabled=email_alerter is not None and email_alerter.enabled)
+    
+>>>>>>> origin/main
     # Start a minimal health-check HTTP server so Docker HEALTHCHECK
     # passes regardless of operating mode (backtest / paper / live).
     # In paper/live mode this is later superseded by the full dashboard API.
     if os.getenv("ENABLE_MONITORING", "").lower() in ("true", "1", "yes"):
         try:
             from flask import Flask as _Flask
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
             _health_app = _Flask("healthcheck")
 
             @_health_app.route("/health")
@@ -920,7 +1155,13 @@ def main():
             _hc_host = os.getenv("DASHBOARD_API_HOST", "0.0.0.0")
             _hc_port = int(os.getenv("DASHBOARD_API_PORT", "5000"))
             _hc_thread = threading.Thread(
+<<<<<<< HEAD
                 target=lambda: _health_app.run(host=_hc_host, port=_hc_port, debug=False, use_reloader=False),
+=======
+                target=lambda: _health_app.run(
+                    host=_hc_host, port=_hc_port, debug=False, use_reloader=False
+                ),
+>>>>>>> origin/main
                 daemon=True,
             )
             _hc_thread.start()
@@ -933,7 +1174,15 @@ def main():
             logger.info("backtest_mode_starting")
             runner = BacktestRunner()
             # Use run_unified() to avoid look-ahead bias present in legacy run()
+<<<<<<< HEAD
             metrics = runner.run_unified(args.symbols, start_date=args.start_date, end_date=args.end_date)
+=======
+            metrics = runner.run_unified(
+                args.symbols,
+                start_date=args.start_date,
+                end_date=args.end_date
+            )
+>>>>>>> origin/main
             print(metrics.summary())
 
         elif args.mode == "paper":
@@ -947,18 +1196,32 @@ def main():
         elif args.mode == "live-runner":
             logger.info("live_runner_mode_selected", symbols=args.symbols)
             from live_trading.runner import LiveTradingRunner, TradingLoopConfig
+<<<<<<< HEAD
 
             runner_cfg = TradingLoopConfig(
                 symbols=args.symbols,
                 bar_interval_seconds=getattr(settings.execution, "paper_trading_loop_interval_seconds", 60),
                 pair_rediscovery_hours=24,
                 max_positions=getattr(settings.risk, "max_concurrent_positions", 10),
+=======
+            runner_cfg = TradingLoopConfig(
+                symbols=args.symbols,
+                bar_interval_seconds=getattr(
+                    settings.execution, 'paper_trading_loop_interval_seconds', 60
+                ),
+                pair_rediscovery_hours=24,
+                max_positions=getattr(settings.risk, 'max_concurrent_positions', 10),
+>>>>>>> origin/main
                 initial_capital=settings.execution.initial_capital,
                 mode="paper",
             )
             lt_runner = LiveTradingRunner(runner_cfg, email_alerter=email_alerter, slack_alerter=slack_alerter)
             lt_runner.start()
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> origin/main
     except Exception as e:
         logger.error("main_error", mode=args.mode, error=str(e))
         # Send critical alert to Slack and/or Email

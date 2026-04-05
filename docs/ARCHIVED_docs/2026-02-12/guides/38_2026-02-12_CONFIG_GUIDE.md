@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# Environment-Specific Configuration & Hot-Reload Guide
+=======
+# Environment-Specific Configuration & Hot-Reload Guide
+>>>>>>> origin/main
 
 ## Overview
 
@@ -84,10 +88,17 @@ print(f"Trading {len(current_symbols)} symbols in {settings.env} environment")
 
 ```
 config/
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ dev.yaml      # 46 symbols: default for development
 Ôö£ÔöÇÔöÇ test.yaml     # 10 symbols: for unit tests
 Ôö£ÔöÇÔöÇ prod.yaml     # 119 symbols: production setting
 ÔööÔöÇÔöÇ settings.py   # Python config loader (auto-loads based on env)
+=======
+├── dev.yaml      # 46 symbols: default for development
+├── test.yaml     # 10 symbols: for unit tests
+├── prod.yaml     # 119 symbols: production setting
+└── settings.py   # Python config loader (auto-loads based on env)
+>>>>>>> origin/main
 ```
 
 ## Use Cases

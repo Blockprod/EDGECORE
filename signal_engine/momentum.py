@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Momentum Overlay ÔÇö Relative strength signal for pair trading.
+=======
+"""
+Momentum Overlay — Relative strength signal for pair trading.
+>>>>>>> origin/main
 
 Computes cross-sectional relative strength between pair legs and adjusts
 signal strength accordingly.  When momentum *confirms* the z-score signal
@@ -9,12 +14,20 @@ the z-score (divergence play), the signal is reduced.
 This acts as a second alpha source, decorrelated from the cointegration
 z-score, and feeds into the SignalCombiner (Etape 3).
 
+<<<<<<< HEAD
 v31 ÔÇö Phase 1, Etape 2.
+=======
+v31 — Phase 1, Etape 2.
+>>>>>>> origin/main
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+from typing import Optional
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -50,10 +63,17 @@ class MomentumOverlay:
 
     Config params (from MomentumConfig):
         enabled:      bool  = True
+<<<<<<< HEAD
         lookback:     int   = 20   ÔÇö Rolling return window (bars)
         weight:       float = 0.30 ÔÇö Momentum weight in composite score
         min_strength: float = 0.30 ÔÇö Floor for contra-momentum signals
         max_boost:    float = 1.00 ÔÇö Cap for momentum-confirmed signals
+=======
+        lookback:     int   = 20   — Rolling return window (bars)
+        weight:       float = 0.30 — Momentum weight in composite score
+        min_strength: float = 0.30 — Floor for contra-momentum signals
+        max_boost:    float = 1.00 — Cap for momentum-confirmed signals
+>>>>>>> origin/main
     """
 
     def __init__(
@@ -85,7 +105,11 @@ class MomentumOverlay:
         self,
         prices_a: pd.Series,
         prices_b: pd.Series,
+<<<<<<< HEAD
         lookback: int | None = None,
+=======
+        lookback: Optional[int] = None,
+>>>>>>> origin/main
     ) -> float:
         """
         Compute relative strength: RS = return_A(lookback) - return_B(lookback).
@@ -115,7 +139,11 @@ class MomentumOverlay:
         self,
         prices_a: pd.Series,
         prices_b: pd.Series,
+<<<<<<< HEAD
         lookback: int | None = None,
+=======
+        lookback: Optional[int] = None,
+>>>>>>> origin/main
     ) -> float:
         """
         Compute normalised momentum score in [-1, 1].
@@ -141,7 +169,11 @@ class MomentumOverlay:
         raw_strength: float,
         prices_a: pd.Series,
         prices_b: pd.Series,
+<<<<<<< HEAD
         lookback: int | None = None,
+=======
+        lookback: Optional[int] = None,
+>>>>>>> origin/main
     ) -> MomentumResult:
         """
         Adjust signal strength based on relative momentum.

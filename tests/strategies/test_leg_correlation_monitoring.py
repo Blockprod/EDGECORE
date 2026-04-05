@@ -1,13 +1,24 @@
+<<<<<<< HEAD
 ﻿"""
 Sprint 4.6 ÔÇô Tests for rolling leg correlation monitoring.
+=======
+"""
+Sprint 4.6 – Tests for rolling leg correlation monitoring.
+>>>>>>> origin/main
 
 Tests the ``_check_leg_correlation_stability()`` method, integration into
 ``generate_signals()``, pair exclusion/rehabilitation, and analytics exposure.
 
 Covers:
+<<<<<<< HEAD
   1. Stable correlation Ôåô returns True
   2. Correlation breakdown Ôåô returns False
   3. Insufficient data Ôåô returns True (safe default)
+=======
+  1. Stable correlation ↓ returns True
+  2. Correlation breakdown ↓ returns False
+  3. Insufficient data ↓ returns True (safe default)
+>>>>>>> origin/main
   4. NaN handling (constant series)
   5. Threshold parametrisation
   6. Pair exclusion on breakdown
@@ -18,11 +29,19 @@ Covers:
   11. Edge cases: zero historical, identical series, anti-correlated legs
 """
 
+<<<<<<< HEAD
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
+=======
+import numpy as np
+import pandas as pd
+from unittest.mock import MagicMock, patch
+from datetime import datetime
+
+>>>>>>> origin/main
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -84,7 +103,11 @@ def _correlated_series(n: int = 200, noise: float = 0.02, seed: int = 42):
 def _breaking_series(n: int = 200, break_point: int = 160, seed: int = 42):
     """
     Return two series that are highly correlated up to *break_point* but then
+<<<<<<< HEAD
     completely diverge ÔÇô simulating a correlation breakdown.
+=======
+    completely diverge – simulating a correlation breakdown.
+>>>>>>> origin/main
 
     After the break, x follows an independent random walk so the recent window
     (which is entirely post-break) has near-zero or negative correlation
@@ -103,11 +126,19 @@ def _breaking_series(n: int = 200, break_point: int = 160, seed: int = 42):
 
 
 # ===================================================================
+<<<<<<< HEAD
 # 1. Core method ÔÇô stable correlation
 # ===================================================================
 
 class TestStableCorrelation:
     """Pair with stable high correlation Ôåô method returns True."""
+=======
+# 1. Core method – stable correlation
+# ===================================================================
+
+class TestStableCorrelation:
+    """Pair with stable high correlation ↓ method returns True."""
+>>>>>>> origin/main
 
     def test_stable_returns_true(self):
         strategy = _make_strategy()
@@ -132,11 +163,19 @@ class TestStableCorrelation:
 
 
 # ===================================================================
+<<<<<<< HEAD
 # 2. Core method ÔÇô correlation breakdown
 # ===================================================================
 
 class TestCorrelationBreakdown:
     """Pair with recent correlation collapse Ôåô returns False."""
+=======
+# 2. Core method – correlation breakdown
+# ===================================================================
+
+class TestCorrelationBreakdown:
+    """Pair with recent correlation collapse ↓ returns False."""
+>>>>>>> origin/main
 
     def test_breakdown_returns_false(self):
         strategy = _make_strategy()
@@ -166,11 +205,19 @@ class TestCorrelationBreakdown:
 
 
 # ===================================================================
+<<<<<<< HEAD
 # 3. Insufficient data ÔÇô safe fallback
 # ===================================================================
 
 class TestInsufficientData:
     """Not enough bars Ôåô allow pair (return True)."""
+=======
+# 3. Insufficient data – safe fallback
+# ===================================================================
+
+class TestInsufficientData:
+    """Not enough bars ↓ allow pair (return True)."""
+>>>>>>> origin/main
 
     def test_short_series_returns_true(self):
         strategy = _make_strategy(leg_correlation_window=30)
@@ -202,22 +249,35 @@ class TestEdgeCases:
     """Edge cases: constant series, NaN correlation, tiny historical."""
 
     def test_constant_series_returns_true(self):
+<<<<<<< HEAD
         """Constant series Ôåô corr is NaN Ôåô safe default True."""
+=======
+        """Constant series ↓ corr is NaN ↓ safe default True."""
+>>>>>>> origin/main
         strategy = _make_strategy()
         y = pd.Series([100.0] * 200)
         x = pd.Series([200.0] * 200)
         assert strategy._check_leg_correlation_stability(y, x, "A_B") is True
 
     def test_identical_series(self):
+<<<<<<< HEAD
         """Identical series Ôåô perfect correlation Ôåô stable."""
+=======
+        """Identical series ↓ perfect correlation ↓ stable."""
+>>>>>>> origin/main
         strategy = _make_strategy()
         rng = np.random.RandomState(7)
         base = pd.Series(100 + np.cumsum(rng.randn(200) * 0.5))
         assert strategy._check_leg_correlation_stability(base, base.copy(), "A_A") is True
 
     def test_anticorrelated_legs(self):
+<<<<<<< HEAD
         """Anti-correlated legs: both recent and historical negative Ôåô no breakdown
         if recent is still >= threshold ├ù historical in absolute value."""
+=======
+        """Anti-correlated legs: both recent and historical negative ↓ no breakdown
+        if recent is still >= threshold × historical in absolute value."""
+>>>>>>> origin/main
         strategy = _make_strategy()
         rng = np.random.RandomState(3)
         base = 100 + np.cumsum(rng.randn(200) * 0.5)
@@ -228,15 +288,25 @@ class TestEdgeCases:
         assert result is True
 
     def test_zero_historical_corr(self):
+<<<<<<< HEAD
         """Historical corr Ôëê 0 Ôåô abs(hist) < 1e-6 Ôåô no division, returns True."""
+=======
+        """Historical corr ≈ 0 ↓ abs(hist) < 1e-6 ↓ no division, returns True."""
+>>>>>>> origin/main
         strategy = _make_strategy()
         rng = np.random.RandomState(9)
         # Build series with near-zero overall correlation over 4*window range
         n = 200
         y = pd.Series(rng.randn(n).cumsum())
+<<<<<<< HEAD
         # x is random walk independent of y Ôåô correlation ~0
         x = pd.Series(rng.randn(n).cumsum())
         # We can't guarantee the method returns True or False ÔÇô but it should not crash
+=======
+        # x is random walk independent of y ↓ correlation ~0
+        x = pd.Series(rng.randn(n).cumsum())
+        # We can't guarantee the method returns True or False – but it should not crash
+>>>>>>> origin/main
         strategy._check_leg_correlation_stability(y, x, "random")
         assert "random" in strategy._leg_correlation_history
 
@@ -303,7 +373,11 @@ class TestAnalytics:
 
 
 # ===================================================================
+<<<<<<< HEAD
 # 7. Integration ÔÇô generate_signals exits on breakdown
+=======
+# 7. Integration – generate_signals exits on breakdown
+>>>>>>> origin/main
 # ===================================================================
 
 class TestGenerateSignalsIntegration:
@@ -343,7 +417,11 @@ class TestGenerateSignalsIntegration:
         return strategy
 
     def test_breakdown_emits_exit_signal(self):
+<<<<<<< HEAD
         """Active position + correlation breakdown Ôåô exit signal emitted."""
+=======
+        """Active position + correlation breakdown ↓ exit signal emitted."""
+>>>>>>> origin/main
         strategy = self._build_strategy_with_mocks(corr_stable=False)
         # Prepare a stub correlation history for the exit reason string
         strategy._leg_correlation_history["A_B"] = {
@@ -390,7 +468,11 @@ class TestGenerateSignalsIntegration:
         assert "A_B" in strategy._excluded_pairs_correlation
 
     def test_no_exit_when_no_active_trade(self):
+<<<<<<< HEAD
         """Correlation breakdown without active trade Ôåô no exit signal, just exclusion."""
+=======
+        """Correlation breakdown without active trade ↓ no exit signal, just exclusion."""
+>>>>>>> origin/main
         strategy = self._build_strategy_with_mocks(corr_stable=False)
         strategy.active_trades.clear()
         strategy._leg_correlation_history["A_B"] = {

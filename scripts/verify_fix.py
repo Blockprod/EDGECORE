@@ -8,6 +8,7 @@ def verify_imports():
     """Verify all Phase 4.5 modules can be imported."""
     try:
         print("Checking imports...")
+<<<<<<< HEAD
         print("  Ô£ô execution.monte_carlo")
         
         print("  Ô£ô execution.venue_models")
@@ -17,6 +18,17 @@ def verify_imports():
         print("  Ô£ô execution.ml_impact")
         
         print("  Ô£ô monitoring.latency")
+=======
+        print("  ✓ execution.monte_carlo")
+        
+        print("  ✓ execution.venue_models")
+        
+        print("  ✓ monitoring.tracing")
+        
+        print("  ✓ execution.ml_impact")
+        
+        print("  ✓ monitoring.latency")
+>>>>>>> origin/main
         
         print("\nÔ£ô All Phase 4.5 modules imported successfully!")
         return True
@@ -34,7 +46,11 @@ def verify_model_creation():
         model = NeuralNetworkModel(input_size=8, hidden_size_1=64, hidden_size_2=32)
         assert model.W1 is not None
         assert model.feature_mean is not None
+<<<<<<< HEAD
         print("  Ô£ô NeuralNetworkModel created")
+=======
+        print("  ✓ NeuralNetworkModel created")
+>>>>>>> origin/main
         print(f"    - Input size: {model.input_size}")
         print(f"    - W1 shape: {model.W1.shape}")
         print(f"    - Feature mean shape: {model.feature_mean.shape}")

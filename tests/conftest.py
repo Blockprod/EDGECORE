@@ -9,8 +9,16 @@ Provides:
 - Common test utilities
 """
 
+<<<<<<< HEAD
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
+=======
+import pytest
+from datetime import datetime
+from unittest.mock import MagicMock
+import pandas as pd
+import numpy as np
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -18,7 +26,11 @@ import pytest
 
 from config.schemas import FullConfigSchema
 from data.loader import DataLoader
+<<<<<<< HEAD
 from data.validators import EquityValidator, OHLCVValidator
+=======
+from data.validators import OHLCVValidator, EquityValidator
+>>>>>>> origin/main
 from monitoring.alerter import AlertManager
 from risk.engine import RiskEngine
 
@@ -168,6 +180,7 @@ def cointegrated_pair():
 
     X = 100 + np.cumsum(np.random.randn(200) * 0.5)
     Y = 200 + 2 * X + np.random.randn(200) * 5
+<<<<<<< HEAD
 
     df_x = pd.DataFrame({"open": X * 0.99, "high": X * 1.01, "low": X * 0.98, "close": X, "volume": 1000}, index=dates)
 
@@ -178,6 +191,24 @@ def cointegrated_pair():
     df_y["high"] = df_y[["open", "high", "close"]].max(axis=1) + 1
     df_y["low"] = df_y[["open", "low", "close"]].min(axis=1) - 1
 
+=======
+    
+    df_x = pd.DataFrame({
+        'open': X * 0.99, 'high': X * 1.01,
+        'low': X * 0.98, 'close': X, 'volume': 1000
+    }, index=dates)
+    
+    df_y = pd.DataFrame({
+        'open': Y * 0.99, 'high': Y * 1.01,
+        'low': Y * 0.98, 'close': Y, 'volume': 1000
+    }, index=dates)
+    
+    df_x['high'] = df_x[['open', 'high', 'close']].max(axis=1) + 1
+    df_x['low'] = df_x[['open', 'low', 'close']].min(axis=1) - 1
+    df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
+    df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
+    
+>>>>>>> origin/main
     return {"AAPL": df_x, "MSFT": df_y}
 
 
@@ -188,6 +219,26 @@ def independent_pair():
 
     X = 100 + np.cumsum(np.random.randn(200) * 0.5)
     Y = 200 + np.cumsum(np.random.randn(200) * 0.5)  # Independent brownian
+<<<<<<< HEAD
+=======
+    
+    df_x = pd.DataFrame({
+        'open': X * 0.99, 'high': X * 1.01,
+        'low': X * 0.98, 'close': X, 'volume': 1000
+    }, index=dates)
+    
+    df_y = pd.DataFrame({
+        'open': Y * 0.99, 'high': Y * 1.01,
+        'low': Y * 0.98, 'close': Y, 'volume': 1000
+    }, index=dates)
+    
+    df_x['high'] = df_x[['open', 'high', 'close']].max(axis=1) + 1
+    df_x['low'] = df_x[['open', 'low', 'close']].min(axis=1) - 1
+    df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
+    df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
+    
+    return {"AAPL": df_x, "MSFT": df_y}
+>>>>>>> origin/main
 
     df_x = pd.DataFrame({"open": X * 0.99, "high": X * 1.01, "low": X * 0.98, "close": X, "volume": 1000}, index=dates)
 
@@ -278,9 +329,15 @@ def temp_data_dir(tmp_path):
 
 
 def create_sample_position(symbol="AAPL", quantity=1.0, entry_price=50000.0):
+<<<<<<< HEAD
     """Helper to create sample position. NOTE: modes_legacy.Position — C-09 pending full migration."""
     from execution.modes_legacy import Position
 
+=======
+    """Helper to create sample position."""
+    from execution.modes import Position
+    
+>>>>>>> origin/main
     return Position(
         symbol=symbol,
         quantity=quantity,
@@ -309,8 +366,12 @@ def assert_dataframe_valid(df, symbol="TEST"):
 def reset_singletons():
     """Reset singleton instances between tests."""
     from common.circuit_breaker import reset_all_circuit_breakers
+<<<<<<< HEAD
     from monitoring.api_security import reset_rate_limiter_for_testing
 
+=======
+    
+>>>>>>> origin/main
     reset_all_circuit_breakers()
     reset_rate_limiter_for_testing()
 

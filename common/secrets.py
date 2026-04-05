@@ -9,7 +9,13 @@ Provides:
 - Access audit logging
 """
 
+<<<<<<< HEAD
 import logging
+=======
+from typing import Dict, Optional, Any, List, Set
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+>>>>>>> origin/main
 import os
 import re
 from dataclasses import dataclass, field
@@ -40,7 +46,11 @@ class SecretMetadata:
 
     name: str
     created_at: datetime
+<<<<<<< HEAD
     last_accessed: datetime = field(default_factory=lambda: datetime.now(UTC))
+=======
+    last_accessed: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+>>>>>>> origin/main
     access_count: int = 0
     rotated_at: datetime | None = None
     rotation_interval_days: int | None = None
@@ -59,17 +69,29 @@ class SecretMetadata:
             return False
 
         last_rotation = self.rotated_at or self.created_at
+<<<<<<< HEAD
         days_since = (datetime.now(UTC) - last_rotation).days
+=======
+        days_since = (datetime.now(timezone.utc) - last_rotation).days
+>>>>>>> origin/main
         return days_since >= self.rotation_interval_days
 
     def mark_accessed(self) -> None:
         """Update access metadata."""
+<<<<<<< HEAD
         self.last_accessed = datetime.now(UTC)
+=======
+        self.last_accessed = datetime.now(timezone.utc)
+>>>>>>> origin/main
         self.access_count += 1
 
     def mark_rotated(self) -> None:
         """Mark as just rotated."""
+<<<<<<< HEAD
         self.rotated_at = datetime.now(UTC)
+=======
+        self.rotated_at = datetime.now(timezone.utc)
+>>>>>>> origin/main
 
 
 class MaskedString:
@@ -192,7 +214,13 @@ class SecretsVault:
 
         # Store metadata
         self._metadata[name] = SecretMetadata(
+<<<<<<< HEAD
             name=name, created_at=datetime.now(UTC), rotation_interval_days=rotation_interval_days
+=======
+            name=name,
+            created_at=datetime.now(timezone.utc),
+            rotation_interval_days=rotation_interval_days
+>>>>>>> origin/main
         )
 
         # Audit log
@@ -309,8 +337,13 @@ class SecretsVault:
 
         for secret_name, metadata in self._metadata.items():
             last_rotation = metadata.rotated_at or metadata.created_at
+<<<<<<< HEAD
             days_since = (datetime.now(UTC) - last_rotation).days
 
+=======
+            days_since = (datetime.now(timezone.utc) - last_rotation).days
+            
+>>>>>>> origin/main
             next_rotation = None
             needs_rotation = False
 
@@ -380,10 +413,20 @@ class SecretsVault:
         Returns:
             List of audit log entries
         """
+<<<<<<< HEAD
         cutoff = datetime.now(UTC) - timedelta(days=days)
 
         entries = [e for e in self._audit_log if e["timestamp"] >= cutoff]
 
+=======
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        
+        entries = [
+            e for e in self._audit_log
+            if e['timestamp'] >= cutoff
+        ]
+        
+>>>>>>> origin/main
         if action:
             entries = [e for e in entries if e["action"] == action]
 
@@ -401,6 +444,7 @@ class SecretsVault:
 
     def _log_audit(self, action: str, secret_name: str, success: bool, details: dict[str, Any] | None = None) -> None:
         """Log action to audit trail."""
+<<<<<<< HEAD
         self._audit_log.append(
             {
                 "timestamp": datetime.now(UTC),
@@ -411,6 +455,16 @@ class SecretsVault:
             }
         )
 
+=======
+        self._audit_log.append({
+            'timestamp': datetime.now(timezone.utc),
+            'action': action,
+            'secret_name': secret_name,
+            'success': success,
+            'details': details or {}
+        })
+    
+>>>>>>> origin/main
     def _calculate_rotation_age(self, secret_name: str) -> int:
         """Calculate days since last rotation."""
         meta = self._metadata.get(secret_name)
@@ -418,7 +472,11 @@ class SecretsVault:
             return 0
 
         last_rotation = meta.rotated_at or meta.created_at
+<<<<<<< HEAD
         return (datetime.now(UTC) - last_rotation).days
+=======
+        return (datetime.now(timezone.utc) - last_rotation).days
+>>>>>>> origin/main
 
 
 # Global vault instance
@@ -475,7 +533,11 @@ def inject_secrets(logging_handler=None) -> None:
         logging_handler: Optional specific handler to inject
     """
     get_vault()
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     class MaskingFilter(logging.Filter):
         """Logging filter that masks secrets."""
 

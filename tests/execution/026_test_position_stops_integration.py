@@ -83,11 +83,19 @@ class TestExecutionIntegrationWithStops:
             side="long",
             stop_config={"stop_loss_price": 2700.0},
         )
+<<<<<<< HEAD
 
         # Only AAPL stop triggered
         should_exit_aapl, _ = manager.check_exits("aapl_long", 44000.0)
         should_exit_eth, _ = manager.check_exits("eth_long", 2900.0)
 
+=======
+        
+        # Only AAPL stop triggered
+        should_exit_aapl, _ = manager.check_exits("aapl_long", 44000.0)
+        should_exit_eth, _ = manager.check_exits("eth_long", 2900.0)
+        
+>>>>>>> origin/main
         assert should_exit_aapl is True
         assert should_exit_eth is False
 
@@ -151,7 +159,15 @@ class TestExecutionIntegrationWithStops:
         }
 
         manager.add_position(
+<<<<<<< HEAD
             position_id="persist_pos", symbol="AAPL", entry_price=50000.0, side="long", stop_config=config
+=======
+            position_id="persist_pos",
+            symbol="AAPL",
+            entry_price=50000.0,
+            side="long",
+            stop_config=config
+>>>>>>> origin/main
         )
 
         # Multiple price updates

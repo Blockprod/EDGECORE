@@ -28,7 +28,7 @@ L'audit V3 contenait des **erreurs factuelles graves:**
 - 40+ fichiers tests validés pour existence/contenu
 - Documentation review (docs/2026-02-xx/)
 
-**Projet:** Statistcal arbitrage pair-trading (cointegration) sur crypto-monnaies (CCXT)  
+**Projet:** Statistcal arbitrage pair-trading (cointegration) sur actions US (equities) (IBKR API)  
 **Type:** Trading quantitatif temps réel avec 3 modes (backtest/paper/live)
 
 ---
@@ -61,7 +61,7 @@ ACCEPTABILITÉ: 7/10 (architecture sound, mais intégration incomplète)
 | **Error Handling** | common/error_handler.py (205L) | ✅ COMPLET | Category-based (TRANSIENT/RETRYABLE/NON_RETRYABLE/FATAL) |
 | **Secrets Management** | common/secrets.py (503L) | ✅ COMPLET | Masked logging, rotation tracking |
 | **Configuration** | config/settings.py (112L) | ✅ COMPLET | YAML loaders, dev/prod configs |
-| **IBKR Engine** | execution/ibkr_engine.py | 🔴 STUB | NotImplementedError ("use CCXT for now") |
+| **IBKR Engine** | execution/ibkr_engine.py | 🔴 STUB | NotImplementedError ("use IBKR API for now") |
 | **Walk-Forward Backtest** | backtests/walk_forward.py | 🟡 STUB | Skeleton only (TODO comment left) |
 
 #### 2.2 Intégration réelle vs. existence du code
@@ -74,7 +74,7 @@ Beaucoup de composants **existent en code** mais **NE SONT PAS INTÉGRÉS dans m
 - RiskEngine (gatekeeping trades)
 - DataLoader + validation
 - Strategy (pair discovery)
-- Execution engines (CCXT)
+- Execution engines (IBKR API)
 - OrderLifecycleManager
 - ShutdownManager
 - AuditTrail
@@ -124,7 +124,7 @@ class BrokerReconciler:
 
 **But:** main.py never instantiates or calls it.
 
-Risque: Si exchange ferme une position manuellement, l'algo continue de croire qu'elle existe = **potential capital loss**
+Risque: Si broker ferme une position manuellement, l'algo continue de croire qu'elle existe = **potential capital loss**
 
 #### 3.2 Typage & Validations
 
@@ -169,7 +169,7 @@ with Pool(cpu_count()) as pool:
 
 - 100 pairs: ~2-3s (acceptable)
 - 500+ pairs: 30+ seconds (acceptable but noticeable)
-- No timeout on pool.map() → can hang indefinitely if exchange API hangs
+- No timeout on pool.map() → can hang indefinitely if broker API hangs
 
 **Other performance:**
 - Order submission: 100-500ms (network dependent)
@@ -232,8 +232,8 @@ All trades pass through ths gate. Rules can't be bypassed.
 
 #### 4.2 Stress scenarios
 
-**Scenario A: Exchange closes position manually**
-1. Exchange closes BTC/USDT long
+**Scenario A: broker closes position manually**
+1. broker closes AAPL long
 2. Internal state still tracks it as open
 3. Next signal checks max concurrent positions = 5 open (but really 4)
 4. Logic continues with wrong understanding
@@ -242,11 +242,11 @@ All trades pass through ths gate. Rules can't be bypassed.
 **Mitigation missing:** No reconciliation loop checking `get_positions() vs internal state`
 
 **Scenario B: Partial fill not updated**
-1. Order placed for 1.0 BTC @ $45k
-2. 0.5 BTC fills, 0.5 pending
+1. Order placed for 1.0 AAPL @ $45k
+2. 0.5 AAPL fills, 0.5 pending
 3. OrderLifecycle timeout → force cancel
-4. Risk engine thinks entry was 1.0 BTC
-5. Actual position: 0.5 BTC
+4. Risk engine thinks entry was 1.0 AAPL
+5. Actual position: 0.5 AAPL
 6. Exit math is wrong
 7. **Result:** P&L error, over/under position
 
@@ -363,7 +363,7 @@ while attempt < max_attempts:
 ```
 
 **Why not tested directly?**
-- It's a loop that calls external services (CCXT, file I/O)
+- It's a loop that calls external services (IBKR API, file I/O)
 - Hard to mock entire flow
 - Integration tests exist but not this exact function
 
@@ -390,7 +390,7 @@ class MaskedString:
 
 **GAPS:**
 - No key rotation capability (metadata tracked but not enforced)
-- Single API key per exchange (no multi-tier access)
+- Single API key per broker (no multi-tier access)
 - Secrets passed as config dict (not ideal)
 
 #### 8.2 API security
@@ -446,7 +446,7 @@ class OHLCVValidator:
 
 ```python
 # data/loader.py
-df = loader.load_ccxt_data("binance", "BTC/USDT", "1h", limit=100)
+df = loader.load_IBKR API_data("IBKR", "AAPL", "1h", limit=100)
 # If last candle is from 6 hours ago (e.g., weekend)
 # validator passes
 ```
@@ -597,7 +597,7 @@ No constraint for:
 **Found in:** execution/reconciler.py exists but main.py never calls it
 
 **Risk:** 
-- Exchange closes position → algo doesn't know → wrong risk model
+- broker closes position → algo doesn't know → wrong risk model
 - Over-leverage possible
 - P&L calculation wrong
 

@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Adaptive Z-Score Threshold Engine.
 
 Dynamically adjusts entry/exit thresholds based on market regime and pair characteristics.
 This replaces the static threshold (2.0) with a regime-aware system.
 
 Key Insight:
+<<<<<<< HEAD
   In low-volatility regimes: Spread mean-reverts quickly Ôåô Use lower threshold (1.5)
   In high-volatility regimes: Spread has wider excursions Ôåô Use higher threshold (2.5)
   Mid-trade: Adapt exit threshold to actual half-life and volatility drift
@@ -15,6 +20,17 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+=======
+  In low-volatility regimes: Spread mean-reverts quickly ↓ Use lower threshold (1.5)
+  In high-volatility regimes: Spread has wider excursions ↓ Use higher threshold (2.5)
+  Mid-trade: Adapt exit threshold to actual half-life and volatility drift
+"""
+
+from typing import Optional, Dict, Tuple, List
+from dataclasses import dataclass
+import pandas as pd
+import numpy as np
+>>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -23,6 +39,7 @@ logger = get_logger(__name__)
 @dataclass
 class ThresholdConfig:
     """Configuration for adaptive threshold calculation."""
+<<<<<<< HEAD
 
     base_entry_threshold: float = 2.0  # Default Z-score entry level
     base_exit_threshold: float = 0.5  # Default Z-score exit level (was 0.0 ÔÇö unreachable in float)
@@ -39,11 +56,30 @@ class ThresholdConfig:
     # Half-life adjustment factors
     short_hl_threshold: float = 10.0  # Days
     long_hl_threshold: float = 40.0  # Days
+=======
+    
+    base_entry_threshold: float = 2.0  # Default Z-score entry level
+    base_exit_threshold: float = 0.5   # Default Z-score exit level (was 0.0 — unreachable in float)
+    min_entry_threshold: float = 1.0   # Lower bound (don't go too permissive)
+    max_entry_threshold: float = 3.5   # Upper bound (don't go too strict)
+    volatility_adjustment_enabled: bool = True
+    regime_adjustment_enabled: bool = True
+    hl_adjustment_enabled: bool = True
+    
+    # Volatility percentile ranges for regime classification
+    low_vol_percentile: float = 0.25    # Bottom 25% = low volatility
+    high_vol_percentile: float = 0.75   # Top 25% = high volatility
+    
+    # Half-life adjustment factors
+    short_hl_threshold: float = 10.0    # Days
+    long_hl_threshold: float = 40.0     # Days
+>>>>>>> origin/main
 
 
 class AdaptiveThresholdCalculator:
     """
     Calculates adaptive Z-score thresholds that adjust to market conditions.
+<<<<<<< HEAD
 
     Problem Statement:
       - Fixed threshold (e.g., 2.0) is suboptimal across regimes
@@ -61,10 +97,30 @@ class AdaptiveThresholdCalculator:
         """
         Initialize threshold calculator.
 
+=======
+    
+    Problem Statement:
+      - Fixed threshold (e.g., 2.0) is suboptimal across regimes
+      - In calm periods: Threshold too high ↓ miss good trades
+      - In volatile periods: Threshold too low ↓ false signals
+    
+    Solution:
+      - Monitor spread volatility percentile in rolling window
+      - Classify regime: low/normal/high volatility
+      - Adjust threshold dynamically: 1.5 ↓ 2.0 ↓ 2.5
+      - Also consider half-life of mean reversion
+    """
+    
+    def __init__(self, config: Optional[ThresholdConfig] = None):
+        """
+        Initialize threshold calculator.
+        
+>>>>>>> origin/main
         Args:
             config: ThresholdConfig with adjustment parameters
         """
         self.config = config or ThresholdConfig()
+<<<<<<< HEAD
         self.volatility_history: list[float] = []
 
     def calculate_threshold(
@@ -73,17 +129,35 @@ class AdaptiveThresholdCalculator:
         """
         Calculate adaptive entry and exit thresholds.
 
+=======
+        self.volatility_history: List[float] = []
+    
+    def calculate_threshold(
+        self,
+        spread: pd.Series,
+        half_life: Optional[float] = None,
+        lookback_vol: int = 60
+    ) -> Tuple[float, float, Dict[str, any]]:
+        """
+        Calculate adaptive entry and exit thresholds.
+        
+>>>>>>> origin/main
         Args:
             spread: Current and historical spread series
             half_life: Half-life of mean reversion in days (optional)
             lookback_vol: Lookback window for volatility assessment
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         Returns:
             Tuple of (entry_threshold, exit_threshold, adjustment_details)
         """
         # Start with baseline thresholds
         entry_threshold = self.config.base_entry_threshold
         exit_threshold = self.config.base_exit_threshold
+<<<<<<< HEAD
 
         adjustments = {
             "base_entry": entry_threshold,
@@ -103,10 +177,34 @@ class AdaptiveThresholdCalculator:
             adjustments["spread_volatility_percentile"] = vol_pctl
             adjustments["spread_std"] = spread.tail(lookback_vol).std()
 
+=======
+        
+        adjustments = {
+            'base_entry': entry_threshold,
+            'volatility_adjustment': 0.0,
+            'half_life_adjustment': 0.0,
+            'regime': 'normal',
+            'spread_volatility_percentile': None,
+            'spread_std': None
+        }
+        
+        # Adjustment 1: Volatility-based
+        if self.config.volatility_adjustment_enabled and len(spread) >= lookback_vol:
+            vol_adjustment, regime, vol_pctl = self._calculate_volatility_adjustment(
+                spread, lookback_vol
+            )
+            entry_threshold += vol_adjustment
+            adjustments['volatility_adjustment'] = vol_adjustment
+            adjustments['regime'] = regime
+            adjustments['spread_volatility_percentile'] = vol_pctl
+            adjustments['spread_std'] = spread.tail(lookback_vol).std()
+        
+>>>>>>> origin/main
         # Adjustment 2: Half-life based
         if self.config.hl_adjustment_enabled and half_life is not None:
             hl_adjustment = self._calculate_half_life_adjustment(half_life)
             entry_threshold += hl_adjustment
+<<<<<<< HEAD
             adjustments["half_life_adjustment"] = hl_adjustment
             adjustments["half_life_days"] = half_life
 
@@ -119,17 +217,44 @@ class AdaptiveThresholdCalculator:
         """
         Adjust threshold based on spread volatility regime.
 
+=======
+            adjustments['half_life_adjustment'] = hl_adjustment
+            adjustments['half_life_days'] = half_life
+        
+        # Clamp to valid bounds
+        entry_threshold = np.clip(
+            entry_threshold,
+            self.config.min_entry_threshold,
+            self.config.max_entry_threshold
+        )
+        
+        return entry_threshold, exit_threshold, adjustments
+    
+    def _calculate_volatility_adjustment(
+        self,
+        spread: pd.Series,
+        lookback: int = 60
+    ) -> Tuple[float, str, float]:
+        """
+        Adjust threshold based on spread volatility regime.
+        
+>>>>>>> origin/main
         Returns:
             (adjustment_amount, regime_label, volatility_percentile)
         """
         # Calculate rolling volatility
         recent_volatility = spread.tail(lookback).std()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Get historical volatility percentiles from this series
         if len(spread) >= lookback * 2:
             # Use longer history for percentile calculation
             historical_vols = []
             for i in range(lookback, len(spread) - lookback):
+<<<<<<< HEAD
                 window_vol = spread.iloc[i : i + lookback].std()
                 historical_vols.append(window_vol)
 
@@ -153,6 +278,31 @@ class AdaptiveThresholdCalculator:
                     regime = "normal"
                     adjustment = 0.0
 
+=======
+                window_vol = spread.iloc[i:i+lookback].std()
+                historical_vols.append(window_vol)
+            
+            if historical_vols:
+                # Percentile rank of recent volatility in the historical distribution
+                vol_pctl = 100.0 * np.mean(np.array(historical_vols) < recent_volatility)
+                
+                # Classification logic
+                low_vol_threshold = np.percentile(historical_vols, self.config.low_vol_percentile * 100)
+                high_vol_threshold = np.percentile(historical_vols, self.config.high_vol_percentile * 100)
+                
+                if recent_volatility < low_vol_threshold:
+                    regime = "low"
+                    # Low volatility: mean-revert is fast, use LOWER threshold
+                    adjustment = -0.4  # 2.0 ↓ 1.6
+                elif recent_volatility > high_vol_threshold:
+                    regime = "high"
+                    # High volatility: larger excursions, use HIGHER threshold
+                    adjustment = +0.5  # 2.0 ↓ 2.5
+                else:
+                    regime = "normal"
+                    adjustment = 0.0
+                
+>>>>>>> origin/main
                 # vol_pctl already computed above
             else:
                 vol_pctl = 50.0
@@ -163,6 +313,7 @@ class AdaptiveThresholdCalculator:
             vol_pctl = 50.0
             adjustment = 0.0
             regime = "normal"
+<<<<<<< HEAD
 
         return adjustment, regime, vol_pctl
 
@@ -170,6 +321,15 @@ class AdaptiveThresholdCalculator:
         """
         Adjust threshold based on half-life of mean reversion.
 
+=======
+        
+        return adjustment, regime, vol_pctl
+    
+    def _calculate_half_life_adjustment(self, half_life: float) -> float:
+        """
+        Adjust threshold based on half-life of mean reversion.
+        
+>>>>>>> origin/main
         Logic:
           - Very short HL (< 10d): Fast reversion, use tighter entry (lower threshold)
           - Normal HL (10-40d): Standard reversion, no adjustment
@@ -184,6 +344,7 @@ class AdaptiveThresholdCalculator:
         else:
             # Normal range: no adjustment
             return 0.0
+<<<<<<< HEAD
 
     def calculate_position_sizing(
         self, portfolio_vol: float, spread_vol: float, target_risk_pct: float = 0.01
@@ -191,16 +352,33 @@ class AdaptiveThresholdCalculator:
         """
         Calculate position size based on volatility.
 
+=======
+    
+    def calculate_position_sizing(
+        self,
+        portfolio_vol: float,
+        spread_vol: float,
+        target_risk_pct: float = 0.01
+    ) -> float:
+        """
+        Calculate position size based on volatility.
+        
+>>>>>>> origin/main
         Args:
             portfolio_vol: Portfolio volatility (e.g., 0.15 for 15% annualized)
             spread_vol: Current spread volatility
             target_risk_pct: Target risk per trade (e.g., 0.01 for 1%)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         Returns:
             Position size multiplier (0.0 to 2.0)
         """
         if spread_vol == 0:
             return 1.0
+<<<<<<< HEAD
         if portfolio_vol <= 0:
             logger.warning("invalid_portfolio_vol", portfolio_vol=portfolio_vol)
             return 1.0
@@ -209,6 +387,13 @@ class AdaptiveThresholdCalculator:
         size = target_risk_pct / max(spread_vol, 0.001)
         size = np.clip(size, 0.1, 2.0)  # Bounds: 10%-200% of base
 
+=======
+        
+        # Position size inversely proportional to volatility
+        size = target_risk_pct / max(spread_vol, 0.001)
+        size = np.clip(size, 0.1, 2.0)  # Bounds: 10%-200% of base
+        
+>>>>>>> origin/main
         return size
 
 
@@ -216,15 +401,24 @@ class DynamicSpreadModel:
     """
     Enhanced spread model with adaptive thresholds and lookback windows.
     Includes hedge ratio tracking for detecting relationship degradation.
+<<<<<<< HEAD
 
     Sprint 4.2: Supports optional Kalman filter for dynamic ╬▓ estimation.
     When use_kalman=True, ╬▓ adapts bar-by-bar instead of being fixed from OLS.
     """
 
+=======
+    
+    Sprint 4.2: Supports optional Kalman filter for dynamic β estimation.
+    When use_kalman=True, β adapts bar-by-bar instead of being fixed from OLS.
+    """
+    
+>>>>>>> origin/main
     def __init__(
         self,
         y: pd.Series,
         x: pd.Series,
+<<<<<<< HEAD
         half_life: float | None = None,
         pair_key: str | None = None,
         hedge_ratio_tracker=None,
@@ -236,24 +430,50 @@ class DynamicSpreadModel:
         """
         Initialize dynamic spread model.
 
+=======
+        half_life: Optional[float] = None,
+        pair_key: str = None,
+        hedge_ratio_tracker = None,
+        use_kalman: bool = True,
+        kalman_delta: float = 1e-4,
+        kalman_ve: float = 1e-3,
+        bar_time = None,
+    ):
+        """
+        Initialize dynamic spread model.
+        
+>>>>>>> origin/main
         Args:
             y: Dependent series
             x: Independent series
             half_life: Half-life of mean reversion (optional)
             pair_key: Pair identifier for tracking (optional)
+<<<<<<< HEAD
             hedge_ratio_tracker: HedgeRatioTracker instance for ╬▓ monitoring (optional)
             use_kalman: If True, use Kalman filter for dynamic ╬▓ (Sprint 4.2)
+=======
+            hedge_ratio_tracker: HedgeRatioTracker instance for β monitoring (optional)
+            use_kalman: If True, use Kalman filter for dynamic β (Sprint 4.2)
+>>>>>>> origin/main
             kalman_delta: Kalman state noise variance (adaptation speed)
             kalman_ve: Kalman observation noise variance
             bar_time: Timestamp of the current bar for tracker (optional, defaults to datetime.now())
         """
         self.use_kalman = use_kalman
         self.kalman_filter = None
+<<<<<<< HEAD
 
         # OLS regression (always compute as baseline reference)
         X = np.column_stack([np.ones(len(x)), np.asarray(x, dtype=float)])
         beta = np.linalg.lstsq(X, np.asarray(y, dtype=float), rcond=None)[0]
 
+=======
+        
+        # OLS regression (always compute as baseline reference)
+        X = np.column_stack([np.ones(len(x)), x.values])
+        beta = np.linalg.lstsq(X, y.values, rcond=None)[0]
+        
+>>>>>>> origin/main
         self.intercept = beta[0]
         self.beta = beta[1]
         self.y = y
@@ -262,6 +482,7 @@ class DynamicSpreadModel:
         self.pair_key = pair_key
         self.tracker = hedge_ratio_tracker
         self.is_deprecated = False
+<<<<<<< HEAD
         self.residuals = np.asarray(y, dtype=float) - X @ beta
         self.std_residuals = float(np.std(self.residuals))
 
@@ -270,11 +491,23 @@ class DynamicSpreadModel:
             from models.kalman_hedge import KalmanHedgeRatio
 
             self.kalman_filter = KalmanHedgeRatio(delta=kalman_delta, ve=kalman_ve)
+=======
+        self.residuals = y.values - X @ beta
+        self.std_residuals = np.std(self.residuals)
+        
+        # Sprint 4.2: Initialize Kalman filter and run it on historical data
+        if use_kalman:
+            from models.kalman_hedge import KalmanHedgeRatio
+            self.kalman_filter = KalmanHedgeRatio(
+                delta=kalman_delta, ve=kalman_ve
+            )
+>>>>>>> origin/main
             kf_results = self.kalman_filter.run_filter(y, x)
             # Use Kalman's final β as the model β
             self.beta = self.kalman_filter.beta
             # Kalman spread series (for residual stats)
             self.residuals = kf_results["spread"].values
+<<<<<<< HEAD
             self.std_residuals = float(np.std(np.asarray(self.residuals[1:], dtype=float)))  # skip first (0)
             # C-07: alert when the filter accumulated too many anomalous innovations
             if self.kalman_filter.is_broken:
@@ -299,6 +532,24 @@ class DynamicSpreadModel:
 
         Checks with tracker if reestimation is needed, and updates the model
         if so.  When Kalman is active, uses the Kalman-estimated ╬▓; otherwise
+=======
+            self.std_residuals = np.std(self.residuals[1:])  # skip first (0)
+        
+        # Initialize adaptive threshold calculator
+        self.threshold_config = ThresholdConfig()
+        self.threshold_calculator = AdaptiveThresholdCalculator(self.threshold_config)
+        
+        # Record initial β if tracker is available
+        if self.tracker is not None and self.pair_key is not None:
+            self.tracker.record_initial_beta(self.pair_key, self.beta, bar_time=bar_time)
+    
+    def reestimate_beta_if_needed(self, y: pd.Series, x: pd.Series, bar_time=None) -> bool:
+        """
+        Reestimate β if enough time has passed, using recent data.
+        
+        Checks with tracker if reestimation is needed, and updates the model
+        if so.  When Kalman is active, uses the Kalman-estimated β; otherwise
+>>>>>>> origin/main
         falls back to OLS.
 
         Args:
@@ -312,6 +563,7 @@ class DynamicSpreadModel:
         if self.tracker is None or self.pair_key is None:
             return True
 
+<<<<<<< HEAD
         # Compute a fresh ╬▓ from recent data
         if self.use_kalman and self.kalman_filter is not None:
             new_beta = self.beta  # Kalman already updated in __init__
@@ -322,6 +574,22 @@ class DynamicSpreadModel:
                 new_beta = beta_coef[1]
             except Exception as e:
                 logger.warning("beta_reestimation_failed", pair=self.pair_key, error=str(e))
+=======
+        # Compute a fresh β from recent data
+        if self.use_kalman and self.kalman_filter is not None:
+            new_beta = self.beta  # Kalman already updated in __init__
+        else:
+            X = np.column_stack([np.ones(len(x)), x.values])
+            try:
+                beta_coef = np.linalg.lstsq(X, y.values, rcond=None)[0]
+                new_beta = beta_coef[1]
+            except Exception as e:
+                logger.warning(
+                    "beta_reestimation_failed",
+                    pair=self.pair_key,
+                    error=str(e)
+                )
+>>>>>>> origin/main
                 return True
 
         current_beta, is_stable = self.tracker.reestimate_if_needed(
@@ -338,6 +606,7 @@ class DynamicSpreadModel:
             self.is_deprecated = True
 
         return is_stable
+<<<<<<< HEAD
 
     def compute_spread(self, y: pd.Series, x: pd.Series) -> pd.Series:
         """
@@ -384,11 +653,55 @@ class DynamicSpreadModel:
         """
         Compute rolling Z-score with adaptive lookback window (S2.2).
 
+=======
+    
+    def compute_spread(self, y: pd.Series, x: pd.Series) -> pd.Series:
+        """
+        Compute spread: y - (intercept + beta*x).
+        
+        When Kalman is enabled, uses the Kalman filter's dynamic β.
+        """
+        if self.use_kalman and self.kalman_filter is not None:
+            return self.compute_spread_kalman(y, x)
+        return y - (self.intercept + self.beta * x)
+    
+    def compute_spread_kalman(self, y: pd.Series, x: pd.Series) -> pd.Series:
+        """
+        Sprint 4.2: Compute spread using Kalman filter's time-varying β.
+        
+        Each bar uses the β estimated up to that point, producing a
+        spread series that adapts to structural changes.
+        
+        Args:
+            y: Dependent price series
+            x: Independent price series
+            
+        Returns:
+            Spread series with dynamic β
+        """
+        if self.kalman_filter is None:
+            from models.kalman_hedge import KalmanHedgeRatio
+            self.kalman_filter = KalmanHedgeRatio()
+        
+        kf_results = self.kalman_filter.run_filter(y, x)
+        self.beta = self.kalman_filter.beta  # Update to latest β
+        return kf_results["spread"]
+    
+    def compute_z_score(
+        self,
+        spread: pd.Series,
+        lookback: Optional[int] = None
+    ) -> pd.Series:
+        """
+        Compute rolling Z-score with adaptive lookback window (S2.2).
+        
+>>>>>>> origin/main
         Adaptive lookback based on half-life ensures Z-score captures the right
         frequency of mean reversion:
         - Fast pairs (HL < 30d): lookback = 3*HL (smooth short-term noise)
         - Normal (HL 30-60d): lookback = HL (capture full reversion cycle)
         - Slow pairs (HL > 60d): lookback = 60 (historical reference)
+<<<<<<< HEAD
 
         This replaces the fixed 20-day window with pair-specific timing.
 
@@ -396,6 +709,15 @@ class DynamicSpreadModel:
             spread: Spread series
             lookback: Explicit rolling window (overrides half-life logic if provided)
 
+=======
+        
+        This replaces the fixed 20-day window with pair-specific timing.
+        
+        Args:
+            spread: Spread series
+            lookback: Explicit rolling window (overrides half-life logic if provided)
+        
+>>>>>>> origin/main
         Returns:
             Z-score series
         """
@@ -403,14 +725,23 @@ class DynamicSpreadModel:
         if lookback is None:
             if self.half_life is not None:
                 # Smooth adaptive lookback (no discontinuity at HL=30):
+<<<<<<< HEAD
                 # Multiplier linearly interpolates from 3.0 at HLÔëñ10
                 # down to 1.0 at HLÔëÑ60, capped at 60 for HL>60.
+=======
+                # Multiplier linearly interpolates from 3.0 at HL≤10
+                # down to 1.0 at HL≥60, capped at 60 for HL>60.
+>>>>>>> origin/main
                 if self.half_life <= 10:
                     multiplier = 3.0
                 elif self.half_life >= 60:
                     multiplier = 1.0
                 else:
+<<<<<<< HEAD
                     # Linear interpolation: 3.0 at HL=10 Ôåô 1.0 at HL=60
+=======
+                    # Linear interpolation: 3.0 at HL=10 ↓ 1.0 at HL=60
+>>>>>>> origin/main
                     multiplier = 3.0 - 2.0 * (self.half_life - 10) / (60 - 10)
                 lookback = int(np.ceil(multiplier * self.half_life))
                 # Cap at 60 for very slow reversion
@@ -418,10 +749,17 @@ class DynamicSpreadModel:
             else:
                 # Default fallback
                 lookback = 20
+<<<<<<< HEAD
 
         # Enforce bounds: [10, 120]
         lookback = max(10, min(lookback, 120))
 
+=======
+        
+        # Enforce bounds: [10, 120]
+        lookback = max(10, min(lookback, 120))
+        
+>>>>>>> origin/main
         rolling_mean = spread.rolling(window=lookback).mean()
         rolling_std = spread.rolling(window=lookback).std()
         z_score = (spread - rolling_mean) / (rolling_std + 1e-8)
@@ -429,6 +767,7 @@ class DynamicSpreadModel:
         # residual outliers from generating aberrant signals
         z_score = z_score.clip(-6.0, 6.0)
         return z_score
+<<<<<<< HEAD
 
     def get_adaptive_signals(
         self, spread: pd.Series, config: ThresholdConfig | None = None
@@ -440,10 +779,26 @@ class DynamicSpreadModel:
             spread: Spread series
             config: Threshold configuration
 
+=======
+    
+    def get_adaptive_signals(
+        self,
+        spread: pd.Series,
+        config: Optional[ThresholdConfig] = None
+    ) -> Tuple[pd.Series, Dict[str, any]]:
+        """
+        Generate trading signals with adaptive thresholds.
+        
+        Args:
+            spread: Spread series
+            config: Threshold configuration
+        
+>>>>>>> origin/main
         Returns:
             (signals, thresholds_info)
         """
         z_score = self.compute_z_score(spread)
+<<<<<<< HEAD
 
         # Use caller-supplied config to override threshold calculation if provided
         calculator = AdaptiveThresholdCalculator(config=config) if config is not None else self.threshold_calculator
@@ -478,4 +833,40 @@ class DynamicSpreadModel:
             "residual_std": self.std_residuals,
             "residual_mean": float(np.mean(np.asarray(self.residuals, dtype=float))),
             "half_life": self.half_life,
+=======
+        
+        # Calculate adaptive thresholds
+        entry_thresh, exit_thresh, adj_details = self.threshold_calculator.calculate_threshold(
+            spread,
+            half_life=self.half_life
+        )
+        
+        # Generate signals: 1 (long), 0 (hold), -1 (short)
+        signals = pd.Series(0, index=z_score.index)
+        
+        # Long signal: z_score < -entry_threshold (spread below mean)
+        signals[z_score < -entry_thresh] = 1
+        
+        # Short signal: z_score > entry_threshold (spread above mean)
+        signals[z_score > entry_thresh] = -1
+        
+        # Exit signal: near zero
+        signals[np.abs(z_score) < exit_thresh + 0.5] = 0
+        
+        return signals, {
+            'entry_threshold': entry_thresh,
+            'exit_threshold': exit_thresh,
+            'z_score': z_score,
+            'adjustments': adj_details
+        }
+    
+    def get_model_info(self) -> dict:
+        """Return all model parameters."""
+        return {
+            'intercept': self.intercept,
+            'beta': self.beta,
+            'residual_std': self.std_residuals,
+            'residual_mean': np.mean(self.residuals),
+            'half_life': self.half_life
+>>>>>>> origin/main
         }

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Live Trading Runner ÔÇö Production trading loop composing all EDGECORE modules.
+=======
+"""
+Live Trading Runner — Production trading loop composing all EDGECORE modules.
+>>>>>>> origin/main
 
 Orchestrates the full trading pipeline in real-time:
 
@@ -18,6 +23,7 @@ process under process supervision (systemd, Docker, etc.).
 
 from __future__ import annotations
 
+<<<<<<< HEAD
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -25,25 +31,42 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
+=======
+import time
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional
+>>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
 
+<<<<<<< HEAD
 if TYPE_CHECKING:
     from monitoring.metrics import SystemMetrics
 
 from risk_engine.kill_switch import KillReason
 
+=======
+>>>>>>> origin/main
 logger = get_logger(__name__)
 
 
 class TradingState(Enum):
     """Trading loop state machine."""
+<<<<<<< HEAD
 
     INITIALIZING = "initializing"
     RUNNING = "running"
     PAUSED = "paused"
     HALTED = "halted"  # kill-switch triggered
+=======
+    INITIALIZING = "initializing"
+    RUNNING = "running"
+    PAUSED = "paused"
+    HALTED = "halted"       # kill-switch triggered
+>>>>>>> origin/main
     SHUTTING_DOWN = "shutting_down"
     STOPPED = "stopped"
 
@@ -51,6 +74,7 @@ class TradingState(Enum):
 @dataclass
 class TradingLoopConfig:
     """Configuration for the live trading loop."""
+<<<<<<< HEAD
 
     symbols: list[str] = field(default_factory=list)
     sector_map: dict[str, str] | None = None
@@ -61,6 +85,17 @@ class TradingLoopConfig:
     allocation_per_pair_pct: float = 90.0  # % of capital per pair
     max_portfolio_heat: float = 4.0  # max concurrent notional / capital
     mode: str = "live"  # "live" or "paper"
+=======
+    symbols: List[str] = field(default_factory=list)
+    sector_map: Optional[Dict[str, str]] = None
+    bar_interval_seconds: int = 60         # 60s = 1-minute bars
+    pair_rediscovery_hours: int = 24       # re-discover pairs every N hours
+    max_positions: int = 10
+    initial_capital: float = 100_000.0
+    allocation_per_pair_pct: float = 90.0  # % of capital per pair
+    max_portfolio_heat: float = 4.0        # max concurrent notional / capital
+    mode: str = "live"                     # "live" or "paper"
+>>>>>>> origin/main
 
 
 class LiveTradingRunner:
@@ -91,6 +126,7 @@ class LiveTradingRunner:
 
     def __init__(
         self,
+<<<<<<< HEAD
         config: TradingLoopConfig | None = None,
         email_alerter: Any | None = None,
         slack_alerter: Any | None = None,
@@ -101,10 +137,22 @@ class LiveTradingRunner:
         self._positions: dict[str, Any] = {}
         self._positions_lock = threading.Lock()
         self._last_discovery: datetime | None = None
+=======
+        config: Optional[TradingLoopConfig] = None,
+        email_alerter: Optional[Any] = None,
+        slack_alerter: Optional[Any] = None,
+    ):
+        self.config = config or TradingLoopConfig()
+        self._state = TradingState.INITIALIZING
+        self._active_pairs: List[tuple] = []
+        self._positions: Dict[str, Any] = {}
+        self._last_discovery: Optional[datetime] = None
+>>>>>>> origin/main
         self._iteration = 0
         # Data load tracking (for dashboard)
         self._data_symbols_loaded: int = 0
         self._data_symbols_total: int = 0
+<<<<<<< HEAD
         self._data_load_at: datetime | None = None
         self._data_load_rows: int = 0
         self._equity_history: list = []  # per-tick equity for sparkline (last 60)
@@ -115,6 +163,15 @@ class LiveTradingRunner:
         # C-11: dedicated single-worker executor for alert dispatch
         # (avoids blocking the tick thread on SMTP/HTTP timeouts)
         self._alert_executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="alerts")
+=======
+        self._data_load_at: Optional[datetime] = None
+        self._data_load_rows: int = 0
+        self._equity_history: list = []  # per-tick equity for sparkline (last 60)
+
+        # Alerters (Email + Slack) — initialised from env or passed in
+        self._email_alerter = email_alerter
+        self._slack_alerter = slack_alerter
+>>>>>>> origin/main
 
         # Module references (lazy-initialized in _initialize)
         self._universe_mgr = None
@@ -123,17 +180,23 @@ class LiveTradingRunner:
         self._position_risk = None
         self._portfolio_risk = None
         self._kill_switch = None
+<<<<<<< HEAD
         self._risk_facade = None
         self._allocator = None
         self._router = None
         self._audit_trail = None  # A-17: crash-recovery audit trail (lazy-init at startup)
         self._ml_combiner = None  # C-04: ML signal shadow mode (MLSignalCombiner)
         self._retraining_task = None  # C-07: periodic hedge-ratio re-estimation
+=======
+        self._allocator = None
+        self._router = None
+>>>>>>> origin/main
 
     # ------------------------------------------------------------------
     # Alerting helpers
     # ------------------------------------------------------------------
 
+<<<<<<< HEAD
     def _on_kill_switch_activated(self, reason: KillReason, message: str) -> None:
         """Callback wired into KillSwitch — called on activation.
 
@@ -157,11 +220,14 @@ class LiveTradingRunner:
             {"reason": str(reason)},
         )
 
+=======
+>>>>>>> origin/main
     def _send_alert(
         self,
         level: str,
         title: str,
         message: str,
+<<<<<<< HEAD
         data: dict | None = None,
     ) -> None:
         """Submit an alert to the dedicated alert thread (C-11 — non-blocking)."""
@@ -173,6 +239,9 @@ class LiveTradingRunner:
         title: str,
         message: str,
         data: dict | None = None,
+=======
+        data: Optional[Dict] = None,
+>>>>>>> origin/main
     ) -> None:
         """Dispatch alert to Email + Slack.  Never raises — fire-and-forget."""
         for alerter in (self._email_alerter, self._slack_alerter):
@@ -211,7 +280,10 @@ class LiveTradingRunner:
     def stop(self) -> None:
         """Signal the loop to stop gracefully."""
         self._state = TradingState.SHUTTING_DOWN
+<<<<<<< HEAD
         self._alert_executor.shutdown(wait=False)  # C-11: don't block on pending alerts
+=======
+>>>>>>> origin/main
         logger.info("live_trading_stop_requested")
 
     # ------------------------------------------------------------------
@@ -225,6 +297,7 @@ class LiveTradingRunner:
         that parameters set before ``start()`` (e.g. entry_z_score=1.5)
         propagate to all sub-modules.
         """
+<<<<<<< HEAD
         # C-09: Guard — Cython extension required for live trading performance.
         from models import CYTHON_AVAILABLE
 
@@ -257,12 +330,38 @@ class LiveTradingRunner:
 
         # Sector map from config or TradingLoopConfig
         sector_map = getattr(self.config, "sector_map", None)
+=======
+        from universe import UniverseManager
+        from pair_selection import PairDiscoveryEngine
+        from pair_selection.discovery import DiscoveryConfig
+        from signal_engine import SignalGenerator
+        from signal_engine.adaptive import AdaptiveThresholdEngine
+        from risk_engine import PositionRiskManager, PortfolioRiskManager, KillSwitch
+        from risk.facade import RiskFacade
+        from portfolio_engine import PortfolioAllocator
+        from execution_engine import ExecutionRouter, ExecutionMode
+        from execution.trailing_stop import TrailingStopManager
+        from execution.time_stop import TimeStopManager
+        from execution.partial_profit import PartialProfitManager
+        from execution.shutdown_manager import ShutdownManager
+        from execution.reconciler import BrokerReconciler
+        from monitoring.correlation_monitor import CorrelationMonitor
+        from monitoring.metrics import SystemMetrics
+        from config.settings import get_settings
+
+        strat = get_settings().strategy
+        self._lookback = getattr(strat, 'lookback_window', 252)
+
+        # Sector map from config or TradingLoopConfig
+        sector_map = getattr(self.config, 'sector_map', None)
+>>>>>>> origin/main
         self._universe_mgr = UniverseManager(
             symbols=self.config.symbols,
             sector_map=sector_map,
         )
 
         # Wire strategy params into PairDiscoveryEngine
+<<<<<<< HEAD
         self._pair_engine = PairDiscoveryEngine(
             config=DiscoveryConfig(
                 min_correlation=getattr(strat, "min_correlation", 0.7),
@@ -316,6 +415,35 @@ class LiveTradingRunner:
         # Wire portfolio heat and allocation from config
         alloc_pct = getattr(self.config, "allocation_per_pair_pct", 90.0) / 100.0
         heat = getattr(self.config, "max_portfolio_heat", 4.0)
+=======
+        self._pair_engine = PairDiscoveryEngine(config=DiscoveryConfig(
+            min_correlation=getattr(strat, 'min_correlation', 0.7),
+            max_half_life=getattr(strat, 'max_half_life', 60),
+            lookback_window=self._lookback,
+        ))
+
+        # Wire z-score thresholds into SignalGenerator
+        self._signal_gen = SignalGenerator(
+            threshold_engine=AdaptiveThresholdEngine(
+                base_entry=getattr(strat, 'entry_z_score', 2.0),
+                base_exit=getattr(strat, 'exit_z_score', 0.5),
+                max_entry=getattr(strat, 'z_score_stop', 3.5),
+            ),
+        )
+
+        self._position_risk = PositionRiskManager()
+        self._portfolio_risk = PortfolioRiskManager(
+            initial_equity=self.config.initial_capital,
+        )
+        self._kill_switch = KillSwitch()
+        self._risk_facade = RiskFacade(
+            initial_equity=self.config.initial_capital,
+        )
+
+        # Wire portfolio heat and allocation from config
+        alloc_pct = getattr(self.config, 'allocation_per_pair_pct', 90.0) / 100.0
+        heat = getattr(self.config, 'max_portfolio_heat', 4.0)
+>>>>>>> origin/main
         self._allocator = PortfolioAllocator(
             equity=self.config.initial_capital,
             max_pairs=self.config.max_positions,
@@ -323,7 +451,11 @@ class LiveTradingRunner:
             max_portfolio_heat=heat,
         )
 
+<<<<<<< HEAD
         # Stop managers ÔÇö wired into _tick() for live position protection
+=======
+        # Stop managers — wired into _tick() for live position protection
+>>>>>>> origin/main
         self._trailing_stop = TrailingStopManager()
         self._time_stop = TimeStopManager()
         self._partial_profit = PartialProfitManager()
@@ -334,8 +466,13 @@ class LiveTradingRunner:
         self._metrics = SystemMetrics(equity=self.config.initial_capital)
 
         # Broker reconciliation
+<<<<<<< HEAD
         self._reconciler: BrokerReconciler | None = None
         self._last_reconciliation: datetime | None = None
+=======
+        self._reconciler: Optional[BrokerReconciler] = None
+        self._last_reconciliation: Optional[datetime] = None
+>>>>>>> origin/main
         self._reconciliation_interval = timedelta(minutes=5)
 
         mode_map = {"live": ExecutionMode.LIVE, "paper": ExecutionMode.PAPER}
@@ -343,6 +480,7 @@ class LiveTradingRunner:
 
         self._state = TradingState.INITIALIZING
 
+<<<<<<< HEAD
         # C-04: Instantiate ML combiner in shadow mode and restore persisted model.
         # In live mode, entry is gated by entry_z_score (raw z-score), NOT the ML threshold.
         # ml_combiner_shadow_mode=True means ML predictions are logged but do not block trades.
@@ -369,6 +507,8 @@ class LiveTradingRunner:
         _interval = _gs().strategy.retraining_interval_bars
         self._retraining_task = _RetrainingTask(interval_bars=_interval)
 
+=======
+>>>>>>> origin/main
         # Startup reconciliation (live mode only)
         if self.config.mode == "live":
             self._run_startup_reconciliation()
@@ -381,6 +521,7 @@ class LiveTradingRunner:
 
     def _run_startup_reconciliation(self) -> None:
         """Run full broker reconciliation at startup."""
+<<<<<<< HEAD
         # A-17: restore in-memory positions from audit trail (crash recovery)
         try:
             from persistence.audit_trail import AuditTrail
@@ -396,6 +537,8 @@ class LiveTradingRunner:
                 )
         except Exception as exc:
             logger.warning("audit_trail_recovery_failed", error=str(exc)[:200])
+=======
+>>>>>>> origin/main
         try:
             if not self._router:
                 return
@@ -405,12 +548,16 @@ class LiveTradingRunner:
                 return
 
             from execution.reconciler import BrokerReconciler
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
             self._reconciler = BrokerReconciler(
                 internal_equity=self.config.initial_capital,
                 internal_positions={k: v for k, v in self._positions.items()},
                 equity_tolerance_pct=0.02,
             )
+<<<<<<< HEAD
             broker_positions: dict[str, dict[str, Any]] = {}
             try:
                 _raw_pos = self._router.get_positions() if self._router else {}
@@ -419,6 +566,13 @@ class LiveTradingRunner:
                 if self.config.mode == "live":
                     raise RuntimeError(f"Cannot start live trading: broker position fetch failed: {exc}") from exc
                 logger.warning("startup_reconciliation_positions_unavailable", error=str(exc)[:200])
+=======
+            broker_positions = {}
+            try:
+                broker_positions = self._router._engine.get_positions() if hasattr(self._router, '_engine') else {}
+            except Exception:
+                pass
+>>>>>>> origin/main
 
             report = self._reconciler.full_reconciliation(
                 broker_equity=broker_equity,
@@ -457,6 +611,7 @@ class LiveTradingRunner:
             broker_equity = self._router.get_account_balance() if self._router else 0
             if broker_equity <= 0:
                 return
+<<<<<<< HEAD
             self._reconciler.internal_equity = (
                 self._metrics.equity
                 if hasattr(self, "_metrics") and self._metrics.equity > 0
@@ -470,6 +625,15 @@ class LiveTradingRunner:
             except Exception as exc:
                 logger.warning("periodic_reconciliation_positions_unavailable", error=str(exc)[:200])
                 return  # skip ce tick, réessayer au prochain intervalle
+=======
+            self._reconciler.internal_equity = self.config.initial_capital  # update if tracking
+            self._reconciler.internal_positions = {k: v for k, v in self._positions.items()}
+            broker_positions = {}
+            try:
+                broker_positions = self._router._engine.get_positions() if hasattr(self._router, '_engine') else {}
+            except Exception:
+                pass
+>>>>>>> origin/main
             report = self._reconciler.full_reconciliation(
                 broker_equity=broker_equity,
                 broker_positions=broker_positions,
@@ -498,6 +662,7 @@ class LiveTradingRunner:
     # ------------------------------------------------------------------
     # Main loop tick
     # ------------------------------------------------------------------
+<<<<<<< HEAD
     # Fill confirmation (A-02)
     # ------------------------------------------------------------------
 
@@ -564,11 +729,14 @@ class LiveTradingRunner:
     # ------------------------------------------------------------------
     # Main loop tick
     # ------------------------------------------------------------------
+=======
+>>>>>>> origin/main
 
     def _tick(self) -> None:
         """Execute one iteration of the trading loop."""
         self._iteration += 1
 
+<<<<<<< HEAD
         # 0a. Process fill confirmations from pending close orders (A-02)
         self._process_fill_confirmations()
 
@@ -589,6 +757,30 @@ class LiveTradingRunner:
                 if isinstance(prefetched_data, pd.DataFrame) and not prefetched_data.empty
                 else self._fetch_market_data()
             )
+=======
+        # 0a. Periodic reconciliation
+        self._maybe_reconcile()
+
+        # 0. Kill-switch check
+        if self._kill_switch and self._kill_switch.is_active:
+            self._state = TradingState.HALTED
+            logger.critical("live_trading_halted_by_kill_switch")
+            self._send_alert(
+                "CRITICAL",
+                "Kill-switch activated",
+                "Trading halted — kill-switch has been triggered. "
+                "Immediate operator intervention required.",
+                {"iteration": self._iteration, "open_positions": len(self._positions)},
+            )
+            return
+
+        # 1. Periodic pair re-discovery
+        self._maybe_rediscover_pairs()
+
+        # 2. Fetch latest market data for active symbols
+        try:
+            market_data = self._fetch_market_data()
+>>>>>>> origin/main
         except Exception as exc:
             logger.error("live_trading_data_fetch_failed", error=str(exc)[:200])
             self._send_alert(
@@ -603,6 +795,7 @@ class LiveTradingRunner:
             logger.warning("live_trading_no_market_data", iteration=self._iteration)
             return
 
+<<<<<<< HEAD
         self._step_process_stops(market_data)
 
         # 3. Generate signals for active pairs
@@ -666,6 +859,25 @@ class LiveTradingRunner:
                 if self._trailing_stop:
                     ts_exit, ts_reason = self._trailing_stop.should_exit_on_trailing_stop(
                         symbol_pair=pair_key,
+=======
+        # 2b. Stop manager checks on existing positions
+        exit_signals_from_stops = []
+        for pair_key, pos_info in list(self._positions.items()):
+            try:
+                holding_bars = pos_info.get('holding_bars', 0)
+                pos_info['holding_bars'] = holding_bars + 1  # increment
+
+                half_life = pos_info.get('half_life')
+                entry_z = pos_info.get('entry_z', 0.0)
+                current_z = pos_info.get('current_z', 0.0)
+                unrealized_pnl_pct = pos_info.get('unrealized_pnl_pct', 0.0)
+
+                # Trailing stop: exit if Z-score diverges too far from entry
+                if self._trailing_stop:
+                    ts_exit, ts_reason = self._trailing_stop.check(
+                        pair_key=pair_key,
+                        entry_z=entry_z,
+>>>>>>> origin/main
                         current_z=current_z,
                     )
                     if ts_exit:
@@ -684,6 +896,7 @@ class LiveTradingRunner:
 
                 # Partial profit: take profit on portion of position
                 if self._partial_profit:
+<<<<<<< HEAD
                     _entry_notional = float(pos_info.get("entry_notional", 0.0))
                     _unrealised_pnl = unrealized_pnl_pct * _entry_notional
                     pp_close_frac, _pp_force = self._partial_profit.check(
@@ -696,6 +909,17 @@ class LiveTradingRunner:
                             "live_trading_partial_profit",
                             pair=pair_key,
                             close_fraction=pp_close_frac,
+=======
+                    pp_action = self._partial_profit.check(
+                        pair_key=pair_key,
+                        unrealized_pnl_pct=unrealized_pnl_pct,
+                    )
+                    if pp_action and pp_action.get('close_fraction', 0) > 0:
+                        logger.info(
+                            "live_trading_partial_profit",
+                            pair=pair_key,
+                            close_fraction=pp_action['close_fraction'],
+>>>>>>> origin/main
                         )
 
                 # Ongoing correlation monitor: exit if pair correlation degrades
@@ -705,6 +929,7 @@ class LiveTradingRunner:
                         pa = float(market_data[syms[0]].iloc[-1])
                         pb = float(market_data[syms[1]].iloc[-1])
                         corr_alert = self._correlation_monitor.update(pair_key, pa, pb)
+<<<<<<< HEAD
                         if corr_alert and corr_alert.get("hard_exit"):
                             exit_signals_from_stops.append(
                                 (pair_key, f"correlation_degraded_{corr_alert['correlation']:.2f}")
@@ -714,6 +939,13 @@ class LiveTradingRunner:
                             logger.warning(
                                 "live_trading_correlation_warning", pair=pair_key, corr=corr_alert["correlation"]
                             )
+=======
+                        if corr_alert and corr_alert.get('hard_exit'):
+                            exit_signals_from_stops.append((pair_key, f"correlation_degraded_{corr_alert['correlation']:.2f}"))
+                            continue
+                        elif corr_alert and corr_alert.get('degraded'):
+                            logger.warning("live_trading_correlation_warning", pair=pair_key, corr=corr_alert['correlation'])
+>>>>>>> origin/main
 
             except Exception as exc:
                 logger.error("live_trading_stop_check_error", pair=pair_key, error=str(exc)[:200])
@@ -731,6 +963,7 @@ class LiveTradingRunner:
                 # Route a close order through the execution router
                 try:
                     if self._router:
+<<<<<<< HEAD
                         from uuid import uuid4
 
                         from execution.base import Order, OrderSide
@@ -741,6 +974,15 @@ class LiveTradingRunner:
                         close_order_id = str(uuid4())
                         close_order = Order(
                             order_id=close_order_id,
+=======
+                        from execution.base import Order, OrderSide
+                        from uuid import uuid4
+                        pos = self._positions[pair_key]
+                        qty = pos.get('quantity', 0)
+                        close_side = OrderSide.SELL if qty > 0 else OrderSide.BUY
+                        close_order = Order(
+                            order_id=str(uuid4()),
+>>>>>>> origin/main
                             symbol=pair_key,
                             side=close_side,
                             quantity=abs(qty),
@@ -748,6 +990,7 @@ class LiveTradingRunner:
                             order_type="MARKET",
                         )
                         self._router.submit_order(close_order)
+<<<<<<< HEAD
                         if self._audit_trail is not None:
                             from datetime import datetime as _dt_stop
 
@@ -784,6 +1027,8 @@ class LiveTradingRunner:
                             if pair_key in self._positions:
                                 self._positions[pair_key]["status"] = "pending_close"
                                 self._positions[pair_key]["close_order_id"] = close_order_id
+=======
+>>>>>>> origin/main
                 except Exception as exc:
                     logger.error("live_trading_stop_exit_failed", pair=pair_key, error=str(exc)[:200])
                     self._send_alert(
@@ -792,6 +1037,7 @@ class LiveTradingRunner:
                         f"Could not submit exit order for {pair_key}: {exc}",
                         {"pair": pair_key, "reason": reason},
                     )
+<<<<<<< HEAD
                     # Position intentionnellement conservée : l'ordre de fermeture a échoué
 
     def _step_generate_signals(self, market_data: pd.DataFrame) -> list:
@@ -801,6 +1047,12 @@ class LiveTradingRunner:
             List of signal objects produced by the SignalGenerator.
         """
         signals: list = []
+=======
+                del self._positions[pair_key]
+
+        # 3. Generate signals for active pairs
+        signals = []
+>>>>>>> origin/main
         if self._active_pairs and self._signal_gen:
             try:
                 signals = self._signal_gen.generate(
@@ -810,6 +1062,7 @@ class LiveTradingRunner:
                 )
             except Exception as exc:
                 logger.error("live_trading_signal_error", error=str(exc)[:200])
+<<<<<<< HEAD
         return signals
 
     def _step_execute_signals(
@@ -962,17 +1215,68 @@ class LiveTradingRunner:
                                 pair=sig.pair_key,
                                 error=str(_ae)[:200],
                             )
+=======
+
+        # 4. Process each signal through risk checks, sizing, execution
+        for sig in signals:
+            try:
+                # 4a. Position-level risk check
+                if self._position_risk:
+                    risk_ok = self._position_risk.check(
+                        pair_key=sig.pair_key,
+                        signal=sig,
+                        positions=self._positions,
+                    )
+                    if not risk_ok:
+                        logger.info("live_trading_signal_blocked_position_risk", pair=sig.pair_key)
+                        continue
+
+                # 4b. Portfolio-level risk check
+                if self._portfolio_risk:
+                    portfolio_ok = self._portfolio_risk.check(
+                        positions=self._positions,
+                        new_signal=sig,
+                    )
+                    if not portfolio_ok:
+                        logger.info("live_trading_signal_blocked_portfolio_risk", pair=sig.pair_key)
+                        continue
+
+                # 4c. Size the position via allocator
+                if self._allocator:
+                    sized_order = self._allocator.size(
+                        signal=sig,
+                        capital=self._router.get_account_balance() if self._router else self.config.initial_capital,
+                        max_positions=self.config.max_positions,
+                        current_positions=self._positions,
+                    )
+                else:
+                    sized_order = sig  # fallback: raw signal
+
+                # 4d. Submit order through execution router
+                if self._router and sized_order:
+                    order_id = self._router.submit_order(sized_order)
+                    logger.info(
+                        "live_trading_order_submitted",
+                        pair=sig.pair_key,
+                        order_id=order_id,
+                    )
+>>>>>>> origin/main
 
             except Exception as exc:
                 logger.error(
                     "live_trading_signal_processing_error",
+<<<<<<< HEAD
                     pair=getattr(sig, "pair_key", "unknown"),
+=======
+                    pair=getattr(sig, 'pair_key', 'unknown'),
+>>>>>>> origin/main
                     error=str(exc)[:200],
                 )
                 self._send_alert(
                     "ERROR",
                     f"Order processing error: {getattr(sig, 'pair_key', '?')}",
                     f"Failed to process signal/submit order: {exc}",
+<<<<<<< HEAD
                     {"pair": getattr(sig, "pair_key", "unknown"), "iteration": self._iteration},
                 )
 
@@ -982,6 +1286,11 @@ class LiveTradingRunner:
         Includes: tick completion logging, portfolio beta check, ML state
         persist, PSI drift detection, and hedge-ratio re-estimation.
         """
+=======
+                    {"pair": getattr(sig, 'pair_key', 'unknown'), "iteration": self._iteration},
+                )
+
+>>>>>>> origin/main
         logger.debug(
             "live_trading_tick_complete",
             iteration=self._iteration,
@@ -990,6 +1299,7 @@ class LiveTradingRunner:
             open_positions=len(self._positions),
         )
 
+<<<<<<< HEAD
         # C-04: Persist ML combiner state after each tick (every 100 ticks to limit I/O)
         # C-13: submit save() to the alert executor (background thread) to avoid blocking the tick
         if self._ml_combiner is not None and self._iteration % 100 == 0:
@@ -1029,6 +1339,17 @@ class LiveTradingRunner:
                 equity
                 if equity is not None
                 else (self._router.get_account_balance() if self._router else self.config.initial_capital)
+=======
+        # MON-1: Update metrics snapshot for Prometheus / dashboard
+        self._update_metrics(signals)
+
+    def _update_metrics(self, signals: list) -> None:
+        """Refresh SystemMetrics snapshot at end of each tick."""
+        try:
+            equity = (
+                self._router.get_account_balance()
+                if self._router else self.config.initial_capital
+>>>>>>> origin/main
             )
             # Fallback: if router returns 0 (paper engine has no balance tracker),
             # keep initial_capital as equity to avoid false -100% PnL display.
@@ -1042,7 +1363,11 @@ class LiveTradingRunner:
             self._metrics.trades_today += len(signals)
             self._metrics.trades_total += len(signals)
             # Max drawdown (simple high-water mark tracking)
+<<<<<<< HEAD
             if not hasattr(self, "_hw_equity"):
+=======
+            if not hasattr(self, '_hw_equity'):
+>>>>>>> origin/main
                 self._hw_equity = equity
             self._hw_equity = max(self._hw_equity, equity)
             if self._hw_equity > 0:
@@ -1052,25 +1377,38 @@ class LiveTradingRunner:
             logger.debug("metrics_update_failed", error=str(exc)[:100])
 
     @property
+<<<<<<< HEAD
     def metrics(self) -> SystemMetrics:
         """Current metrics snapshot (for API / dashboard consumption)."""
         return self._metrics
 
     def _fetch_market_data(self) -> pd.DataFrame | None:
+=======
+    def metrics(self) -> "SystemMetrics":
+        """Current metrics snapshot (for API / dashboard consumption)."""
+        return self._metrics
+
+    def _fetch_market_data(self) -> Optional[pd.DataFrame]:
+>>>>>>> origin/main
         """Fetch recent price data for all symbols in the universe.
 
         Returns:
             DataFrame with columns = symbols, rows = time bars.
         """
         try:
+<<<<<<< HEAD
             from common.errors import DataUnavailableError
             from data.loader import load_price_data
 
+=======
+            from data.loader import load_price_data
+>>>>>>> origin/main
             symbols = self.config.symbols
             if self._universe_mgr:
                 active = self._universe_mgr.get_active_symbols()
                 if active:
                     symbols = active
+<<<<<<< HEAD
             lookback = getattr(self, "_lookback", 252)
             try:
                 df = load_price_data(symbols=symbols, limit=lookback)
@@ -1104,6 +1442,10 @@ class LiveTradingRunner:
                             symbol=sym,
                             lag_minutes=round(lag.total_seconds() / 60, 1),
                         )
+=======
+            lookback = getattr(self, '_lookback', 252)
+            df = load_price_data(symbols=symbols, limit=lookback)
+>>>>>>> origin/main
             # Track data load stats for dashboard
             self._data_symbols_total = len(symbols)
             if df is not None and not df.empty:
@@ -1124,23 +1466,34 @@ class LiveTradingRunner:
     # Pair discovery
     # ------------------------------------------------------------------
 
+<<<<<<< HEAD
     def _maybe_rediscover_pairs(self) -> pd.DataFrame | None:
+=======
+    def _maybe_rediscover_pairs(self) -> None:
+>>>>>>> origin/main
         """Re-discover cointegrated pairs if enough time has elapsed.
 
         Uses ``PairTradingStrategy.find_cointegrated_pairs()`` as the
         canonical pair discovery path (same as backtests and main.py)
         to keep all pipelines consistent.
+<<<<<<< HEAD
 
         Returns:
             The fetched market data DataFrame if discovery was triggered and
             data was loaded successfully (so ``_tick()`` can reuse it without
             a second IBKR round-trip), or ``None`` otherwise.
+=======
+>>>>>>> origin/main
         """
         now = datetime.now()
         interval = timedelta(hours=self.config.pair_rediscovery_hours)
 
         if self._last_discovery is not None and (now - self._last_discovery) < interval:
+<<<<<<< HEAD
             return None
+=======
+            return
+>>>>>>> origin/main
 
         logger.info("live_trading_pair_rediscovery_start")
 
@@ -1148,6 +1501,7 @@ class LiveTradingRunner:
             market_data = self._fetch_market_data()
             if market_data is None or market_data.empty:
                 logger.warning("live_trading_pair_rediscovery_no_data")
+<<<<<<< HEAD
                 return None
 
             from config.settings import get_settings
@@ -1156,6 +1510,15 @@ class LiveTradingRunner:
             strategy = PairTradingStrategy()
             settings = get_settings()
             lookback = getattr(settings.strategy, "lookback_window", 120)
+=======
+                return
+
+            from strategies.pair_trading import PairTradingStrategy
+            from config.settings import get_settings
+            strategy = PairTradingStrategy()
+            settings = get_settings()
+            lookback = getattr(settings.strategy, 'lookback_window', 120)
+>>>>>>> origin/main
             pairs = strategy.find_cointegrated_pairs(market_data, lookback)
             self._active_pairs = pairs
             self._last_discovery = now
@@ -1163,7 +1526,10 @@ class LiveTradingRunner:
                 "live_trading_pair_rediscovery_complete",
                 pairs=len(self._active_pairs),
             )
+<<<<<<< HEAD
             return market_data  # C-02: reused by _tick() — avoids second fetch
+=======
+>>>>>>> origin/main
         except Exception as exc:
             logger.error(
                 "live_trading_pair_rediscovery_failed",
@@ -1171,7 +1537,10 @@ class LiveTradingRunner:
             )
             # Keep existing pairs on failure
             self._last_discovery = now  # avoid tight retry loop
+<<<<<<< HEAD
             return None
+=======
+>>>>>>> origin/main
 
     # ------------------------------------------------------------------
     # Shutdown
@@ -1188,6 +1557,7 @@ class LiveTradingRunner:
 
         # Close all open positions via router
         if self._router and self._positions:
+<<<<<<< HEAD
             with self._positions_lock:
                 positions_to_close = list(self._positions.items())
             for symbol, qty in positions_to_close:
@@ -1196,6 +1566,12 @@ class LiveTradingRunner:
 
                     from execution.base import Order, OrderSide
 
+=======
+            for symbol, qty in list(self._positions.items()):
+                try:
+                    from execution.base import Order, OrderSide
+                    from uuid import uuid4
+>>>>>>> origin/main
                     close_side = OrderSide.SELL if qty > 0 else OrderSide.BUY
                     close_order = Order(
                         order_id=str(uuid4()),
@@ -1212,7 +1588,11 @@ class LiveTradingRunner:
 
         self._state = TradingState.STOPPED
         # Cleanup shutdown manager (remove trading_enabled file)
+<<<<<<< HEAD
         if hasattr(self, "_shutdown_mgr") and self._shutdown_mgr:
+=======
+        if hasattr(self, '_shutdown_mgr') and self._shutdown_mgr:
+>>>>>>> origin/main
             try:
                 self._shutdown_mgr.cleanup()
             except Exception:

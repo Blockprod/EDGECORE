@@ -1,19 +1,34 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 2.4 ÔÇö Multi-Tier Drawdown Manager.
+=======
+"""
+Phase 2.4 — Multi-Tier Drawdown Manager.
+>>>>>>> origin/main
 
 Implements a graduated response to portfolio drawdowns:
 
     Tier 1 (DD > 3%)  : Reduce sizing by 50%
     Tier 2 (DD > 5%)  : Close 50% of positions (weakest first)
     Tier 3 (DD > 8%)  : Close ALL positions, cooldown 10 bars
+<<<<<<< HEAD
     Tier 4 (DD > 12%) : Full stop ÔÇö manual review required
+=======
+    Tier 4 (DD > 12%) : Full stop — manual review required
+>>>>>>> origin/main
 
 Each tier escalates from the previous. The manager tracks which tier
 is currently active and provides action recommendations.
 """
 
+<<<<<<< HEAD
 from dataclasses import dataclass
 from enum import IntEnum
+=======
+from dataclasses import dataclass, field
+from enum import IntEnum
+from typing import Dict, List, Optional, Tuple
+>>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -91,7 +106,11 @@ class DrawdownManager:
             # skip all entries
     """
 
+<<<<<<< HEAD
     def __init__(self, config: DrawdownConfig | None = None):
+=======
+    def __init__(self, config: Optional[DrawdownConfig] = None):
+>>>>>>> origin/main
         self.config = config or DrawdownConfig()
         self._current_tier = DrawdownTier.NORMAL
         self._cooldown_remaining: int = 0
@@ -158,7 +177,11 @@ class DrawdownManager:
                 reason=f"TIER_3_COOLDOWN: {self._cooldown_remaining} bars remaining",
             )
 
+<<<<<<< HEAD
         # Tier 4 - full stop (latching ÔÇö requires manual reset)
+=======
+        # Tier 4 - full stop (latching — requires manual reset)
+>>>>>>> origin/main
         if self._tier_4_triggered:
             return DrawdownAction(
                 tier=DrawdownTier.TIER_4,

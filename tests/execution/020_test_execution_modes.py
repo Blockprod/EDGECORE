@@ -11,7 +11,12 @@ Covers:
 - Mode-agnostic execution interface
 """
 
+<<<<<<< HEAD
 from datetime import UTC, datetime
+=======
+import pytest
+from datetime import datetime
+>>>>>>> origin/main
 
 import pytest
 
@@ -35,8 +40,20 @@ class TestOrder:
 
     def test_order_creation(self):
         """Test creating an order."""
+<<<<<<< HEAD
         order = Order(order_id="TEST-001", symbol="AAPL", side="buy", quantity=1.0, price=50000.0, order_type="limit")
 
+=======
+        order = Order(
+            order_id="TEST-001",
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            price=50000.0,
+            order_type="limit"
+        )
+        
+>>>>>>> origin/main
         assert order.order_id == "TEST-001"
         assert order.symbol == "AAPL"
         assert order.side == "buy"
@@ -181,10 +198,17 @@ class TestExecutionContext:
 
         context.add_position(position)
         retrieved = context.get_position("AAPL")
+<<<<<<< HEAD
 
         assert retrieved is not None
         assert retrieved.symbol == "AAPL"
 
+=======
+        
+        assert retrieved is not None
+        assert retrieved.symbol == "AAPL"
+    
+>>>>>>> origin/main
     def test_remove_position(self):
         """Test position removal."""
         context = ExecutionContext(mode=ModeType.PAPER)
@@ -199,6 +223,7 @@ class TestExecutionContext:
 
         context.add_position(position)
         removed = context.remove_position("AAPL")
+<<<<<<< HEAD
 
         assert removed is not None
         assert context.get_position("AAPL") is None
@@ -209,6 +234,25 @@ class TestExecutionContext:
 
         order = Order(order_id="TEST-001", symbol="AAPL", side="buy", quantity=1.0, price=50000.0, order_type="limit")
 
+=======
+        
+        assert removed is not None
+        assert context.get_position("AAPL") is None
+    
+    def test_add_and_get_order(self):
+        """Test order management."""
+        context = ExecutionContext(mode=ModeType.PAPER)
+        
+        order = Order(
+            order_id="TEST-001",
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            price=50000.0,
+            order_type="limit"
+        )
+        
+>>>>>>> origin/main
         context.add_order(order)
         retrieved = context.get_order("TEST-001")
 
@@ -218,9 +262,22 @@ class TestExecutionContext:
     def test_update_order_status(self):
         """Test order status updates."""
         context = ExecutionContext(mode=ModeType.PAPER)
+<<<<<<< HEAD
 
         order = Order(order_id="TEST-001", symbol="AAPL", side="buy", quantity=1.0, price=50000.0, order_type="limit")
 
+=======
+        
+        order = Order(
+            order_id="TEST-001",
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            price=50000.0,
+            order_type="limit"
+        )
+        
+>>>>>>> origin/main
         context.add_order(order)
         context.update_order_status("TEST-001", OrderStatus.FILLED)
 
@@ -231,12 +288,21 @@ class TestExecutionContext:
     def test_update_market_price(self):
         """Test market price updates."""
         context = ExecutionContext(mode=ModeType.PAPER)
+<<<<<<< HEAD
 
         context.market_prices["AAPL"] = 50000.0
         context.update_market_price("AAPL", 51000.0)
 
         assert context.market_prices["AAPL"] == 51000.0
 
+=======
+        
+        context.market_prices["AAPL"] = 50000.0
+        context.update_market_price("AAPL", 51000.0)
+        
+        assert context.market_prices["AAPL"] == 51000.0
+    
+>>>>>>> origin/main
     def test_total_position_value(self):
         """Test total position value calculation."""
         context = ExecutionContext(mode=ModeType.PAPER)
@@ -299,10 +365,22 @@ class TestPaperTradingMode:
         """Test market order in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
         context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         mode = PaperTradingMode(context)
         order_id = mode.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+        
+        mode = PaperTradingMode(context)
+        order_id = mode.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            order_type="market"
+        )
+        
+>>>>>>> origin/main
         assert order_id is not None
         order = context.get_order(order_id)
         assert order is not None
@@ -313,10 +391,23 @@ class TestPaperTradingMode:
         """Test limit order in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
         context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         mode = PaperTradingMode(context)
         order_id = mode.submit_order(symbol="AAPL", side="buy", quantity=1.0, price=49500.0, order_type="limit")
 
+=======
+        
+        mode = PaperTradingMode(context)
+        order_id = mode.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            price=49500.0,
+            order_type="limit"
+        )
+        
+>>>>>>> origin/main
         assert order_id is not None
         order = context.get_order(order_id)
         assert order is not None
@@ -329,16 +420,39 @@ class TestPaperTradingMode:
         mode = PaperTradingMode(context)
 
         with pytest.raises(ValueError):
+<<<<<<< HEAD
             mode.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+            mode.submit_order(
+                symbol="AAPL",
+                side="buy",
+                quantity=1.0,
+                order_type="market"
+            )
+    
+>>>>>>> origin/main
     def test_paper_cancel_order(self):
         """Test order cancellation in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
         context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         mode = PaperTradingMode(context)
         order_id = mode.submit_order(symbol="AAPL", side="buy", quantity=1.0, price=49500.0, order_type="limit")
 
+=======
+        
+        mode = PaperTradingMode(context)
+        order_id = mode.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            price=49500.0,
+            order_type="limit"
+        )
+        
+>>>>>>> origin/main
         cancelled = mode.cancel_order(order_id)
         assert cancelled is True
         assert context.get_order(order_id) is not None
@@ -350,8 +464,17 @@ class TestPaperTradingMode:
         context.cash = 100000.0
 
         mode = PaperTradingMode(context)
+<<<<<<< HEAD
         success = mode.open_position(symbol="AAPL", quantity=2.0, entry_price=50000.0)
 
+=======
+        success = mode.open_position(
+            symbol="AAPL",
+            quantity=2.0,
+            entry_price=50000.0
+        )
+        
+>>>>>>> origin/main
         assert success is True
         position = context.get_position("AAPL")
         assert position is not None
@@ -364,6 +487,7 @@ class TestPaperTradingMode:
 
         mode = PaperTradingMode(context)
         mode.open_position("AAPL", 1.0, 50000.0)
+<<<<<<< HEAD
 
         success, pnl = mode.close_position("AAPL", 51000.0)
 
@@ -371,6 +495,15 @@ class TestPaperTradingMode:
         assert pnl is not None
         assert context.get_position("AAPL") is None
 
+=======
+        
+        success, pnl = mode.close_position("AAPL", 51000.0)
+        
+        assert success is True
+        assert pnl is not None
+        assert context.get_position("AAPL") is None
+    
+>>>>>>> origin/main
     def test_paper_get_equity(self):
         """Test equity calculation in paper mode."""
         context = ExecutionContext(mode=ModeType.PAPER)
@@ -381,7 +514,11 @@ class TestPaperTradingMode:
         # Open position worth 50000
         mode.open_position("AAPL", 1.0, 50000.0)
         context.update_market_price("AAPL", 50000.0)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         equity = mode.get_account_equity()
         expected = 100000.0 - 50000.0 + 50000.0  # cash - position cost + position value
         assert equity == expected
@@ -394,10 +531,22 @@ class TestBacktestMode:
         """Test order submission in backtest mode."""
         context = ExecutionContext(mode=ModeType.BACKTEST)
         context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         mode = BacktestMode(context)
         order_id = mode.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+        
+        mode = BacktestMode(context)
+        order_id = mode.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            order_type="market"
+        )
+        
+>>>>>>> origin/main
         assert order_id is not None
         order = context.get_order(order_id)
         assert order is not None
@@ -407,10 +556,22 @@ class TestBacktestMode:
         """Test slippage applied in backtest."""
         context = ExecutionContext(mode=ModeType.BACKTEST)
         context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         mode = BacktestMode(context)
         order_id = mode.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+        
+        mode = BacktestMode(context)
+        order_id = mode.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            order_type="market"
+        )
+        
+>>>>>>> origin/main
         order = context.get_order(order_id)
         assert order is not None
         assert order.filled_price is not None
@@ -425,7 +586,11 @@ class TestBacktestMode:
 
         mode = BacktestMode(context)
         success = mode.open_position("AAPL", 1.0, 50000.0)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         assert success is True
         # Cash reduced by position cost + commission
         commission = 1.0 * 50000.0 * 0.1 / 100
@@ -440,9 +605,15 @@ class TestBacktestMode:
         mode = BacktestMode(context)
         mode.open_position("AAPL", 1.0, 50000.0)
         context.update_market_price("AAPL", 51000.0)
+<<<<<<< HEAD
 
         success, pnl_net = mode.close_position("AAPL", 51000.0)
 
+=======
+        
+        success, pnl_net = mode.close_position("AAPL", 51000.0)
+        
+>>>>>>> origin/main
         assert success is True
         # Gross P&L = 1000, minus commission
         commission = 1.0 * 51000.0 * 0.1 / 100
@@ -479,18 +650,41 @@ class TestExecutionEngine:
         """Test order submission through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         order_id = engine.submit_order(symbol="AAPL", side="buy", quantity=1.0, order_type="market")
 
+=======
+        
+        order_id = engine.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            order_type="market"
+        )
+        
+>>>>>>> origin/main
         assert order_id is not None
 
     def test_engine_cancel_order(self):
         """Test order cancellation through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         order_id = engine.submit_order(symbol="AAPL", side="buy", quantity=1.0, price=49500.0, order_type="limit")
 
+=======
+        
+        order_id = engine.submit_order(
+            symbol="AAPL",
+            side="buy",
+            quantity=1.0,
+            price=49500.0,
+            order_type="limit"
+        )
+        
+>>>>>>> origin/main
         cancelled = engine.cancel_order(order_id)
         assert cancelled is True
 
@@ -498,20 +692,38 @@ class TestExecutionEngine:
         """Test position opening through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
+<<<<<<< HEAD
 
         success = engine.open_position(symbol="AAPL", quantity=1.0, entry_price=50000.0)
 
+=======
+        
+        success = engine.open_position(
+            symbol="AAPL",
+            quantity=1.0,
+            entry_price=50000.0
+        )
+        
+>>>>>>> origin/main
         assert success is True
 
     def test_engine_close_position(self):
         """Test position closing through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
+<<<<<<< HEAD
 
         engine.open_position("AAPL", 1.0, 50000.0)
 
         success, pnl = engine.close_position("AAPL", 51000.0)
 
+=======
+        
+        engine.open_position("AAPL", 1.0, 50000.0)
+        
+        success, pnl = engine.close_position("AAPL", 51000.0)
+        
+>>>>>>> origin/main
         assert success is True
         assert pnl is not None
 
@@ -519,15 +731,23 @@ class TestExecutionEngine:
         """Test getting all positions through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
+<<<<<<< HEAD
 
         engine.open_position("AAPL", 1.0, 50000.0)
         engine.open_position("MSFT", 10.0, 3000.0)
 
+=======
+        
+        engine.open_position("AAPL", 1.0, 50000.0)
+        engine.open_position("MSFT", 10.0, 3000.0)
+        
+>>>>>>> origin/main
         positions = engine.get_positions()
 
         assert len(positions) == 2
         assert "AAPL" in positions
         assert "MSFT" in positions
+<<<<<<< HEAD
 
     def test_engine_update_prices(self):
         """Test market price updates through engine."""
@@ -540,14 +760,37 @@ class TestExecutionEngine:
         assert engine.context.market_prices["AAPL"] == 50000.0
         assert engine.context.market_prices["MSFT"] == 3000.0
 
+=======
+    
+    def test_engine_update_prices(self):
+        """Test market price updates through engine."""
+        engine = ExecutionEngine(mode=ModeType.PAPER)
+        
+        prices = {
+            "AAPL": 50000.0,
+            "MSFT": 3000.0
+        }
+        
+        engine.update_prices(prices)
+        
+        assert engine.context.market_prices["AAPL"] == 50000.0
+        assert engine.context.market_prices["MSFT"] == 3000.0
+    
+>>>>>>> origin/main
     def test_engine_get_equity(self):
         """Test equity retrieval through engine."""
         engine = ExecutionEngine(mode=ModeType.PAPER)
         engine.context.cash = 100000.0
         engine.context.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         engine.open_position("AAPL", 1.0, 50000.0)
 
+=======
+        
+        engine.open_position("AAPL", 1.0, 50000.0)
+        
+>>>>>>> origin/main
         equity = engine.get_equity()
 
         assert equity > 0
@@ -560,10 +803,17 @@ class TestExecutionModeConsistency:
         """Test that all modes implement same interface."""
         context_paper = ExecutionContext(mode=ModeType.PAPER)
         context_paper.market_prices["AAPL"] = 50000.0
+<<<<<<< HEAD
 
         context_backtest = ExecutionContext(mode=ModeType.BACKTEST)
         context_backtest.market_prices["AAPL"] = 50000.0
 
+=======
+        
+        context_backtest = ExecutionContext(mode=ModeType.BACKTEST)
+        context_backtest.market_prices["AAPL"] = 50000.0
+        
+>>>>>>> origin/main
         mode_paper = PaperTradingMode(context_paper)
         mode_backtest = BacktestMode(context_backtest)
 

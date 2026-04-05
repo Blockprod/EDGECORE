@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿# PLAN DE REM├ëDIATION ÔÇö EDGECORE 5/10 ÔåÆ 10/10
 ## Roadmap compl├¿te vers Production Ready (100% Capital-Safe)
 
@@ -18,20 +19,52 @@
 6. [Phase 4: Testing & Validation Compl├¿te (3 semaines)](#6-phase-4-testing--validation-compl├¿te-3-semaines)
 7. [Phase 5: Excellence & Optimisation (2 semaines)](#7-phase-5-excellence--optimisation-2-semaines)
 8. [H├®bergement & d├®ploiement (1 semaine)](#8-h├®bergement--d├®ploiement-1-semaine)
+=======
+# PLAN DE REMÉDIATION — EDGECORE 5/10 → 10/10
+## Roadmap complète vers Production Ready (100% Capital-Safe)
+
+**Date:** 8 février 2026  
+**Horizon total:** 12-16 semaines (3-4 mois)  
+**Équipe requise:** 1-2 ingénieurs senior Python  
+**Objectif final:** Score 10/10 + Capital Protection Guarantee ✅
+
+---
+
+## TABLE DES MATIÈRES
+
+1. [Vue d'ensemble stratégique](#1-vue-densemble-stratégique)
+2. [Phase 0: Stabilisation immédiate (48h)](#2-phase-0-stabilisation-immédiate-48h)
+3. [Phase 1: Capital Protection Critical (2 semaines)](#3-phase-1-capital-protection-critical-2-semaines)
+4. [Phase 2: Robustesse & Résilience (3 semaines)](#4-phase-2-robustesse--résilience-3-semaines)
+5. [Phase 3: Observabilité & Monitoring (2 semaines)](#5-phase-3-observabilité--monitoring-2-semaines)
+6. [Phase 4: Testing & Validation Complète (3 semaines)](#6-phase-4-testing--validation-complète-3-semaines)
+7. [Phase 5: Excellence & Optimisation (2 semaines)](#7-phase-5-excellence--optimisation-2-semaines)
+8. [Hébergement & déploiement (1 semaine)](#8-hébergement--déploiement-1-semaine)
+>>>>>>> origin/main
 9. [Checklist de Production](#9-checklist-de-production)
 
 ---
 
+<<<<<<< HEAD
 ## 1. Vue d'ensemble strat├®gique
 
 ### 1.1 Principes directeurs
 
 **Pilier 1: Capital Preservation (Priorit├® absolue)**
 - Position persistence (crash = z├®ro perte)
+=======
+## 1. Vue d'ensemble stratégique
+
+### 1.1 Principes directeurs
+
+**Pilier 1: Capital Preservation (Priorité absolue)**
+- Position persistence (crash = zéro perte)
+>>>>>>> origin/main
 - Global kill-switch (emergency control)
 - Order timeout enforcement (capital locked prevention)
 - Drawdown circuit breaker (hard stop on losses)
 
+<<<<<<< HEAD
 **Pilier 2: Observabilit├® & Operabilit├®**
 - Real-time alerting (Slack/Email/Dashboard)
 - Centralized audit trail (tous les trades trac├®s)
@@ -42,6 +75,18 @@
 - Graceful error recovery (exponential backoff, circuit breaker)
 - Idempotent operations (safe to retry)
 - State reconciliation (broker Ôåö local)
+=======
+**Pilier 2: Observabilité & Operabilité**
+- Real-time alerting (Slack/Email/Dashboard)
+- Centralized audit trail (tous les trades tracés)
+- Performance monitoring (latency, throughput)
+- Incident diagnostics (tracer root cause rapidement)
+
+**Pilier 3: Robustesse & Résilience**
+- Graceful error recovery (exponential backoff, circuit breaker)
+- Idempotent operations (safe to retry)
+- State reconciliation (broker ↔ local)
+>>>>>>> origin/main
 - No silent failures (loud errors)
 
 **Pilier 4: Test Complet & Validation**
@@ -53,16 +98,26 @@
 ### 1.2 Roadmap par score
 
 ```
+<<<<<<< HEAD
 PHASE 0 (48h)   ÔåÆ Score 5 ÔåÆ 5.5  [Critical hotfixes]
 PHASE 1 (14j)   ÔåÆ Score 5.5 ÔåÆ 7  [Capital protection]
 PHASE 2 (21j)   ÔåÆ Score 7 ÔåÆ 7.5  [Error handling]
 PHASE 3 (14j)   ÔåÆ Score 7.5 ÔåÆ 8.5  [Monitoring/Alerts]
 PHASE 4 (21j)   ÔåÆ Score 8.5 ÔåÆ 9.5  [Testing]
 PHASE 5 (14j)   ÔåÆ Score 9.5 ÔåÆ 10  [Polish/Excellence]
+=======
+PHASE 0 (48h)   → Score 5 → 5.5  [Critical hotfixes]
+PHASE 1 (14j)   → Score 5.5 → 7  [Capital protection]
+PHASE 2 (21j)   → Score 7 → 7.5  [Error handling]
+PHASE 3 (14j)   → Score 7.5 → 8.5  [Monitoring/Alerts]
+PHASE 4 (21j)   → Score 8.5 → 9.5  [Testing]
+PHASE 5 (14j)   → Score 9.5 → 10  [Polish/Excellence]
+>>>>>>> origin/main
 ```
 
 **Total: 12-16 weeks (1 engineer FTE)**
 
+<<<<<<< HEAD
 ### 1.3 D├®pendances critiques
 
 ```
@@ -76,11 +131,27 @@ Phase 3 (Monitoring) // Phase 4 (Testing) ÔåÉ Can run in parallel
   Ôåô
 Phase 5 (Polish)
   Ôåô
+=======
+### 1.3 Dépendances critiques
+
+```
+Phase 0 (Hotfixes)
+  ↓
+Phase 1 (Position Persist) ← BLOCKS Phase 2+3+4
+  ↓
+Phase 2 (Error Handling) ← BLOCKS Phase 4
+  ↓
+Phase 3 (Monitoring) // Phase 4 (Testing) ← Can run in parallel
+  ↓
+Phase 5 (Polish)
+  ↓
+>>>>>>> origin/main
 Production Readiness Checklist
 ```
 
 ---
 
+<<<<<<< HEAD
 ## 2. PHASE 0: Stabilisation imm├®diate (48h)
 
 **Objectif:** Patch les bugs critiques qui feraient crash un test simple  
@@ -93,6 +164,20 @@ Production Readiness Checklist
 **Solution:** Force sandbox=true dans tous les configs, requiert un env var pour d├®sactiver
 
 **T├óches:**
+=======
+## 2. PHASE 0: Stabilisation immédiate (48h)
+
+**Objectif:** Patch les bugs critiques qui feraient crash un test simple  
+**Score cible:** 5.5/10  
+**Effort:** 2-3 jours (1 ingénieur)
+
+### 2.1 Hotfix 1: Désactiver le mode live par default
+
+**Problème:** `prod.yaml` a `use_sandbox: false` → IBKR réel activé par accident  
+**Solution:** Force sandbox=true dans tous les configs, requiert un env var pour désactiver
+
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Fichier: config/settings.py
    - Ajouter safety check:
@@ -100,15 +185,24 @@ Production Readiness Checklist
          raise ValueError("Live trading disabled. Set ENABLE_LIVE_TRADING=true to enable.")
    
 2. Fichier: config/prod.yaml
+<<<<<<< HEAD
    - CHANGE: use_sandbox: false ÔåÆ use_sandbox: true
    - COMMENT: "# Override with ENABLE_LIVE_TRADING env var only"
    
 3. Fichier: main.py
    - CHANGE: if settings.env != "prod": ÔåÆ if os.getenv("ENABLE_LIVE_TRADING") != "true":
+=======
+   - CHANGE: use_sandbox: false → use_sandbox: true
+   - COMMENT: "# Override with ENABLE_LIVE_TRADING env var only"
+   
+3. Fichier: main.py
+   - CHANGE: if settings.env != "prod": → if os.getenv("ENABLE_LIVE_TRADING") != "true":
+>>>>>>> origin/main
    - Log at CRITICAL: "LIVE TRADING MODE ENABLED - TRADING WITH REAL MONEY"
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à config/prod.yaml defaults to sandbox=true
 - Ô£à Starting without ENABLE_LIVE_TRADING=true logs error or forces paper mode
 - Ô£à Test: python main.py --mode live ÔåÆ raises ValueError
@@ -120,6 +214,19 @@ Production Readiness Checklist
 **Probl├¿me:** `execution/IBKR API_engine.py` line 59 has `# TODO: Remove sandbox restriction in production`
 
 **T├óches:**
+=======
+- ✅ config/prod.yaml defaults to sandbox=true
+- ✅ Starting without ENABLE_LIVE_TRADING=true logs error or forces paper mode
+- ✅ Test: python main.py --mode live → raises ValueError
+
+**Effort:** 2h
+
+### 2.2 Hotfix 2: Supprimer les TODO laissés en code prod
+
+**Problème:** `execution/IBKR API_engine.py` line 59 has `# TODO: Remove sandbox restriction in production`
+
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. File: execution/IBKR API_engine.py:50-65
    - Remove TODO comment
@@ -129,22 +236,37 @@ Production Readiness Checklist
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à grep -r "TODO" codebase ÔåÆ only research/param_optimization, walk_forward (non-critical)
 - Ô£à execute `python -m pylint --disable=all --enable=fixme main.py` ÔåÆ no fixme warnings
+=======
+- ✅ grep -r "TODO" codebase → only research/param_optimization, walk_forward (non-critical)
+- ✅ execute `python -m pylint --disable=all --enable=fixme main.py` → no fixme warnings
+>>>>>>> origin/main
 
 **Effort:** 1h
 
 ### 2.3 Hotfix 3: Exponential backoff dans main loop
 
+<<<<<<< HEAD
 **Probl├¿me:** `time.sleep(5)` constant ÔåÆ CPU tight loop si API down
 
 **T├óches:**
+=======
+**Problème:** `time.sleep(5)` constant → CPU tight loop si API down
+
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. File: main.py (run_paper_trading):100-180
    BEFORE:
      except Exception as e:
          logger.error("paper_trading_loop_error", ...)
+<<<<<<< HEAD
          time.sleep(5)  # ÔåÉ Constant
+=======
+         time.sleep(5)  # ← Constant
+>>>>>>> origin/main
    
    AFTER:
      except Exception as e:
@@ -160,6 +282,7 @@ Production Readiness Checklist
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à First error: 2s, second: 4s, third: 8s, ... max 60s
 - Ô£à After 10 consecutive errors, loop breaks (doesn't retry forever)
 - Ô£à Test: force error 3x, measure delays, verify 2ÔåÆ4ÔåÆ8s pattern
@@ -171,6 +294,19 @@ Production Readiness Checklist
 **Probl├¿me:** `time.sleep(10)` dans paper trading loop (commentaire: "would be 3600 in prod") ÔåÆ Dev code
 
 **T├óches:**
+=======
+- ✅ First error: 2s, second: 4s, third: 8s, ... max 60s
+- ✅ After 10 consecutive errors, loop breaks (doesn't retry forever)
+- ✅ Test: force error 3x, measure delays, verify 2→4→8s pattern
+
+**Effort:** 1h
+
+### 2.4 Hotfix 4: Hardcoded sleep(10) → configurable
+
+**Problème:** `time.sleep(10)` dans paper trading loop (commentaire: "would be 3600 in prod") → Dev code
+
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. File: config/settings.py - Add to ExecutionConfig:
    paper_trading_loop_interval_seconds: int = 3600  # 1 hour
@@ -181,17 +317,29 @@ Production Readiness Checklist
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à config/dev.yaml: paper_trading_loop_interval_seconds: 10
 - Ô£à config/prod.yaml: paper_trading_loop_interval_seconds: 3600
 - Ô£à Configurable via env var
+=======
+- ✅ config/dev.yaml: paper_trading_loop_interval_seconds: 10
+- ✅ config/prod.yaml: paper_trading_loop_interval_seconds: 3600
+- ✅ Configurable via env var
+>>>>>>> origin/main
 
 **Effort:** 1h
 
 ### 2.5 Hotfix 5: Fix division by zero risk
 
+<<<<<<< HEAD
 **Probl├¿me:** `risk/engine.py` line ~120: `self.daily_loss / current_equity` crashes if equity=0
 
 **T├óches:**
+=======
+**Problème:** `risk/engine.py` line ~120: `self.daily_loss / current_equity` crashes if equity=0
+
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. File: risk/engine.py:100-140
    BEFORE:
@@ -204,8 +352,13 @@ Production Readiness Checklist
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Any function that divides by equity checks equity > 0 first
 - Ô£à Test: can_enter_trade(current_equity=0) ÔåÆ raises EquityError
+=======
+- ✅ Any function that divides by equity checks equity > 0 first
+- ✅ Test: can_enter_trade(current_equity=0) → raises EquityError
+>>>>>>> origin/main
 
 **Effort:** 1h
 
@@ -223,22 +376,38 @@ Production Readiness Checklist
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à All 4 hotfixes tested
 - Ô£à System starts without errors
 - Ô£à No critical TODOs left
+=======
+- ✅ All 4 hotfixes tested
+- ✅ System starts without errors
+- ✅ No critical TODOs left
+>>>>>>> origin/main
 
 ---
 
 ## 3. PHASE 1: Capital Protection Critical (2 semaines)
 
+<<<<<<< HEAD
 **Objectif:** Impl├®menter persistence, kill-switch, order timeouts  
 **Score cible:** 7/10  
 **Effort:** 80-100 heures (2 semaines enti├¿res)  
+=======
+**Objectif:** Implémenter persistence, kill-switch, order timeouts  
+**Score cible:** 7/10  
+**Effort:** 80-100 heures (2 semaines entières)  
+>>>>>>> origin/main
 **Blockers:** None (PHASE 0 done)
 
 ### 3.1 Feature: Position Persistence & Reconciliation (40h)
 
+<<<<<<< HEAD
 **Probl├¿me:** Crash ÔåÆ perte de toutes les positions locales ÔåÆ position leaks
+=======
+**Problème:** Crash → perte de toutes les positions locales → position leaks
+>>>>>>> origin/main
 
 **Solution:** Append-only audit trail + startup reconciliation
 
@@ -340,14 +509,24 @@ class AuditTrail:
         return positions
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create execution/audit_trail.py (200 LOC, 6h)
    - AuditEvent dataclass
    - AuditTrail manager
+<<<<<<< HEAD
    - log_event() ÔåÆ append to daily JSONL file
    - load_recent_events(days) ÔåÆ read from disk
    - reconstruct_positions() ÔåÆ rebuild state
+=======
+   - log_event() → append to daily JSONL file
+   - load_recent_events(days) → read from disk
+   - reconstruct_positions() → rebuild state
+>>>>>>> origin/main
 
 2. Modify risk/engine.py (10h)
    - Add audit_trail: AuditTrail = field(default_factory=AuditTrail)
@@ -368,10 +547,17 @@ class AuditTrail:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Every trade (entry/exit) logged to disk immediately
 - Ô£à Restart system ÔåÆ positions reconstructed from audit trail
 - Ô£à Mismatch between local state and IBKR detected + alerted
 - Ô£à No data loss even if process crashes
+=======
+- ✅ Every trade (entry/exit) logged to disk immediately
+- ✅ Restart system → positions reconstructed from audit trail
+- ✅ Mismatch between local state and IBKR detected + alerted
+- ✅ No data loss even if process crashes
+>>>>>>> origin/main
 
 **Effort:** 40h
 
@@ -456,7 +642,11 @@ class BrokerReconciler:
             logger.error("force_close_failed", symbol=symbol, error=str(e))
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Enhance execution/reconciler.py (8h) - Implement BrokerReconciler
 
@@ -475,16 +665,27 @@ class BrokerReconciler:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Startup compares local vs IBKR state
 - Ô£à Mismatches logged at CRITICAL level
 - Ô£à Phantom positions auto-closed with MARKET order
 - Ô£à Audit trail updated with reconciliation actions
+=======
+- ✅ Startup compares local vs IBKR state
+- ✅ Mismatches logged at CRITICAL level
+- ✅ Phantom positions auto-closed with MARKET order
+- ✅ Audit trail updated with reconciliation actions
+>>>>>>> origin/main
 
 **Effort:** 40h (total for 3.1)
 
 ### 3.2 Feature: Global Kill-Switch (15h)
 
+<<<<<<< HEAD
 **Probl├¿me:** Pas de way to emergency stop trading
+=======
+**Problème:** Pas de way to emergency stop trading
+>>>>>>> origin/main
 
 **Solution:** Implement graceful shutdown + signal handler
 
@@ -603,7 +804,11 @@ def run_paper_trading(symbols, settings):
     logger.info("paper_trading_completed")
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create execution/shutdown_manager.py (6h)
    - Signal handler (SIGTERM, SIGINT)
@@ -624,18 +829,31 @@ def run_paper_trading(symbols, settings):
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Ctrl+C closes all positions within 5 seconds
 - Ô£à All positions logged before close
 - Ô£à MARKET close orders placed immediately
 - Ô£à No pending orders left open
+=======
+- ✅ Ctrl+C closes all positions within 5 seconds
+- ✅ All positions logged before close
+- ✅ MARKET close orders placed immediately
+- ✅ No pending orders left open
+>>>>>>> origin/main
 
 **Effort:** 15h (total for 3.2)
 
 ### 3.3 Feature: Order Lifecycle Integration (25h)
 
+<<<<<<< HEAD
 **Probl├¿me:** Orders peuvent pendre ind├®finiment ÔåÆ capital locked
 
 **Solution:** Enforcer 30s timeout par d├®faut, force-cancel
+=======
+**Problème:** Orders peuvent pendre indéfiniment → capital locked
+
+**Solution:** Enforcer 30s timeout par défaut, force-cancel
+>>>>>>> origin/main
 
 #### 3.3.1 Enhance OrderLifecycle class
 
@@ -707,12 +925,20 @@ def run_paper_trading(symbols, settings):
                     risk_engine.register_exit(symbol, 0, 0)  # Cancel position
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Enhance execution/order_lifecycle.py (12h)
    - check_and_timeout_orders()
    - force_cancel_order()
+<<<<<<< HEAD
    - Status tracking (PENDING ÔåÆ TIMEOUT ÔåÆ CANCELLED)
+=======
+   - Status tracking (PENDING → TIMEOUT → CANCELLED)
+>>>>>>> origin/main
    
 2. Create execution/order_lifecycle_manager.py (8h)
    - Central manager for tracking all orders
@@ -730,10 +956,17 @@ def run_paper_trading(symbols, settings):
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Orders timeout after 30s (configurable)
 - Ô£à Timed-out orders auto-cancelled
 - Ô£à Position removed from RiskEngine
 - Ô£à Capital becomes available for new trades
+=======
+- ✅ Orders timeout after 30s (configurable)
+- ✅ Timed-out orders auto-cancelled
+- ✅ Position removed from RiskEngine
+- ✅ Capital becomes available for new trades
+>>>>>>> origin/main
 
 **Effort:** 25h (total for 3.3)
 
@@ -764,6 +997,7 @@ ls -lh audit/
 # - Start paper trading
 # - Verify positions logged to audit trail
 # - Kill process
+<<<<<<< HEAD
 # - Restart ÔåÆ positions should be recovered
 ```
 
@@ -776,6 +1010,20 @@ ls -lh audit/
 ---
 
 ## 4. PHASE 2: Robustesse & R├®silience (3 semaines)
+=======
+# - Restart → positions should be recovered
+```
+
+**Acceptance criteria:**
+- ✅ All critical features (persistence, kill-switch, order timeout) working
+- ✅ Audit trail files created daily
+- ✅ Reconciliation runs on startup
+- ✅ Graceful shutdown closes positions
+
+---
+
+## 4. PHASE 2: Robustesse & Résilience (3 semaines)
+>>>>>>> origin/main
 
 **Objectif:** Error recovery, circuit breaker, exponential backoff  
 **Score cible:** 7.5/10  
@@ -784,7 +1032,11 @@ ls -lh audit/
 
 ### 4.1 Feature: Unified Error Handling Pattern (25h)
 
+<<<<<<< HEAD
 **Probl├¿me:** `except Exception: log(); continue` silencieuse everywhere
+=======
+**Problème:** `except Exception: log(); continue` silencieuse everywhere
+>>>>>>> origin/main
 
 **Solution:** Error classification, categorized retries
 
@@ -819,7 +1071,11 @@ class DataError(TradingError):
 
 class BrokerError(TradingError):
     """Broker API error."""
+<<<<<<< HEAD
     # Subclass for each broker API: ConnectionError ÔåÆ TRANSIENT, InsufficientBalance ÔåÆ NON_RETRYABLE
+=======
+    # Subclass for each broker API: ConnectionError → TRANSIENT, InsufficientBalance → NON_RETRYABLE
+>>>>>>> origin/main
 
 class StrategyError(TradingError):
     """Error in strategy logic."""
@@ -956,7 +1212,11 @@ def load_market_data_for_symbols(symbols: List[str], loader: DataLoader) -> Dict
     return prices
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create common/errors.py (8h)
    - TradingError base class
@@ -980,16 +1240,27 @@ def load_market_data_for_symbols(symbols: List[str], loader: DataLoader) -> Dict
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à No bare `except Exception: pass` left in code
 - Ô£à All errors classified (TRANSIENT vs NON_RETRYABLE)
 - Ô£à Transient errors auto-retry with exponential backoff
 - Ô£à Non-retryable errors alert operator
+=======
+- ✅ No bare `except Exception: pass` left in code
+- ✅ All errors classified (TRANSIENT vs NON_RETRYABLE)
+- ✅ Transient errors auto-retry with exponential backoff
+- ✅ Non-retryable errors alert operator
+>>>>>>> origin/main
 
 **Effort:** 25h
 
 ### 4.2 Feature: Data Integrity Validation Enforcement (20h)
 
+<<<<<<< HEAD
 **Probl├¿me:** OHLCVValidator existe mais n'est pas appel├®
+=======
+**Problème:** OHLCVValidator existe mais n'est pas appelé
+>>>>>>> origin/main
 
 **Solution:** Integrate validator into data pipeline
 
@@ -1031,7 +1302,11 @@ class DataLoader:
             raise
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Enhance data/loader.py (6h)
    - Add validator parameter
@@ -1050,15 +1325,25 @@ class DataLoader:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Every load_IBKR API_data() call validates OHLCV
 - Ô£à Invalid data raises DataValidationError (not silently NaN)
 - Ô£à Test: load data with NaN ÔåÆ raises error
+=======
+- ✅ Every load_IBKR API_data() call validates OHLCV
+- ✅ Invalid data raises DataValidationError (not silently NaN)
+- ✅ Test: load data with NaN → raises error
+>>>>>>> origin/main
 
 **Effort:** 20h
 
 ### 4.3 Feature: Circuit Breaker Integration (25h)
 
+<<<<<<< HEAD
 **Probl├¿me:** CircuitBreaker existe mais n'est pas utilis├® pour IBKR API calls
+=======
+**Problème:** CircuitBreaker existe mais n'est pas utilisé pour IBKR API calls
+>>>>>>> origin/main
 
 **Solution:** Wrap all broker API calls
 
@@ -1142,7 +1427,11 @@ def load_IBKR API_data(self, broker_name: str, symbol: str, ...) -> pd.DataFrame
         raise DataError(f"broker API down: {e}")
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Refactor execution/IBKR API_engine.py (10h)
    - Wrap submit_order with circuit breaker
@@ -1164,11 +1453,19 @@ def load_IBKR API_data(self, broker_name: str, symbol: str, ...) -> pd.DataFrame
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à 5 API failures ÔåÆ circuit opens
 - Ô£à Circuit stays open for 60s
 - Ô£à New API calls blocked while open
 - Ô£à After 60s, circuit half-open (allows 1 test call)
 - Ô£à If test succeeds, circuit closes
+=======
+- ✅ 5 API failures → circuit opens
+- ✅ Circuit stays open for 60s
+- ✅ New API calls blocked while open
+- ✅ After 60s, circuit half-open (allows 1 test call)
+- ✅ If test succeeds, circuit closes
+>>>>>>> origin/main
 
 **Effort:** 25h
 
@@ -1198,6 +1495,7 @@ grep -r "except Exception:" . --include="*.py" | grep -v "test_\|\.venv" | wc -l
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à All errors classified and handled
 - Ô£à Exponential backoff working
 - Ô£à Circuit breaker active for IBKR API + Data loader
@@ -1206,6 +1504,16 @@ grep -r "except Exception:" . --include="*.py" | grep -v "test_\|\.venv" | wc -l
 ---
 
 ## 5. PHASE 3: Observabilit├® & Monitoring (2 semaines)
+=======
+- ✅ All errors classified and handled
+- ✅ Exponential backoff working
+- ✅ Circuit breaker active for IBKR API + Data loader
+- ✅ No silent failures / swallowed exceptions
+
+---
+
+## 5. PHASE 3: Observabilité & Monitoring (2 semaines)
+>>>>>>> origin/main
 
 **Objectif:** Real-time alerts, centralized logging, dashboard  
 **Score cible:** 8.5/10  
@@ -1304,7 +1612,11 @@ class SlackAlerter:
             return False
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create monitoring/slack_alerter.py (8h)
    - Send to Slack with formatting
@@ -1325,9 +1637,15 @@ class SlackAlerter:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à CRITICAL alerts sent to Slack immediately
 - Ô£à Throttling prevents spam (< 1 alert per 30s per type)
 - Ô£à Formatted with color, timestamp, metadata
+=======
+- ✅ CRITICAL alerts sent to Slack immediately
+- ✅ Throttling prevents spam (< 1 alert per 30s per type)
+- ✅ Formatted with color, timestamp, metadata
+>>>>>>> origin/main
 
 **Effort:** 15h
 
@@ -1398,7 +1716,11 @@ Data:
             return False
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create monitoring/email_alerter.py (6h)
    - SMTP integration
@@ -1412,8 +1734,13 @@ Data:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à ERROR/CRITICAL alerts sent via email
 - Ô£à Formatted with timestamp, level, metadata
+=======
+- ✅ ERROR/CRITICAL alerts sent via email
+- ✅ Formatted with timestamp, level, metadata
+>>>>>>> origin/main
 
 **Effort:** 10h
 
@@ -1525,7 +1852,11 @@ class DashboardGenerator:
         }
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create monitoring/dashboard.py (12h)
    - Capture system status, risk, positions, orders, alerts
@@ -1542,9 +1873,15 @@ class DashboardGenerator:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à /api/dashboard returns JSON snapshot
 - Ô£à Includes: equity, positions, orders, alerts, performance
 - Ô£à Accessible from browser/curl
+=======
+- ✅ /api/dashboard returns JSON snapshot
+- ✅ Includes: equity, positions, orders, alerts, performance
+- ✅ Accessible from browser/curl
+>>>>>>> origin/main
 
 **Effort:** 20h (core), +20h (HTML UI optional)
 
@@ -1587,7 +1924,11 @@ class CentralizedLogger:
         return structlog_logger
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Enhance monitoring/logger.py (6h)
    - JSONL output (machine-parseable)
@@ -1604,9 +1945,15 @@ class CentralizedLogger:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Logs written to JSONL daily files
 - Ô£à Can query logs via API
 - Ô£à Fields: timestamp, level, symbol, message, context
+=======
+- ✅ Logs written to JSONL daily files
+- ✅ Can query logs via API
+- ✅ Fields: timestamp, level, symbol, message, context
+>>>>>>> origin/main
 
 **Effort:** 15h
 
@@ -1643,6 +1990,7 @@ python main.py --mode paper --symbols AAPL
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Real-time alerts via Slack/Email
 - Ô£à Dashboard accessible
 - Ô£à All logs in JSONL format
@@ -1651,6 +1999,16 @@ python main.py --mode paper --symbols AAPL
 ---
 
 ## 6. PHASE 4: Testing & Validation Compl├¿te (3 semaines)
+=======
+- ✅ Real-time alerts via Slack/Email
+- ✅ Dashboard accessible
+- ✅ All logs in JSONL format
+- ✅ Can query/search logs
+
+---
+
+## 6. PHASE 4: Testing & Validation Complète (3 semaines)
+>>>>>>> origin/main
 
 **Objectif:** 70%+ coverage, E2E tests, chaos engineering  
 **Score cible:** 9.5/10  
@@ -1670,10 +2028,17 @@ pytest tests/ --cov=. --cov-report=html
 
 # 2. Identify gaps (< 70% modules)
 # Prioritize:
+<<<<<<< HEAD
 #   - main.py (0% ÔåÆ needs E2E, harder)
 #   - backtests/runner.py (30% ÔåÆ add tests)
 #   - strategies/pair_trading.py (20% ÔåÆ add tests)
 #   - execution/IBKR API_engine.py (40% ÔåÆ add mocks)
+=======
+#   - main.py (0% → needs E2E, harder)
+#   - backtests/runner.py (30% → add tests)
+#   - strategies/pair_trading.py (20% → add tests)
+#   - execution/IBKR API_engine.py (40% → add mocks)
+>>>>>>> origin/main
 
 # 3. Add missing tests for each gap
 # Target: each module >= 70% coverage
@@ -1703,7 +2068,11 @@ tests/test_backtests_realistic.py (15h)
   - test_backtest_max_drawdown()
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Measure current coverage (2h)
    - Run pytest --cov
@@ -1718,9 +2087,15 @@ tests/test_backtests_realistic.py (15h)
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à pytest coverage >= 70%
 - Ô£à All critical paths tested
 - Ô£à test_main_integration.py passes (validates full flow)
+=======
+- ✅ pytest coverage >= 70%
+- ✅ All critical paths tested
+- ✅ test_main_integration.py passes (validates full flow)
+>>>>>>> origin/main
 
 **Effort:** 40h
 
@@ -1738,7 +2113,11 @@ class E2ETestSuite:
         # Initial balance: 10 AAPL, 10 MSFT
     
     def test_full_trading_flow(self):
+<<<<<<< HEAD
         """Complete flow: discover pairs ÔåÆ generate signals ÔåÆ trade ÔåÆ close."""
+=======
+        """Complete flow: discover pairs → generate signals → trade → close."""
+>>>>>>> origin/main
         
         # 1. Load market data
         # 2. Discover cointegrated pairs
@@ -1756,7 +2135,11 @@ class E2ETestSuite:
     def test_error_recovery_flow(self):
         """Test recovery from errors."""
         
+<<<<<<< HEAD
         # Simulate: API timeout ÔåÆ retry ÔåÆ success
+=======
+        # Simulate: API timeout → retry → success
+>>>>>>> origin/main
         # Verify: exponential backoff, circuit breaker, no silent failures
     
     def test_risk_constraints_enforced(self):
@@ -1785,11 +2168,19 @@ class E2ETestSuite:
         
         # Open 3 positions
         # Kill process
+<<<<<<< HEAD
         # Restart ÔåÆ positions should be recovered
         # Verify: position quantities match broker
 ```
 
 **T├óches:**
+=======
+        # Restart → positions should be recovered
+        # Verify: position quantities match broker
+```
+
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create tests/test_e2e_trading_flow.py (25h)
    - Full trading flow
@@ -1808,11 +2199,19 @@ class E2ETestSuite:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Full E2E test executes without errors
 - Ô£à 50+ real trades executed on testnet
 - Ô£à All risk constraints enforced
 - Ô£à Position persistence verified
 - Ô£à Graceful shutdown verified
+=======
+- ✅ Full E2E test executes without errors
+- ✅ 50+ real trades executed on testnet
+- ✅ All risk constraints enforced
+- ✅ Position persistence verified
+- ✅ Graceful shutdown verified
+>>>>>>> origin/main
 
 **Effort:** 30h
 
@@ -1846,7 +2245,11 @@ class E2ETestSuite:
    - Loss of database connection
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create tests/test_chaos_engineering.py (20h)
    - Simulate each failure scenario
@@ -1861,10 +2264,17 @@ class E2ETestSuite:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à System recovers from all transient failures
 - Ô£à No crashes on data quality issues
 - Ô£à No silent failures
 - Ô£à All recovery attempts logged
+=======
+- ✅ System recovers from all transient failures
+- ✅ No crashes on data quality issues
+- ✅ No silent failures
+- ✅ All recovery attempts logged
+>>>>>>> origin/main
 
 **Effort:** 25h
 
@@ -1879,8 +2289,13 @@ class E2ETestSuite:
    - Target: process in < 1 second
    
 2. Latency
+<<<<<<< HEAD
    - Trade entry ÔåÆ execution: < 5s (target < 2s)
    - Data load ÔåÆ signal ÔåÆ order: < 3s
+=======
+   - Trade entry → execution: < 5s (target < 2s)
+   - Data load → signal → order: < 3s
+>>>>>>> origin/main
    
 3. Memory
    - Max memory: 500 MB
@@ -1892,7 +2307,11 @@ class E2ETestSuite:
    - 30 days backtest
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create benchmarks/ directory (8h)
    - bench_signal_generation.py
@@ -1906,10 +2325,17 @@ class E2ETestSuite:
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à 100 signals processed in < 1s
 - Ô£à Trade latency < 5s
 - Ô£à No memory leaks
 - Ô£à Handles 50+ pairs without slowdown
+=======
+- ✅ 100 signals processed in < 1s
+- ✅ Trade latency < 5s
+- ✅ No memory leaks
+- ✅ Handles 50+ pairs without slowdown
+>>>>>>> origin/main
 
 **Effort:** 20h
 
@@ -1939,10 +2365,17 @@ pytest tests/ -v --tb=short | tail -20
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à 70%+ test coverage
 - Ô£à E2E tests passing
 - Ô£à Chaos tests handling failures
 - Ô£à Performance targets met
+=======
+- ✅ 70%+ test coverage
+- ✅ E2E tests passing
+- ✅ Chaos tests handling failures
+- ✅ Performance targets met
+>>>>>>> origin/main
 
 ---
 
@@ -2142,7 +2575,11 @@ def main():
     run_trading_loop(context, mode)
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Create execution/modes.py (10h)
    - ExecutionMode base class
@@ -2163,10 +2600,17 @@ def main():
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à run_paper_trading() + run_live_trading() removed (consolidated)
 - Ô£à main.py < 50 LOC (just mode selection)
 - Ô£à trading_loop() < 100 LOC (no code duplication)
 - Ô£à All mode tests passing
+=======
+- ✅ run_paper_trading() + run_live_trading() removed (consolidated)
+- ✅ main.py < 50 LOC (just mode selection)
+- ✅ trading_loop() < 100 LOC (no code duplication)
+- ✅ All mode tests passing
+>>>>>>> origin/main
 
 **Effort:** 20h
 
@@ -2179,7 +2623,11 @@ def main():
 
 ## 1. System Overview
 - Component diagram (modules + interactions)
+<<<<<<< HEAD
 - Data flow (data ÔåÆ strategy ÔåÆ execution)
+=======
+- Data flow (data → strategy → execution)
+>>>>>>> origin/main
 - Risk boundaries
 
 ## 2. Component Reference
@@ -2200,7 +2648,11 @@ def main():
 - Error categories (TRANSIENT vs FATAL)
 - Retry strategies (exponential backoff)
 - Circuit breaker pattern
+<<<<<<< HEAD
 - Silent failures ÔåÆ impossible
+=======
+- Silent failures → impossible
+>>>>>>> origin/main
 
 ## 5. Safety Guarantees
 - Capital preservation guarantees
@@ -2221,7 +2673,11 @@ def main():
 - Incident response playbook
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Write architecture handbook (12h)
    - Diagrams (ASCII or images)
@@ -2235,10 +2691,17 @@ def main():
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à 5000+ word handbook
 - Ô£à All modules documented
 - Ô£à Design decisions explained
 - Ô£à Examples provided
+=======
+- ✅ 5000+ word handbook
+- ✅ All modules documented
+- ✅ Design decisions explained
+- ✅ Examples provided
+>>>>>>> origin/main
 
 **Effort:** 15h
 
@@ -2310,17 +2773,28 @@ python main.py --mode paper --symbols AAPL MSFT
 - Quarterly: disaster recovery drill
 ```
 
+<<<<<<< HEAD
 **T├óches:**
+=======
+**Tâches:**
+>>>>>>> origin/main
 ```
 1. Write operations manual (8h)
 2. Create incident playbooks (2h)
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à 2000+ word manual
 - Ô£à Startup/shutdown procedures
 - Ô£à Incident response plans
 - Ô£à Monitoring guide
+=======
+- ✅ 2000+ word manual
+- ✅ Startup/shutdown procedures
+- ✅ Incident response plans
+- ✅ Monitoring guide
+>>>>>>> origin/main
 
 **Effort:** 10h
 
@@ -2350,10 +2824,17 @@ python main.py --mode paper --symbols AAPL MSFT
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à mypy: zero warnings with --strict
 - Ô£à pylint: 9.0+ on critical modules
 - Ô£à black: consistent formatting
 - Ô£à No code duplication
+=======
+- ✅ mypy: zero warnings with --strict
+- ✅ pylint: 9.0+ on critical modules
+- ✅ black: consistent formatting
+- ✅ No code duplication
+>>>>>>> origin/main
 
 **Effort:** 20h
 
@@ -2386,6 +2867,7 @@ pytest tests/ --cov=. --cov-report=term | tail -3
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à 10/10 score achieved
 - Ô£à All documentation complete
 - Ô£à Code quality maximal
@@ -2394,6 +2876,16 @@ pytest tests/ --cov=. --cov-report=term | tail -3
 ---
 
 ## 8. H├®bergement & D├®ploiement (1 semaine)
+=======
+- ✅ 10/10 score achieved
+- ✅ All documentation complete
+- ✅ Code quality maximal
+- ✅ 70%+ test coverage
+
+---
+
+## 8. Hébergement & Déploiement (1 semaine)
+>>>>>>> origin/main
 
 **Objectif:** Production-ready deployment
 
@@ -2516,11 +3008,19 @@ curl http://localhost:8000/api/dashboard
 ```
 
 **Acceptance criteria:**
+<<<<<<< HEAD
 - Ô£à Docker image builds successfully
 - Ô£à Container starts and runs trading loop
 - Ô£à Logs visible via docker logs
 - Ô£à Dashboard accessible on port 8000
 - Ô£à Health check passing
+=======
+- ✅ Docker image builds successfully
+- ✅ Container starts and runs trading loop
+- ✅ Logs visible via docker logs
+- ✅ Dashboard accessible on port 8000
+- ✅ Health check passing
+>>>>>>> origin/main
 
 **Effort:** 15h (Docker + monitoring basics)
 
@@ -2554,7 +3054,11 @@ SECTION B: RISK MANAGEMENT
 SECTION C: OPERATIONAL READINESS
 [ ] All 4 error categories classified
 [ ] Exponential backoff implemented
+<<<<<<< HEAD
 [ ] Circuit breaker active (5 failures ÔåÆ OPEN)
+=======
+[ ] Circuit breaker active (5 failures → OPEN)
+>>>>>>> origin/main
 [ ] Data validation on all OHLCV loads
 [ ] Audit trail writing to disk daily
 [ ] Reconciliation running on startup
@@ -2573,11 +3077,19 @@ SECTION D: SECURITY
 [ ] HTTPS for dashboard (if remote)
 
 SECTION E: DOCUMENTATION
+<<<<<<< HEAD
 [ ] Architecture handbook (5000+ words) Ô£à
 [ ] Operations manual (2000+ words) Ô£à
 [ ] API reference generated Ô£à
 [ ] Incident response playbook Ô£à
 [ ] Deployment README Ô£à
+=======
+[ ] Architecture handbook (5000+ words) ✅
+[ ] Operations manual (2000+ words) ✅
+[ ] API reference generated ✅
+[ ] Incident response playbook ✅
+[ ] Deployment README ✅
+>>>>>>> origin/main
 
 SECTION F: DEPLOYMENT
 [ ] Docker image built and tested
@@ -2607,6 +3119,7 @@ Lead Review: ___________
 
 | Phase | Duration | Effort | Score | Cumulative |
 |-------|----------|--------|-------|-----------|
+<<<<<<< HEAD
 | **Phase 0: Hotfixes** | 2 days | 15h | 5 ÔåÆ 5.5 | 5.5 |
 | **Phase 1: Capital Protection** | 2 weeks | 80h | 5.5 ÔåÆ 7 | 7 |
 | **Phase 2: Robustness** | 3 weeks | 120h | 7 ÔåÆ 7.5 | 7.5 |
@@ -2615,6 +3128,16 @@ Lead Review: ___________
 | **Phase 5: Excellence** | 2 weeks | 80h | 9.5 ÔåÆ 10 | **10** |
 | **Phase 6: Deployment** | 1 week | 50h | 10 | 10 |
 | **TOTAL** | **15 weeks** | **585h** | **5 ÔåÆ 10** | **Ô£à PRODUCTION READY** |
+=======
+| **Phase 0: Hotfixes** | 2 days | 15h | 5 → 5.5 | 5.5 |
+| **Phase 1: Capital Protection** | 2 weeks | 80h | 5.5 → 7 | 7 |
+| **Phase 2: Robustness** | 3 weeks | 120h | 7 → 7.5 | 7.5 |
+| **Phase 3: Observability** | 2 weeks | 100h | 7.5 → 8.5 | 8.5 |
+| **Phase 4: Testing** | 3 weeks | 140h | 8.5 → 9.5 | 9.5 |
+| **Phase 5: Excellence** | 2 weeks | 80h | 9.5 → 10 | **10** |
+| **Phase 6: Deployment** | 1 week | 50h | 10 | 10 |
+| **TOTAL** | **15 weeks** | **585h** | **5 → 10** | **✅ PRODUCTION READY** |
+>>>>>>> origin/main
 
 **Resources:**
 - 1 Senior Python engineer (FTE, 15 weeks)
@@ -2632,6 +3155,7 @@ Lead Review: ___________
 
 ## 11. Success Metrics
 
+<<<<<<< HEAD
 **System Score: 10/10 Ô£à**
 
 **Key Achievements:**
@@ -2643,6 +3167,19 @@ Lead Review: ___________
 - Ô£à 70%+ test coverage (confidence)
 - Ô£à E2E validated (full flow proven)
 - Ô£à Production deployment (Docker ready)
+=======
+**System Score: 10/10 ✅**
+
+**Key Achievements:**
+- ✅ Zero silent failures (all errors handled)
+- ✅ Position persistence (crash → recovery)
+- ✅ Global kill-switch (emergency control)
+- ✅ Order timeout enforcement (capital freed)
+- ✅ Real-time monitoring (Slack/Email/Dashboard)
+- ✅ 70%+ test coverage (confidence)
+- ✅ E2E validated (full flow proven)
+- ✅ Production deployment (Docker ready)
+>>>>>>> origin/main
 
 **Capital Safety Guarantee:**
 > "In the event of any system failure, position state can be recovered from the audit trail, and all open orders are timeout-protected and will be force-closed. The system cannot lose capital due to bugs without explicit user action."
@@ -2654,6 +3191,7 @@ Lead Review: ___________
 This roadmap transforms EDGECORE from a proof-of-concept (5/10) to a **production-grade quantitative trading system (10/10)** capable of safely trading real capital.
 
 **Key Principles:**
+<<<<<<< HEAD
 1. **Capital Preservation First** ÔÇö Every feature prioritizes money safety
 2. **No Silent Failures** ÔÇö All errors surfaced immediately
 3. **Operational Excellence** ÔÇö Monitoring, alerting, diagnostics built-in
@@ -2661,3 +3199,12 @@ This roadmap transforms EDGECORE from a proof-of-concept (5/10) to a **productio
 5. **Maintainable Long-Term** ÔÇö Documentation, architecture, clean code
 
 **Ready to execute? Let's build a system we can trust with real money.** ­ƒÆ¬
+=======
+1. **Capital Preservation First** — Every feature prioritizes money safety
+2. **No Silent Failures** — All errors surfaced immediately
+3. **Operational Excellence** — Monitoring, alerting, diagnostics built-in
+4. **Tested Thoroughly** — 70%+ coverage, E2E, chaos testing
+5. **Maintainable Long-Term** — Documentation, architecture, clean code
+
+**Ready to execute? Let's build a system we can trust with real money.** 💪
+>>>>>>> origin/main

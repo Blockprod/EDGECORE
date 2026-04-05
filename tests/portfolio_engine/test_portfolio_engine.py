@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Tests for portfolio_engine ÔÇö allocator.py, concentration.py, hedger.py.
+=======
+"""
+Tests for portfolio_engine — allocator.py, concentration.py, hedger.py.
+>>>>>>> origin/main
 
 Covers:
     - PortfolioAllocator: 4 sizing methods, heat limit, Kelly formula, release
@@ -10,20 +15,36 @@ Covers:
 import numpy as np
 import pandas as pd
 import pytest
+<<<<<<< HEAD
 
 from portfolio_engine.allocator import (
     AllocationResult,
     PortfolioAllocator,
     SizingMethod,
+=======
+from unittest.mock import MagicMock, patch
+
+from portfolio_engine.allocator import (
+    PortfolioAllocator,
+    SizingMethod,
+    AllocationResult,
+>>>>>>> origin/main
 )
 from portfolio_engine.concentration import ConcentrationManager
 from portfolio_engine.hedger import PortfolioHedger
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 # ======================================================================
 # PortfolioAllocator
 # ======================================================================
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 class TestPortfolioAllocatorEqualWeight:
     """Equal-weight sizing."""
 
@@ -52,7 +73,11 @@ class TestPortfolioAllocatorVolInverse:
         r_low = a.allocate("LOW_VOL", spread_vol=0.04)
         a2 = PortfolioAllocator(equity=100_000, sizing_method=SizingMethod.VOLATILITY_INVERSE)
         r_high = a2.allocate("HIGH_VOL", spread_vol=0.10)
+<<<<<<< HEAD
         # vol-inverse: target_vol/spread_vol ÔåÆ lower vol ÔåÆ higher fraction
+=======
+        # vol-inverse: target_vol/spread_vol → lower vol → higher fraction
+>>>>>>> origin/main
         assert r_low.fraction_of_equity >= r_high.fraction_of_equity
 
     def test_zero_vol_falls_back(self):
@@ -73,8 +98,13 @@ class TestPortfolioAllocatorKelly:
     def test_kelly_formula(self):
         """Half-Kelly: f* = (p*b - q) / b / 2"""
         f = PortfolioAllocator._kelly_fraction(win_rate=0.6, wl_ratio=1.5)
+<<<<<<< HEAD
         # p=0.6, q=0.4, b=1.5 ÔåÆ (0.6*1.5-0.4)/1.5 = 0.5/1.5 Ôëê 0.333
         # half_kelly = 0.333/2 Ôëê 0.167
+=======
+        # p=0.6, q=0.4, b=1.5 → (0.6*1.5-0.4)/1.5 = 0.5/1.5 ≈ 0.333
+        # half_kelly = 0.333/2 ≈ 0.167
+>>>>>>> origin/main
         expected = ((0.6 * 1.5 - 0.4) / 1.5) / 2
         assert f == pytest.approx(expected, abs=0.01)
 
@@ -106,7 +136,11 @@ class TestPortfolioAllocatorHeat:
         a = PortfolioAllocator(equity=100_000, max_pairs=5, max_portfolio_heat=0.50)
         for i in range(3):
             a.allocate(f"P{i}")
+<<<<<<< HEAD
         # With 3 ├ù 20% = 60% > heat limit 50%, third+ allocation should be squeezed
+=======
+        # With 3 × 20% = 60% > heat limit 50%, third+ allocation should be squeezed
+>>>>>>> origin/main
         assert a.current_heat <= 0.50 + 0.01
 
     def test_release_frees_capacity(self):
@@ -128,13 +162,20 @@ class TestPortfolioAllocatorHeat:
 # ConcentrationManager
 # ======================================================================
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 class TestConcentrationManager:
     """Per-symbol concentration enforcement."""
 
     def test_first_entry_allowed(self):
         cm = ConcentrationManager(max_concentration_pct=30.0)
+<<<<<<< HEAD
         ok, _reason = cm.check_entry("AAPL_MSFT", "AAPL", "MSFT", "long")
+=======
+        ok, reason = cm.check_entry("AAPL_MSFT", "AAPL", "MSFT", "long")
+>>>>>>> origin/main
         assert ok
 
     def test_register_and_exit(self):
@@ -160,7 +201,10 @@ class TestConcentrationManager:
 # PortfolioHedger
 # ======================================================================
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 class TestPortfolioHedger:
     """Diversification enforcement and beta hedging."""
 
@@ -185,7 +229,11 @@ class TestPortfolioHedger:
         h = PortfolioHedger(max_correlation=0.60)
         spread = self._random_spread()
         h.register_spread("P1", spread)
+<<<<<<< HEAD
         ok, _reason = h.check_diversification("P2", spread)
+=======
+        ok, reason = h.check_diversification("P2", spread)
+>>>>>>> origin/main
         assert not ok
 
     def test_remove_spread(self):
@@ -218,7 +266,11 @@ class TestPortfolioHedger:
 
 
 class TestAllocatorZeroEquity:
+<<<<<<< HEAD
     """equity = 0 ÔåÆ explicit ValueError, not silent zero allocation."""
+=======
+    """equity = 0 → explicit ValueError, not silent zero allocation."""
+>>>>>>> origin/main
 
     def test_zero_equity_raises(self):
         a = PortfolioAllocator(equity=0.0)
@@ -238,7 +290,10 @@ class TestConcentrationBlock:
         """Adding many pairs with the same symbol eventually gets blocked."""
         # Use low AUM so that notional=10_000 quickly exceeds 30%
         from execution.concentration_limits import ConcentrationLimitManager
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         inner = ConcentrationLimitManager(
             max_symbol_concentration_pct=30.0,
             portfolio_aum=100_000.0,
@@ -246,7 +301,11 @@ class TestConcentrationBlock:
         blocked_at = None
         for i in range(20):
             partner = f"SYM{i}"
+<<<<<<< HEAD
             ok, _reason = inner.add_position(
+=======
+            ok, reason = inner.add_position(
+>>>>>>> origin/main
                 pair_key=f"AAA_{partner}",
                 symbol1="AAA",
                 symbol2=partner,
@@ -256,7 +315,13 @@ class TestConcentrationBlock:
             if not ok:
                 blocked_at = i
                 break
+<<<<<<< HEAD
         assert blocked_at is not None, "Concentration manager should block entry when symbol is overexposed"
+=======
+        assert blocked_at is not None, (
+            "Concentration manager should block entry when symbol is overexposed"
+        )
+>>>>>>> origin/main
 
 
 class TestBetaHedgeDirection:
@@ -276,6 +341,7 @@ class TestBetaHedgeDirection:
             assert result["action"] in ("short", "sell", "hedge")
         if "notional" in result:
             # Negative notional = short hedge to offset positive beta
+<<<<<<< HEAD
             assert result["notional"] < 0, f"Expected negative (short) hedge, got {result['notional']}"
 
 
@@ -383,3 +449,8 @@ class TestPortfolioConfig:
         s = Settings()
         assert s.portfolio.sizing_method == "volatility_inverse"
         Settings._instance = None
+=======
+            assert result["notional"] < 0, (
+                f"Expected negative (short) hedge, got {result['notional']}"
+            )
+>>>>>>> origin/main

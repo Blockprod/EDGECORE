@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
+=======
+#!/usr/bin/env python3
+>>>>>>> origin/main
 """Fix encoding issues in test files."""
 
 from pathlib import Path

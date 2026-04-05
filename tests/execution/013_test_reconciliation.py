@@ -4,8 +4,19 @@ import math
 from datetime import UTC, datetime
 
 import pytest
+<<<<<<< HEAD
 
 from execution.reconciler import BrokerReconciler, ReconciliationDivergence, ReconciliationReport, ReconciliationStatus
+=======
+import math
+from datetime import datetime
+from execution.reconciler import (
+    BrokerReconciler,
+    ReconciliationStatus,
+    ReconciliationDivergence,
+    ReconciliationReport
+)
+>>>>>>> origin/main
 
 
 class TestReconciliationDivergence:
@@ -68,8 +79,17 @@ class TestBrokerReconcilerInit:
         """Test reconciler with positions and orders."""
         positions = {"AAPL": {"size": 1.0, "price": 50000}}
         orders = {"order_1": {"symbol": "AAPL", "quantity": 1}}
+<<<<<<< HEAD
 
         reconciler = BrokerReconciler(internal_equity=100000.0, internal_positions=positions, internal_orders=orders)
+=======
+        
+        reconciler = BrokerReconciler(
+            internal_equity=100000.0,
+            internal_positions=positions,
+            internal_orders=orders
+        )
+>>>>>>> origin/main
         assert len(reconciler.internal_positions) == 1
         assert len(reconciler.internal_orders) == 1
 
@@ -165,8 +185,16 @@ class TestPositionReconciliation:
     def test_positions_match_exact(self):
         """Test exact position matches."""
         positions = {"AAPL": {"size": 1.0}, "MSFT": {"size": 10.0}}
+<<<<<<< HEAD
         reconciler = BrokerReconciler(internal_equity=100000.0, internal_positions=positions)
 
+=======
+        reconciler = BrokerReconciler(
+            internal_equity=100000.0,
+            internal_positions=positions
+        )
+        
+>>>>>>> origin/main
         broker_positions = {"AAPL": {"size": 1.0}, "MSFT": {"size": 10.0}}
         matches, inconsistencies = reconciler.reconcile_positions(broker_positions)
 
@@ -205,8 +233,16 @@ class TestPositionReconciliation:
     def test_positions_missing_on_broker(self):
         """Test position missing on broker."""
         positions = {"AAPL": {"size": 1.0}}
+<<<<<<< HEAD
         reconciler = BrokerReconciler(internal_equity=100000.0, internal_positions=positions)
 
+=======
+        reconciler = BrokerReconciler(
+            internal_equity=100000.0,
+            internal_positions=positions
+        )
+        
+>>>>>>> origin/main
         broker_positions = {}
         matches, inconsistencies = reconciler.reconcile_positions(broker_positions)
 
@@ -237,8 +273,16 @@ class TestOrderReconciliation:
     def test_orders_match_exact(self):
         """Test exact order matches."""
         orders = {"order_1": {"symbol": "AAPL"}, "order_2": {"symbol": "MSFT"}}
+<<<<<<< HEAD
         reconciler = BrokerReconciler(internal_equity=100000.0, internal_orders=orders)
 
+=======
+        reconciler = BrokerReconciler(
+            internal_equity=100000.0,
+            internal_orders=orders
+        )
+        
+>>>>>>> origin/main
         broker_orders = {"order_1": {"symbol": "AAPL"}, "order_2": {"symbol": "MSFT"}}
         matches, inconsistencies = reconciler.reconcile_orders(broker_orders)
 
@@ -248,7 +292,11 @@ class TestOrderReconciliation:
     def test_orders_unknown_on_broker(self):
         """Test unknown order on broker."""
         reconciler = BrokerReconciler(internal_equity=100000.0)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         broker_orders = {"unknown_order": {"symbol": "AAPL"}}
         matches, inconsistencies = reconciler.reconcile_orders(broker_orders)
 
@@ -270,12 +318,25 @@ class TestFullReconciliation:
         """Test full reconciliation with all systems OK."""
         positions = {"AAPL": {"size": 1.0}}
         orders = {"order_1": {"symbol": "AAPL"}}
+<<<<<<< HEAD
 
         reconciler = BrokerReconciler(internal_equity=100000.0, internal_positions=positions, internal_orders=orders)
 
         broker_positions = {"AAPL": {"size": 1.0}}
         broker_orders = {"order_1": {"symbol": "AAPL"}}
 
+=======
+        
+        reconciler = BrokerReconciler(
+            internal_equity=100000.0,
+            internal_positions=positions,
+            internal_orders=orders
+        )
+        
+        broker_positions = {"AAPL": {"size": 1.0}}
+        broker_orders = {"order_1": {"symbol": "AAPL"}}
+        
+>>>>>>> origin/main
         report = reconciler.full_reconciliation(
             broker_equity=100000.0, broker_positions=broker_positions, broker_orders=broker_orders
         )
@@ -343,8 +404,16 @@ class TestRecoveryActions:
     def test_recovery_actions_position_mismatch(self):
         """Test recovery action for position mismatch."""
         positions = {"AAPL": {"size": 1.0}}
+<<<<<<< HEAD
         reconciler = BrokerReconciler(internal_equity=100000.0, internal_positions=positions)
 
+=======
+        reconciler = BrokerReconciler(
+            internal_equity=100000.0,
+            internal_positions=positions
+        )
+        
+>>>>>>> origin/main
         # Position missing on broker
         reconciler.full_reconciliation(broker_equity=100000.0, broker_positions={}, broker_orders={})
 
@@ -358,9 +427,20 @@ class TestReconciliationIntegration:
     def test_daily_startup_reconciliation(self):
         """Test typical daily startup reconciliation workflow."""
         # Internal state from last session
+<<<<<<< HEAD
         internal_positions = {"AAPL": {"size": 2.5, "entry_price": 40000}, "MSFT": {"size": 50.0, "entry_price": 2000}}
         internal_orders = {"pending_1": {"symbol": "AAPL", "status": "pending"}}
 
+=======
+        internal_positions = {
+            "AAPL": {"size": 2.5, "entry_price": 40000},
+            "MSFT": {"size": 50.0, "entry_price": 2000}
+        }
+        internal_orders = {
+            "pending_1": {"symbol": "AAPL", "status": "pending"}
+        }
+        
+>>>>>>> origin/main
         reconciler = BrokerReconciler(
             internal_equity=250000.0,
             internal_positions=internal_positions,
@@ -369,7 +449,14 @@ class TestReconciliationIntegration:
         )
 
         # Actual broker state
+<<<<<<< HEAD
         broker_positions = {"AAPL": {"size": 2.5, "entry_price": 40000}, "MSFT": {"size": 50.0, "entry_price": 2000}}
+=======
+        broker_positions = {
+            "AAPL": {"size": 2.5, "entry_price": 40000},
+            "MSFT": {"size": 50.0, "entry_price": 2000}
+        }
+>>>>>>> origin/main
         broker_orders = {}  # Order filled overnight
 
         report = reconciler.full_reconciliation(
@@ -388,14 +475,25 @@ class TestReconciliationIntegration:
         """Test detection of overnight gap/divergence."""
         # Internal thinks we have 200 shares
         internal_positions = {"AAPL": {"size": 2.0}}
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         reconciler = BrokerReconciler(
             internal_equity=100000.0, internal_positions=internal_positions, position_tolerance_units=0.1
         )
+<<<<<<< HEAD
 
         # But broker actually has 150 shares (partial fill unknown to system)
         broker_positions = {"AAPL": {"size": 1.5}}
 
+=======
+        
+        # But broker actually has 150 shares (partial fill unknown to system)
+        broker_positions = {"AAPL": {"size": 1.5}}
+        
+>>>>>>> origin/main
         report = reconciler.full_reconciliation(
             broker_equity=100000.0, broker_positions=broker_positions, broker_orders={}
         )

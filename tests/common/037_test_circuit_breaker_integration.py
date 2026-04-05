@@ -1,20 +1,35 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Circuit Breaker Integration Tests - Phase 2 Feature 2
 
 EDGECORE: Tests circuit breaker state machine, failure counting, and recovery
 for the IBKR-based trading system.
 """
 
+<<<<<<< HEAD
 from datetime import UTC, datetime, timedelta
 from unittest.mock import Mock
 
 import pytest
+=======
+import pytest
+from unittest.mock import Mock
+from datetime import datetime, timedelta, timezone
+>>>>>>> origin/main
 
 from common.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,
+<<<<<<< HEAD
     CircuitBreakerOpen,
     CircuitBreakerState,
+=======
+    CircuitBreakerState,
+    CircuitBreakerOpen,
+>>>>>>> origin/main
 )
 from common.errors import BrokerConnectionError
 
@@ -70,7 +85,10 @@ class TestCircuitBreakerClosedState:
     def test_single_failure_does_not_open(self, breaker):
         def _fail():
             raise ValueError("one failure")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         with pytest.raises(ValueError):
             breaker.call(_fail)
         assert breaker.state == CircuitBreakerState.CLOSED
@@ -78,7 +96,10 @@ class TestCircuitBreakerClosedState:
     def test_failure_count_increments(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         for _ in range(2):
             with pytest.raises(Exception):
                 breaker.call(_fail)
@@ -88,7 +109,10 @@ class TestCircuitBreakerClosedState:
     def test_success_after_failures_keeps_closed(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         with pytest.raises(Exception):
             breaker.call(_fail)
         result = breaker.call(lambda: "ok")
@@ -102,7 +126,10 @@ class TestCircuitBreakerOpening:
     def test_circuit_opens_after_threshold_failures(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         for _ in range(3):
             with pytest.raises(Exception):
                 breaker.call(_fail)
@@ -111,7 +138,10 @@ class TestCircuitBreakerOpening:
     def test_open_circuit_blocks_calls(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         for _ in range(3):
             with pytest.raises(Exception):
                 breaker.call(_fail)
@@ -128,7 +158,10 @@ class TestCircuitBreakerOpening:
     def test_failure_count_at_threshold(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         for _ in range(3):
             with pytest.raises(Exception):
                 breaker.call(_fail)
@@ -141,12 +174,19 @@ class TestCircuitBreakerHalfOpen:
     def test_circuit_transitions_to_half_open_after_timeout(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         for _ in range(3):
             with pytest.raises(Exception):
                 breaker.call(_fail)
         assert breaker.state == CircuitBreakerState.OPEN
+<<<<<<< HEAD
         breaker.metrics.state_change_time = datetime.now(UTC) - timedelta(seconds=61)
+=======
+        breaker.metrics.state_change_time = datetime.now(timezone.utc) - timedelta(seconds=61)
+>>>>>>> origin/main
         result = breaker.call(lambda: "test")
         assert result == "test"
         assert breaker.state in (CircuitBreakerState.HALF_OPEN, CircuitBreakerState.CLOSED)
@@ -154,7 +194,10 @@ class TestCircuitBreakerHalfOpen:
     def test_half_open_failure_returns_to_open(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         breaker.metrics.state = CircuitBreakerState.HALF_OPEN
         with pytest.raises(Exception):
             breaker.call(_fail)
@@ -174,12 +217,19 @@ class TestCircuitBreakerRecovery:
     def test_full_state_cycle(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         for _ in range(3):
             with pytest.raises(Exception):
                 breaker.call(_fail)
         assert breaker.state == CircuitBreakerState.OPEN
+<<<<<<< HEAD
         breaker.metrics.state_change_time = datetime.now(UTC) - timedelta(seconds=61)
+=======
+        breaker.metrics.state_change_time = datetime.now(timezone.utc) - timedelta(seconds=61)
+>>>>>>> origin/main
         breaker.call(lambda: "probe")
         breaker.call(lambda: "probe2")
         assert breaker.state == CircuitBreakerState.CLOSED
@@ -187,11 +237,18 @@ class TestCircuitBreakerRecovery:
     def test_circuit_can_reopen_after_recovery(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
         for _ in range(3):
             with pytest.raises(Exception):
                 breaker.call(_fail)
         breaker.metrics.state_change_time = datetime.now(UTC) - timedelta(seconds=61)
+=======
+        for _ in range(3):
+            with pytest.raises(Exception):
+                breaker.call(_fail)
+        breaker.metrics.state_change_time = datetime.now(timezone.utc) - timedelta(seconds=61)
+>>>>>>> origin/main
         for _ in range(2):
             breaker.call(lambda: "ok")
         assert breaker.state == CircuitBreakerState.CLOSED
@@ -273,7 +330,11 @@ class TestCircuitBreakerIBKRIntegration:
 
         assert breaker.state == CircuitBreakerState.OPEN
 
+<<<<<<< HEAD
         breaker.metrics.state_change_time = datetime.now(UTC) - timedelta(seconds=61)
+=======
+        breaker.metrics.state_change_time = datetime.now(timezone.utc) - timedelta(seconds=61)
+>>>>>>> origin/main
 
         for _ in range(2):
             breaker.call(lambda: "order_submitted")
@@ -292,7 +353,10 @@ class TestCircuitBreakerProperties:
     def test_failure_count_property(self, breaker):
         def _fail():
             raise Exception("fail")
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         assert breaker.failure_count == 0
         with pytest.raises(Exception):
             breaker.call(_fail)

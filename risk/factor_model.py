@@ -1,8 +1,16 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 2.1 ÔÇö Per-Pair Beta-Neutral Weights + Portfolio Beta Monitor.
 
 Two responsibilities:
 1. **Per-pair**: Adjust the hedge ratio so each pair trade has net beta Ôëê 0.
+=======
+"""
+Phase 2.1 — Per-Pair Beta-Neutral Weights + Portfolio Beta Monitor.
+
+Two responsibilities:
+1. **Per-pair**: Adjust the hedge ratio so each pair trade has net beta ≈ 0.
+>>>>>>> origin/main
    For a pair (long A, short B):
        w_B = beta_A / beta_B  (so beta_net = beta_A - w_B * beta_B = 0)
    This replaces dollar-neutral with beta-neutral at the pair level.
@@ -13,6 +21,10 @@ Two responsibilities:
 """
 
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+from typing import Dict, Optional, Tuple
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -59,9 +71,15 @@ class FactorModel:
         beta = fm.portfolio_beta(positions, prices_df, bar_idx, portfolio_value)
     """
 
+<<<<<<< HEAD
     def __init__(self, config: FactorModelConfig | None = None):
         self.config = config or FactorModelConfig()
         self._beta_cache: dict[str, float] = {}
+=======
+    def __init__(self, config: Optional[FactorModelConfig] = None):
+        self.config = config or FactorModelConfig()
+        self._beta_cache: Dict[str, float] = {}
+>>>>>>> origin/main
         self._bars_since_estimate: int = 0
         logger.info(
             "factor_model_initialized",
@@ -75,7 +93,11 @@ class FactorModel:
         prices_df: pd.DataFrame,
         symbol: str,
         bar_idx: int,
+<<<<<<< HEAD
     ) -> float | None:
+=======
+    ) -> Optional[float]:
+>>>>>>> origin/main
         """Estimate rolling beta of *symbol* to the benchmark.
 
         Uses OLS: R_sym = alpha + beta * R_bench + eps
@@ -86,8 +108,13 @@ class FactorModel:
             return None
 
         start = max(0, bar_idx - self.config.lookback)
+<<<<<<< HEAD
         sym_prices = prices_df[symbol].iloc[start : bar_idx + 1]
         bench_prices = prices_df[bench_col].iloc[start : bar_idx + 1]
+=======
+        sym_prices = prices_df[symbol].iloc[start:bar_idx + 1]
+        bench_prices = prices_df[bench_col].iloc[start:bar_idx + 1]
+>>>>>>> origin/main
 
         if len(sym_prices) < self.config.min_observations:
             return None
@@ -162,11 +189,19 @@ class FactorModel:
 
     def portfolio_beta(
         self,
+<<<<<<< HEAD
         positions: dict[str, dict],
         prices_df: pd.DataFrame,
         bar_idx: int,
         portfolio_value: float,
     ) -> tuple[float, bool]:
+=======
+        positions: Dict[str, dict],
+        prices_df: pd.DataFrame,
+        bar_idx: int,
+        portfolio_value: float,
+    ) -> Tuple[float, bool]:
+>>>>>>> origin/main
         """Compute the aggregate portfolio beta and check if within limits.
 
         Each position contributes: beta_sym * (notional_sym / portfolio_value).
@@ -182,6 +217,7 @@ class FactorModel:
             return 0.0, True
 
         total_beta = 0.0
+<<<<<<< HEAD
         for pair_key, pos in positions.items():
             sym1, sym2 = pos["sym1"], pos["sym2"]
             not_per_leg = pos["notional"] / 2.0
@@ -194,6 +230,22 @@ class FactorModel:
                 beta1 = 1.0
             if beta2 is None:
                 logger.debug("beta_fallback", pair=pair_key, symbol=sym2, default=1.0)
+=======
+        for _pair_key, pos in positions.items():
+            sym1, sym2 = pos["sym1"], pos["sym2"]
+            not_per_leg = pos["notional"] / 2.0
+
+            beta1 = self._beta_cache.get(sym1) or self.estimate_beta(
+                prices_df, sym1, bar_idx
+            )
+            beta2 = self._beta_cache.get(sym2) or self.estimate_beta(
+                prices_df, sym2, bar_idx
+            )
+
+            if beta1 is None:
+                beta1 = 1.0
+            if beta2 is None:
+>>>>>>> origin/main
                 beta2 = 1.0
 
             w1 = not_per_leg / portfolio_value
@@ -216,7 +268,11 @@ class FactorModel:
 
         return float(total_beta), is_neutral
 
+<<<<<<< HEAD
     def get_cached_betas(self) -> dict[str, float]:
+=======
+    def get_cached_betas(self) -> Dict[str, float]:
+>>>>>>> origin/main
         """Return the current beta cache for diagnostics."""
         return dict(self._beta_cache)
 

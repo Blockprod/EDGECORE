@@ -30,10 +30,17 @@ class ShutdownManager:
     - Thread-safe state management
     - Non-blocking signal handling
     """
+<<<<<<< HEAD
 
     # Class-level lock for thread safety (shared is OK for the lock itself)
     _global_lock = threading.Lock()
 
+=======
+    
+    # Class-level lock for thread safety (shared is OK for the lock itself)
+    _global_lock = threading.Lock()
+    
+>>>>>>> origin/main
     def __init__(self, data_dir: str = "data"):
         """
         Initialize shutdown manager.
@@ -42,9 +49,15 @@ class ShutdownManager:
             data_dir: Directory for trading_enabled file
         """
         # Instance-level state (not shared across instances)
+<<<<<<< HEAD
         self._shutdown_flag: bool = False
         self._shutdown_reason: str | None = None
 
+=======
+        self._shutdown_flag = False
+        self._shutdown_reason = None
+        
+>>>>>>> origin/main
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.trading_enabled_file = self.data_dir / "trading_enabled"
@@ -88,8 +101,13 @@ class ShutdownManager:
         try:
             signal.signal(signal.SIGINT, _sigint_handler)
             signal.signal(signal.SIGTERM, _sigterm_handler)
+<<<<<<< HEAD
             if hasattr(signal, "SIGUSR1"):
                 signal.signal(signal.SIGUSR1, _sigusr1_handler)  # type: ignore[attr-defined]
+=======
+            if hasattr(signal, 'SIGUSR1'):
+                signal.signal(signal.SIGUSR1, _sigusr1_handler)
+>>>>>>> origin/main
             else:
                 logger.info("sigusr1_not_available", reason="not supported on this platform")
             logger.debug("signal_handlers_registered")
@@ -110,8 +128,17 @@ class ShutdownManager:
             if not self._shutdown_flag:
                 self._shutdown_flag = True
                 self._shutdown_reason = reason
+<<<<<<< HEAD
                 logger.warning("shutdown_requested", reason=reason, timestamp=datetime.now().isoformat())
 
+=======
+                logger.warning(
+                    "shutdown_requested",
+                    reason=reason,
+                    timestamp=datetime.now().isoformat()
+                )
+    
+>>>>>>> origin/main
     def is_shutdown_requested(self) -> bool:
         """
         Check if shutdown has been requested (by any mechanism).
@@ -145,7 +172,11 @@ class ShutdownManager:
         """
         with ShutdownManager._global_lock:
             return self._shutdown_reason
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     def cleanup(self) -> None:
         """
         Cleanup on shutdown.

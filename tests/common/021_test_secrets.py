@@ -11,7 +11,11 @@ Covers:
 """
 
 import os
+<<<<<<< HEAD
 from datetime import UTC, datetime, timedelta
+=======
+from datetime import datetime, timedelta, timezone
+>>>>>>> origin/main
 from unittest.mock import Mock, patch
 
 import pytest
@@ -89,36 +93,80 @@ class TestSecretMetadata:
 
     def test_metadata_creation(self):
         """Test creating metadata."""
+<<<<<<< HEAD
         meta = SecretMetadata(name="TEST_KEY", created_at=datetime.now(UTC))
 
+=======
+        meta = SecretMetadata(
+            name="TEST_KEY",
+            created_at=datetime.now(timezone.utc)
+        )
+        
+>>>>>>> origin/main
         assert meta.name == "TEST_KEY"
         assert meta.access_count == 0
         assert meta.rotated_at is None
 
     def test_needs_rotation_false(self):
         """Test rotation not needed."""
+<<<<<<< HEAD
         meta = SecretMetadata(name="TEST_KEY", created_at=datetime.now(UTC), rotation_interval_days=90)
 
+=======
+        meta = SecretMetadata(
+            name="TEST_KEY",
+            created_at=datetime.now(timezone.utc),
+            rotation_interval_days=90
+        )
+        
+>>>>>>> origin/main
         assert meta.needs_rotation() is False
 
     def test_needs_rotation_true(self):
         """Test rotation needed."""
+<<<<<<< HEAD
         old_date = datetime.now(UTC) - timedelta(days=100)
         meta = SecretMetadata(name="TEST_KEY", created_at=old_date, rotation_interval_days=90)
 
+=======
+        old_date = datetime.now(timezone.utc) - timedelta(days=100)
+        meta = SecretMetadata(
+            name="TEST_KEY",
+            created_at=old_date,
+            rotation_interval_days=90
+        )
+        
+>>>>>>> origin/main
         assert meta.needs_rotation() is True
 
     def test_needs_rotation_no_interval(self):
         """Test no rotation tracking if interval not set."""
+<<<<<<< HEAD
         old_date = datetime.now(UTC) - timedelta(days=1000)
         meta = SecretMetadata(name="TEST_KEY", created_at=old_date)
 
+=======
+        old_date = datetime.now(timezone.utc) - timedelta(days=1000)
+        meta = SecretMetadata(
+            name="TEST_KEY",
+            created_at=old_date
+        )
+        
+>>>>>>> origin/main
         assert meta.needs_rotation() is False
 
     def test_mark_accessed(self):
         """Test access tracking."""
+<<<<<<< HEAD
         meta = SecretMetadata(name="TEST_KEY", created_at=datetime.now(UTC))
 
+=======
+        meta = SecretMetadata(
+            name="TEST_KEY",
+            created_at=datetime.now(timezone.utc)
+        )
+        
+>>>>>>> origin/main
         original_time = meta.last_accessed
         meta.mark_accessed()
 
@@ -127,6 +175,7 @@ class TestSecretMetadata:
 
     def test_mark_rotated(self):
         """Test rotation timestamp."""
+<<<<<<< HEAD
         meta = SecretMetadata(name="TEST_KEY", created_at=datetime.now(UTC))
 
         before_rotate = datetime.now(UTC)
@@ -134,6 +183,17 @@ class TestSecretMetadata:
         after_rotate = datetime.now(UTC)
 
         assert meta.rotated_at is not None
+=======
+        meta = SecretMetadata(
+            name="TEST_KEY",
+            created_at=datetime.now(timezone.utc)
+        )
+        
+        before_rotate = datetime.now(timezone.utc)
+        meta.mark_rotated()
+        after_rotate = datetime.now(timezone.utc)
+        
+>>>>>>> origin/main
         assert before_rotate <= meta.rotated_at <= after_rotate
 
 
@@ -246,7 +306,11 @@ class TestSecretsVault:
         vault = SecretsVault(auto_load_env=False)
 
         # Create old secret
+<<<<<<< HEAD
         old_date = datetime.now(UTC) - timedelta(days=100)
+=======
+        old_date = datetime.now(timezone.utc) - timedelta(days=100)
+>>>>>>> origin/main
         vault.store_secret("OLD_KEY", "value", rotation_interval_days=90)
         vault._metadata["OLD_KEY"].created_at = old_date
 
@@ -317,8 +381,13 @@ class TestSecretsVault:
 
         vault.store_secret("OLD_KEY", "value")
         # Manually backdate
+<<<<<<< HEAD
         vault._audit_log[0]["timestamp"] = datetime.now(UTC) - timedelta(days=10)
 
+=======
+        vault._audit_log[0]['timestamp'] = datetime.now(timezone.utc) - timedelta(days=10)
+        
+>>>>>>> origin/main
         vault.store_secret("NEW_KEY", "value")
 
         recent_logs = vault.get_audit_log(days=1)
@@ -332,6 +401,7 @@ class TestLoadFromEnvironment:
 
     def test_load_from_env_with_api_keys(self):
         """Test loading API keys from environment."""
+<<<<<<< HEAD
         with patch.dict(
             os.environ,
             {"IBKR_API_KEY": "test_key_123", "IBKR_SECRET_KEY": "test_secret_456", "OTHER_VAR": "not_secret"},
@@ -342,6 +412,19 @@ class TestLoadFromEnvironment:
             assert vault.has_secret("IBKR_SECRET_KEY")
             assert vault.has_secret("OTHER_VAR") is False
 
+=======
+        with patch.dict(os.environ, {
+            'IBKR_API_KEY': 'test_key_123',
+            'IBKR_SECRET_KEY': 'test_secret_456',
+            'OTHER_VAR': 'not_secret'
+        }):
+            vault = SecretsVault(auto_load_env=True)
+            
+            assert vault.has_secret('IBKR_API_KEY')
+            assert vault.has_secret('IBKR_SECRET_KEY')
+            assert vault.has_secret('OTHER_VAR') is False
+    
+>>>>>>> origin/main
     def test_load_with_prefix(self):
         """Test loading with prefix filter."""
         with patch.dict(os.environ, {"TRADING_API_KEY": "key1", "TRADING_PASSWORD": "pass1", "OTHER_API_KEY": "key2"}):

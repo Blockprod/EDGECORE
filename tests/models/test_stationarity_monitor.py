@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Sprint 2.1 ÔÇô Stationarity Monitor tests.
+=======
+"""
+Sprint 2.1 – Stationarity Monitor tests.
+>>>>>>> origin/main
 
 Proves M-01 fix:
   - StationarityMonitor detects stationary vs non-stationary spread
@@ -11,6 +16,7 @@ Proves M-01 fix:
 Run: pytest tests/test_stationarity_monitor.py -v
 """
 
+<<<<<<< HEAD
 import numpy as np
 import pandas as pd
 import pytest
@@ -20,11 +26,26 @@ from models.stationarity_monitor import (
     StationarityMonitor,
 )
 
+=======
+import pytest
+import numpy as np
+import pandas as pd
+
+from models.stationarity_monitor import (
+    StationarityMonitor,
+    StationarityConfig,
+)
+
+
+>>>>>>> origin/main
 # ========================================================================
 # Helpers
 # ========================================================================
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 def _make_stationary_spread(n=200, seed=42):
     """Mean-reverting OU-like spread (stationary)."""
     np.random.seed(seed)
@@ -51,10 +72,16 @@ def _make_regime_break(n=300, break_at=200, seed=42):
 
 
 # ========================================================================
+<<<<<<< HEAD
 # Unit tests ÔÇô StationarityMonitor
 # ========================================================================
 
 
+=======
+# Unit tests – StationarityMonitor
+# ========================================================================
+
+>>>>>>> origin/main
 class TestStationarityMonitorBasic:
     """Core logic tests."""
 
@@ -75,7 +102,11 @@ class TestStationarityMonitorBasic:
         assert pval >= 0.10
 
     def test_insufficient_data_returns_stationary(self):
+<<<<<<< HEAD
         """Short series Ôåô conservatively returns stationary."""
+=======
+        """Short series ↓ conservatively returns stationary."""
+>>>>>>> origin/main
         mon = StationarityMonitor()
         spread = pd.Series([1.0, 2.0, 3.0])
         is_ok, pval = mon.check(spread)
@@ -83,7 +114,11 @@ class TestStationarityMonitorBasic:
         assert pval == 0.0
 
     def test_zero_variance_returns_non_stationary(self):
+<<<<<<< HEAD
         """Constant spread (zero variance) Ôåô non-stationary."""
+=======
+        """Constant spread (zero variance) ↓ non-stationary."""
+>>>>>>> origin/main
         mon = StationarityMonitor()
         spread = pd.Series(np.ones(100))
         is_ok, pval = mon.check(spread)
@@ -109,7 +144,11 @@ class TestStationarityConfig:
         cfg = StationarityConfig(alert_pvalue=0.05)
         mon = StationarityMonitor(config=cfg)
         spread = _make_stationary_spread(200)
+<<<<<<< HEAD
         is_ok, _pval = mon.check(spread)
+=======
+        is_ok, pval = mon.check(spread)
+>>>>>>> origin/main
         # For a strong OU process, should still pass at 0.05
         assert is_ok is True
 
@@ -120,13 +159,21 @@ class TestStationarityConfig:
         # Some random walks will have p < 0.50
         spread = _make_random_walk(200, seed=99)
         is_ok, pval = mon.check(spread)
+<<<<<<< HEAD
         # We don't assert the outcome ÔÇô just that it runs
+=======
+        # We don't assert the outcome – just that it runs
+>>>>>>> origin/main
         assert isinstance(is_ok, bool)
         assert 0.0 <= pval <= 1.0
 
 
 class TestRegimeBreakDetection:
+<<<<<<< HEAD
     """Key test from DoD: regime break Ôåô stationarity loss detected."""
+=======
+    """Key test from DoD: regime break ↓ stationarity loss detected."""
+>>>>>>> origin/main
 
     def test_regime_break_detected_after_bar_200(self):
         """Stationary spread for 200 bars, then random walk.
@@ -158,7 +205,13 @@ class TestRegimeBreakDetection:
 
         assert first_alarm is not None, "Monitor never raised alarm after break"
         # Should fire within window bars after the break
+<<<<<<< HEAD
         assert first_alarm <= 150 + 60 + 20, f"Alarm at bar {first_alarm}, expected within ~80 bars after break at 150"
+=======
+        assert first_alarm <= 150 + 60 + 20, (
+            f"Alarm at bar {first_alarm}, expected within ~80 bars after break at 150"
+        )
+>>>>>>> origin/main
 
 
 class TestStationarityMonitorPerformance:

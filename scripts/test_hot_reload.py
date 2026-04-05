@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python
+=======
+#!/usr/bin/env python
+>>>>>>> origin/main
 """Test hot-reload configuration feature."""
 import os
 import sys

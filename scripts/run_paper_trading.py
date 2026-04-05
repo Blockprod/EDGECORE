@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python
 """EDGECORE Paper Trading ÔÇö v22 Optimized Parameters.
+=======
+#!/usr/bin/env python
+"""EDGECORE Paper Trading — v22 Optimized Parameters.
+>>>>>>> origin/main
 
 Launches a paper trading session using the validated v22 configuration:
     - entry_z_score = 1.5 (more entries vs default 2.0)
@@ -9,7 +14,11 @@ Launches a paper trading session using the validated v22 configuration:
     - max_portfolio_heat = 4.0 (up to 4 concurrent positions)
 
 Connects to IB Gateway on port 4002 (paper account).
+<<<<<<< HEAD
 Runs daily bars ÔÇö pair rediscovery every 24h.
+=======
+Runs daily bars — pair rediscovery every 24h.
+>>>>>>> origin/main
 Displays premium Rich dashboard with real-time metrics.
 
 Usage:
@@ -21,7 +30,10 @@ Press Ctrl+C to stop gracefully (closes all positions).
 """
 
 import argparse
+<<<<<<< HEAD
 import logging
+=======
+>>>>>>> origin/main
 import sys
 import os
 import time
@@ -29,12 +41,16 @@ import signal
 import threading
 from datetime import datetime
 
+<<<<<<< HEAD
 _script_log = logging.getLogger(__name__)
 
+=======
+>>>>>>> origin/main
 # Ensure project root is on path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
+<<<<<<< HEAD
 # ÔöÇÔöÇ Universe (same 31 symbols as backtest v22) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
 SYMBOLS = [
@@ -103,11 +119,39 @@ SECTOR_MAP = {
     "NEE": "utilities",
     "DUK": "utilities",
     "SO": "utilities",
+=======
+# ── Universe (same 31 symbols as backtest v22) ──────────────────────────
+
+SYMBOLS = [
+    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
+    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
+    "XOM", "CVX", "COP", "EOG",
+    "KO", "PEP", "PG", "CL", "WMT",
+    "CAT", "HON", "DE", "GE", "RTX",
+    "NEE", "DUK", "SO",
+]
+
+SECTOR_MAP = {
+    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
+    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AVGO": "technology",
+    "JPM": "financials", "GS": "financials", "BAC": "financials",
+    "MS": "financials", "WFC": "financials", "C": "financials",
+    "SCHW": "financials",
+    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
+    "KO": "consumer_staples", "PEP": "consumer_staples",
+    "PG": "consumer_staples", "CL": "consumer_staples",
+    "WMT": "consumer_staples",
+    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
+    "GE": "industrials", "RTX": "industrials",
+    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
+>>>>>>> origin/main
 }
 
 
 def main():
     parser = argparse.ArgumentParser(description="EDGECORE Paper Trading (v22)")
+<<<<<<< HEAD
     parser.add_argument("--capital", type=float, default=100_000, help="Starting virtual capital (EUR)")
     parser.add_argument("--interval", type=int, default=86400, help="Bar interval in seconds (86400 = daily)")
     parser.add_argument("--rediscovery", type=int, default=24, help="Pair rediscovery interval in hours")
@@ -117,6 +161,23 @@ def main():
     args = parser.parse_args()
 
     # ÔöÇÔöÇ 1. Set v22 strategy parameters in settings singleton ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    parser.add_argument("--capital", type=float, default=100_000,
+                        help="Starting virtual capital (EUR)")
+    parser.add_argument("--interval", type=int, default=86400,
+                        help="Bar interval in seconds (86400 = daily)")
+    parser.add_argument("--rediscovery", type=int, default=24,
+                        help="Pair rediscovery interval in hours")
+    parser.add_argument("--alloc", type=float, default=90.0,
+                        help="Allocation per pair (%% of capital)")
+    parser.add_argument("--heat", type=float, default=4.0,
+                        help="Max portfolio heat (concurrent notional / capital)")
+    parser.add_argument("--max-positions", type=int, default=4,
+                        help="Max concurrent pair positions")
+    args = parser.parse_args()
+
+    # ── 1. Set v22 strategy parameters in settings singleton ─────────
+>>>>>>> origin/main
     from config.settings import get_settings
 
     settings = get_settings()
@@ -138,7 +199,11 @@ def main():
     # Ensure paper mode
     settings.execution.use_sandbox = True
 
+<<<<<<< HEAD
     # ÔöÇÔöÇ 2. Configure and launch paper trading runner ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ── 2. Configure and launch paper trading runner ─────────────────
+>>>>>>> origin/main
     from live_trading.runner import TradingLoopConfig
     from live_trading.paper_runner import PaperTradingRunner
 
@@ -154,6 +219,7 @@ def main():
         mode="paper",
     )
 
+<<<<<<< HEAD
     # ÔöÇÔöÇ 3. Print configuration banner ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     n_intra = sum(
         1 for i, s1 in enumerate(SYMBOLS) for s2 in SYMBOLS[i + 1 :] if SECTOR_MAP.get(s1) == SECTOR_MAP.get(s2)
@@ -161,6 +227,17 @@ def main():
 
     print("=" * 60)
     print("  EDGECORE PAPER TRADING ÔÇö v22 Configuration")
+=======
+    # ── 3. Print configuration banner ────────────────────────────────
+    n_intra = sum(
+        1 for i, s1 in enumerate(SYMBOLS)
+        for s2 in SYMBOLS[i + 1:]
+        if SECTOR_MAP.get(s1) == SECTOR_MAP.get(s2)
+    )
+
+    print("=" * 60)
+    print("  EDGECORE PAPER TRADING — v22 Configuration")
+>>>>>>> origin/main
     print("=" * 60)
     print(f"  Capital:      {args.capital:,.0f} EUR (paper)")
     print(f"  Symbols:      {len(SYMBOLS)} across 6 sectors")
@@ -170,16 +247,26 @@ def main():
     print(f"  Allocation:   {args.alloc}% per pair")
     print(f"  Heat limit:   {args.heat:.0f}x ({args.heat * 100:.0f}%)")
     print(f"  Max pos:      {args.max_positions}")
+<<<<<<< HEAD
     print(f"  Z-score:      entry={strat.entry_z_score}, exit={strat.exit_z_score}, stop={strat.z_score_stop}")
     print(f"  Correlation:  min={strat.min_correlation}")
     print(f"  Half-life:    max={strat.max_half_life}")
     print(f"  FDR q-level:  {strat.fdr_q_level}")
     print("  IB Gateway:   127.0.0.1:4002 (paper)")
+=======
+    print(f"  Z-score:      entry={strat.entry_z_score}, "
+          f"exit={strat.exit_z_score}, stop={strat.z_score_stop}")
+    print(f"  Correlation:  min={strat.min_correlation}")
+    print(f"  Half-life:    max={strat.max_half_life}")
+    print(f"  FDR q-level:  {strat.fdr_q_level}")
+    print(f"  IB Gateway:   127.0.0.1:4002 (paper)")
+>>>>>>> origin/main
     print("=" * 60)
     print()
     print("[EDGECORE] Starting paper trading... Press Ctrl+C to stop.")
     print()
 
+<<<<<<< HEAD
     # ÔöÇÔöÇ 4. Launch with premium Rich dashboard ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     from rich.console import Console
     from rich.live import Live
@@ -210,6 +297,31 @@ def main():
             interval=args.interval,
             status="INITIALIZING",
             sector_map=SECTOR_MAP,
+=======
+    # ── 4. Launch with premium Rich dashboard ────────────────────────
+    from rich.console import Console
+    from rich.live import Live
+    from monitoring.rich_dashboard import build_dashboard
+    
+    runner = PaperTradingRunner(config)
+    _rich_console = Console(highlight=False)
+    
+    # Ctrl+C handler for Windows compatibility
+    _stop_event = threading.Event()
+    def _sigint_handler(sig, frame):
+        _stop_event.set()
+    signal.signal(signal.SIGINT, _sigint_handler)
+    
+    tick_count = 0
+    start = datetime.now()
+    tick_elapsed = 0.0
+    
+    with Live(
+        build_dashboard(
+            runner, tick_count=0, tick_elapsed=0,
+            start_time=start, interval=args.interval,
+            status="INITIALIZING", sector_map=SECTOR_MAP,
+>>>>>>> origin/main
         ),
         console=_rich_console,
         screen=True,
@@ -219,6 +331,7 @@ def main():
         while not _stop_event.is_set():
             tick_count += 1
             tick_start = datetime.now()
+<<<<<<< HEAD
 
             # Update dashboard: COMPUTING state
             live.update(
@@ -238,12 +351,27 @@ def main():
             runner._tick()
             tick_elapsed = (datetime.now() - tick_start).total_seconds()
 
+=======
+            
+            # Update dashboard: COMPUTING state
+            live.update(build_dashboard(
+                runner, tick_count=tick_count, tick_elapsed=tick_elapsed,
+                start_time=start, interval=args.interval, status="COMPUTING", sector_map=SECTOR_MAP,
+            ))
+            live.refresh()
+            
+            # Execute one tick
+            runner._tick()
+            tick_elapsed = (datetime.now() - tick_start).total_seconds()
+            
+>>>>>>> origin/main
             # Countdown with real-time dashboard updates
             remaining = args.interval
             last_render = 0.0
             while remaining >= 0 and not _stop_event.is_set():
                 now_t = time.monotonic()
                 if now_t - last_render >= 1.0:
+<<<<<<< HEAD
                     live.update(
                         build_dashboard(
                             runner,
@@ -256,10 +384,19 @@ def main():
                             sector_map=SECTOR_MAP,
                         )
                     )
+=======
+                    live.update(build_dashboard(
+                        runner, tick_count=tick_count,
+                        tick_elapsed=tick_elapsed,
+                        start_time=start, interval=args.interval,
+                        status="RUNNING", next_tick_in=remaining, sector_map=SECTOR_MAP,
+                    ))
+>>>>>>> origin/main
                     live.refresh()
                     last_render = now_t
                     remaining -= 1
                 time.sleep(0.1)
+<<<<<<< HEAD
 
         # Show STOPPED state briefly
         live.update(
@@ -277,6 +414,19 @@ def main():
         live.refresh()
         time.sleep(2)  # Show stopped message for 2 seconds
 
+=======
+        
+        # Show STOPPED state briefly
+        live.update(build_dashboard(
+            runner, tick_count=tick_count,
+            tick_elapsed=tick_elapsed,
+            start_time=start, interval=args.interval,
+            status="STOPPED", next_tick_in=0, sector_map=SECTOR_MAP,
+        ))
+        live.refresh()
+        time.sleep(2)  # Show stopped message for 2 seconds
+    
+>>>>>>> origin/main
     print()
 
 

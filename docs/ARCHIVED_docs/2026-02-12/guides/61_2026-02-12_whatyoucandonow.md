@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿­ƒÄ» What You Can Do Now
+=======
+🎯 What You Can Do Now
+>>>>>>> origin/main
 
 Option 1: Deploy to Production (Recommended)
 System is production-ready

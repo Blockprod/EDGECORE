@@ -1,17 +1,25 @@
+<<<<<<< HEAD
 ﻿name: EDGECORE CI
+=======
+name: CI
+>>>>>>> origin/main
 
 on:
   push:
     branches:
       - main
+<<<<<<< HEAD
       - lfs-migration-preview
       - fix/**
       - feat/**
       - chore/**
+=======
+>>>>>>> origin/main
   pull_request:
     branches:
       - main
 
+<<<<<<< HEAD
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -78,6 +86,28 @@ jobs:
 
       - name: Cache pip
         uses: actions/cache@v5
+=======
+jobs:
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - 3.11
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+>>>>>>> origin/main
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -86,6 +116,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+<<<<<<< HEAD
           pip install ruff pyright "cython>=3.0,<4.0" numpy pip-audit
           python -m pip install -e . || true
 
@@ -176,3 +207,11 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/edgecore:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+=======
+          # Install package in editable mode if present
+          python -m pip install -e . || true
+
+      - name: Run tests
+        run: |
+          pytest -q
+>>>>>>> origin/main

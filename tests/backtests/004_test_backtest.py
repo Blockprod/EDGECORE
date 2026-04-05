@@ -1,6 +1,10 @@
 ﻿import pandas as pd
 import pytest
+<<<<<<< HEAD
 
+=======
+import pandas as pd
+>>>>>>> origin/main
 from backtests.metrics import BacktestMetrics
 
 
@@ -25,7 +29,13 @@ def test_backtest_metrics_from_returns():
     assert metrics.sharpe_ratio > 0  # Positive returns should have positive Sharpe
     assert metrics.max_drawdown <= 0  # Drawdown should be negative or zero
     # Sprint 3.4: Tighten win_rate and profit_factor to meaningful ranges
+<<<<<<< HEAD
     assert 0.5 <= metrics.win_rate <= 1.0, f"Win rate {metrics.win_rate:.2f} should be >=0.5 for mostly winning trades"
+=======
+    assert 0.5 <= metrics.win_rate <= 1.0, (
+        f"Win rate {metrics.win_rate:.2f} should be >=0.5 for mostly winning trades"
+    )
+>>>>>>> origin/main
     assert metrics.profit_factor > 1.0, (
         f"Profit factor {metrics.profit_factor:.2f} should be >1 for net-positive trades"
     )
@@ -96,9 +106,15 @@ def test_backtest_metrics_sharpe_calculation():
     metrics = BacktestMetrics.from_returns(
         returns=returns, trades=trades, start_date="2023-01-01", end_date="2023-04-10"
     )
+<<<<<<< HEAD
 
     # Sprint 3.4: This test claims to test Sharpe  - actually CHECK the Sharpe value
     # With constant 1% daily returns, std Ôëê 0 -> Sharpe should be very high or 0
+=======
+    
+    # Sprint 3.4: This test claims to test Sharpe  - actually CHECK the Sharpe value
+    # With constant 1% daily returns, std ≈ 0 -> Sharpe should be very high or 0
+>>>>>>> origin/main
     # (depending on implementation: divides by near-zero std)
     assert metrics.total_return > 0.0
     # The Sharpe either goes to inf (capped) or 0  - it should not be negative

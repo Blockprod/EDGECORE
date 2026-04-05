@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Z-Score Calculator ÔÇö Spread z-score with adaptive lookback.
+=======
+"""
+Z-Score Calculator — Spread z-score with adaptive lookback.
+>>>>>>> origin/main
 
 Computes rolling z-scores for pair trading spreads with:
     - Half-life adaptive lookback window
@@ -7,8 +12,13 @@ Computes rolling z-scores for pair trading spreads with:
     - Bounded z-score output for robustness
 
 The adaptive lookback logic:
+<<<<<<< HEAD
     - Fast mean-reversion (HL Ôëñ 10d):  lookback = 3 ├ù HL
     - Normal (10d < HL Ôëñ 60d):         lookback = linear interpolation ÔåÆ HL
+=======
+    - Fast mean-reversion (HL ≤ 10d):  lookback = 3 × HL
+    - Normal (10d < HL ≤ 60d):         lookback = linear interpolation → HL
+>>>>>>> origin/main
     - Slow (HL > 60d):                 capped at 60
 
 This ensures the z-score window captures the correct frequency
@@ -17,6 +27,11 @@ of mean reversion for each pair.
 
 from __future__ import annotations
 
+<<<<<<< HEAD
+=======
+from typing import Optional
+
+>>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -54,8 +69,13 @@ class ZScoreCalculator:
     def compute(
         self,
         spread: pd.Series,
+<<<<<<< HEAD
         half_life: float | None = None,
         lookback: int | None = None,
+=======
+        half_life: Optional[float] = None,
+        lookback: Optional[int] = None,
+>>>>>>> origin/main
     ) -> pd.Series:
         """
         Compute rolling z-score of *spread*.
@@ -90,8 +110,13 @@ class ZScoreCalculator:
 
     def _resolve_lookback(
         self,
+<<<<<<< HEAD
         half_life: float | None,
         explicit: int | None,
+=======
+        half_life: Optional[float],
+        explicit: Optional[int],
+>>>>>>> origin/main
     ) -> int:
         """Determine lookback window from half-life or explicit override."""
         if explicit is not None:

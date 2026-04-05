@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 ﻿# EDGECORE ÔÇö Equity Production Configuration
 # Market: US Equities via Interactive Brokers (LIVE)
 # Annualisation: 252 trading days
 # audit 2026-02-22 ÔÇö equity migration (Option A: 100% US equities via IBKR)
+=======
+# EDGECORE — Equity Production Configuration
+# Market: US Equities via Interactive Brokers (LIVE)
+# Annualisation: 252 trading days
+# audit 2026-02-22 — equity migration (Option A: 100% US equities via IBKR)
+>>>>>>> origin/main
 #
 # Production config is more conservative than dev:
 #   - Tighter risk limits
@@ -16,7 +23,11 @@ market:
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
+<<<<<<< HEAD
   exit_z_score: 0.5                 # R-8 fix: was 0.0 ÔåÆ whipsaw at mean-crossing
+=======
+  exit_z_score: 0.5                 # R-8 fix: was 0.0 → whipsaw at mean-crossing
+>>>>>>> origin/main
   min_correlation: 0.7
   max_half_life: 60
   use_kalman: true
@@ -150,7 +161,11 @@ risk:
   max_daily_loss_pct: 0.015       # 1.5% daily drawdown circuit breaker
   max_leverage: 1.5
   max_drawdown_pct: 0.08          # 8% portfolio drawdown hard stop
+<<<<<<< HEAD
   spread_correlation_max: 0.40    # R-6: max |¤ü| between spreads
+=======
+  spread_correlation_max: 0.40    # R-6: max |ρ| between spreads
+>>>>>>> origin/main
 
 # Operational constants (F-7)
 trading:

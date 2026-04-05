@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Sprint 4.1 ÔÇô Johansen multi-variate cointegration test.
+=======
+"""
+Sprint 4.1 – Johansen multi-variate cointegration test.
+>>>>>>> origin/main
 
 Complements Engle-Granger (bivariate) with:
 - Cointegration rank detection (how many linear relationships)
@@ -13,8 +18,13 @@ Usage:
         print(f"Rank: {result['rank']}")
 """
 
+<<<<<<< HEAD
 import numpy as np
 import pandas as pd
+=======
+import pandas as pd
+from typing import Optional
+>>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -51,8 +61,13 @@ class JohansenCointegrationTest:
     def test(
         self,
         data: pd.DataFrame,
+<<<<<<< HEAD
         det_order: int | None = None,
         k_ar_diff: int | None = None,
+=======
+        det_order: Optional[int] = None,
+        k_ar_diff: Optional[int] = None,
+>>>>>>> origin/main
     ) -> dict:
         """
         Run the Johansen cointegration test on a multivariate dataset.
@@ -65,6 +80,7 @@ class JohansenCointegrationTest:
 
         Returns:
             dict with keys:
+<<<<<<< HEAD
                 rank: int ÔÇô estimated cointegration rank (0 = none)
                 trace_statistics: list[float] ÔÇô trace test statistics
                 trace_critical_values: dict ÔÇô {90, 95, 99} critical values
@@ -74,6 +90,17 @@ class JohansenCointegrationTest:
                 eigenvalues: list[float] ÔÇô eigenvalues
                 is_cointegrated: bool ÔÇô True if rank >= 1
                 error: str or None ÔÇô error message if test failed
+=======
+                rank: int – estimated cointegration rank (0 = none)
+                trace_statistics: list[float] – trace test statistics
+                trace_critical_values: dict – {90, 95, 99} critical values
+                max_eig_statistics: list[float] – max-eigenvalue statistics
+                max_eig_critical_values: dict – {90, 95, 99} critical values
+                eigenvectors: list[list[float]] – cointegrating vectors
+                eigenvalues: list[float] – eigenvalues
+                is_cointegrated: bool – True if rank >= 1
+                error: str or None – error message if test failed
+>>>>>>> origin/main
         """
         det_order = det_order if det_order is not None else self.det_order
         k_ar_diff = k_ar_diff if k_ar_diff is not None else self.k_ar_diff
@@ -83,6 +110,7 @@ class JohansenCointegrationTest:
             return self._error_result("Input must be a pandas DataFrame")
 
         if data.shape[1] < 2:
+<<<<<<< HEAD
             return self._error_result(f"Need at least 2 columns, got {data.shape[1]}")
 
         min_rows = max(20, 2 * k_ar_diff + data.shape[1] + 5)
@@ -94,21 +122,53 @@ class JohansenCointegrationTest:
 
         if np.any(np.asarray(data.std()) < 1e-10):
             return self._error_result("One or more series have near-zero variance")
+=======
+            return self._error_result(
+                f"Need at least 2 columns, got {data.shape[1]}"
+            )
+
+        min_rows = max(20, 2 * k_ar_diff + data.shape[1] + 5)
+        if len(data) < min_rows:
+            return self._error_result(
+                f"Need at least {min_rows} rows, got {len(data)}"
+            )
+
+        if data.isna().any().any():
+            return self._error_result("Data contains NaN values")
+
+        if (data.std() < 1e-10).any():
+            return self._error_result(
+                "One or more series have near-zero variance"
+            )
+>>>>>>> origin/main
 
         # --- Run Johansen test ---
         try:
             from statsmodels.tsa.vector_ar.vecm import coint_johansen
 
+<<<<<<< HEAD
             result = coint_johansen(data.values, det_order=det_order, k_ar_diff=k_ar_diff)
+=======
+            result = coint_johansen(
+                data.values, det_order=det_order, k_ar_diff=k_ar_diff
+            )
+>>>>>>> origin/main
         except Exception as e:
             logger.error("johansen_test_failed", error=str(e)[:200])
             return self._error_result(f"Johansen test failed: {str(e)[:100]}")
 
         # --- Extract results ---
+<<<<<<< HEAD
         trace_stat = result.lr1  # Trace statistics
         trace_crit = result.cvt  # Trace critical values (90%, 95%, 99%)
         max_eig_stat = result.lr2  # Max eigenvalue statistics
         max_eig_crit = result.cvm  # Max-eig critical values (90%, 95%, 99%)
+=======
+        trace_stat = result.lr1          # Trace statistics
+        trace_crit = result.cvt          # Trace critical values (90%, 95%, 99%)
+        max_eig_stat = result.lr2        # Max eigenvalue statistics
+        max_eig_crit = result.cvm        # Max-eig critical values (90%, 95%, 99%)
+>>>>>>> origin/main
 
         # Map significance level to critical value column index
         # cvt columns: 90%, 95%, 99%

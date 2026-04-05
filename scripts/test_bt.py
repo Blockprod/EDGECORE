@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿from backtests.runner import BacktestRunner
+=======
+from backtests.runner import BacktestRunner
+>>>>>>> origin/main
 from config.settings import get_settings
 import sys
 import traceback
@@ -30,7 +34,11 @@ try:
     sys.stdout.flush()
     
 except Exception as e:
+<<<<<<< HEAD
     print(f"\nÔØî ERROR: {e}", flush=True)
+=======
+    print(f"\n❌ ERROR: {e}", flush=True)
+>>>>>>> origin/main
     traceback.print_exc()
     sys.exit(1)
 

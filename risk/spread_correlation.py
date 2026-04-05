@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Spread Correlation Guard ÔÇô Sprint 1.6 (fixes C-06: correlated positions).
+=======
+"""
+Spread Correlation Guard – Sprint 1.6 (fixes C-06: correlated positions).
+>>>>>>> origin/main
 
 Problem
 -------
@@ -16,9 +21,15 @@ over a rolling window.  If **any** correlation exceeds the threshold
 (default 0.60), the entry is **rejected**.
 
     ========================  ============
+<<<<<<< HEAD
     max(|¤ü| with existing)     Decision
     ========================  ============
     Ôëñ 0.40                     ALLOW entry
+=======
+    max(|ρ| with existing)     Decision
+    ========================  ============
+    ≤ 0.40                     ALLOW entry
+>>>>>>> origin/main
     > 0.40                     REJECT entry
     ========================  ============
 
@@ -27,6 +38,10 @@ concentrated drawdowns from correlated mean-reversion failures.
 """
 
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+from typing import Dict, Optional, Tuple
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -68,9 +83,15 @@ class SpreadCorrelationGuard:
         guard.remove_spread("AAPL_MSFT")
     """
 
+<<<<<<< HEAD
     def __init__(self, config: SpreadCorrelationConfig | None = None):
         self.config = config or SpreadCorrelationConfig()
         self._spreads: dict[str, pd.Series] = {}
+=======
+    def __init__(self, config: Optional[SpreadCorrelationConfig] = None):
+        self.config = config or SpreadCorrelationConfig()
+        self._spreads: Dict[str, pd.Series] = {}
+>>>>>>> origin/main
         logger.info(
             "spread_correlation_guard_initialized",
             max_correlation=self.config.max_correlation,
@@ -98,7 +119,11 @@ class SpreadCorrelationGuard:
         self,
         candidate_key: str,
         candidate_spread: pd.Series,
+<<<<<<< HEAD
     ) -> tuple[bool, str | None]:
+=======
+    ) -> Tuple[bool, Optional[str]]:
+>>>>>>> origin/main
         """Decide whether *candidate_key* may enter.
 
         Args:
@@ -109,7 +134,11 @@ class SpreadCorrelationGuard:
             (allowed: bool, reject_reason: str | None)
         """
         if not self._spreads:
+<<<<<<< HEAD
             return True, None  # No existing positions Ôåô always allowed
+=======
+            return True, None  # No existing positions ↓ always allowed
+>>>>>>> origin/main
 
         worst_corr = 0.0
         worst_pair = ""
@@ -161,7 +190,11 @@ class SpreadCorrelationGuard:
         self,
         s1: pd.Series,
         s2: pd.Series,
+<<<<<<< HEAD
     ) -> float | None:
+=======
+    ) -> Optional[float]:
+>>>>>>> origin/main
         """Pearson correlation over the overlapping tail.
 
         Returns ``None`` if fewer than ``min_overlap_bars`` observations

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Ornstein-Uhlenbeck Signal ÔÇö Expected reversion velocity for pair trading.
+=======
+"""
+Ornstein-Uhlenbeck Signal — Expected reversion velocity for pair trading.
+>>>>>>> origin/main
 
 Instead of a static z-score threshold, this models the spread as an OU
 process: dX = theta*(mu - X)*dt + sigma*dW
@@ -16,6 +21,10 @@ Phase 1, Etape 1.1.
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+from typing import Optional
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -27,10 +36,16 @@ logger = get_logger(__name__)
 @dataclass
 class OUParams:
     """Estimated Ornstein-Uhlenbeck parameters."""
+<<<<<<< HEAD
 
     theta: float  # Mean-reversion speed (1/days)
     mu: float  # Long-run mean
     sigma: float  # Diffusion coefficient
+=======
+    theta: float      # Mean-reversion speed (1/days)
+    mu: float         # Long-run mean
+    sigma: float      # Diffusion coefficient
+>>>>>>> origin/main
     half_life: float  # ln(2) / theta
 
 
@@ -68,7 +83,11 @@ class OUSignalGenerator:
         self.min_theta = min_theta
         self.max_score = max_score
 
+<<<<<<< HEAD
     def estimate_params(self, spread: pd.Series) -> OUParams | None:
+=======
+    def estimate_params(self, spread: pd.Series) -> Optional[OUParams]:
+>>>>>>> origin/main
         """Estimate OU parameters from the spread series via AR(1) regression.
 
         Uses the last `self.lookback` observations.
@@ -80,16 +99,26 @@ class OUSignalGenerator:
         if len(s) < max(20, self.lookback // 2):
             return None
 
+<<<<<<< HEAD
         s = s.iloc[-self.lookback :]
         x_lag = s.values[:-1]
         dx = np.diff(np.asarray(s, dtype=float))
+=======
+        s = s.iloc[-self.lookback:]
+        x_lag = s.values[:-1]
+        dx = np.diff(s.values)
+>>>>>>> origin/main
 
         # OLS: dx = alpha + beta * x_lag
         n = len(dx)
         if n < 10:
             return None
 
+<<<<<<< HEAD
         x_mat = np.column_stack([np.ones(n), np.asarray(x_lag, dtype=float)])
+=======
+        x_mat = np.column_stack([np.ones(n), x_lag])
+>>>>>>> origin/main
         try:
             coeffs, _, _, _ = np.linalg.lstsq(x_mat, dx, rcond=None)
         except np.linalg.LinAlgError:

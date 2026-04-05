@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Tests for LiveTradingRunner ÔÇö verifies initialization, tick, and lifecycle.
+=======
+"""
+Tests for LiveTradingRunner — verifies initialization, tick, and lifecycle.
+>>>>>>> origin/main
 """
 
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
@@ -54,6 +59,7 @@ class TestTradingState:
         assert TradingState.HALTED.value == "halted"
         assert TradingState.SHUTTING_DOWN.value == "shutting_down"
         assert TradingState.STOPPED.value == "stopped"
+<<<<<<< HEAD
 
 
 class TestKillSwitchSharedInstance:
@@ -147,3 +153,5 @@ class TestKillSwitchIBKRWiring:
 
         # Must not raise
         runner._on_kill_switch_activated(KillReason.MANUAL, "test paper mode")
+=======
+>>>>>>> origin/main

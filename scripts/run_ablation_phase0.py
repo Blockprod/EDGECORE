@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python
+=======
+#!/usr/bin/env python
+>>>>>>> origin/main
 """EDGECORE Ablation Study -- Phase 0 Factor Isolation.
 
 Runs 4 backtests, each with exactly ONE Phase 0 component active:

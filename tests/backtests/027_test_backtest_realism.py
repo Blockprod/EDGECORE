@@ -8,7 +8,11 @@ Covers:
 - End-to-end order execution workflows
 """
 
+<<<<<<< HEAD
 from datetime import UTC, datetime
+=======
+from datetime import datetime
+>>>>>>> origin/main
 
 import pytest
 
@@ -535,8 +539,13 @@ class TestBacktestExecutor:
             execution_time=datetime.now(UTC),
         )
 
+<<<<<<< HEAD
         # Total cost (for documentation only)
         _ = -buy_result["net_proceeds"] + abs(sell_result["net_proceeds"])
+=======
+        # Total cost
+        -buy_result["net_proceeds"] + abs(sell_result["net_proceeds"])
+>>>>>>> origin/main
         gross_profit = 100.0 * (101.0 - 100.0)
 
         # Actual profit reduced by slippage and commissions

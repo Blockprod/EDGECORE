@@ -2,13 +2,24 @@
 End-to-End Integration Tests for EDGECORE Trading System.
 
 Tests complete trading workflows:
+<<<<<<< HEAD
 - Market data loading Ôåô Strategy signals Ôåô Position opening Ôåô Risk management
+=======
+- Market data loading ↓ Strategy signals ↓ Position opening ↓ Risk management
+>>>>>>> origin/main
 - Error handling across all layers
 - Alert triggering (Slack, Email, Dashboard)
 - Dashboard metrics accuracy
 - API endpoint availability
 """
 
+<<<<<<< HEAD
+=======
+import pytest
+from unittest.mock import patch
+import pandas as pd
+import numpy as np
+>>>>>>> origin/main
 import json
 from unittest.mock import patch
 
@@ -17,7 +28,16 @@ import pandas as pd
 import pytest
 
 from data.loader import DataLoader
+<<<<<<< HEAD
 from execution.ibkr_engine import IBGatewaySync, IBKRExecutionEngine
+=======
+from strategies.pair_trading import PairTradingStrategy
+from risk.engine import RiskEngine
+from execution.ibkr_engine import IBGatewaySync, IBKRExecutionEngine
+from monitoring.slack_alerter import SlackAlerter
+from monitoring.email_alerter import EmailAlerter
+from monitoring.dashboard import DashboardGenerator
+>>>>>>> origin/main
 from monitoring.api import create_app
 from monitoring.dashboard import DashboardGenerator
 from monitoring.email_alerter import EmailAlerter
@@ -34,11 +54,23 @@ def _reset_ibkr_client_ids():
     IBKRExecutionEngine._active_client_ids.clear()
 
 
+@pytest.fixture(autouse=True)
+def _reset_ibkr_client_ids():
+    """Clear IBKRExecutionEngine client_id registry between tests."""
+    IBKRExecutionEngine._active_client_ids.clear()
+    yield
+    IBKRExecutionEngine._active_client_ids.clear()
+
+
 class TestFullTradingCycle:
     """Test complete trading cycle from data to execution."""
 
     def test_complete_market_data_to_position_flow(self):
+<<<<<<< HEAD
         """Test: Data Load Ôåô Strategy Ôåô Position Created."""
+=======
+        """Test: Data Load ↓ Strategy ↓ Position Created."""
+>>>>>>> origin/main
         # Setup
         DataLoader()
         PairTradingStrategy()
@@ -50,12 +82,24 @@ class TestFullTradingCycle:
         strategy = PairTradingStrategy()
 
         # Create synthetic prices showing potential spread
+<<<<<<< HEAD
         dates = pd.date_range("2026-01-01", periods=50, freq="D")
         aapl_prices = pd.Series(np.sin(np.linspace(0, 2 * np.pi, 50)) * 5 + 175, index=dates)
         msft_prices = pd.Series(np.sin(np.linspace(0.5, 2 * np.pi + 0.5, 50)) * 8 + 420, index=dates)
 
         prices_df = pd.DataFrame({"AAPL": aapl_prices, "MSFT": msft_prices})
 
+=======
+        dates = pd.date_range('2026-01-01', periods=50, freq='D')
+        aapl_prices = pd.Series(np.sin(np.linspace(0, 2*np.pi, 50)) * 5 + 175, index=dates)
+        msft_prices = pd.Series(np.sin(np.linspace(0.5, 2*np.pi + 0.5, 50)) * 8 + 420, index=dates)
+        
+        prices_df = pd.DataFrame({
+            'AAPL': aapl_prices,
+            'MSFT': msft_prices
+        })
+        
+>>>>>>> origin/main
         # Generate signals
         signals = strategy.generate_signals(prices_df)
 
@@ -69,22 +113,41 @@ class TestFullTradingCycle:
         risk_engine = RiskEngine(initial_equity=100000.0)
 
         # Test position validation
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Should validate without error (assuming defaults allow it)
         assert risk_engine is not None
 
     def test_execution_engine_order_submission(self):
         """Test: Execution engine can submit orders."""
         execution_engine = IBKRExecutionEngine()
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Verify engine initialized
         assert execution_engine is not None
 
         # Mock order submission
+<<<<<<< HEAD
         with patch.object(execution_engine, "submit_order") as mock_submit:
             mock_submit.return_value = {"id": "123456", "symbol": "AAPL", "status": "open"}
 
             order = execution_engine.submit_order("AAPL", "buy", 100)  # type: ignore[call-arg]
+=======
+        with patch.object(execution_engine, 'submit_order') as mock_submit:
+            mock_submit.return_value = {
+                'id': '123456',
+                'symbol': 'AAPL',
+                'status': 'open'
+            }
+            
+            order = execution_engine.submit_order('AAPL', 'buy', 100)
+>>>>>>> origin/main
             assert order is not None
 
 
@@ -98,9 +161,19 @@ class TestAlertingIntegration:
         # Mock the alert
         with patch.object(slack_alerter, "send_alert") as mock_alert:
             mock_alert.return_value = True
+<<<<<<< HEAD
 
             slack_alerter.send_alert(level="ERROR", title="Test Error", message="This is a test error")
 
+=======
+            
+            slack_alerter.send_alert(
+                level='ERROR',
+                title='Test Error',
+                message='This is a test error'
+            )
+            
+>>>>>>> origin/main
             mock_alert.assert_called_once()
 
     def test_critical_error_triggers_email_alert(self):
@@ -116,9 +189,19 @@ class TestAlertingIntegration:
         # Mock email sending
         with patch.object(email_alerter, "send_alert") as mock_alert:
             mock_alert.return_value = True
+<<<<<<< HEAD
 
             email_alerter.send_alert(level="CRITICAL", title="System Critical Alert", message="Critical event occurred")
 
+=======
+            
+            email_alerter.send_alert(
+                level='CRITICAL',
+                title='System Critical Alert',
+                message='Critical event occurred'
+            )
+            
+>>>>>>> origin/main
             mock_alert.assert_called_once()
 
     def test_multiple_alerts_sent_together(self):
@@ -207,13 +290,23 @@ class TestErrorHandlingChain:
     def test_data_load_error_handled(self):
         """Test: Data loading error is caught and logged."""
         loader = DataLoader()
+<<<<<<< HEAD
 
         with patch.object(loader, "load_ibkr_data") as mock_load:
+=======
+        
+        with patch.object(loader, 'load_ibkr_data') as mock_load:
+>>>>>>> origin/main
             mock_load.side_effect = Exception("Network error")
 
             try:
+<<<<<<< HEAD
                 loader.load_ibkr_data("AAPL")
                 raise AssertionError("Should have raised exception")
+=======
+                loader.load_ibkr_data('AAPL')
+                assert False, "Should have raised exception"
+>>>>>>> origin/main
             except Exception as e:
                 assert "Network error" in str(e)
 
@@ -232,13 +325,23 @@ class TestErrorHandlingChain:
     def test_execution_error_handled(self):
         """Test: Execution engine error is caught."""
         execution_engine = IBKRExecutionEngine()
+<<<<<<< HEAD
 
         with patch.object(execution_engine, "submit_order") as mock_submit:
+=======
+        
+        with patch.object(execution_engine, 'submit_order') as mock_submit:
+>>>>>>> origin/main
             mock_submit.side_effect = Exception("Exchange unavailable")
 
             try:
+<<<<<<< HEAD
                 execution_engine.submit_order("AAPL", "buy", 100)  # type: ignore[call-arg]
                 raise AssertionError("Should have raised")
+=======
+                execution_engine.submit_order('AAPL', 'buy', 100)
+                assert False, "Should have raised"
+>>>>>>> origin/main
             except Exception as e:
                 assert "Exchange unavailable" in str(e)
 
@@ -251,12 +354,24 @@ class TestSystemStability:
         strategy = PairTradingStrategy()
         RiskEngine(initial_equity=100000.0)
         IBKRExecutionEngine()
+<<<<<<< HEAD
 
         # Simulate 5 consecutive trades
         for i in range(5):
             # Generate prices
             prices_df = pd.DataFrame({"AAPL": [175.0 + i], "MSFT": [420.0 + i * 2]})
 
+=======
+        
+        # Simulate 5 consecutive trades
+        for i in range(5):
+            # Generate prices
+            prices_df = pd.DataFrame({
+                'AAPL': [175.0 + i],
+                'MSFT': [420.0 + i * 2]
+            })
+            
+>>>>>>> origin/main
             # Generate signals
             signals = strategy.generate_signals(prices_df)
 
@@ -417,7 +532,11 @@ class TestPerformanceCharacteristics:
         import time
 
         start = time.time()
+<<<<<<< HEAD
         client.get("/api/dashboard/system")
+=======
+        client.get('/api/dashboard/system')
+>>>>>>> origin/main
         elapsed = time.time() - start
 
         # Should respond in under 500ms
@@ -444,11 +563,20 @@ class TestPerformanceCharacteristics:
         strategy = PairTradingStrategy()
 
         # Create large dataset
+<<<<<<< HEAD
         dates = pd.date_range("2026-01-01", periods=1000, freq="h")
         data = pd.DataFrame(
             {"AAPL": np.random.randn(1000).cumsum() + 175, "MSFT": np.random.randn(1000).cumsum() + 420}, index=dates
         )
 
+=======
+        dates = pd.date_range('2026-01-01', periods=1000, freq='h')
+        data = pd.DataFrame({
+            'AAPL': np.random.randn(1000).cumsum() + 175,
+            'MSFT': np.random.randn(1000).cumsum() + 420
+        }, index=dates)
+        
+>>>>>>> origin/main
         import time
 
         start = time.time()
@@ -465,6 +593,7 @@ class TestSystemintegration:
     def test_all_modules_importable(self):
         """Test: All EDGECORE modules can be imported."""
         from data.loader import DataLoader
+<<<<<<< HEAD
         from execution.ibkr_engine import IBGatewaySync
         from monitoring.api import create_app
         from monitoring.dashboard import DashboardGenerator
@@ -485,6 +614,19 @@ class TestSystemintegration:
                 create_app,
             ]
         )
+=======
+        from strategies.pair_trading import PairTradingStrategy
+        from risk.engine import RiskEngine
+        from execution.ibkr_engine import IBGatewaySync
+        from monitoring.slack_alerter import SlackAlerter
+        from monitoring.email_alerter import EmailAlerter
+        from monitoring.dashboard import DashboardGenerator
+        from monitoring.api import create_app
+        
+        assert all([DataLoader, PairTradingStrategy, RiskEngine, 
+                   IBGatewaySync, SlackAlerter, EmailAlerter,
+                   DashboardGenerator, create_app])
+>>>>>>> origin/main
 
     def test_components_initialize_without_error(self):
         """Test: All components initialize successfully."""

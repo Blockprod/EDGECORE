@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Institutional position sizing via fractional Kelly criterion.
 
 Phase 0.2 of the EDGECORE Institutional Roadmap.
@@ -20,7 +24,11 @@ Usage::
 """
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 
+=======
+from typing import Dict, Optional
+>>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -30,6 +38,7 @@ logger = get_logger(__name__)
 class KellySizerConfig:
     """Configuration for Kelly-based position sizing."""
 
+<<<<<<< HEAD
     kelly_fraction: float = 0.25  # Quarter-Kelly (institutional standard)
     max_position_pct: float = 10.0  # Max 10% of equity per pair
     min_position_pct: float = 2.0  # Min 2% (below this, skip the trade)
@@ -37,12 +46,25 @@ class KellySizerConfig:
     max_gross_leverage: float = 2.0  # Max 200% gross leverage
     max_loss_per_trade_nav_pct: float = 0.75  # Max 0.75% of NAV loss per trade
     default_allocation_pct: float = 8.0  # Fallback when no trade history
+=======
+    kelly_fraction: float = 0.25           # Quarter-Kelly (institutional standard)
+    max_position_pct: float = 10.0         # Max 10% of equity per pair
+    min_position_pct: float = 2.0          # Min 2% (below this, skip the trade)
+    max_sector_pct: float = 25.0           # Max 25% gross exposure per sector
+    max_gross_leverage: float = 2.0        # Max 200% gross leverage
+    max_loss_per_trade_nav_pct: float = 0.75  # Max 0.75% of NAV loss per trade
+    default_allocation_pct: float = 8.0    # Fallback when no trade history
+>>>>>>> origin/main
 
 
 class KellySizer:
     """Fractional Kelly position sizer with institutional risk limits."""
 
+<<<<<<< HEAD
     def __init__(self, config: KellySizerConfig | None = None):
+=======
+    def __init__(self, config: Optional[KellySizerConfig] = None):
+>>>>>>> origin/main
         self.config = config or KellySizerConfig()
         # Rolling trade history for adaptive Kelly
         self._trade_history: list = []
@@ -56,9 +78,15 @@ class KellySizer:
 
     def _compute_kelly_fraction(
         self,
+<<<<<<< HEAD
         win_rate: float | None = None,
         avg_win: float | None = None,
         avg_loss: float | None = None,
+=======
+        win_rate: Optional[float] = None,
+        avg_win: Optional[float] = None,
+        avg_loss: Optional[float] = None,
+>>>>>>> origin/main
     ) -> float:
         """Compute raw Kelly fraction f* = (p*b - q) / b.
 
@@ -76,12 +104,15 @@ class KellySizer:
 
         # Estimate from trade history
         if len(self._trade_history) < 10:
+<<<<<<< HEAD
             logger.warning(
                 "kelly_sizer_insufficient_history",
                 n_trades=len(self._trade_history),
                 min_required=10,
                 using_fallback_pct=self.config.default_allocation_pct,
             )
+=======
+>>>>>>> origin/main
             return self.config.default_allocation_pct / 100.0
 
         wins = [t for t in self._trade_history if t > 0]
@@ -100,16 +131,28 @@ class KellySizer:
 
         b = avg_w / avg_l
         kelly = (p * b - q) / b
+<<<<<<< HEAD
         return float(max(kelly, 0.0))
+=======
+        return max(kelly, 0.0)
+>>>>>>> origin/main
 
     def compute_allocation(
         self,
         current_equity: float,
+<<<<<<< HEAD
         win_rate: float | None = None,
         avg_win: float | None = None,
         avg_loss: float | None = None,
         sector: str | None = None,
         sector_exposure: dict[str, float] | None = None,
+=======
+        win_rate: Optional[float] = None,
+        avg_win: Optional[float] = None,
+        avg_loss: Optional[float] = None,
+        sector: Optional[str] = None,
+        sector_exposure: Optional[Dict[str, float]] = None,
+>>>>>>> origin/main
         current_gross_exposure: float = 0.0,
     ) -> float:
         """Compute position allocation as % of equity.
@@ -150,11 +193,22 @@ class KellySizer:
             proposed_notional = current_equity * alloc_pct / 100.0
             new_gross = current_gross_exposure + proposed_notional
             if new_gross / current_equity > self.config.max_gross_leverage:
+<<<<<<< HEAD
                 available = self.config.max_gross_leverage * current_equity - current_gross_exposure
                 if available <= 0:
                     logger.debug(
                         "kelly_rejected_leverage_limit",
                         gross_leverage=f"{new_gross / current_equity:.2f}",
+=======
+                available = (
+                    self.config.max_gross_leverage * current_equity
+                    - current_gross_exposure
+                )
+                if available <= 0:
+                    logger.debug(
+                        "kelly_rejected_leverage_limit",
+                        gross_leverage=f"{new_gross/current_equity:.2f}",
+>>>>>>> origin/main
                         limit=f"{self.config.max_gross_leverage:.1f}",
                     )
                     return 0.0

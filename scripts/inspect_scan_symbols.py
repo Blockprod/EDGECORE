@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""Inspecte les symboles retourn├®s par `IBKRUniverseScanner.bootstrap_from_sec()`
 et affiche les premiers cas o├╣ `ticker` n'est pas une `str`.
+=======
+"""Inspecte les symboles retournés par `IBKRUniverseScanner.bootstrap_from_sec()`
+et affiche les premiers cas où `ticker` n'est pas une `str`.
+>>>>>>> origin/main
 """
 import sys
 import os

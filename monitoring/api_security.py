@@ -11,6 +11,7 @@ Provides:
 
 import hashlib
 import hmac
+<<<<<<< HEAD
 import os
 import time
 from datetime import UTC, datetime, timedelta
@@ -18,6 +19,9 @@ from functools import wraps
 from typing import Any, Callable
 
 from flask import Response, g, jsonify, request
+=======
+from datetime import datetime, timedelta, timezone
+>>>>>>> origin/main
 from structlog import get_logger
 
 jwt: Any = None  # pre-init; overwritten if PyJWT is available
@@ -131,6 +135,7 @@ class JWTAuth:
         """
         if not HAS_JWT:
             raise ImportError("PyJWT not installed. Install with: pip install PyJWT")
+<<<<<<< HEAD
 
         self.secret_key: str = secret_key or os.getenv("JWT_SECRET") or ""
         if not self.secret_key:
@@ -138,6 +143,15 @@ class JWTAuth:
                 "JWT_SECRET not set. Set the JWT_SECRET environment variable "
                 "with a cryptographically random key (>=32 bytes). "
                 'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))"'
+=======
+        
+        self.secret_key = secret_key or os.getenv('JWT_SECRET')
+        if not self.secret_key:
+            raise ValueError(
+                "JWT_SECRET not set. Set the JWT_SECRET environment variable "
+                "with a cryptographically random key (≥32 bytes). "
+                "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+>>>>>>> origin/main
             )
 
     def generate_token(self, user_id: str, expires_in_hours: int = 24) -> str:
@@ -152,9 +166,15 @@ class JWTAuth:
             JWT token string
         """
         payload = {
+<<<<<<< HEAD
             "user_id": user_id,
             "iat": datetime.now(UTC),
             "exp": datetime.now(UTC) + timedelta(hours=expires_in_hours),
+=======
+            'user_id': user_id,
+            'iat': datetime.now(timezone.utc),
+            'exp': datetime.now(timezone.utc) + timedelta(hours=expires_in_hours)
+>>>>>>> origin/main
         }
         token = jwt.encode(payload, self.secret_key, algorithm="HS256")
         logger.info("jwt_token_generated", user_id=user_id, expires_in_hours=expires_in_hours)
@@ -302,7 +322,10 @@ def require_https(func: Callable) -> Callable:
 def generate_api_key(name: str = "default") -> str:
     """Generate a new API key."""
     import secrets
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
     secrets.token_bytes(32)
     key = secrets.token_urlsafe(32)
     return f"edgecore_{name}_{key}"

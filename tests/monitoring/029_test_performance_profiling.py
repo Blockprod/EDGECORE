@@ -17,7 +17,10 @@ import pytest
 
 from monitoring.profiler import (
     PerformanceMetric,
+<<<<<<< HEAD
     PerformanceProfiler,
+=======
+>>>>>>> origin/main
     TimingContext,
     get_global_profiler,
     reset_global_profiler,

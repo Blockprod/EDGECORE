@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
 """
 EDGECORE ÔÇö Phase 6 Pre-Flight Checklist
+=======
+#!/usr/bin/env python3
+"""
+EDGECORE — Phase 6 Pre-Flight Checklist
+>>>>>>> origin/main
 
 Validates that the system is production-ready before go-live.
 Run this script *before* deploying with real capital.
@@ -17,9 +23,15 @@ from pathlib import Path
 # Ensure project root is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+<<<<<<< HEAD
 PASS = "Ô£à"
 FAIL = "ÔØî"
 WARN = "ÔÜá´©Å"
+=======
+PASS = "✅"
+FAIL = "❌"
+WARN = "⚠️"
+>>>>>>> origin/main
 
 results: list[tuple[str, str, str]] = []  # (status, check, detail)
 
@@ -38,12 +50,21 @@ def main():
     env = sys.argv[sys.argv.index("--env") + 1] if "--env" in sys.argv else "prod"
     os.environ["EDGECORE_ENV"] = env
     print(f"\n{'='*70}")
+<<<<<<< HEAD
     print(f"  EDGECORE Pre-Flight Checklist ÔÇö env={env}")
     print(f"{'='*70}\n")
 
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 1. Config loads without error
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    print(f"  EDGECORE Pre-Flight Checklist — env={env}")
+    print(f"{'='*70}\n")
+
+    # ──────────────────────────────────────────────────────────────────
+    # 1. Config loads without error
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     try:
         # Reset singleton for fresh load
         from config.settings import Settings
@@ -54,6 +75,7 @@ def main():
         check("Config loads", True, f"env={settings.env}")
     except Exception as e:
         check("Config loads", False, str(e)[:120])
+<<<<<<< HEAD
         print("\nÔøö Cannot load config ÔÇö aborting remaining checks.\n")
         _print_results()
         return 1
@@ -61,6 +83,15 @@ def main():
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 2. Risk tier coherence (R-3)
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+        print("\n⛔ Cannot load config — aborting remaining checks.\n")
+        _print_results()
+        return 1
+
+    # ──────────────────────────────────────────────────────────────────
+    # 2. Risk tier coherence (R-3)
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     tier1 = settings.risk.max_drawdown_pct
     ks = (settings.raw_config.get("risk", {}) or {}).get("kill_switch", {}) or {}
     tier2 = ks.get("max_drawdown_pct", 0.15)
@@ -70,12 +101,21 @@ def main():
     check(
         "Risk tier coherence",
         tier1 <= tier2 <= tier3,
+<<<<<<< HEAD
         f"T1={tier1:.0%} Ôëñ T2={tier2:.0%} Ôëñ T3={tier3:.0%}",
     )
 
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 3. Critical risk parameters are set
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+        f"T1={tier1:.0%} ≤ T2={tier2:.0%} ≤ T3={tier3:.0%}",
+    )
+
+    # ──────────────────────────────────────────────────────────────────
+    # 3. Critical risk parameters are set
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     check("max_drawdown_pct set", settings.risk.max_drawdown_pct > 0,
           f"{settings.risk.max_drawdown_pct:.0%}")
     check("max_daily_loss_pct set", settings.risk.max_daily_loss_pct > 0,
@@ -86,9 +126,15 @@ def main():
           settings.risk.max_concurrent_positions > 0,
           str(settings.risk.max_concurrent_positions))
 
+<<<<<<< HEAD
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 4. Strategy sanity
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ──────────────────────────────────────────────────────────────────
+    # 4. Strategy sanity
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     check("exit_z_score > 0 (R-8)",
           settings.strategy.exit_z_score > 0,
           f"{settings.strategy.exit_z_score}")
@@ -100,9 +146,15 @@ def main():
     check("bonferroni_correction on",
           settings.strategy.bonferroni_correction is True)
 
+<<<<<<< HEAD
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 5. Execution config
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ──────────────────────────────────────────────────────────────────
+    # 5. Execution config
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     check("engine = ibkr", settings.execution.engine == "ibkr")
     if env == "prod":
         check("use_sandbox = false (prod)",
@@ -114,16 +166,26 @@ def main():
           5 <= settings.execution.timeout_seconds <= 120,
           f"{settings.execution.timeout_seconds}s")
 
+<<<<<<< HEAD
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 6. Trading operational constants (F-7)
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ──────────────────────────────────────────────────────────────────
+    # 6. Trading operational constants (F-7)
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     tc = settings.trading
     check("trading.max_consecutive_errors set", tc.max_consecutive_errors > 0,
           str(tc.max_consecutive_errors))
     check("trading.limit_price_offset reasonable",
           0 < tc.limit_price_offset_pct <= 0.05,
           f"{tc.limit_price_offset_pct:.1%}")
+<<<<<<< HEAD
     check("trading.max_allocation_pct Ôëñ 25%",
+=======
+    check("trading.max_allocation_pct ≤ 25%",
+>>>>>>> origin/main
           tc.max_allocation_pct <= 0.25,
           f"{tc.max_allocation_pct:.0%}")
     if env == "prod":
@@ -131,6 +193,7 @@ def main():
               tc.data_max_age_hours < 24,
               f"{tc.data_max_age_hours}h")
 
+<<<<<<< HEAD
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 7. Universe
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -142,6 +205,19 @@ def main():
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 8. Critical modules importable
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ──────────────────────────────────────────────────────────────────
+    # 7. Universe
+    # ──────────────────────────────────────────────────────────────────
+    n_syms = len(settings.trading_universe.symbols)
+    check("Universe has symbols", n_syms >= 2, f"{n_syms} symbols")
+    if env == "prod":
+        check("Universe ≥ 20 symbols (prod)", n_syms >= 20, f"{n_syms}")
+
+    # ──────────────────────────────────────────────────────────────────
+    # 8. Critical modules importable
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     critical_modules = [
         "strategies.pair_trading",
         "risk.engine",
@@ -169,9 +245,15 @@ def main():
         except Exception as e:
             check(f"Import {mod}", False, str(e)[:80])
 
+<<<<<<< HEAD
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 9. Environment variables (warnings only)
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ──────────────────────────────────────────────────────────────────
+    # 9. Environment variables (warnings only)
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     env_checks = {
         "SLACK_WEBHOOK_URL": "Slack alerts won't fire",
         "EMAIL_SMTP_SERVER": "Email alerts won't fire",
@@ -183,6 +265,7 @@ def main():
     if env == "prod" and os.getenv("ENABLE_LIVE_TRADING") != "true":
         warn("ENABLE_LIVE_TRADING not set", "Live trading will be sandbox-forced")
 
+<<<<<<< HEAD
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # 10. Spread correlation threshold (R-6)
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -193,11 +276,27 @@ def main():
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
     # Results
     # ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+    # ──────────────────────────────────────────────────────────────────
+    # 10. Spread correlation threshold (R-6)
+    # ──────────────────────────────────────────────────────────────────
+    check("spread_correlation_max ≤ 0.50",
+          settings.risk.spread_correlation_max <= 0.50,
+          f"{settings.risk.spread_correlation_max}")
+
+    # ──────────────────────────────────────────────────────────────────
+    # Results
+    # ──────────────────────────────────────────────────────────────────
+>>>>>>> origin/main
     return _print_results()
 
 
 def _print_results() -> int:
+<<<<<<< HEAD
     print(f"\n{'ÔöÇ'*70}")
+=======
+    print(f"\n{'─'*70}")
+>>>>>>> origin/main
     n_pass = sum(1 for s, _, _ in results if s == PASS)
     n_fail = sum(1 for s, _, _ in results if s == FAIL)
     n_warn = sum(1 for s, _, _ in results if s == WARN)
@@ -208,15 +307,26 @@ def _print_results() -> int:
             line += f"  ({detail})"
         print(line)
 
+<<<<<<< HEAD
     print(f"\n{'ÔöÇ'*70}")
+=======
+    print(f"\n{'─'*70}")
+>>>>>>> origin/main
     summary = f"  {n_pass} passed, {n_fail} failed, {n_warn} warnings"
     print(summary)
 
     if n_fail == 0:
+<<<<<<< HEAD
         print(f"\n  {PASS} PRE-FLIGHT CHECK PASSED ÔÇö system is go-live ready\n")
         return 0
     else:
         print(f"\n  {FAIL} PRE-FLIGHT CHECK FAILED ÔÇö fix {n_fail} issue(s) before go-live\n")
+=======
+        print(f"\n  {PASS} PRE-FLIGHT CHECK PASSED — system is go-live ready\n")
+        return 0
+    else:
+        print(f"\n  {FAIL} PRE-FLIGHT CHECK FAILED — fix {n_fail} issue(s) before go-live\n")
+>>>>>>> origin/main
         return 1
 
 

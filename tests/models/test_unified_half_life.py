@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Sprint 3.2 ÔÇô Unify half-life estimation.
+=======
+"""
+Sprint 3.2 – Unify half-life estimation.
+>>>>>>> origin/main
 
 Validates that:
 1. `half_life_mean_reversion()` in cointegration.py delegates to
@@ -10,7 +15,10 @@ Validates that:
 """
 
 import inspect
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 import numpy as np
 import pandas as pd
 import pytest
@@ -18,6 +26,10 @@ import pytest
 from models.cointegration import half_life_mean_reversion
 from models.half_life_estimator import SpreadHalfLifeEstimator, estimate_half_life
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 # ---------------------------------------------------------------------------
 # Helper: generate OU process with known half-life
 # ---------------------------------------------------------------------------
@@ -133,7 +145,11 @@ class TestBoundsValidation:
     """validate=True in wrapper enforces HL in [5, 200]."""
 
     def test_very_fast_mean_reversion_rejected(self):
+<<<<<<< HEAD
         """HL=2 (very fast) Ôåô outside [5, 200] bounds Ôåô None."""
+=======
+        """HL=2 (very fast) ↓ outside [5, 200] bounds ↓ None."""
+>>>>>>> origin/main
         spread = _ou_process(half_life=2, n=500, noise=0.05, seed=10)
         hl = half_life_mean_reversion(spread)
         # With validate=True, HL < 5 should be rejected
@@ -162,7 +178,11 @@ class TestReturnType:
         assert hl is None or isinstance(hl, int)
 
     def test_returns_none_for_short_series(self):
+<<<<<<< HEAD
         """Series shorter than lookback Ôåô None."""
+=======
+        """Series shorter than lookback ↓ None."""
+>>>>>>> origin/main
         short = pd.Series(np.random.randn(50))
         hl = half_life_mean_reversion(short)
         assert hl is None

@@ -1,4 +1,5 @@
 """Paper trading execution with realistic slippage and commissions.
+<<<<<<< HEAD
 
 Fully decoupled from IBKRExecutionEngine ��� no live broker connection needed.
 Maintains an in-memory order book, positions, and balance for simulation.
@@ -12,6 +13,19 @@ from structlog import get_logger
 from common.types import CommissionConfig, CommissionType, SlippageConfig, SlippageModel
 from execution.backtest_execution import CommissionCalculator, SlippageCalculator
 from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
+=======
+
+Fully decoupled from IBKRExecutionEngine — no live broker connection needed.
+Maintains an in-memory order book, positions, and balance for simulation.
+"""
+
+from typing import Dict
+from datetime import datetime
+from structlog import get_logger
+from execution.backtest_execution import SlippageCalculator, CommissionCalculator
+from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
+from common.types import SlippageModel, CommissionType
+>>>>>>> origin/main
 
 logger = get_logger(__name__)
 
@@ -41,26 +55,45 @@ class PaperExecutionEngine(BaseExecutionEngine):
         # In-memory state
         self._balance: float = initial_capital
         self._initial_capital: float = initial_capital
+<<<<<<< HEAD
         self._positions: dict[str, float] = {}          # symbol -> net qty
         self._orders: dict[str, Order] = {}             # order_id -> Order
         self._market_prices: dict[str, float] = {}      # symbol -> last known price
+=======
+        self._positions: Dict[str, float] = {}          # symbol -> net qty
+        self._orders: Dict[str, Order] = {}             # order_id -> Order
+        self._market_prices: Dict[str, float] = {}      # symbol -> last known price
+>>>>>>> origin/main
 
         # Convert string slippage model to enum
         slippage_model_enum = self._parse_slippage_model(slippage_model)
 
+<<<<<<< HEAD
         self.slippage_config: SlippageConfig = cast(SlippageConfig, {
+=======
+        # Slippage configuration
+        self.slippage_config = {
+>>>>>>> origin/main
             'model': slippage_model_enum,
             'fixed_bps': fixed_bps,
             'adaptive_multiplier': 2.0,
             'max_slippage_bps': 50.0,
+<<<<<<< HEAD
         })
+=======
+        }
+>>>>>>> origin/main
         self.slippage_calc = SlippageCalculator(self.slippage_config)
 
         # Commission configuration
         self.commission_config: CommissionConfig = cast(CommissionConfig, {
             'type': CommissionType.PERCENT,
             'percent': commission_pct,
+<<<<<<< HEAD
         })
+=======
+        }
+>>>>>>> origin/main
         self.commission_calc = CommissionCalculator(self.commission_config)
 
         logger.info(
@@ -71,7 +104,11 @@ class PaperExecutionEngine(BaseExecutionEngine):
             commission_pct=commission_pct,
         )
 
+<<<<<<< HEAD
     # ������ helpers ������
+=======
+    # ── helpers ──
+>>>>>>> origin/main
     @staticmethod
     def _parse_slippage_model(model_str: str) -> SlippageModel:
         mapping = {
@@ -90,11 +127,19 @@ class PaperExecutionEngine(BaseExecutionEngine):
         """Feed a market price into the paper engine (call before submit_order)."""
         self._market_prices[symbol] = price
 
+<<<<<<< HEAD
     def set_market_prices(self, prices: dict[str, float]) -> None:
         """Bulk-update market prices."""
         self._market_prices.update(prices)
 
     # ������ BaseExecutionEngine interface ������
+=======
+    def set_market_prices(self, prices: Dict[str, float]) -> None:
+        """Bulk-update market prices."""
+        self._market_prices.update(prices)
+
+    # ── BaseExecutionEngine interface ──
+>>>>>>> origin/main
 
     def submit_order(self, order: Order) -> str:
         """Simulate order fill with slippage and commission."""
@@ -121,11 +166,18 @@ class PaperExecutionEngine(BaseExecutionEngine):
         commission = self.commission_calc.calculate(trade_value)
 
         # Final price (commission baked in)
+<<<<<<< HEAD
         commission_pct = float(self.commission_config.get('percent', 0.0) or 0.0)
         if order.side == OrderSide.BUY:
             final_price = slippage_price * (1 + commission_pct / 100)
         else:
             final_price = slippage_price * (1 - commission_pct / 100)
+=======
+        if order.side == OrderSide.BUY:
+            final_price = slippage_price * (1 + self.commission_config['percent'] / 100)
+        else:
+            final_price = slippage_price * (1 - self.commission_config['percent'] / 100)
+>>>>>>> origin/main
 
         cost = final_price * order.quantity
         if order.side == OrderSide.BUY:
@@ -171,9 +223,16 @@ class PaperExecutionEngine(BaseExecutionEngine):
             return OrderStatus.PENDING
         return order.status
 
+<<<<<<< HEAD
     def get_positions(self) -> dict[str, float]:
+=======
+    def get_positions(self) -> Dict[str, float]:
+>>>>>>> origin/main
         return dict(self._positions)
 
     def get_account_balance(self) -> float:
         return self._balance
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main

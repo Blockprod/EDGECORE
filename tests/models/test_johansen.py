@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿"""
 Sprint 4.1 ÔÇô Johansen multi-variate cointegration test.
 
@@ -27,6 +28,37 @@ import pandas as pd
 from models.johansen import JohansenCointegrationTest, johansen_confirm_pair
 
 # ÔôÇÔôÇÔôÇ Fixtures ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
+=======
+"""
+Sprint 4.1 – Johansen multi-variate cointegration test.
+
+Tests:
+1. JohansenCointegrationTest – core functionality
+   - Known cointegrated pair ↓ rank ≥ 1
+   - Random walk pair ↓ rank = 0
+   - Multi-variate (3 series) ↓ correct rank
+   - Input validation (NaN, too few rows, single column)
+   - Trace vs max-eigenvalue conservatism
+
+2. johansen_confirm_pair – convenience function
+   - Cointegrated pair confirmed
+   - Random pair rejected
+
+3. Integration with PairTradingStrategy – double screening
+   - EG + Johansen both pass ↓ pair accepted
+   - EG passes but Johansen rejects ↓ pair filtered out
+   - Config flag disables Johansen confirmation
+"""
+
+import numpy as np
+import pandas as pd
+from unittest.mock import patch
+
+from models.johansen import JohansenCointegrationTest, johansen_confirm_pair
+
+
+# ⓀⓀⓀ Fixtures ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
+>>>>>>> origin/main
 
 
 def _make_cointegrated_pair(n: int = 300, seed: int = 42) -> pd.DataFrame:
@@ -58,14 +90,22 @@ def _make_trivariate_cointegrated(n: int = 300, seed: int = 42) -> pd.DataFrame:
     return pd.DataFrame({"a": a, "b": b, "c": c})
 
 
+<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇ Core Johansen Test ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
+=======
+# ⓀⓀⓀ Core Johansen Test ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
+>>>>>>> origin/main
 
 
 class TestJohansenCointegrationTest:
     """Test the Johansen cointegration test class."""
 
     def test_cointegrated_pair_detected(self):
+<<<<<<< HEAD
         """Known cointegrated pair should have rank ÔëÑ 1."""
+=======
+        """Known cointegrated pair should have rank ≥ 1."""
+>>>>>>> origin/main
         data = _make_cointegrated_pair()
         jt = JohansenCointegrationTest()
         result = jt.test(data)
@@ -87,7 +127,11 @@ class TestJohansenCointegrationTest:
         assert result["rank"] == 0
 
     def test_trivariate_cointegration(self):
+<<<<<<< HEAD
         """Three series sharing a common trend Ôåô rank ÔëÑ 1."""
+=======
+        """Three series sharing a common trend ↓ rank ≥ 1."""
+>>>>>>> origin/main
         data = _make_trivariate_cointegrated()
         jt = JohansenCointegrationTest()
         result = jt.test(data)
@@ -178,7 +222,11 @@ class TestJohansenCointegrationTest:
     def test_non_dataframe_rejected(self):
         """Non-DataFrame input should return error."""
         jt = JohansenCointegrationTest()
+<<<<<<< HEAD
         result = jt.test(np.random.randn(100, 2))  # type: ignore[arg-type]
+=======
+        result = jt.test(np.random.randn(100, 2))
+>>>>>>> origin/main
 
         assert result["is_cointegrated"] is False
         assert result["error"] is not None
@@ -194,7 +242,11 @@ class TestJohansenCointegrationTest:
         assert isinstance(result["rank"], int)
 
 
+<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇ Convenience Function ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
+=======
+# ⓀⓀⓀ Convenience Function ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
+>>>>>>> origin/main
 
 
 class TestJohansenConfirmPair:
@@ -203,7 +255,11 @@ class TestJohansenConfirmPair:
     def test_cointegrated_pair_confirmed(self):
         """Known cointegrated pair should be confirmed."""
         data = _make_cointegrated_pair()
+<<<<<<< HEAD
         result = johansen_confirm_pair(pd.Series(data["y"]), pd.Series(data["x"]))
+=======
+        result = johansen_confirm_pair(data["y"], data["x"])
+>>>>>>> origin/main
 
         assert result["is_cointegrated"] is True
         assert result["rank"] >= 1
@@ -212,13 +268,21 @@ class TestJohansenConfirmPair:
     def test_random_pair_rejected(self):
         """Independent random walks should be rejected."""
         data = _make_random_pair()
+<<<<<<< HEAD
         result = johansen_confirm_pair(pd.Series(data["y"]), pd.Series(data["x"]))
+=======
+        result = johansen_confirm_pair(data["y"], data["x"])
+>>>>>>> origin/main
 
         assert result["is_cointegrated"] is False
         assert result["rank"] == 0
 
 
+<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇ Integration: Double Screening ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
+=======
+# ⓀⓀⓀ Integration: Double Screening ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
+>>>>>>> origin/main
 
 
 class TestDoubleScreeningIntegration:
@@ -230,6 +294,7 @@ class TestDoubleScreeningIntegration:
 
         data = _make_cointegrated_pair(n=300)
         args = (
+<<<<<<< HEAD
             "SYM_Y",
             "SYM_X",
             data["y"],
@@ -237,6 +302,13 @@ class TestDoubleScreeningIntegration:
             0.5,  # min_corr
             60,  # max_hl
             2,  # num_symbols (lenient Bonferroni)
+=======
+            "SYM_Y", "SYM_X",
+            data["y"], data["x"],
+            0.5,   # min_corr
+            60,    # max_hl
+            2,     # num_symbols (lenient Bonferroni)
+>>>>>>> origin/main
             True,  # johansen_confirm
         )
         result = PairTradingStrategy._test_pair_cointegration(args)
@@ -260,6 +332,7 @@ class TestDoubleScreeningIntegration:
         with patch("models.johansen.johansen_confirm_pair") as mock_joh:
             mock_joh.return_value = {"is_cointegrated": False, "rank": 0}
             args = (
+<<<<<<< HEAD
                 "SYM_Y",
                 "SYM_X",
                 data["y"],
@@ -271,6 +344,15 @@ class TestDoubleScreeningIntegration:
             )
             result = PairTradingStrategy._test_pair_cointegration(args)
             # Even if EG would pass, Johansen rejection Ôåô None
+=======
+                "SYM_Y", "SYM_X",
+                data["y"], data["x"],
+                0.5, 60, 2,
+                True,  # johansen_confirm ON
+            )
+            result = PairTradingStrategy._test_pair_cointegration(args)
+            # Even if EG would pass, Johansen rejection ↓ None
+>>>>>>> origin/main
             assert result is None
 
     def test_johansen_disabled_skips_confirmation(self):
@@ -281,6 +363,7 @@ class TestDoubleScreeningIntegration:
 
         with patch("models.johansen.johansen_confirm_pair") as mock_joh:
             args = (
+<<<<<<< HEAD
                 "SYM_Y",
                 "SYM_X",
                 data["y"],
@@ -288,6 +371,11 @@ class TestDoubleScreeningIntegration:
                 0.5,
                 60,
                 2,
+=======
+                "SYM_Y", "SYM_X",
+                data["y"], data["x"],
+                0.5, 60, 2,
+>>>>>>> origin/main
                 False,  # johansen_confirm OFF
             )
             PairTradingStrategy._test_pair_cointegration(args)
@@ -301,7 +389,10 @@ class TestConfigJohansenFlag:
     def test_default_johansen_confirmation_true(self):
         """Default config should have johansen_confirmation=True."""
         from config.settings import StrategyConfig
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         config = StrategyConfig()
         assert config.johansen_confirmation is True
 
@@ -310,4 +401,8 @@ class TestConfigJohansenFlag:
         from strategies.pair_trading import PairTradingStrategy
 
         strategy = PairTradingStrategy()
+<<<<<<< HEAD
         assert hasattr(strategy.config, "johansen_confirmation")
+=======
+        assert hasattr(strategy.config, 'johansen_confirmation')
+>>>>>>> origin/main

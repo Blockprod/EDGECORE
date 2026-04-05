@@ -1,18 +1,38 @@
+<<<<<<< HEAD
 ﻿"""Tests for ├ëtape 2 ÔÇö Rel├¿vement entry_z + entry_z_min_spread filter.
+=======
+"""Tests for Étape 2 — Relèvement entry_z + entry_z_min_spread filter.
+>>>>>>> origin/main
 
 Validates:
 - entry_z_score config is 2.0 (raised from 1.0)
 - entry_z_min_spread rejects micro-deviations
+<<<<<<< HEAD
 - Schema validation enforces entry_z_score Ôêê [1.5, 4.0]
+=======
+- Schema validation enforces entry_z_score ∈ [1.5, 4.0]
+>>>>>>> origin/main
 - Schema validation enforces entry_z_score > exit_z_score
 """
 
 import pytest
+<<<<<<< HEAD
 
 # ÔöÇÔöÇ Config defaults ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
 class TestEntryZConfigDefaults:
     """Verify StrategyConfig defaults after ├ëtape 2."""
+=======
+import pandas as pd
+import numpy as np
+from unittest.mock import patch, MagicMock
+
+
+# ── Config defaults ──────────────────────────────────────────────────
+
+class TestEntryZConfigDefaults:
+    """Verify StrategyConfig defaults after Étape 2."""
+>>>>>>> origin/main
 
     def test_entry_z_score_default_is_2(self):
         from config.settings import StrategyConfig
@@ -27,7 +47,10 @@ class TestEntryZConfigDefaults:
     def test_entry_z_score_yaml_is_2(self):
         """config.yaml should have entry_z_score = 1.6 (v31 aggressive)."""
         from pathlib import Path
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         import yaml
         cfg_path = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(cfg_path, encoding="utf-8") as f:
@@ -37,7 +60,10 @@ class TestEntryZConfigDefaults:
     def test_entry_z_min_spread_yaml(self):
         """config.yaml should have entry_z_min_spread = 0.50."""
         from pathlib import Path
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
         import yaml
         cfg_path = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(cfg_path, encoding="utf-8") as f:
@@ -45,7 +71,11 @@ class TestEntryZConfigDefaults:
         assert raw["strategy"]["entry_z_min_spread"] == 0.50
 
 
+<<<<<<< HEAD
 # ÔöÇÔöÇ Schema validation ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+# ── Schema validation ───────────────────────────────────────────────
+>>>>>>> origin/main
 
 class TestEntryZSchemaValidation:
     """StrategyConfigSchema must enforce z-score bounds."""
@@ -86,7 +116,11 @@ class TestEntryZSchemaValidation:
             StrategyConfigSchema(entry_z_min_spread=10.0)
 
 
+<<<<<<< HEAD
 # ÔöÇÔöÇ Min-spread filter logic ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+=======
+# ── Min-spread filter logic ─────────────────────────────────────────
+>>>>>>> origin/main
 
 class TestMinSpreadFilter:
     """Test the min-spread guard logic used in pair_trading.py."""
@@ -119,10 +153,17 @@ class TestMinSpreadFilter:
         assert cfg.entry_z_min_spread == 1.25
 
 
+<<<<<<< HEAD
 # ÔöÇÔöÇ Integration: entry_z threshold ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
 class TestEntryZThreshold:
     """Verify that entries require z-score ÔëÑ 2.0."""
+=======
+# ── Integration: entry_z threshold ───────────────────────────────────
+
+class TestEntryZThreshold:
+    """Verify that entries require z-score ≥ 2.0."""
+>>>>>>> origin/main
 
     def test_z_below_2_no_entry(self):
         current_z = 1.8

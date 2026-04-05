@@ -1,20 +1,38 @@
+<<<<<<< HEAD
 ﻿"""
 Pair Filters ÔÇö Pre-screening filters for pair candidate selection.
+=======
+"""
+Pair Filters — Pre-screening filters for pair candidate selection.
+>>>>>>> origin/main
 
 Applied *before* the expensive cointegration test to reduce the search
 space and eliminate obviously unsuitable pairs.
 
 Filters:
+<<<<<<< HEAD
     1. Correlation pre-filter (|¤ü| ÔëÑ min_correlation)
+=======
+    1. Correlation pre-filter (|ρ| ≥ min_correlation)
+>>>>>>> origin/main
     2. Data quality filter (no NaN, min length)
     3. Variance filter (non-constant series)
     4. Sector matching (optional intra-sector only)
     5. Spread half-life pre-screen (quick AR(1) check)
+<<<<<<< HEAD
     6. Momentum divergence (cross-sectional momentum outlier ÔÇö v46)
+=======
+    6. Momentum divergence (cross-sectional momentum outlier — v46)
+>>>>>>> origin/main
 """
 
 from __future__ import annotations
 
+<<<<<<< HEAD
+=======
+from typing import Dict, List, Optional, Tuple
+
+>>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -26,7 +44,11 @@ class PairFilters:
     """
     Collection of fast pre-filters for pair candidate screening.
 
+<<<<<<< HEAD
     All methods return a boolean mask or filtered list ÔÇö designed to be
+=======
+    All methods return a boolean mask or filtered list — designed to be
+>>>>>>> origin/main
     chained in a pipeline.
 
     Usage::
@@ -41,7 +63,11 @@ class PairFilters:
         min_data_points: int = 60,
         min_variance: float = 1e-10,
         max_half_life_hint: int = 60,
+<<<<<<< HEAD
         sector_map: dict[str, str] | None = None,
+=======
+        sector_map: Optional[Dict[str, str]] = None,
+>>>>>>> origin/main
         require_same_sector: bool = False,
     ):
         self.min_correlation = min_correlation
@@ -54,8 +80,13 @@ class PairFilters:
     def apply_all(
         self,
         price_data: pd.DataFrame,
+<<<<<<< HEAD
         candidate_pairs: list[tuple[str, str]],
     ) -> list[tuple[str, str]]:
+=======
+        candidate_pairs: List[Tuple[str, str]],
+    ) -> List[Tuple[str, str]]:
+>>>>>>> origin/main
         """
         Apply all pre-filters and return surviving pairs.
 
@@ -66,15 +97,24 @@ class PairFilters:
         Returns:
             Filtered list of candidate pairs.
         """
+<<<<<<< HEAD
         passed: list[tuple[str, str]] = []
+=======
+        passed: List[Tuple[str, str]] = []
+>>>>>>> origin/main
         available_cols = set(price_data.columns)
 
         for sym1, sym2 in candidate_pairs:
             if sym1 not in available_cols or sym2 not in available_cols:
                 continue
 
+<<<<<<< HEAD
             s1 = pd.Series(price_data[sym1].dropna())
             s2 = pd.Series(price_data[sym2].dropna())
+=======
+            s1 = price_data[sym1].dropna()
+            s2 = price_data[sym2].dropna()
+>>>>>>> origin/main
 
             if not self._check_data_quality(s1, s2):
                 continue
@@ -125,7 +165,11 @@ class PairFilters:
         sec1 = self.sector_map.get(sym1)
         sec2 = self.sector_map.get(sym2)
         if sec1 is None or sec2 is None:
+<<<<<<< HEAD
             return True  # missing data ÔåÆ allow through
+=======
+            return True  # missing data → allow through
+>>>>>>> origin/main
         return sec1 == sec2
 
     @staticmethod
@@ -138,12 +182,21 @@ class PairFilters:
         Quick AR(1) half-life pre-screen (no full ADF).
 
         Returns True if the OLS spread has an estimated half-life
+<<<<<<< HEAD
         Ôëñ max_half_life.  This is a *hint*, not definitive.
         """
         try:
             X = np.column_stack([np.ones(len(s2)), np.asarray(s2, dtype=float)])
             beta = np.linalg.lstsq(X, np.asarray(s1, dtype=float), rcond=None)[0]
             spread = np.asarray(s1, dtype=float) - X @ beta
+=======
+        ≤ max_half_life.  This is a *hint*, not definitive.
+        """
+        try:
+            X = np.column_stack([np.ones(len(s2)), s2.values])
+            beta = np.linalg.lstsq(X, s1.values, rcond=None)[0]
+            spread = s1.values - X @ beta
+>>>>>>> origin/main
             lag = spread[:-1].reshape(-1, 1)
             diff = spread[1:]
             if len(lag) < 20:
@@ -157,6 +210,10 @@ class PairFilters:
             return True  # degrade gracefully
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 class MomentumDivergenceFilter:
     """
     Rejects pair entries where one leg is a cross-sectional momentum outlier,
@@ -204,7 +261,11 @@ class MomentumDivergenceFilter:
             lb = min(self.lookback_days, n_bars - 1)
             if lb < 10:
                 return None
+<<<<<<< HEAD
             recent = price_data.iloc[-(lb + 1) :]
+=======
+            recent = price_data.iloc[-(lb + 1):]
+>>>>>>> origin/main
             returns = (recent.iloc[-1] / recent.iloc[0]) - 1.0
             returns = returns.dropna()
             if len(returns) < self.min_universe_size:
@@ -216,7 +277,11 @@ class MomentumDivergenceFilter:
     def check_market_dispersion(
         self,
         price_data: pd.DataFrame,
+<<<<<<< HEAD
     ) -> tuple[bool, str]:
+=======
+    ) -> Tuple[bool, str]:
+>>>>>>> origin/main
         """
         Market-level gate: block ALL new entries when cross-sectional return
         dispersion is below min_dispersion.
@@ -232,7 +297,14 @@ class MomentumDivergenceFilter:
                 return True, ""  # fail open
             dispersion = float(returns.std())
             if dispersion < self.min_dispersion:
+<<<<<<< HEAD
                 return False, (f"low_cs_dispersion={dispersion:.3f}<{self.min_dispersion:.3f} (smooth_bull_gate)")
+=======
+                return False, (
+                    "low_cs_dispersion=%.3f<%.3f (smooth_bull_gate)"
+                    % (dispersion, self.min_dispersion)
+                )
+>>>>>>> origin/main
             return True, ""
         except Exception:
             return True, ""
@@ -242,7 +314,11 @@ class MomentumDivergenceFilter:
         sym1: str,
         sym2: str,
         price_data: pd.DataFrame,
+<<<<<<< HEAD
     ) -> tuple[bool, str]:
+=======
+    ) -> Tuple[bool, str]:
+>>>>>>> origin/main
         """
         Per-pair gate: reject entry when one leg is a cross-sectional momentum
         outlier.
@@ -274,7 +350,12 @@ class MomentumDivergenceFilter:
 
             if divergence > self.threshold:
                 return False, (
+<<<<<<< HEAD
                     f"momentum_divergence={divergence:.2f}>{self.threshold:.2f} z({sym1})={z1:.2f} z({sym2})={z2:.2f}"
+=======
+                    "momentum_divergence=%.2f>%.2f z(%s)=%.2f z(%s)=%.2f"
+                    % (divergence, self.threshold, sym1, z1, sym2, z2)
+>>>>>>> origin/main
                 )
             return True, ""
         except Exception:

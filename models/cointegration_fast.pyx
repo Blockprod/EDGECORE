@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# cython: language_level=3, boundscheck=False, wraparound=False
+=======
+# cython: language_level=3, boundscheck=False, wraparound=False
+>>>>>>> origin/main
 """
 Fast cointegration testing with Cython.
 Hybrid approach: Cython-accelerated OLS + statsmodels ADF for correctness.
@@ -228,13 +232,22 @@ def brownian_bridge_batch_fast(
 
     Parameters
     ----------
+<<<<<<< HEAD
     closes      : (n_days, n_symbols)               ÔÇö daily close prices
     noise       : (n_days-1, bars_per_day, n_symbols) ÔÇö standard-normal noise
+=======
+    closes      : (n_days, n_symbols)               — daily close prices
+    noise       : (n_days-1, bars_per_day, n_symbols) — standard-normal noise
+>>>>>>> origin/main
     bars_per_day: number of intraday bars per trading day
 
     Returns
     -------
+<<<<<<< HEAD
     out : (n_days-1) * bars_per_day  ├ù  n_symbols   ÔÇö float64
+=======
+    out : (n_days-1) * bars_per_day  ×  n_symbols   — float64
+>>>>>>> origin/main
         Synthetic intraday close prices, ordered day-major then bar-minor.
     """
     cdef int n_days = closes.shape[0]
@@ -302,7 +315,11 @@ def compute_zscore_last_fast(
     """Compute the last rolling z-score of *spread* using *lookback* bars.
 
     Equivalent to the last value of ``spread.rolling(lookback).mean()/std()``
+<<<<<<< HEAD
     but operates purely in C ÔÇö no pandas overhead.
+=======
+    but operates purely in C — no pandas overhead.
+>>>>>>> origin/main
 
     Returns 0.0 when there is insufficient data.
     Result is clamped to [-6, 6] (matches SpreadModel.compute_z_score).

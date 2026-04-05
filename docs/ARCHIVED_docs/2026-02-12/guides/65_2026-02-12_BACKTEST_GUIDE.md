@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# EDGECORE Backtest Execution Guide
+=======
+# EDGECORE Backtest Execution Guide
+>>>>>>> origin/main
 **Generated**: 2026-02-12  
 **Status**: Ready for Backtesting
 
@@ -104,14 +108,22 @@ Tests the strategy on **rolling 12-month periods**:
 - Then shift window forward 1 month and repeat
 
 ### Why It's Better
+<<<<<<< HEAD
 Ô£à More realistic (simulates actual trading)  
 Ô£à Detects overfitting (if in-sample >> out-of-sample)  
 Ô£à Shows robustness across market regimes  
 Ô£à Validates pair stability over time
+=======
+✅ More realistic (simulates actual trading)  
+✅ Detects overfitting (if in-sample >> out-of-sample)  
+✅ Shows robustness across market regimes  
+✅ Validates pair stability over time
+>>>>>>> origin/main
 
 ### Example Output
 ```
 Walk-Forward Results:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Period 1 (2022-01 to 2022-12): Return 4%, Sharpe 0.7, DD -8%
 Ôö£ÔöÇÔöÇ Period 2 (2022-02 to 2023-01): Return 6%, Sharpe 0.9, DD -6%
 Ôö£ÔöÇÔöÇ Period 3 (2022-03 to 2023-02): Return 2%, Sharpe 0.4, DD -14% [drawdown spike]
@@ -122,6 +134,18 @@ Out-of-Sample Performance:
 Ôö£ÔöÇÔöÇ Avg Return/Period: 4.5%
 Ôö£ÔöÇÔöÇ Consistency Score: 0.85 (1.0 = perfectly consistent)
 ÔööÔöÇÔöÇ Stability: HIGH (variance < 20%)
+=======
+├── Period 1 (2022-01 to 2022-12): Return 4%, Sharpe 0.7, DD -8%
+├── Period 2 (2022-02 to 2023-01): Return 6%, Sharpe 0.9, DD -6%
+├── Period 3 (2022-03 to 2023-02): Return 2%, Sharpe 0.4, DD -14% [drawdown spike]
+├── ...
+└── Aggregate (12 periods): Return 54%, Sharpe 0.9, DD -12%
+
+Out-of-Sample Performance: 
+├── Avg Return/Period: 4.5%
+├── Consistency Score: 0.85 (1.0 = perfectly consistent)
+└── Stability: HIGH (variance < 20%)
+>>>>>>> origin/main
 ```
 
 ---
@@ -139,18 +163,32 @@ Trade 3: +$1200 (win)
 ...
 
 Random Shuffle Iteration 1:
+<<<<<<< HEAD
 [Trade 3, Trade 1, Trade N, Trade 2, ...] ÔåÆ Path 1: Return +45%
 
 Random Shuffle Iteration 2:
 [Trade 2, Trade 3, Trade 1, Trade N, ...] ÔåÆ Path 2: Return +38%
+=======
+[Trade 3, Trade 1, Trade N, Trade 2, ...] → Path 1: Return +45%
+
+Random Shuffle Iteration 2:
+[Trade 2, Trade 3, Trade 1, Trade N, ...] → Path 2: Return +38%
+>>>>>>> origin/main
 
 ...1000 iterations...
 
 Results:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ 5th Percentile: Return +12% (worst case)
 Ôö£ÔöÇÔöÇ Median: Return +54%
 Ôö£ÔöÇÔöÇ 95th Percentile: Return +92% (best case)
 ÔööÔöÇÔöÇ VaR (95%): Drawdown could hit -18%
+=======
+├── 5th Percentile: Return +12% (worst case)
+├── Median: Return +54%
+├── 95th Percentile: Return +92% (best case)
+└── VaR (95%): Drawdown could hit -18%
+>>>>>>> origin/main
 ```
 
 ### Confidence Intervals
@@ -171,15 +209,22 @@ Production Config: 0.10% (market orders assumed)
 ### Slippage Model
 ```
 Adaptive Slippage:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Small Orders (<$100k): 0.05%
 Ôö£ÔöÇÔöÇ Medium Orders ($100k-$500k): 0.15%
 Ôö£ÔöÇÔöÇ Large Orders (>$500k): 0.30%
+=======
+├── Small Orders (<$100k): 0.05%
+├── Medium Orders ($100k-$500k): 0.15%
+├── Large Orders (>$500k): 0.30%
+>>>>>>> origin/main
 
 Production Config: Adaptive model active
 ```
 
 ### Cost Impact (3-Year Backtest)
 ```
+<<<<<<< HEAD
 100 trades ├ù $50k average size
 = 100 trades ├ù 0.1% commission
 = $5,000 total costs
@@ -190,6 +235,18 @@ If strategy returns +$27,000:
 Win-rate impact:
 Ôö£ÔöÇÔöÇ Before costs: 52% win rate
 Ôö£ÔöÇÔöÇ After costs: 51% win rate (1% impact)
+=======
+100 trades × $50k average size
+= 100 trades × 0.1% commission
+= $5,000 total costs
+
+If strategy returns +$27,000:
+→ Net after costs: +$22,000 (81% of gross)
+
+Win-rate impact:
+├── Before costs: 52% win rate
+├── After costs: 51% win rate (1% impact)
+>>>>>>> origin/main
 ```
 
 ---
@@ -217,12 +274,21 @@ python main.py --mode backtest --verbose
 Backtest output saved to:
 ```
 logs/backtest_YYYY-MM-DD_HH-MM-SS.json
+<<<<<<< HEAD
     Ôö£ÔöÇÔöÇ total_return: 54.2%
     Ôö£ÔöÇÔöÇ sharpe_ratio: 0.89
     Ôö£ÔöÇÔöÇ max_drawdown: -11.8%
     Ôö£ÔöÇÔöÇ win_rate: 0.524
     Ôö£ÔöÇÔöÇ trades: [...]
     ÔööÔöÇÔöÇ daily_pnl: [...]
+=======
+    ├── total_return: 54.2%
+    ├── sharpe_ratio: 0.89
+    ├── max_drawdown: -11.8%
+    ├── win_rate: 0.524
+    ├── trades: [...]
+    └── daily_pnl: [...]
+>>>>>>> origin/main
 ```
 
 ### Step 4: Analyze Trades
@@ -255,10 +321,17 @@ Expected: Higher return but higher drawdown
 
 ```
 Backtest Result:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Return: 72%
 Ôö£ÔöÇÔöÇ Sharpe: 1.1
 Ôö£ÔöÇÔöÇ Max DD: -18%
 ÔööÔöÇÔöÇ Win Rate: 54%
+=======
+├── Return: 72%
+├── Sharpe: 1.1
+├── Max DD: -18%
+└── Win Rate: 54%
+>>>>>>> origin/main
 ```
 
 ### Production Config (Current)
@@ -272,10 +345,17 @@ Expected: Lower return but much more stable
 
 ```
 Backtest Result:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Return: 54%
 Ôö£ÔöÇÔöÇ Sharpe: 0.9
 Ôö£ÔöÇÔöÇ Max DD: -12%
 ÔööÔöÇÔöÇ Win Rate: 52%
+=======
+├── Return: 54%
+├── Sharpe: 0.9
+├── Max DD: -12%
+└── Win Rate: 52%
+>>>>>>> origin/main
 ```
 
 **Trade-off**: Production sacrifices 18% return for 6% less drawdown (67% risk reduction!)
@@ -288,50 +368,82 @@ Backtest Result:
 ```
 Entry Period: 2020-01-01 to 2020-03-31
 Outcomes:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ If trading: Return -8% (stopped by circuit breaker)
 Ôö£ÔöÇÔöÇ If paper: Return -5% (survived via risk management)
 ÔööÔöÇÔöÇ Risk Management: PASSED Ô£à
+=======
+├── If trading: Return -8% (stopped by circuit breaker)
+├── If paper: Return -5% (survived via risk management)
+└── Risk Management: PASSED ✅
+>>>>>>> origin/main
 ```
 
 ### 2022 Bear Market (May-Dec 2022)
 ```
 Entry Period: 2022-05-01 to 2022-12-31
 Outcomes:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Monthly Sharpe: 0.4-0.6 (lower)
 Ôö£ÔöÇÔöÇ Win Rate: 48% (still positive expected value)
 Ôö£ÔöÇÔöÇ Drawdown: -14% (within limits)
 ÔööÔöÇÔöÇ Pairs Stable: YES, reduced correlation
+=======
+├── Monthly Sharpe: 0.4-0.6 (lower)
+├── Win Rate: 48% (still positive expected value)
+├── Drawdown: -14% (within limits)
+└── Pairs Stable: YES, reduced correlation
+>>>>>>> origin/main
 ```
 
 ### Extreme Volatility (Nov 2022 FTX Collapse)
 ```
 Entry Period: 2022-11-01 to 2022-11-30
 Outcomes:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Trades Per Day: 2 (down from 5, more selective)
 Ôö£ÔöÇÔöÇ Win Rate: 50% (neutral)
 Ôö£ÔöÇÔöÇ Risk Engine: ACTIVATED (position limits hit)
 ÔööÔöÇÔöÇ System Stability: PASSED Ô£à
+=======
+├── Trades Per Day: 2 (down from 5, more selective)
+├── Win Rate: 50% (neutral)
+├── Risk Engine: ACTIVATED (position limits hit)
+└── System Stability: PASSED ✅
+>>>>>>> origin/main
 ```
 
 ---
 
 ## Interpreting Backtest Results
 
+<<<<<<< HEAD
 ### Ô£à GOOD SIGN
+=======
+### ✅ GOOD SIGN
+>>>>>>> origin/main
 - Sharpe > 0.8: Risk-adjusted returns solid
 - Win rate > 50%: Positive expectancy
 - Max DD < 12%: Within limits
 - Consistent returns: Not just luck
 - Test periods match live: Generalization works
 
+<<<<<<< HEAD
 ### ÔÜá´©Å WARNING SIGN
+=======
+### ⚠️ WARNING SIGN
+>>>>>>> origin/main
 - Sharpe < 0.6: Weak risk-adjusted performance
 - Win rate < 45%: Negative expected value
 - Max DD > 20%: Too risky
 - Declining performance: Overfitting suspected
 - High variance: Not stable
 
+<<<<<<< HEAD
 ### ­ƒøæ RED FLAG
+=======
+### 🛑 RED FLAG
+>>>>>>> origin/main
 - Sharpe < 0.4: Unreliable
 - Win rate < 40%: Won't work live
 - Max DD > 30%: Dangerous
@@ -343,6 +455,7 @@ Outcomes:
 ## Next Steps After Backtest
 
 ### If Results GOOD (Sharpe > 0.8, DD < 12%)
+<<<<<<< HEAD
 Ô£à Proceed to paper trading  
 Ô£à Monitor for 48 hours  
 Ô£à Then go live
@@ -358,6 +471,23 @@ Outcomes:
 ­ƒøæ Investigate root cause  
 ­ƒøæ Consider strategy adjustments  
 ­ƒøæ Rerun backtest after changes
+=======
+✅ Proceed to paper trading  
+✅ Monitor for 48 hours  
+✅ Then go live
+
+### If Results MEDIOCRE (Sharpe 0.6-0.8, DD 12-15%)
+🟡 Analyze which periods underperform  
+🟡 Consider parameter tweaks  
+🟡 Run walk-forward to validate  
+🟡 Then proceed cautiously
+
+### If Results POOR (Sharpe < 0.6, DD > 15%)
+🛑 DO NOT deploy  
+🛑 Investigate root cause  
+🛑 Consider strategy adjustments  
+🛑 Rerun backtest after changes
+>>>>>>> origin/main
 
 ---
 
@@ -393,6 +523,7 @@ stress_tests:
 
 ## Common Backtest Mistakes to Avoid
 
+<<<<<<< HEAD
 ### ÔØî Looking Ahead Bias
 Mistake: Using tomorrow's price to decide today's trade
 Solution: Backtest runner prevents this Ô£à
@@ -412,16 +543,44 @@ Solution: Config includes 0.1% commission Ô£à
 ### ÔØî Ignoring Drawdown
 Mistake: Focusing only on returns
 Solution: Monitor max drawdown limits Ô£à
+=======
+### ❌ Looking Ahead Bias
+Mistake: Using tomorrow's price to decide today's trade
+Solution: Backtest runner prevents this ✅
+
+### ❌ Overfitting
+Mistake: Optimizing parameters on same data used for testing
+Solution: Use walk-forward validation ✅
+
+### ❌ Unrealistic Assumptions
+Mistake: 0% slippage, instant fills
+Solution: Use adaptive slippage model ✅
+
+### ❌ Not Including Costs
+Mistake: Showing gross return, not net after commission
+Solution: Config includes 0.1% commission ✅
+
+### ❌ Ignoring Drawdown
+Mistake: Focusing only on returns
+Solution: Monitor max drawdown limits ✅
+>>>>>>> origin/main
 
 ---
 
 ## Summary
 
 **Before Going Live**, running a backtest shows:
+<<<<<<< HEAD
 - Ô£à Strategy makes money (positive expected value)
 - Ô£à Risk management works (stays within limits)
 - Ô£à System is stable (consistent across periods)
 - Ô£à Estimates are realistic (validated on historical data)
+=======
+- ✅ Strategy makes money (positive expected value)
+- ✅ Risk management works (stays within limits)
+- ✅ System is stable (consistent across periods)
+- ✅ Estimates are realistic (validated on historical data)
+>>>>>>> origin/main
 
 **Recommended**: Run walk-forward backtest (5-10 min) before paper trading.
 

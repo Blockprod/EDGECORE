@@ -1,14 +1,24 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Tests for Out-of-Sample (OOS) Validation Engine.
 
 Validates that pair trading discovery generalizes to future data,
 preventing overfitting and illusory correlations.
 """
 
+<<<<<<< HEAD
 import numpy as np
 import pandas as pd
 
 from validation.oos_validator import OOSValidationResult, OutOfSampleValidator
+=======
+import pandas as pd
+import numpy as np
+from validation.oos_validator import OutOfSampleValidator, OOSValidationResult
+>>>>>>> origin/main
 
 
 class TestOOSValidationBasics:
@@ -37,7 +47,11 @@ class TestOOSValidationBasics:
         )
         
         repr_str = repr(result)
+<<<<<<< HEAD
         assert "Ô£ô PASS" in repr_str
+=======
+        assert "✓ PASS" in repr_str
+>>>>>>> origin/main
         assert "AAPL_GOOGL" in repr_str
         assert "Valid pair" in repr_str
 
@@ -107,7 +121,11 @@ class TestOOSValidationLogic:
     
     def test_stable_half_life_passes(self):
         """Test that pairs with stable half-life pass validation."""
+<<<<<<< HEAD
         # num_symbols=2 Ôåô single pair, no heavy Bonferroni penalty
+=======
+        # num_symbols=2 ↓ single pair, no heavy Bonferroni penalty
+>>>>>>> origin/main
         validator = OutOfSampleValidator(hl_drift_tolerance=0.50, num_symbols=2)
         
         # Create series where spread is a genuine OU (mean-reverting) process
@@ -190,7 +208,11 @@ class TestOOSValidationLogic:
         )
         
         # Sprint 3.4: Assert validation MUST fail (either via failing OOS cointegration
+<<<<<<< HEAD
         # or via half-life drift ÔÇô both are valid failure modes)
+=======
+        # or via half-life drift – both are valid failure modes)
+>>>>>>> origin/main
         assert not result.validation_passed, (
             f"Validation should fail for divergent IS/OOS series, "
             f"but got passed=True, reason='{result.reason}'"

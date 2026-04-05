@@ -13,10 +13,23 @@ def test_t1_1():
 
     # Step 1: Test fresh data (should pass)
     print("[TEST] Testing fresh data (within 2 hours)...")
+<<<<<<< HEAD
     current_time = datetime.now(UTC)
     dates = pd.date_range(end=current_time - timedelta(minutes=30), periods=100, freq="1h")
     df_fresh = pd.DataFrame({"open": 100.0, "high": 101.0, "low": 99.0, "close": 100.5, "volume": 1000.0}, index=dates)
 
+=======
+    current_time = datetime.utcnow()
+    dates = pd.date_range(end=current_time - timedelta(minutes=30), periods=100, freq='1h')
+    df_fresh = pd.DataFrame({
+        'open': 100.0,
+        'high': 101.0,
+        'low': 99.0,
+        'close': 100.5,
+        'volume': 1000.0
+    }, index=dates)
+    
+>>>>>>> origin/main
     validator = OHLCVValidator("AAPL")
     result = validator.validate(df_fresh, raise_on_error=False, max_age_hours=2.0)
     assert result.is_valid, f"Fresh data should be valid, got: {result.errors}"
@@ -31,9 +44,13 @@ def test_t1_1():
 
     result_stale = validator.validate(df_stale, raise_on_error=False, max_age_hours=2.0)
     assert not result_stale.is_valid, "Stale data should be invalid"
+<<<<<<< HEAD
     assert any("old" in err.lower() for err in result_stale.errors), (
         f"Should mention staleness, got: {result_stale.errors}"
     )
+=======
+    assert any("old" in err.lower() for err in result_stale.errors), f"Should mention staleness, got: {result_stale.errors}"
+>>>>>>> origin/main
     print("[OK] Stale data correctly rejected:")
     for err in result_stale.errors:
         if "old" in err.lower():
@@ -49,9 +66,13 @@ def test_t1_1():
 
     result_future = validator.validate(df_future, raise_on_error=False, max_age_hours=2.0)
     assert not result_future.is_valid, "Future data should be invalid"
+<<<<<<< HEAD
     assert any("future" in err.lower() for err in result_future.errors), (
         f"Should mention future, got: {result_future.errors}"
     )
+=======
+    assert any("future" in err.lower() for err in result_future.errors), f"Should mention future, got: {result_future.errors}"
+>>>>>>> origin/main
     print("[OK] Future timestamps correctly rejected:")
     for err in result_future.errors:
         if "future" in err.lower():
@@ -68,12 +89,20 @@ def test_t1_1():
     result_2h = validator.validate(df_3h, raise_on_error=False, max_age_hours=2.0)
     assert not result_2h.is_valid, "3h old data should fail with 2h limit"
     print("[OK] 3h old data rejected with 2h limit")
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # Should pass with 4h limit
     result_4h = validator.validate(df_3h, raise_on_error=False, max_age_hours=4.0)
     assert result_4h.is_valid, "3h old data should pass with 4h limit"
     print("[OK] 3h old data accepted with 4h limit")
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     print("\n[PASS] T1.1 Validation Successful\n")
 
 

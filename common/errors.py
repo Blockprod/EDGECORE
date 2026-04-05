@@ -9,6 +9,10 @@ Provides:
 """
 
 from enum import Enum
+<<<<<<< HEAD
+=======
+from typing import Optional
+>>>>>>> origin/main
 
 
 class ErrorCategory(Enum):
@@ -115,15 +119,25 @@ def classify_exception(exc: Exception) -> ErrorCategory:
         ErrorCategory indicating how to handle the error
 
     Examples:
+<<<<<<< HEAD
         - TimeoutError ÔåÆ TRANSIENT (retry immediately)
         - ConnectionError ÔåÆ TRANSIENT (network issue)
         - KeyError (missing field in data) ÔåÆ FATAL (logic error)
+=======
+        - TimeoutError → TRANSIENT (retry immediately)
+        - ConnectionError → TRANSIENT (network issue)
+        - KeyError (missing field in data) → FATAL (logic error)
+>>>>>>> origin/main
     """
 
     # Network/temporary errors
     if isinstance(exc, (TimeoutError, ConnectionError, OSError)):
         return ErrorCategory.TRANSIENT
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # Data errors (logic)
     if isinstance(exc, (KeyError, ValueError, TypeError)):
         return ErrorCategory.FATAL  # Programming error, must stop

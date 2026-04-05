@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Signal Engine Module -- Z-score computation, adaptive thresholds, signal generation.
 
 Provides:

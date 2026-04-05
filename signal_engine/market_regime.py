@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿"""
 Market Regime Filter ÔÇö SPY-based adaptive trend & volatility regime detection.
 
@@ -6,6 +7,16 @@ Post-v27/v28/v29 evolution:
   v28: Binary filter ÔåÆ -8.29% (blocked ALL entries in TRENDING)
   v29: Directional filter ÔåÆ +2.08% (longs allowed in bull TRENDING)
   v30: ADAPTIVE BIDIRECTIONAL filter ÔåÆ works in both BULL and BEAR markets
+=======
+"""
+Market Regime Filter — SPY-based adaptive trend & volatility regime detection.
+
+Post-v27/v28/v29 evolution:
+  v27: No filter → -26.55% (shorts destroyed in bull market)
+  v28: Binary filter → -8.29% (blocked ALL entries in TRENDING)
+  v29: Directional filter → +2.08% (longs allowed in bull TRENDING)
+  v30: ADAPTIVE BIDIRECTIONAL filter → works in both BULL and BEAR markets
+>>>>>>> origin/main
 
 The key insight: mean-reversion has a directional tailwind:
   - In BULL trends: LONG-side MR (buy the relative dip) works; shorts fight the trend
@@ -17,10 +28,17 @@ Detection uses two indicators on SPY data (from IBKR, no external feeds):
   2. **Volatility regime**: 20-day rolling realized vol (annualized)
 
 Four states:
+<<<<<<< HEAD
   - ``BULL_TRENDING``:    MA50 >> MA200 AND low vol ÔåÆ longs only
   - ``BEAR_TRENDING``:    MA50 << MA200 AND low vol ÔåÆ longs blocked, shorts at 0.80 (v43a baseline)
   - ``MEAN_REVERTING``:   High vol (any trend) ÔåÆ both sides full sizing
   - ``NEUTRAL``:          Near crossover, moderate vol ÔåÆ both sides reduced
+=======
+  - ``BULL_TRENDING``:    MA50 >> MA200 AND low vol → longs only
+  - ``BEAR_TRENDING``:    MA50 << MA200 AND low vol → longs blocked, shorts at 0.80 (v43a baseline)
+  - ``MEAN_REVERTING``:   High vol (any trend) → both sides full sizing
+  - ``NEUTRAL``:          Near crossover, moderate vol → both sides reduced
+>>>>>>> origin/main
 
 Usage::
 
@@ -40,6 +58,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+<<<<<<< HEAD
+=======
+from typing import Optional
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -51,6 +73,7 @@ logger = get_logger(__name__)
 class MarketRegime(Enum):
     """Market-level regime classification (v30: adaptive bidirectional)."""
 
+<<<<<<< HEAD
     MEAN_REVERTING = "mean_reverting"  # High vol ÔåÆ both sides at 100%
     TRENDING = "trending"  # Legacy alias for BULL_TRENDING (backward compat)
     BULL_TRENDING = "bull_trending"  # Bull trend ÔåÆ longs only
@@ -58,6 +81,13 @@ class MarketRegime(Enum):
         "bear_trending"  # Bear trend ÔåÆ longs blocked, shorts favored (v43a baseline; v44 neutral tested but reverted)
     )
     NEUTRAL = "neutral"  # Crossover zone ÔåÆ both reduced
+=======
+    MEAN_REVERTING = "mean_reverting"    # High vol → both sides at 100%
+    TRENDING = "trending"               # Legacy alias for BULL_TRENDING (backward compat)
+    BULL_TRENDING = "bull_trending"      # Bull trend → longs only
+    BEAR_TRENDING = "bear_trending"     # Bear trend → longs blocked, shorts favored (v43a baseline; v44 neutral tested but reverted)
+    NEUTRAL = "neutral"                  # Crossover zone → both reduced
+>>>>>>> origin/main
 
 
 @dataclass
@@ -72,7 +102,11 @@ class MarketRegimeState:
     vol_threshold: float  # Configured threshold
     sizing_multiplier: float  # Legacy: 1.0 (MR), 0.0 (TRENDING), 0.5 (NEUTRAL)
     # v30: per-side sizing multipliers
+<<<<<<< HEAD
     long_sizing: float = 1.0  # Sizing multiplier for long entries
+=======
+    long_sizing: float = 1.0   # Sizing multiplier for long entries
+>>>>>>> origin/main
     short_sizing: float = 1.0  # Sizing multiplier for short entries
 
 
@@ -80,7 +114,11 @@ class MarketRegimeFilter:
     """
     Market-level regime filter based on SPY trend and volatility.
 
+<<<<<<< HEAD
     v30: Adaptive bidirectional ÔÇö detects bull vs bear trends and gates
+=======
+    v30: Adaptive bidirectional — detects bull vs bear trends and gates
+>>>>>>> origin/main
     entries by side accordingly. Both bull AND bear markets can generate
     profitable trades when the right side is selected.
 
@@ -120,7 +158,11 @@ class MarketRegimeFilter:
         self.enabled = enabled
         self.trend_favorable_sizing = trend_favorable_sizing
         self.neutral_sizing = neutral_sizing
+<<<<<<< HEAD
         self._last_state: MarketRegimeState | None = None
+=======
+        self._last_state: Optional[MarketRegimeState] = None
+>>>>>>> origin/main
 
     def classify(self, spy_prices: pd.Series) -> MarketRegimeState:
         """
@@ -135,6 +177,7 @@ class MarketRegimeFilter:
         if not self.enabled:
             state = MarketRegimeState(
                 regime=MarketRegime.MEAN_REVERTING,
+<<<<<<< HEAD
                 ma_fast=0.0,
                 ma_slow=0.0,
                 ma_spread_pct=0.0,
@@ -143,6 +186,12 @@ class MarketRegimeFilter:
                 sizing_multiplier=1.0,
                 long_sizing=1.0,
                 short_sizing=1.0,
+=======
+                ma_fast=0.0, ma_slow=0.0, ma_spread_pct=0.0,
+                realized_vol=0.0, vol_threshold=self.vol_threshold,
+                sizing_multiplier=1.0,
+                long_sizing=1.0, short_sizing=1.0,
+>>>>>>> origin/main
             )
             self._last_state = state
             return state
@@ -151,11 +200,16 @@ class MarketRegimeFilter:
             # Not enough data -> default to NEUTRAL (cautious)
             state = MarketRegimeState(
                 regime=MarketRegime.NEUTRAL,
+<<<<<<< HEAD
                 ma_fast=0.0,
                 ma_slow=0.0,
                 ma_spread_pct=0.0,
                 realized_vol=0.0,
                 vol_threshold=self.vol_threshold,
+=======
+                ma_fast=0.0, ma_slow=0.0, ma_spread_pct=0.0,
+                realized_vol=0.0, vol_threshold=self.vol_threshold,
+>>>>>>> origin/main
                 sizing_multiplier=0.5,
                 long_sizing=self.neutral_sizing,
                 short_sizing=self.neutral_sizing,
@@ -164,14 +218,28 @@ class MarketRegimeFilter:
             return state
 
         # 1. Trend indicator: MA crossover (signed)
+<<<<<<< HEAD
         ma_f = float(pd.Series(spy_prices.rolling(self.ma_fast).mean()).iloc[-1])
         ma_s = float(pd.Series(spy_prices.rolling(self.ma_slow).mean()).iloc[-1])
+=======
+        ma_f = float(spy_prices.rolling(self.ma_fast).mean().iloc[-1])
+        ma_s = float(spy_prices.rolling(self.ma_slow).mean().iloc[-1])
+>>>>>>> origin/main
         ma_spread_pct = (ma_f - ma_s) / ma_s if ma_s != 0 else 0.0
 
         # 2. Volatility indicator: realized vol (annualized)
         returns = spy_prices.pct_change().dropna()
+<<<<<<< HEAD
         recent_returns = returns.iloc[-self.vol_window :]
         realized_vol = float(recent_returns.std() * np.sqrt(252)) if len(recent_returns) >= 5 else 0.0
+=======
+        recent_returns = returns.iloc[-self.vol_window:]
+        realized_vol = (
+            float(recent_returns.std() * np.sqrt(252))
+            if len(recent_returns) >= 5
+            else 0.0
+        )
+>>>>>>> origin/main
 
         # 3. Adaptive bidirectional classification
         #
@@ -206,7 +274,11 @@ class MarketRegimeFilter:
             # Reverted to v43a to use as v44b baseline comparison.
             regime = MarketRegime.BEAR_TRENDING
             sizing_mult = 0.0  # Legacy compat
+<<<<<<< HEAD
             long_sz = 0.0  # Block longs in bear trend
+=======
+            long_sz = 0.0                           # Block longs in bear trend
+>>>>>>> origin/main
             short_sz = self.trend_favorable_sizing  # Favor shorts in bear
         else:
             # Near crossover -> neutral, both sides reduced
@@ -243,6 +315,10 @@ class MarketRegimeFilter:
         return state
 
     @property
+<<<<<<< HEAD
     def last_state(self) -> MarketRegimeState | None:
+=======
+    def last_state(self) -> Optional[MarketRegimeState]:
+>>>>>>> origin/main
         """Return the most recent regime state."""
         return self._last_state

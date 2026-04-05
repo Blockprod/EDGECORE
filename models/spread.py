@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 ﻿from typing import Any
+=======
+from typing import Optional
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
 from structlog import get_logger
 
 from models.half_life_estimator import SpreadHalfLifeEstimator
+<<<<<<< HEAD
 from models.kalman_hedge import KalmanHedgeRatio
 
 # Module-level Cython import — avoids per-call dict lookup in hot path
@@ -24,12 +29,22 @@ except ImportError as _e_cython:
         error=str(_e_cython),
         impact="10x slower half-life estimation — recompile with: python setup.py build_ext --inplace",
     )
+=======
+
+# Module-level Cython import — avoids per-call dict lookup in hot path
+try:
+    from models.cointegration_fast import half_life_fast as _half_life_fast_cython
+    _HALF_LIFE_CYTHON = True
+except ImportError:
+    _HALF_LIFE_CYTHON = False
+>>>>>>> origin/main
 
 logger = get_logger(__name__)
 
 
 class SpreadModel:
     """Linear spread model for pair trading with hedge ratio tracking."""
+<<<<<<< HEAD
 
     def __init__(
         self,
@@ -41,6 +56,16 @@ class SpreadModel:
         use_log_prices: bool = False,
         use_kalman: bool = False,
         kalman_delta: float = 1e-4,
+=======
+    
+    def __init__(
+        self, 
+        y: pd.Series, 
+        x: pd.Series, 
+        pair_key: str = None,
+        hedge_ratio_tracker = None,
+        eg_beta_raw: float = None,
+>>>>>>> origin/main
     ):
         """
         Initialize spread model via OLS regression: y = alpha + beta * x + residuals
@@ -49,6 +74,7 @@ class SpreadModel:
             y: Dependent series (typically first asset price)
             x: Independent series (typically second asset price)
             pair_key: Identifier for tracking (e.g., "AAPL_MSFT")
+<<<<<<< HEAD
             hedge_ratio_tracker: Optional HedgeRatioTracker instance for ╬▓ monitoring
             eg_beta_raw: Optional ╬▓ from the Engle-Granger test (de-normalised).
                 If provided, a consistency check is performed against the
@@ -59,6 +85,12 @@ class SpreadModel:
             use_kalman: If True, use KalmanHedgeRatio instead of static OLS for
                 hedge ratio estimation. β and intercept adapt bar-by-bar.
             kalman_delta: Process noise for KalmanHedgeRatio (default 1e-4).
+=======
+            hedge_ratio_tracker: Optional HedgeRatioTracker instance for β monitoring
+            eg_beta_raw: Optional β from the Engle-Granger test (de-normalised).
+                If provided, a consistency check is performed against the
+                OLS-on-raw-prices β.  Large divergences are logged as warnings.
+>>>>>>> origin/main
         """
         self.use_log_prices = use_log_prices
         self.use_kalman = use_kalman
@@ -74,7 +106,11 @@ class SpreadModel:
         self.intercept = beta[0]
         self.beta = beta[1]
 
+<<<<<<< HEAD
         # C-03: verify EG ╬▓ vs SpreadModel ╬▓ consistency when available
+=======
+        # C-03: verify EG β vs SpreadModel β consistency when available
+>>>>>>> origin/main
         if eg_beta_raw is not None and abs(self.beta) > 1e-12:
             rel_diff = abs(self.beta - eg_beta_raw) / abs(self.beta)
             if rel_diff > 0.05:  # >5% divergence
@@ -90,6 +126,7 @@ class SpreadModel:
         self.pair_key = pair_key
         self.tracker = hedge_ratio_tracker
         self.is_deprecated = False
+<<<<<<< HEAD
         self.residuals = np.asarray(y_fit, dtype=float) - X @ beta
         self.std_residuals = float(np.std(self.residuals))
 
@@ -115,6 +152,60 @@ class SpreadModel:
             self.tracker.record_initial_beta(self.pair_key, self.beta)
 
     def _estimate_half_life(self, y: pd.Series, x: pd.Series) -> float | None:
+=======
+        self.residuals = y.values - X @ beta
+        self.std_residuals = np.std(self.residuals)
+        
+        # Estimate half-life of spread mean reversion
+        self.half_life = self._estimate_half_life(y, x)
+        
+        # Record initial β if tracker is provided
+        if self.tracker is not None and self.pair_key is not None:
+            self.tracker.record_initial_beta(self.pair_key, self.beta)
+    
+    def _estimate_half_life(self, y: pd.Series, x: pd.Series) -> Optional[float]:
+        """
+        Estimate half-life of the spread using AR(1) model.
+
+        Uses the Cython ``half_life_fast`` kernel when available (pure C AR(1),
+        ~10× faster), falling back to ``SpreadHalfLifeEstimator`` when not.
+
+        Args:
+            y: Dependent series
+            x: Independent series
+
+        Returns:
+            Half-life in days, or None if not mean-reverting
+        """
+        try:
+            # self.residuals IS the spread (y - intercept - beta*x), already
+            # computed in __init__ — no need to call compute_spread() again.
+            res = self.residuals.astype(np.float64)
+
+            # ── Cython fast path ──────────────────────────────────────────
+            if _HALF_LIFE_CYTHON:
+                hl_int = _half_life_fast_cython(res)
+                if 5 <= hl_int <= 200:
+                    logger.debug("half_life_estimated", pair=self.pair_key, half_life=hl_int)
+                    return float(hl_int)
+
+            # ── Pure-Python fallback ─────────────────────────────────────
+            spread = pd.Series(res, index=y.index)
+            estimator = SpreadHalfLifeEstimator(lookback=min(252, len(spread)))
+            hl = estimator.estimate_half_life_from_spread(spread, validate=True)
+            if hl is not None:
+                logger.debug("half_life_estimated", pair=self.pair_key, half_life=hl)
+            return hl
+        except Exception as e:
+            logger.debug(
+                "half_life_estimation_failed",
+                pair=self.pair_key,
+                error=str(e)
+            )
+            return None
+    
+    def compute_spread(self, y: pd.Series, x: pd.Series) -> pd.Series:
+>>>>>>> origin/main
         """
         Estimate half-life of the spread using AR(1) model.
 
@@ -128,6 +219,7 @@ class SpreadModel:
         Returns:
             Half-life in days, or None if not mean-reverting
         """
+<<<<<<< HEAD
         try:
             # self.residuals IS the spread (y - intercept - beta*x), already
             # computed in __init__ ÔÇö no need to call compute_spread() again.
@@ -216,17 +308,33 @@ class SpreadModel:
         Checks with tracker if reestimation is needed, and updates the model
         if so. Returns whether the pair is still stable.
 
+=======
+        return y - (self.intercept + self.beta * x)
+    
+    def reestimate_beta_if_needed(self, y: pd.Series, x: pd.Series, bar_time=None) -> bool:
+        """
+        Reestimate β if enough time has passed, using recent data.
+        
+        Checks with tracker if reestimation is needed, and updates the model
+        if so. Returns whether the pair is still stable.
+        
+>>>>>>> origin/main
         Args:
             y: Recent dependent series
             x: Recent independent series
             bar_time: Timestamp of the current bar (optional, passed to tracker)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         Returns:
             is_stable: Whether the relationship remains stable
         """
         if self.tracker is None or self.pair_key is None:
             # No tracking, model stays as-is
             return True
+<<<<<<< HEAD
         # C-04: Kalman filter continuously updates \u03b2 \u2014 skip OLS re-estimation.
         if self.use_kalman:
             return True
@@ -245,6 +353,22 @@ class SpreadModel:
             logger.warning("beta_reestimation_failed", pair=self.pair_key, error=str(e))
             return True  # Assume stable if reestimation fails
 
+=======
+        
+        # Reestimate β from recent data
+        X = np.column_stack([np.ones(len(x)), x.values])
+        try:
+            beta_coef = np.linalg.lstsq(X, y.values, rcond=None)[0]
+            new_beta = beta_coef[1]
+        except Exception as e:
+            logger.warning(
+                "beta_reestimation_failed",
+                pair=self.pair_key,
+                error=str(e)
+            )
+            return True  # Assume stable if reestimation fails
+        
+>>>>>>> origin/main
         # Check with tracker if this represents a drift
         current_beta, is_stable = self.tracker.reestimate_if_needed(
             self.pair_key,
@@ -252,11 +376,16 @@ class SpreadModel:
             drift_tolerance_pct=10.0,
             bar_time=bar_time,
         )
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Update model if reestimation occurred
         if current_beta is not None and not self.is_deprecated:
             self.beta = current_beta
             self.intercept = beta_coef[0]
+<<<<<<< HEAD
             self.residuals = y_fit - X @ beta_coef
             self.std_residuals = np.std(self.residuals)
 
@@ -273,18 +402,53 @@ class SpreadModel:
         """
         Compute rolling Z-score of spread with optional adaptive lookback.
 
+=======
+            self.residuals = y.values - X @ beta_coef
+            self.std_residuals = np.std(self.residuals)
+        
+        # Mark as deprecated if unstable
+        if not is_stable:
+            self.is_deprecated = True
+            logger.warning(
+                "spread_model_deprecated",
+                pair=self.pair_key,
+                reason="Hedge ratio instability"
+            )
+        
+        return is_stable
+    
+    def compute_z_score(
+        self, 
+        spread: pd.Series, 
+        lookback: int = None,
+        half_life: float = None
+    ) -> pd.Series:
+        """
+        Compute rolling Z-score of spread with optional adaptive lookback.
+        
+>>>>>>> origin/main
         If half_life is provided (or estimated from model), lookback window adapts:
         - Fast mean reversion (HL < 30d): lookback = 3 * HL (smooth short-term noise)
         - Normal (30-60d): lookback = HL (capture full cycle)
         - Slow reversion (HL > 60d): lookback = 60 (use max historical window)
+<<<<<<< HEAD
 
         This ensures Z-score captures the right frequency of mean reversion.
 
+=======
+        
+        This ensures Z-score captures the right frequency of mean reversion.
+        
+>>>>>>> origin/main
         Args:
             spread: Spread series
             lookback: Explicit rolling window size (overrides half_life logic if provided)
             half_life: Half-life in days (used to infer optimal lookback). If None, uses self.half_life
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         Returns:
             Z-score series
         """
@@ -292,11 +456,19 @@ class SpreadModel:
         if lookback is None:
             # Use provided half_life, or fall back to estimated half_life
             hl = half_life if half_life is not None else self.half_life
+<<<<<<< HEAD
 
             if hl is not None:
                 # Smooth adaptive lookback (no discontinuity):
                 # Multiplier linearly interpolates from 3.0 at HLÔëñ10
                 # down to 1.0 at HLÔëÑ60, capped at 60 for HL>60.
+=======
+            
+            if hl is not None:
+                # Smooth adaptive lookback (no discontinuity):
+                # Multiplier linearly interpolates from 3.0 at HL≤10
+                # down to 1.0 at HL≥60, capped at 60 for HL>60.
+>>>>>>> origin/main
                 if hl <= 10:
                     multiplier = 3.0
                 elif hl >= 60:
@@ -308,6 +480,7 @@ class SpreadModel:
                 # Cap at 60 for very slow reversion
                 lookback = min(lookback, 60)
             else:
+<<<<<<< HEAD
                 # No half-life estimate available — warn so the issue is
                 # visible in logs rather than a silent wrong-window fallback.
                 logger.warning(
@@ -320,6 +493,14 @@ class SpreadModel:
         # Enforce bounds: [10, 120]
         lookback = max(10, min(lookback, 120))
 
+=======
+                # Default fallback (no half-life available)
+                lookback = 20
+        
+        # Enforce bounds: [10, 120]
+        lookback = max(10, min(lookback, 120))
+        
+>>>>>>> origin/main
         rolling_mean = spread.rolling(window=lookback).mean()
         rolling_std = spread.rolling(window=lookback).std()
         z_score = (spread - rolling_mean) / (rolling_std + 1e-8)
@@ -329,6 +510,7 @@ class SpreadModel:
 
     def get_model_info(self) -> dict:
         """Return model parameters for inspection."""
+<<<<<<< HEAD
         info: dict = {
             "intercept": self.intercept,
             "beta": self.beta,
@@ -345,6 +527,16 @@ class SpreadModel:
             info["kalman_beta_ci_lower"] = ci[0]
             info["kalman_beta_ci_upper"] = ci[1]
         return info
+=======
+        return {
+            'intercept': self.intercept,
+            'beta': self.beta,
+            'residual_std': self.std_residuals,
+            'residual_mean': np.mean(self.residuals),
+            'half_life': self.half_life,
+            'is_deprecated': self.is_deprecated
+        }
+>>>>>>> origin/main
 
     def update(self, y: pd.Series, x: pd.Series) -> None:
         """Re-fit the model with new price data *in place*.
@@ -353,6 +545,7 @@ class SpreadModel:
         HedgeRatioTracker state) while refreshing the OLS estimate,
         residuals, and half-life.
         """
+<<<<<<< HEAD
         if self.use_log_prices:
             y_fit = np.log(np.asarray(y, dtype=float).clip(min=1e-10))
             x_fit = np.log(np.asarray(x, dtype=float).clip(min=1e-10))
@@ -362,6 +555,11 @@ class SpreadModel:
         X = np.column_stack([np.ones(len(x_fit)), x_fit])
         try:
             beta_coef = np.linalg.lstsq(X, y_fit, rcond=None)[0]
+=======
+        X = np.column_stack([np.ones(len(x)), x.values])
+        try:
+            beta_coef = np.linalg.lstsq(X, y.values, rcond=None)[0]
+>>>>>>> origin/main
         except Exception as exc:
             logger.warning(
                 "spread_model_update_failed",
@@ -374,6 +572,7 @@ class SpreadModel:
         self.beta = beta_coef[1]
         self.y = y
         self.x = x
+<<<<<<< HEAD
         self.residuals = y_fit - X @ beta_coef
         self.std_residuals = float(np.std(self.residuals))
 
@@ -390,3 +589,8 @@ class SpreadModel:
                 self.intercept = self._kalman.intercept
             self.residuals = np.array(_spread_vals_warm, dtype=float)
             self.std_residuals = float(np.std(self.residuals))
+=======
+        self.residuals = y.values - X @ beta_coef
+        self.std_residuals = np.std(self.residuals)
+        self.half_life = self._estimate_half_life(y, x)
+>>>>>>> origin/main

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Sprint 3.3 - YAML universe cleanup & duplicate detection.
 
 Tests:
@@ -43,7 +47,11 @@ def _load_symbols(yaml_file: str) -> list:
     path = CONFIG_DIR / yaml_file
     if not path.exists():
         pytest.skip(f"{yaml_file} not found")
+<<<<<<< HEAD
     with open(path, encoding="utf-8") as f:
+=======
+    with open(path, "r", encoding="utf-8") as f:
+>>>>>>> origin/main
         cfg = yaml.safe_load(f)
     return cfg.get("trading_universe", {}).get("symbols", [])
 

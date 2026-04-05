@@ -9,6 +9,10 @@ Covers:
 - Microstructure effects
 """
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 import pytest
 
 from common.types import (

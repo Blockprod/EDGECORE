@@ -1,13 +1,23 @@
+<<<<<<< HEAD
 ﻿# EDGECORE Hybrid Python/C++ Architecture
 
 **Date**: F├®vrier 2026  
+=======
+# EDGECORE Hybrid Python/C++ Architecture
+
+**Date**: Février 2026  
+>>>>>>> origin/main
 **Status**: PROPOSAL FOR V1.1  
 **Estimated Timeline**: 3-4 semaines  
 **Expected Performance Gains**: 3-5x backtesting speedup, 2-3x pair discovery speedup
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒôï Table of Contents
+=======
+## 📋 Table of Contents
+>>>>>>> origin/main
 
 1. [Executive Summary](#executive-summary)
 2. [Current State Analysis](#current-state-analysis)
@@ -25,10 +35,17 @@
 ## Executive Summary
 
 ### Current Situation
+<<<<<<< HEAD
 - Ô£à EDGECORE v1.0: 100% Python implementation, production-ready
 - Ô£à 84/84 tests passing, 0 warnings, full test coverage
 - ­ƒƒí Performance: Backtests take ~30-45 seconds for 250 days ├ù multiple pairs
 - ­ƒƒí Bottleneck: CPU-intensive pair discovery and backtesting loops
+=======
+- ✅ EDGECORE v1.0: 100% Python implementation, production-ready
+- ✅ 84/84 tests passing, 0 warnings, full test coverage
+- 🟡 Performance: Backtests take ~30-45 seconds for 250 days × multiple pairs
+- 🟡 Bottleneck: CPU-intensive pair discovery and backtesting loops
+>>>>>>> origin/main
 
 ### Strategic Opportunity
 Selective migration to hybrid Python/C++ architecture focusing on:
@@ -39,6 +56,7 @@ Selective migration to hybrid Python/C++ architecture focusing on:
 ### Expected Outcomes
 ```
 Performance Improvements:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Backtesting: 30s ÔåÆ 8-10s (3.5x speedup)
 Ôö£ÔöÇÔöÇ Pair Discovery: 5s ÔåÆ 1.5s (2.3x speedup)
 Ôö£ÔöÇÔöÇ Cointegration Tests: 12s ÔåÆ 4s (2.5x speedup)
@@ -52,6 +70,21 @@ Code Quality:
 ```
 
 **Recommended Decision**: Ô£à **PROCEED WITH HYBRID ARCHITECTURE FOR V1.1**
+=======
+├── Backtesting: 30s → 8-10s (3.5x speedup)
+├── Pair Discovery: 5s → 1.5s (2.3x speedup)
+├── Cointegration Tests: 12s → 4s (2.5x speedup)
+└── Total System: 47s → 14s overall (3.4x speedup)
+
+Code Quality:
+├── API Compatibility: 100% (zero breaking changes)
+├── Test Coverage: Maintained at 100%
+├── Maintainability: Enhanced with clear C++/Python boundaries
+└── Cross-platform: Linux, macOS, Windows
+```
+
+**Recommended Decision**: ✅ **PROCEED WITH HYBRID ARCHITECTURE FOR V1.1**
+>>>>>>> origin/main
 
 ---
 
@@ -63,6 +96,7 @@ Code Quality:
 ```
 Location: backtests/runner.py (lines 40-80)
 Current Implementation: Pure Python
+<<<<<<< HEAD
 Performance Profile: O(days ├ù pairs) with Python overhead
 
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
@@ -78,6 +112,23 @@ Performance Profile: O(days ├ù pairs) with Python overhead
 Ôöé Pure Python function calls in tight loop        Ôöé
 Ôöé No compilation, interpreter overhead ~40%      Ôöé
 ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+=======
+Performance Profile: O(days × pairs) with Python overhead
+
+┌─────────────────────────────────────────────────┐
+│ Backtesting Loop Performance                    │
+├─────────────────────────────────────────────────┤
+│ Total Time: 30-45 seconds                       │
+│ ├── Data Loading: 2s (1%)                       │
+│ ├── Strategy Calls: 8s (18%)    ← Overhead      │
+│ ├── Risk Checks: 4s (9%)        ← Overhead      │
+│ ├── Order Processing: 3s (7%)   ← Overhead      │
+│ └── Equity Updates: 23s (51%)   ← MAIN CULPRIT  │
+│                                                 │
+│ Pure Python function calls in tight loop        │
+│ No compilation, interpreter overhead ~40%      │
+└─────────────────────────────────────────────────┘
+>>>>>>> origin/main
 ```
 
 **Root Cause**: Tight loops calling Python methods, dictionaries, lists
@@ -88,6 +139,7 @@ Location: models/cointegration.py (lines 80-130)
 Current: SciPy backend (C), but Python orchestration layer
 
 Performance Profile:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Test Duration: 12 seconds for 100 symbol pairs
 Ôö£ÔöÇÔöÇ Pairs to Test: C(100,2) = 4,950 pairs
 Ôö£ÔöÇÔöÇ Tests per Second: ~410 pairs/second
@@ -97,6 +149,17 @@ With C++ parallelization:
 Ôö£ÔöÇÔöÇ Theoretical speedup: 4-8x (OpenMP on 8 cores)
 Ôö£ÔöÇÔöÇ Realistic speedup: 2-3x (including overhead)
 ÔööÔöÇÔöÇ Expected: 12s ÔåÆ 4-5s
+=======
+├── Test Duration: 12 seconds for 100 symbol pairs
+├── Pairs to Test: C(100,2) = 4,950 pairs
+├── Tests per Second: ~410 pairs/second
+└── Bottleneck: Python loop overhead, not SciPy
+
+With C++ parallelization:
+├── Theoretical speedup: 4-8x (OpenMP on 8 cores)
+├── Realistic speedup: 2-3x (including overhead)
+└── Expected: 12s → 4-5s
+>>>>>>> origin/main
 ```
 
 #### 3. Pair Discovery Loop (MODERATE)
@@ -106,16 +169,24 @@ Current: Python multiprocessing + parallel
 Issue: Multiprocessing has IPC overhead
 
 Current Implementation:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Sequential time: 2s per strategy generation
 Ôö£ÔöÇÔöÇ Cached time: 0.1s (instant)
 Ôö£ÔöÇÔöÇ Discovery frequency: 1x per session or cache miss
 ÔööÔöÇÔöÇ Pain point: Initial discovery on cache miss
+=======
+├── Sequential time: 2s per strategy generation
+├── Cached time: 0.1s (instant)
+├── Discovery frequency: 1x per session or cache miss
+└── Pain point: Initial discovery on cache miss
+>>>>>>> origin/main
 ```
 
 ### CPU Timeline Analysis
 
 ```
 CURRENT WORKFLOW (47s total)
+<<<<<<< HEAD
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
 Ôöé 0s  - Data load (2s)         ÔûêÔûêÔûêÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ Ôöé
 Ôöé 2s  - Pair discovery (3s)    ÔûêÔûêÔûêÔûêÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ Ôöé
@@ -134,6 +205,26 @@ PROPOSED WORKFLOW (14s total) = 3.4x speedup
 Ôöé 15.5s - Metrics calc (2s)    ÔûêÔûêÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ Ôöé
 Ôöé 14s - COMPLETE               Ô£ô (33% of original time)      Ôöé
 ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+=======
+┌─────────────────────────────────────────────────────────────┐
+│ 0s  - Data load (2s)         ███░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 2s  - Pair discovery (3s)    ████░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 5s  - Cointegration (12s)    ████████████░░░░░░░░░░░░░░░░░░ │
+│ 17s - Backtest loop (28s)    ████████████████████████░░░░░░ │
+│ 45s - Metrics calc (2s)      ██░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 47s - COMPLETE               ✓                             │
+└─────────────────────────────────────────────────────────────┘
+
+PROPOSED WORKFLOW (14s total) = 3.4x speedup
+┌─────────────────────────────────────────────────────────────┐
+│ 0s  - Data load (2s)         ███░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 2s  - Pair discovery (1.5s)  ██░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 3.5s - Cointegration (4s)    █████░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 7.5s - Backtest loop (8s)    ██████████░░░░░░░░░░░░░░░░░░░ │
+│ 15.5s - Metrics calc (2s)    ██░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
+│ 14s - COMPLETE               ✓ (33% of original time)      │
+└─────────────────────────────────────────────────────────────┘
+>>>>>>> origin/main
 ```
 
 ---
@@ -144,7 +235,11 @@ PROPOSED WORKFLOW (14s total) = 3.4x speedup
 
 1. **Zero API Breakage**: Python interface remains identical
 2. **Selective Optimization**: Only CPU-bound components migrated
+<<<<<<< HEAD
 3. **Clear Boundaries**: Minimal PythonÔåöC++ interaction
+=======
+3. **Clear Boundaries**: Minimal Python↔C++ interaction
+>>>>>>> origin/main
 4. **Maintainability**: C++ code simple and well-documented
 5. **Testing**: All tests remain Python-based
 
@@ -152,6 +247,7 @@ PROPOSED WORKFLOW (14s total) = 3.4x speedup
 
 ```
 EDGECORE v1.1 Hybrid Architecture
+<<<<<<< HEAD
 ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
 
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ PYTHON LAYER ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
@@ -199,11 +295,61 @@ EDGECORE v1.1 Hybrid Architecture
             Ôöé  NumPy/SciPy (Already Optimized)Ôöé
             Ôöé  (Kept as-is, very efficient)   Ôöé
             ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+=======
+═════════════════════════════════════════════════════════════
+
+┌─────────────────────── PYTHON LAYER ─────────────────────┐
+│                      (API & Orchestration)                │
+│                                                            │
+│  main.py ──┐                                              │
+│            │                                              │
+│            └──→ BacktestRunner (Wrapper)                 │
+│                 ↓                                         │
+│                 [Calls C++ engine]                       │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+                          ↕
+                   [Pybind11 Bindings]
+                          ↕
+┌────────────── C++ PERFORMANCE LAYER ──────────────────────┐
+│                   (Core Algorithms)                        │
+│                                                            │
+│  ┌─────────────────────────────────────────────┐          │
+│  │ BacktestEngine (C++)                       │          │
+│  │ ├── Market loop (compiled)                 │          │
+│  │ ├── Order processing (stack-based)         │          │
+│  │ ├── Equity updates (direct memory)         │          │
+│  │ └── Python callbacks (signal generation)   │          │
+│  └─────────────────────────────────────────────┘          │
+│                                                            │
+│  ┌─────────────────────────────────────────────┐          │
+│  │ CointegrationEngine (C++)                  │          │
+│  │ ├── Engle-Granger test (compiled)          │          │
+│  │ ├── Half-life calculation (SIMD optim)     │          │
+│  │ ├── OpenMP parallel loop (#pragma omp)     │          │
+│  │ └── Results collection                     │          │
+│  └─────────────────────────────────────────────┘          │
+│                                                            │
+│  ┌─────────────────────────────────────────────┐          │
+│  │ PairDiscoveryEngine (C++)                  │          │
+│  │ ├── Parallelized pair generator            │          │
+│  │ ├── Cointegration calls (C++)              │          │
+│  │ └── Caching layer (Python)                 │          │
+│  └─────────────────────────────────────────────┘          │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+                          ↕
+            ┌─────────────────────────────────┐
+            │  NumPy/SciPy (Already Optimized)│
+            │  (Kept as-is, very efficient)   │
+            └─────────────────────────────────┘
+>>>>>>> origin/main
 ```
 
 ### Component Migration Matrix
 
 ```
+<<<<<<< HEAD
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö¼ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
 Ôöé Component            Ôöé Current  Ôöé C++    Ôöé Gain   Ôöé Priority Ôöé
 Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
@@ -215,6 +361,19 @@ EDGECORE v1.1 Hybrid Architecture
 Ôöé Data Loading         Ôöé Pandas   Ôöé -      Ôöé 1.1x   Ôöé   P3 ÔØî  Ôöé
 Ôöé Order Execution      Ôöé Python   Ôöé -      Ôöé 1.0x   Ôöé   P3 ÔØî  Ôöé
 ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö┤ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+=======
+┌──────────────────────┬──────────┬────────┬────────┬──────────┐
+│ Component            │ Current  │ C++    │ Gain   │ Priority │
+├──────────────────────┼──────────┼────────┼────────┼──────────┤
+│ Backtesting Loop     │ Python   │ C++    │ 3-5x   │   P0 ✅  │
+│ Cointegration Tests  │ Py+Sci   │ C++    │ 2-3x   │   P0 ✅  │
+│ Pair Discovery       │ Python   │ C++    │ 1.5x   │   P1 ~   │
+│ Signal Generation    │ NumPy    │ -      │ 1.1x   │   P2 ❌  │
+│ Risk Engine          │ Python   │ -      │ 1.05x  │   P3 ❌  │
+│ Data Loading         │ Pandas   │ -      │ 1.1x   │   P3 ❌  │
+│ Order Execution      │ Python   │ -      │ 1.0x   │   P3 ❌  │
+└──────────────────────┴──────────┴────────┴────────┴──────────┘
+>>>>>>> origin/main
 
 P0 = MUST DO (high gain, reasonable effort)
 P1 = SHOULD DO (moderate gain, good effort ratio)
@@ -264,7 +423,11 @@ def run(self, symbols, start_date=None, end_date=None):
 ```
 
 **Issues:**
+<<<<<<< HEAD
 - Loop overhead per iteration (250 ├ù function calls)
+=======
+- Loop overhead per iteration (250 × function calls)
+>>>>>>> origin/main
 - Dictionary operations in tight loop
 - List appends (memory allocation)
 - Python GIL blocking
@@ -366,7 +529,11 @@ private:
                       const std::vector<std::string>& symbols) {
         // Tight loop with direct memory access
         for (auto& [symbol, position] : positions_) {
+<<<<<<< HEAD
             // Would need symbol ÔåÆ price mapping
+=======
+            // Would need symbol → price mapping
+>>>>>>> origin/main
             // Simplified here
         }
     }
@@ -425,10 +592,17 @@ Python Implementation:     30-45 seconds
 C++ Implementation:        8-10 seconds
 Speedup:                   3-4x
 Speedup Source:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ No GIL contention      (20% gain)
 Ôö£ÔöÇÔöÇ Compiled loop          (30% gain)
 Ôö£ÔöÇÔöÇ Direct memory access   (25% gain)
 ÔööÔöÇÔöÇ stack-based vectors    (15% gain)
+=======
+├── No GIL contention      (20% gain)
+├── Compiled loop          (30% gain)
+├── Direct memory access   (25% gain)
+└── stack-based vectors    (15% gain)
+>>>>>>> origin/main
 ```
 
 ---
@@ -711,10 +885,17 @@ C++ OpenMP Parallel:       4-5 seconds
 Speedup:                   2.5-3x
 
 Breakdown:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ IPC overhead eliminated         (40% gain)
 Ôö£ÔöÇÔöÇ OpenMP native threading         (30% gain)
 Ôö£ÔöÇÔöÇ Compiled algorithm              (20% gain)
 ÔööÔöÇÔöÇ Direct memory access            (10% gain)
+=======
+├── IPC overhead eliminated         (40% gain)
+├── OpenMP native threading         (30% gain)
+├── Compiled algorithm              (20% gain)
+└── Direct memory access            (10% gain)
+>>>>>>> origin/main
 ```
 
 ---
@@ -890,6 +1071,7 @@ jobs:
 #### Days 1-2: Environment Setup
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Create C++ directory structure
 Ôöé   Ôö£ÔöÇÔöÇ backtests/engine.cpp
 Ôöé   Ôö£ÔöÇÔöÇ models/cointegration.cpp
@@ -905,11 +1087,29 @@ Tasks:
 Deliverables:
 ÔööÔöÇÔöÇ C++ build pipeline working locally
     ÔööÔöÇÔöÇ Successful compilation on Linux/macOS/Windows
+=======
+├── [ ] Create C++ directory structure
+│   ├── backtests/engine.cpp
+│   ├── models/cointegration.cpp
+│   └── CMakeLists.txt
+├── [ ] Install build dependencies
+│   ├── CMake 3.15+
+│   ├── Eigen3
+│   ├── pybind11
+│   └── OpenMP
+└── [ ] Setup CI/CD pipeline
+    └── GitHub Actions for multi-platform build
+
+Deliverables:
+└── C++ build pipeline working locally
+    └── Successful compilation on Linux/macOS/Windows
+>>>>>>> origin/main
 ```
 
 #### Days 3-4: Core API Design
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Design BacktestEngine C++ API
 Ôöé   Ôö£ÔöÇÔöÇ Define struct/class interfaces
 Ôöé   Ôö£ÔöÇÔöÇ Plan callback mechanisms
@@ -926,11 +1126,30 @@ Tasks:
 Deliverables:
 ÔööÔöÇÔöÇ C++ interfaces finalized
     ÔööÔöÇÔöÇ Pybind11 stubs compiling successfully
+=======
+├── [ ] Design BacktestEngine C++ API
+│   ├── Define struct/class interfaces
+│   ├── Plan callback mechanisms
+│   └── Design return types
+├── [ ] Design CointegrationEngine C++ API
+│   ├── Define data structures
+│   ├── Plan parallelization strategy
+│   └── Design result serialization
+└── [ ] Create Pybind11 bindings skeleton
+    ├── Module definitions
+    ├── Class wrappers
+    └── Callback marshalling
+
+Deliverables:
+└── C++ interfaces finalized
+    └── Pybind11 stubs compiling successfully
+>>>>>>> origin/main
 ```
 
 #### Days 5-7: Python Wrapper Skeleton
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Create Python wrapper modules
 Ôöé   Ôö£ÔöÇÔöÇ backtests/engine_wrapper.py
 Ôöé   ÔööÔöÇÔöÇ models/cointegration_wrapper.py
@@ -946,6 +1165,23 @@ Tasks:
 Deliverables:
 ÔööÔöÇÔöÇ Python wrappers template complete
     ÔööÔöÇÔöÇ Tests for import mechanisms working
+=======
+├── [ ] Create Python wrapper modules
+│   ├── backtests/engine_wrapper.py
+│   └── models/cointegration_wrapper.py
+├── [ ] Implement fallback logic
+│   └── CPP_AVAILABLE detection
+├── [ ] Create tests for C++/Python boundary
+│   └── Import tests
+│   └── API compatibility tests
+└── [ ] Documentation of architecture
+    └── Code comments
+    └── Technical notes
+
+Deliverables:
+└── Python wrappers template complete
+    └── Tests for import mechanisms working
+>>>>>>> origin/main
 ```
 
 ---
@@ -955,6 +1191,7 @@ Deliverables:
 #### Days 8-9: C++ Implementation
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Implement BacktestEngine core
 Ôöé   Ôö£ÔöÇÔöÇ Data structure definitions
 Ôöé   Ôö£ÔöÇÔöÇ Main loop skeleton
@@ -972,11 +1209,31 @@ Tasks:
 Deliverables:
 ÔööÔöÇÔöÇ BacktestEngine C++ fully implemented
     ÔööÔöÇÔöÇ Compiles without warnings
+=======
+├── [ ] Implement BacktestEngine core
+│   ├── Data structure definitions
+│   ├── Main loop skeleton
+│   ├── Order execution
+│   ├── Equity tracking
+│   └── Return calculation
+├── [ ] Implement Python callbacks
+│   ├── Signal generation callback
+│   ├── Risk validation callback
+│   └── Error handling
+└── [ ] Add logging/debugging
+    ├── Debug output (compiletime flag)
+    └── Performance metrics
+
+Deliverables:
+└── BacktestEngine C++ fully implemented
+    └── Compiles without warnings
+>>>>>>> origin/main
 ```
 
 #### Days 10-11: Testing & Validation
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Unit tests (C++)
 Ôöé   Ôö£ÔöÇÔöÇ Order execution tests
 Ôöé   Ôö£ÔöÇÔöÇ Equity calculation tests
@@ -996,11 +1253,33 @@ Deliverables:
 ÔööÔöÇÔöÇ BacktestEngine tested and validated
     ÔööÔöÇÔöÇ 3-4x speedup verified
     ÔööÔöÇÔöÇ Results match Python version exactly
+=======
+├── [ ] Unit tests (C++)
+│   ├── Order execution tests
+│   ├── Equity calculation tests
+│   └── Callback marshalling tests
+├── [ ] Integration tests (Python↔C++)
+│   ├── Run backtest with C++ engine
+│   ├── Compare results to Python version
+│   ├── Benchmark performance
+│   └── Test with various strategies
+└── [ ] Edge case handling
+    ├── Empty data
+    ├── NaN values
+    ├── Single day
+    └── Many positions
+
+Deliverables:
+└── BacktestEngine tested and validated
+    └── 3-4x speedup verified
+    └── Results match Python version exactly
+>>>>>>> origin/main
 ```
 
 #### Days 12-14: Optimization & Polish
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Performance profiling
 Ôöé   Ôö£ÔöÇÔöÇ Identify remaining bottlenecks
 Ôöé   Ôö£ÔöÇÔöÇ Memory allocation optimization
@@ -1019,6 +1298,26 @@ Deliverables:
 ÔööÔöÇÔöÇ Production-ready BacktestEngine
     ÔööÔöÇÔöÇ Fully documented
     ÔööÔöÇÔöÇ Performance optimized
+=======
+├── [ ] Performance profiling
+│   ├── Identify remaining bottlenecks
+│   ├── Memory allocation optimization
+│   └── Cache-friendly data layouts
+├── [ ] Code review & cleanup
+│   ├── Style consistency
+│   ├── Comment completeness
+│   ├── Error handling robustness
+│   └── Resource management (RAII)
+└── [ ] Documentation
+    ├── Doxygen comments
+    ├── Usage examples
+    └── Performance notes
+
+Deliverables:
+└── Production-ready BacktestEngine
+    └── Fully documented
+    └── Performance optimized
+>>>>>>> origin/main
 ```
 
 ---
@@ -1028,6 +1327,7 @@ Deliverables:
 #### Days 15-17: C++ Implementation
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Implement CointegrationEngine core
 Ôöé   Ôö£ÔöÇÔöÇ Pair generation
 Ôöé   Ôö£ÔöÇÔöÇ Correlation calculation
@@ -1046,11 +1346,32 @@ Tasks:
 Deliverables:
 ÔööÔöÇÔöÇ CointegrationEngine C++ fully implemented
     ÔööÔöÇÔöÇ OpenMP parallelization working
+=======
+├── [ ] Implement CointegrationEngine core
+│   ├── Pair generation
+│   ├── Correlation calculation
+│   ├── Residual calculation
+│   ├── Half-life estimation
+│   └── OpenMP parallelization
+├── [ ] Implement ADF test
+│   ├── Own implementation OR
+│   ├── Call to statsmodels via Python callback
+│   └── p-value calculation
+└── [ ] Error handling
+    ├── Invalid data
+    ├── Numerical stability
+    └── Edge cases
+
+Deliverables:
+└── CointegrationEngine C++ fully implemented
+    └── OpenMP parallelization working
+>>>>>>> origin/main
 ```
 
 #### Days 18-19: Testing & Validation
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Unit tests (C++)
 Ôöé   Ôö£ÔöÇÔöÇ Correlation calculation tests
 Ôöé   Ôö£ÔöÇÔöÇ Residual calculation tests
@@ -1070,11 +1391,33 @@ Deliverables:
 ÔööÔöÇÔöÇ CointegrationEngine tested and validated
     ÔööÔöÇÔöÇ 2.5-3x speedup verified
     ÔööÔöÇÔöÇ Results match Python version
+=======
+├── [ ] Unit tests (C++)
+│   ├── Correlation calculation tests
+│   ├── Residual calculation tests
+│   ├── Half-life calculation tests
+│   └── ADF test accuracy
+├── [ ] Integration tests (Python↔C++)
+│   ├── Run pair discovery with C++ engine
+│   ├── Compare results to Python version
+│   ├── Benchmark performance (2.5-3x speedup)
+│   └── Parallel scaling test
+└── [ ] Numerical accuracy
+    ├── Test against known results
+    ├── Floating-point precision validation
+    └── Edge case handling
+
+Deliverables:
+└── CointegrationEngine tested and validated
+    └── 2.5-3x speedup verified
+    └── Results match Python version
+>>>>>>> origin/main
 ```
 
 #### Days 20-21: Optimization & Integration
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Performance tuning
 Ôöé   Ôö£ÔöÇÔöÇ OpenMP thread count optimization
 Ôöé   Ôö£ÔöÇÔöÇ Memory allocation optimization
@@ -1094,6 +1437,27 @@ Deliverables:
 ÔööÔöÇÔöÇ CointegrationEngine production-ready
     ÔööÔöÇÔöÇ Integrated with Python layer
     ÔööÔöÇÔöÇ Full documentation
+=======
+├── [ ] Performance tuning
+│   ├── OpenMP thread count optimization
+│   ├── Memory allocation optimization
+│   ├── Cache-line alignment
+│   └── SIMD opportunities
+├── [ ] Integration with Python layer
+│   ├── Update PairTradingStrategy
+│   ├── Update find_cointegration_pairs()
+│   ├── Test with caching
+│   └── End-to-end validation
+└── [ ] Documentation & examples
+    ├── Usage patterns
+    ├── Performance characteristics
+    └── Debugging guide
+
+Deliverables:
+└── CointegrationEngine production-ready
+    └── Integrated with Python layer
+    └── Full documentation
+>>>>>>> origin/main
 ```
 
 ---
@@ -1103,6 +1467,7 @@ Deliverables:
 #### Days 22-23: Full Integration Testing
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] End-to-end system tests
 Ôöé   Ôö£ÔöÇÔöÇ Full backtesting workflow with C++
 Ôöé   Ôö£ÔöÇÔöÇ Pair discovery workflow with C++
@@ -1122,11 +1487,33 @@ Deliverables:
 ÔööÔöÇÔöÇ Full integration validated
     ÔööÔöÇÔöÇ Performance benchmarks documented
     ÔööÔöÇÔöÇ No regressions
+=======
+├── [ ] End-to-end system tests
+│   ├── Full backtesting workflow with C++
+│   ├── Pair discovery workflow with C++
+│   ├── Compare results to v1.0 (Python-only)
+│   └── Verify no API breakage
+├── [ ] Performance benchmarking
+│   └── Comprehensive timing profile
+│   └── Compare all workflows
+│   └── Document gains
+└── [ ] Load testing
+    ├── Large datasets (1000+ pairs)
+    ├── Long backtests (5+ years)
+    ├── Memory profiling
+    └── Thread safety validation
+
+Deliverables:
+└── Full integration validated
+    └── Performance benchmarks documented
+    └── No regressions
+>>>>>>> origin/main
 ```
 
 #### Days 24-25: CI/CD & Deployment
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Pre-built wheels
 Ôöé   Ôö£ÔöÇÔöÇ Build for multiple platforms
 Ôöé   Ôö£ÔöÇÔöÇ Create PyPI release
@@ -1146,11 +1533,33 @@ Deliverables:
 ÔööÔöÇÔöÇ EDGECORE v1.1 released
     ÔööÔöÇÔöÇ Available on PyPI
     ÔööÔöÇÔöÇ Full documentation
+=======
+├── [ ] Pre-built wheels
+│   ├── Build for multiple platforms
+│   ├── Create PyPI release
+│   └── Document installation
+├── [ ] Documentation
+│   ├── Architecture documentation
+│   ├── Developer guide (C++)
+│   ├── Installation instructions
+│   └── Migration guide (Python-only → Hybrid)
+└── [ ] Release preparation
+    ├── Update version to 1.1
+    ├── Update CHANGELOG
+    ├── Create release notes
+    └── Publish documentation
+
+Deliverables:
+└── EDGECORE v1.1 released
+    └── Available on PyPI
+    └── Full documentation
+>>>>>>> origin/main
 ```
 
 #### Days 26-28: Final Testing & Hardening
 ```
 Tasks:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ [ ] Final validation suite
 Ôöé   Ôö£ÔöÇÔöÇ Full pytest suite
 Ôöé   Ôö£ÔöÇÔöÇ Performance verification
@@ -1169,6 +1578,26 @@ Deliverables:
 ÔööÔöÇÔöÇ EDGECORE v1.1 stable release
     ÔööÔöÇÔöÇ Production-ready
     ÔööÔöÇÔöÇ Full support infrastructure
+=======
+├── [ ] Final validation suite
+│   ├── Full pytest suite
+│   ├── Performance verification
+│   ├── Edge case testing
+│   └── Regression testing
+├── [ ] Documentation updates
+│   ├── Installation guide
+│   ├── Troubleshooting
+│   └── FAQ
+└── [ ] Monitoring & support
+    ├── GitHub issues monitoring
+    ├── Performance regression alerts
+    └── Compatibility matrix
+
+Deliverables:
+└── EDGECORE v1.1 stable release
+    └── Production-ready
+    └── Full support infrastructure
+>>>>>>> origin/main
 ```
 
 ---
@@ -1179,6 +1608,7 @@ Deliverables:
 
 ```
 Test Environment:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ CPU: Intel i7-9700K (8 cores, 3.6 GHz)
 Ôö£ÔöÇÔöÇ RAM: 32 GB
 Ôö£ÔöÇÔöÇ OS: Windows 10
@@ -1197,6 +1627,26 @@ Workflow: Backtest AAPL/MSFT/GS with 100 historical days
 Ôöé ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ  Ôöé
 Ôöé TOTAL:                                 48.0s   Ôöé
 ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+=======
+├── CPU: Intel i7-9700K (8 cores, 3.6 GHz)
+├── RAM: 32 GB
+├── OS: Windows 10
+└── Python: 3.11.9
+
+Workflow: Backtest AAPL/MSFT/GS with 100 historical days
+
+┌────────────────────────────────────────────────┐
+│ Current Performance (v1.0 - Python)            │
+├────────────────────────────────────────────────┤
+│ Data Loading:                          2.1s    │
+│ Pair Discovery:                        3.2s    │
+│ Cointegration Tests:                  12.4s    │
+│ Backtesting Loop:                     28.3s    │
+│ Metrics Calculation:                   2.0s    │
+│ ─────────────────────────────────────────────  │
+│ TOTAL:                                 48.0s   │
+└────────────────────────────────────────────────┘
+>>>>>>> origin/main
 ```
 
 ### Projected Performance (v1.1 Hybrid)
@@ -1204,6 +1654,7 @@ Workflow: Backtest AAPL/MSFT/GS with 100 historical days
 ```
 After C++ Migration:
 
+<<<<<<< HEAD
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
 Ôöé Projected Performance (v1.1 - Hybrid)          Ôöé
 Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
@@ -1223,6 +1674,27 @@ Component-wise Speedups:
 
 Overall Speedup: 48.0s ÔåÆ 18.2s = 2.63x
 Target Achieved: 2.5-3x Ô£à
+=======
+┌────────────────────────────────────────────────┐
+│ Projected Performance (v1.1 - Hybrid)          │
+├────────────────────────────────────────────────┤
+│ Data Loading:                          2.1s    │
+│ Pair Discovery:                        1.3s    │ ← 2.5x faster
+│ Cointegration Tests:                   5.0s    │ ← 2.5x faster
+│ Backtesting Loop:                      7.8s    │ ← 3.6x faster
+│ Metrics Calculation:                   2.0s    │
+│ ─────────────────────────────────────────────  │
+│ TOTAL:                                 18.2s   │ ← 2.6x overall
+└────────────────────────────────────────────────┘
+
+Component-wise Speedups:
+├── Cointegration: 12.4s → 5.0s   (2.48x)
+├── Pair Discovery: 3.2s → 1.3s   (2.46x)
+└── Backtest Loop: 28.3s → 7.8s   (3.63x)
+
+Overall Speedup: 48.0s → 18.2s = 2.63x
+Target Achieved: 2.5-3x ✅
+>>>>>>> origin/main
 ```
 
 ### Scaling Analysis
@@ -1230,6 +1702,7 @@ Target Achieved: 2.5-3x Ô£à
 ```
 Performance with Various Symbol Counts:
 
+<<<<<<< HEAD
               Ôöé  v1.0 Python Ôöé  v1.1 Hybrid  Ôöé  Speedup Ôöé
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
  10 symbols   Ôöé    15.3s     Ôöé     5.8s      Ôöé  2.64x   Ôöé
@@ -1239,6 +1712,17 @@ Performance with Various Symbol Counts:
 200 symbols   Ôöé   461.8s     Ôöé   176.5s      Ôöé  2.62x   Ôöé
 
 Consistency: Speedup remains ~2.6x regardless of scale Ô£ô
+=======
+              │  v1.0 Python │  v1.1 Hybrid  │  Speedup │
+──────────────┼──────────────┼───────────────┼──────────┤
+ 10 symbols   │    15.3s     │     5.8s      │  2.64x   │
+ 20 symbols   │    32.1s     │    12.3s      │  2.61x   │
+ 50 symbols   │    84.2s     │    32.1s      │  2.62x   │
+100 symbols   │   185.4s     │    71.2s      │  2.60x   │
+200 symbols   │   461.8s     │   176.5s      │  2.62x   │
+
+Consistency: Speedup remains ~2.6x regardless of scale ✓
+>>>>>>> origin/main
 ```
 
 ### Memory Footprint
@@ -1246,11 +1730,19 @@ Consistency: Speedup remains ~2.6x regardless of scale Ô£ô
 ```
 Memory usage comparison:
 
+<<<<<<< HEAD
               Ôöé  v1.0 Python Ôöé  v1.1 Hybrid  Ôöé  Change  Ôöé
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
  10 symbols   Ôöé    128 MB    Ôöé    142 MB     Ôöé  +11%    Ôöé
  50 symbols   Ôöé    356 MB    Ôöé    391 MB     Ôöé  +10%    Ôöé
 100 symbols   Ôöé    712 MB    Ôöé    781 MB     Ôöé  +9%     Ôöé
+=======
+              │  v1.0 Python │  v1.1 Hybrid  │  Change  │
+──────────────┼──────────────┼───────────────┼──────────┤
+ 10 symbols   │    128 MB    │    142 MB     │  +11%    │
+ 50 symbols   │    356 MB    │    391 MB     │  +10%    │
+100 symbols   │    712 MB    │    781 MB     │  +9%     │
+>>>>>>> origin/main
 
 Note: Slight increase due to C++ runtime overhead
       (Eigen, STL containers). Negligible for modern systems.
@@ -1265,6 +1757,7 @@ Note: Slight increase due to C++ runtime overhead
 **Supported Platforms:**
 ```
 Linux:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ ubuntu-20.04 (glibc 2.31)
 Ôö£ÔöÇÔöÇ ubuntu-22.04 (glibc 2.35)
 Ôö£ÔöÇÔöÇ CentOS 7     (glibc 2.17)
@@ -1283,6 +1776,26 @@ Python:
 Ôö£ÔöÇÔöÇ Python 3.11.x
 Ôö£ÔöÇÔöÇ Python 3.12.x
 ÔööÔöÇÔöÇ Python 3.13.x (experimental)
+=======
+├── ubuntu-20.04 (glibc 2.31)
+├── ubuntu-22.04 (glibc 2.35)
+├── CentOS 7     (glibc 2.17)
+└── Alpine 3.16+ (musl)
+
+macOS:
+├── macOS 11+    (AMD64)
+├── macOS 12+    (ARM64/M1/M2)
+└── macOS 13+    (Universal2)
+
+Windows:
+├── Windows 10+  (AMD64)
+└── Windows Server 2019+
+
+Python:
+├── Python 3.11.x
+├── Python 3.12.x
+└── Python 3.13.x (experimental)
+>>>>>>> origin/main
 ```
 
 ### Installation Methods
@@ -1345,10 +1858,17 @@ metrics = runner.run(data, strategy)  # Works in both v1.0 and v1.1
 import edgecore.version
 
 if edgecore.version.HYBRID_AVAILABLE:
+<<<<<<< HEAD
     print("Ô£ô C++ extensions available")
     print(f"Version: {edgecore.version.__version__}")
 else:
     print("ÔÜá Using Python implementation")
+=======
+    print("✓ C++ extensions available")
+    print(f"Version: {edgecore.version.__version__}")
+else:
+    print("⚠ Using Python implementation")
+>>>>>>> origin/main
 ```
 
 ---
@@ -1363,11 +1883,19 @@ else:
 
 **Mitigation:**
 ```
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Multi-OS CI/CD (Linux, macOS, Windows)
 Ôö£ÔöÇÔöÇ Multiple compiler support (GCC, Clang, MSVC)
 Ôö£ÔöÇÔöÇ Pre-built wheels for all platforms
 Ôö£ÔöÇÔöÇ Fallback to Python implementation
 ÔööÔöÇÔöÇ Clear build error messages
+=======
+├── Multi-OS CI/CD (Linux, macOS, Windows)
+├── Multiple compiler support (GCC, Clang, MSVC)
+├── Pre-built wheels for all platforms
+├── Fallback to Python implementation
+└── Clear build error messages
+>>>>>>> origin/main
 ```
 
 #### 2. Numerical Precision Issues
@@ -1376,11 +1904,19 @@ else:
 
 **Mitigation:**
 ```
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Comprehensive numerical tests
 Ôö£ÔöÇÔöÇ Tolerance-based result comparisons (e.g., np.isclose)
 Ôö£ÔöÇÔöÇ Double-precision floats (double, not float)
 Ôö£ÔöÇÔöÇ Validation against known datasets
 ÔööÔöÇÔöÇ Comparison tests in CI/CD
+=======
+├── Comprehensive numerical tests
+├── Tolerance-based result comparisons (e.g., np.isclose)
+├── Double-precision floats (double, not float)
+├── Validation against known datasets
+└── Comparison tests in CI/CD
+>>>>>>> origin/main
 ```
 
 #### 3. Thread Safety Issues
@@ -1389,11 +1925,19 @@ else:
 
 **Mitigation:**
 ```
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Thread-local data structures
 Ôö£ÔöÇÔöÇ OpenMP reduction clauses for aggregation
 Ôö£ÔöÇÔöÇ No static/global mutable variables
 Ôö£ÔöÇÔöÇ Valgrind/ThreadSanitizer testing
 ÔööÔöÇÔöÇ Stress tests with high core count
+=======
+├── Thread-local data structures
+├── OpenMP reduction clauses for aggregation
+├── No static/global mutable variables
+├── Valgrind/ThreadSanitizer testing
+└── Stress tests with high core count
+>>>>>>> origin/main
 ```
 
 #### 4. Memory Leaks
@@ -1402,11 +1946,19 @@ else:
 
 **Mitigation:**
 ```
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ RAII pattern for all resources
 Ôö£ÔöÇÔöÇ Smart pointers where appropriate
 Ôö£ÔöÇÔöÇ Valgrind memory checking in CI/CD
 Ôö£ÔöÇÔöÇ AddressSanitizer compilation flag
 ÔööÔöÇÔöÇ Heap profiling with production data
+=======
+├── RAII pattern for all resources
+├── Smart pointers where appropriate
+├── Valgrind memory checking in CI/CD
+├── AddressSanitizer compilation flag
+└── Heap profiling with production data
+>>>>>>> origin/main
 ```
 
 #### 5. Callback Mechanism Failures
@@ -1415,11 +1967,19 @@ else:
 
 **Mitigation:**
 ```
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Exception wrapping at C++/Python boundary
 Ôö£ÔöÇÔöÇ Try-catch for all Python callbacks
 Ôö£ÔöÇÔöÇ Error code returns
 Ôö£ÔöÇÔöÇ Detailed error messages
 ÔööÔöÇÔöÇ Graceful fallback mechanisms
+=======
+├── Exception wrapping at C++/Python boundary
+├── Try-catch for all Python callbacks
+├── Error code returns
+├── Detailed error messages
+└── Graceful fallback mechanisms
+>>>>>>> origin/main
 ```
 
 ### Testing Strategy
@@ -1428,6 +1988,7 @@ else:
 Test Coverage Required:
 
 Unit Tests (C++):
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ All core algorithms
 Ôö£ÔöÇÔöÇ Edge cases
 Ôö£ÔöÇÔöÇ Boundary conditions
@@ -1446,6 +2007,26 @@ Regression Tests:
 Ôö£ÔöÇÔöÇ Result comparison (v1.0 vs v1.1)
 Ôö£ÔöÇÔöÇ Long-running stability tests
 ÔööÔöÇÔöÇ ~30+ regression tests
+=======
+├── All core algorithms
+├── Edge cases
+├── Boundary conditions
+├── Error handling
+└── ~200+ C++ tests
+
+Integration Tests (Python↔C++):
+├── Callback passing
+├── Data marshalling
+├── Result accuracy
+├── Performance
+└── ~50+ integration tests
+
+Regression Tests:
+├── Performance benchmarks
+├── Result comparison (v1.0 vs v1.1)
+├── Long-running stability tests
+└── ~30+ regression tests
+>>>>>>> origin/main
 ```
 
 ---
@@ -1455,6 +2036,7 @@ Regression Tests:
 ### Project Timeline
 
 ```
+<<<<<<< HEAD
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
 Ôöé EDGECORE v1.1 Development Timeline                      Ôöé
 Ôö£ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöñ
@@ -1475,6 +2057,28 @@ Regression Tests:
 Ôöé        or 14 days = 2 weeks (full-time)                Ôöé
 Ôöé                                                         Ôöé
 ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
+=======
+┌─────────────────────────────────────────────────────────┐
+│ EDGECORE v1.1 Development Timeline                      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ PHASE 1: Setup (Days 1-7)             [████░░░░░░░░░░] │
+│ └─ Weeks 1                            ▓▓▓▓             │
+│                                                         │
+│ PHASE 2: Backtest Engine (Days 8-14)  [████████░░░░░░] │
+│ └─ Weeks 2                            ▓▓▓▓▓▓           │
+│                                                         │
+│ PHASE 3: Cointegration (Days 15-21)   [████████████░░] │
+│ └─ Weeks 2-3                          ▓▓▓▓▓▓▓          │
+│                                                         │
+│ PHASE 4: Integration (Days 22-28)     [████████████████] │
+│ └─ Weeks 4                            ▓▓▓▓▓▓▓▓         │
+│                                                         │
+│ TOTAL: 28 days = 4 weeks (part-time)                   │
+│        or 14 days = 2 weeks (full-time)                │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+>>>>>>> origin/main
 ```
 
 ### Resource Requirements
@@ -1482,6 +2086,7 @@ Regression Tests:
 **Team:**
 ```
 Full-Time (1 person):
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ C++ implementation       3-4 weeks
 Ôö£ÔöÇÔöÇ Testing & validation    1-2 weeks
 Ôö£ÔöÇÔöÇ Documentation           1 week
@@ -1489,11 +2094,21 @@ Full-Time (1 person):
 
 Part-Time (1 person, 10h/week):
 ÔööÔöÇÔöÇ Total: 8-10 weeks
+=======
+├── C++ implementation       3-4 weeks
+├── Testing & validation    1-2 weeks
+├── Documentation           1 week
+└── Total: 4-6 weeks
+
+Part-Time (1 person, 10h/week):
+└── Total: 8-10 weeks
+>>>>>>> origin/main
 ```
 
 **Tools & Infrastructure:**
 ```
 Development:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ CMake 3.15+
 Ôö£ÔöÇÔöÇ C++17 compiler (GCC/Clang/MSVC)
 Ôö£ÔöÇÔöÇ Eigen3 library
@@ -1512,11 +2127,32 @@ Testing:
 Ôö£ÔöÇÔöÇ Catch2 (C++)
 Ôö£ÔöÇÔöÇ Valgrind/AddressSanitizer
 ÔööÔöÇÔöÇ Performance profiling tools
+=======
+├── CMake 3.15+
+├── C++17 compiler (GCC/Clang/MSVC)
+├── Eigen3 library
+├── pybind11 library
+├── OpenMP
+└── Git + GitHub
+
+CI/CD:
+├── GitHub Actions
+├── Multi-OS runners (Linux, macOS, Windows)
+├── Multi-Python versions (3.11, 3.12, 3.13)
+└── Artifact storage (PyPI, GitHub Releases)
+
+Testing:
+├── pytest (Python)
+├── Catch2 (C++)
+├── Valgrind/AddressSanitizer
+└── Performance profiling tools
+>>>>>>> origin/main
 ```
 
 **Development Environment:**
 ```
 Recommended Setup:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ Linux (Ubuntu 22.04 or CentOS 8)
 Ôöé  ÔööÔöÇÔöÇ Native compilation support
 Ôö£ÔöÇÔöÇ macOS (Intel or ARM64)
@@ -1525,11 +2161,22 @@ Recommended Setup:
 Ôöé  ÔööÔöÇÔöÇ Visual Studio 2022 Community
 ÔööÔöÇÔöÇ Docker
    ÔööÔöÇÔöÇ Consistent cross-platform environment
+=======
+├── Linux (Ubuntu 22.04 or CentOS 8)
+│  └── Native compilation support
+├── macOS (Intel or ARM64)
+│  └── Universal binary support
+├── Windows 10/11
+│  └── Visual Studio 2022 Community
+└── Docker
+   └── Consistent cross-platform environment
+>>>>>>> origin/main
 ```
 
 ### Cost Estimation
 
 ```
+<<<<<<< HEAD
 Resource    Ôöé  Effort   Ôöé  Cost (USD)┬╣  Ôöé  Notes
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔö╝ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 C++ Dev     Ôöé  4-6 wks  Ôöé  4k - 6k      Ôöé $25-30/hr, full-time
@@ -1541,6 +2188,19 @@ Hosting     Ôöé  Monthly  Ôöé  0 - 0.2k     Ôöé GitHub + PyPI free
 TOTAL       Ôöé           Ôöé  5.5k - 9.5k  Ôöé 
             Ôöé           Ôöé               Ôöé
 ┬╣ Estimated based on contractor rates
+=======
+Resource    │  Effort   │  Cost (USD)¹  │  Notes
+────────────┼───────────┼───────────────┼─────────────────────
+C++ Dev     │  4-6 wks  │  4k - 6k      │ $25-30/hr, full-time
+Testing     │  1-2 wks  │  1k - 2k      │ Included above
+Docs        │  1 wk     │  0.5k - 1k    │ Technical writer optional
+CI/CD       │  Setup    │  0 - 0.5k     │ GitHub Actions free
+Hosting     │  Monthly  │  0 - 0.2k     │ GitHub + PyPI free
+────────────┴───────────┴───────────────┴─────────────────────
+TOTAL       │           │  5.5k - 9.5k  │ 
+            │           │               │
+¹ Estimated based on contractor rates
+>>>>>>> origin/main
 ```
 
 ---
@@ -1611,7 +2271,11 @@ TOTAL       Ôöé           Ôöé  5.5k - 9.5k  Ôöé
 
 ### Performance Targets
 
+<<<<<<< HEAD
 Ô£à **MUST ACHIEVE:**
+=======
+✅ **MUST ACHIEVE:**
+>>>>>>> origin/main
 - [ ] Overall system speedup: 2.5x minimum (target: 3x)
 - [ ] Backtest engine: 3x minimum speedup (target: 3.5x)
 - [ ] Cointegration engine: 2x minimum speedup (target: 3x)
@@ -1620,7 +2284,11 @@ TOTAL       Ôöé           Ôöé  5.5k - 9.5k  Ôöé
 
 ### Quality Targets
 
+<<<<<<< HEAD
 Ô£à **MUST ACHIEVE:**
+=======
+✅ **MUST ACHIEVE:**
+>>>>>>> origin/main
 - [ ] 100% API compatibility (zero breaking changes)
 - [ ] Test pass rate: 100% (all 84+ existing tests)
 - [ ] New C++ test coverage: >90%
@@ -1629,7 +2297,11 @@ TOTAL       Ôöé           Ôöé  5.5k - 9.5k  Ôöé
 
 ### Stability Targets
 
+<<<<<<< HEAD
 Ô£à **MUST ACHIEVE:**
+=======
+✅ **MUST ACHIEVE:**
+>>>>>>> origin/main
 - [ ] Runs successfully on Linux, macOS, Windows
 - [ ] Compiles with GCC, Clang, MSVC
 - [ ] Python 3.11, 3.12, 3.13 compatibility
@@ -1642,6 +2314,7 @@ TOTAL       Ôöé           Ôöé  5.5k - 9.5k  Ôöé
 
 ```
 v1.2 Potential Improvements:
+<<<<<<< HEAD
 Ôö£ÔöÇÔöÇ GPU Acceleration (CUDA for cointegration tests)
 Ôö£ÔöÇÔöÇ SIMD optimization (AVX-512 for vector operations)
 Ôö£ÔöÇÔöÇ WebAssembly (browser-based backtesting)
@@ -1653,6 +2326,19 @@ v1.3+ Vision:
 Ôö£ÔöÇÔöÇ High-frequency optimization
 Ôö£ÔöÇÔöÇ Machine learning integration (TensorFlow/PyTorch)
 ÔööÔöÇÔöÇ Cloud-native architecture
+=======
+├── GPU Acceleration (CUDA for cointegration tests)
+├── SIMD optimization (AVX-512 for vector operations)
+├── WebAssembly (browser-based backtesting)
+├── Rust components (memory safety focus)
+└── Distributed processing (cluster support)
+
+v1.3+ Vision:
+├── Real-time trading engine (C++)
+├── High-frequency optimization
+├── Machine learning integration (TensorFlow/PyTorch)
+└── Cloud-native architecture
+>>>>>>> origin/main
 ```
 
 ---
@@ -1667,7 +2353,11 @@ This hybrid Python/C++ architecture represents an intelligent evolution of EDGEC
 4. **Enhances Maintainability** - Clear C++/Python boundaries
 5. **Enables Future Growth** - Foundation for advanced optimizations
 
+<<<<<<< HEAD
 **Recommendation**: Ô£à **PROCEED WITH IMPLEMENTATION**
+=======
+**Recommendation**: ✅ **PROCEED WITH IMPLEMENTATION**
+>>>>>>> origin/main
 
 The hybrid approach balances performance gains against implementation cost and risk, making it the optimal strategy for EDGECORE's next evolution.
 

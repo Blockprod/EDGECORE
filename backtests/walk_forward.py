@@ -13,11 +13,16 @@ Sprint 1.3 (C-03): Each period now re-trains (re-discovers pairs) on its own
 training window and uses a FRESH strategy instance.  Zero data leakage.
 """
 
+<<<<<<< HEAD
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
+=======
+from typing import List, Tuple, Dict, Any, Optional
+import pandas as pd
+>>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -25,6 +30,10 @@ from structlog import get_logger
 from backtests.cost_model import CostModel
 from backtests.runner import BacktestRunner
 from backtests.strategy_simulator import StrategyBacktestSimulator
+<<<<<<< HEAD
+=======
+from backtests.cost_model import CostModel
+>>>>>>> origin/main
 from strategies.pair_trading import PairTradingStrategy
 
 logger = get_logger(__name__)
@@ -35,11 +44,19 @@ def split_walk_forward(
 ) -> list[tuple[pd.DataFrame, pd.DataFrame]]:
     """
     Create walk-forward splits with **expanding** training windows.
+<<<<<<< HEAD
 
     Each successive training window starts from the beginning of the data
     and grows, simulating the real-world scenario where all historical data
     is available for model fitting.
 
+=======
+    
+    Each successive training window starts from the beginning of the data
+    and grows, simulating the real-world scenario where all historical data
+    is available for model fitting.
+    
+>>>>>>> origin/main
     Args:
         data: Full time series
         num_periods: Number of rebalancing periods
@@ -56,13 +73,24 @@ def split_walk_forward(
     # Minimum viable split: at least 2 rows per period (1 train + 1 test)
     min_rows_needed = num_periods * 2
     if n < min_rows_needed:
+<<<<<<< HEAD
         raise ValueError(f"Not enough data rows ({n}) for {num_periods} periods. Need at least {min_rows_needed} rows.")
+=======
+        raise ValueError(
+            f"Not enough data rows ({n}) for {num_periods} periods. "
+            f"Need at least {min_rows_needed} rows."
+        )
+>>>>>>> origin/main
 
     # Reserve a portion for the first training window; remaining split across periods
     # Each period's test block has equal length
     oos_total_rows = int(n * oos_ratio * num_periods / (num_periods + 1))
     oos_per_period = max(1, oos_total_rows // num_periods)
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     # First training window ends before the first test block
     first_train_end = n - oos_per_period * num_periods
     if first_train_end < 1:
@@ -70,17 +98,28 @@ def split_walk_forward(
             f"Not enough data rows ({n}) for {num_periods} periods with "
             f"oos_ratio={oos_ratio}. Reduce num_periods or add more data."
         )
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> origin/main
     splits = []
     for i in range(num_periods):
         # Expanding window: always start from 0
         train_end = first_train_end + i * oos_per_period
         test_start = train_end
         test_end = test_start + oos_per_period
+<<<<<<< HEAD
 
         train_data = data.iloc[0:train_end]
         test_data = data.iloc[test_start:test_end]
 
+=======
+        
+        train_data = data.iloc[0:train_end]
+        test_data = data.iloc[test_start:test_end]
+        
+>>>>>>> origin/main
         if len(train_data) > 0 and len(test_data) > 0:
             splits.append((train_data, test_data))
 
@@ -119,7 +158,11 @@ class WalkForwardBacktester:
         use_synthetic: bool = False,
         validate_pairs_oos: bool = True,
         oos_validation_split: float = 0.8,
+<<<<<<< HEAD
     ) -> dict[str, Any]:
+=======
+    ) -> Dict[str, Any]:
+>>>>>>> origin/main
         """
         Run walk-forward backtest with per-period retraining.
 
@@ -152,6 +195,7 @@ class WalkForwardBacktester:
             num_periods=num_periods,
             oos_ratio=oos_ratio,
             validate_pairs_oos=validate_pairs_oos,
+<<<<<<< HEAD
         )
 
         # ---- Load full dataset ------------------------------------------
@@ -159,6 +203,19 @@ class WalkForwardBacktester:
 
         # ---- Create walk-forward splits ---------------------------------
         splits = split_walk_forward(full_df, num_periods=num_periods, oos_ratio=oos_ratio)
+=======
+        )
+
+        # ---- Load full dataset ------------------------------------------
+        full_df = self._load_full_data(
+            symbols, start_date, end_date, use_synthetic
+        )
+
+        # ---- Create walk-forward splits ---------------------------------
+        splits = split_walk_forward(
+            full_df, num_periods=num_periods, oos_ratio=oos_ratio
+        )
+>>>>>>> origin/main
         if len(splits) == 0:
             raise ValueError("No splits created. Check data length and num_periods.")
 
@@ -196,6 +253,7 @@ class WalkForwardBacktester:
                     is_data = train_df.iloc[:is_end]
                     oos_data = train_df.iloc[is_end:]
 
+<<<<<<< HEAD
                     all_pairs = strategy.find_cointegrated_pairs(is_data, use_cache=False, use_parallel=True)
 
                     # Validate pairs against OOS slice
@@ -204,6 +262,17 @@ class WalkForwardBacktester:
                         # Use all discovered pairs for now
                         validated_pairs = all_pairs
                         val_results: dict[str, Any] = {}
+=======
+                    all_pairs = strategy.find_cointegrated_pairs(
+                        is_data, use_cache=False, use_parallel=True
+                    )
+
+                    # Validate pairs against OOS slice
+                    if all_pairs and len(oos_data) > 20:
+                        validated_pairs, val_results = strategy.validate_pairs_oos(
+                            all_pairs, is_data, oos_data
+                        )
+>>>>>>> origin/main
                         logger.info(
                             "walk_forward_oos_validation",
                             period=period_idx + 1,
@@ -214,7 +283,13 @@ class WalkForwardBacktester:
                     else:
                         validated_pairs = all_pairs
                 else:
+<<<<<<< HEAD
                     validated_pairs = strategy.find_cointegrated_pairs(train_df, use_cache=False, use_parallel=True)
+=======
+                    validated_pairs = strategy.find_cointegrated_pairs(
+                        train_df, use_cache=False, use_parallel=True
+                    )
+>>>>>>> origin/main
 
                 logger.info(
                     "walk_forward_pairs_discovered",
@@ -228,6 +303,7 @@ class WalkForwardBacktester:
                     initial_capital=self.runner.config.initial_capital,
                     pair_rediscovery_interval=999,  # Never re-discover; pairs are frozen
                 )
+<<<<<<< HEAD
                 period_metrics = simulator.run(test_df, fixed_pairs=validated_pairs)
 
                 # STEP 3b — C-07: IS vs OOS degradation check
@@ -260,6 +336,11 @@ class WalkForwardBacktester:
                             )
                 except Exception as _e_is:
                     logger.warning("is_comparison_failed", period=period_idx + 1, error=str(_e_is))
+=======
+                period_metrics = simulator.run(
+                    test_df, fixed_pairs=validated_pairs
+                )
+>>>>>>> origin/main
 
                 self.per_period_metrics.append(
                     {
@@ -323,7 +404,11 @@ class WalkForwardBacktester:
 
     @staticmethod
     def _load_full_data(
+<<<<<<< HEAD
         symbols: list[str],
+=======
+        symbols: List[str],
+>>>>>>> origin/main
         start_date: str,
         end_date: str,
         use_synthetic: bool,
@@ -338,6 +423,7 @@ class WalkForwardBacktester:
             from data.loader import DataLoader
 
             loader = DataLoader()
+<<<<<<< HEAD
             batch_results = loader.load_ibkr_data_batch(
                 symbols=symbols,
                 timeframe="1d",
@@ -346,6 +432,16 @@ class WalkForwardBacktester:
             price_data = {}
             for symbol, df in batch_results.items():
                 try:
+=======
+            price_data = {}
+            for symbol in symbols:
+                try:
+                    df = loader.load_ibkr_data(
+                        symbol=symbol,
+                        timeframe="1d",
+                        validate=True,
+                    )
+>>>>>>> origin/main
                     price_data[symbol] = df["close"]
                 except Exception as e:
                     logger.warning(
@@ -358,14 +454,25 @@ class WalkForwardBacktester:
                 raise ValueError("No symbols loaded successfully")
 
             full_df = pd.DataFrame(price_data)
+<<<<<<< HEAD
             full_df = full_df[(full_df.index >= start_date) & (full_df.index <= end_date)]
             if len(full_df) == 0:
                 raise ValueError(f"No data in date range {start_date} to {end_date}")
+=======
+            full_df = full_df[
+                (full_df.index >= start_date) & (full_df.index <= end_date)
+            ]
+            if len(full_df) == 0:
+                raise ValueError(
+                    f"No data in date range {start_date} to {end_date}"
+                )
+>>>>>>> origin/main
             return full_df
 
         except Exception as e:
             logger.error("walk_forward_data_load_failed", error=str(e))
             raise
+<<<<<<< HEAD
 
     def _aggregate_metrics(self) -> dict[str, Any]:
         """
@@ -375,6 +482,17 @@ class WalkForwardBacktester:
         (not averaged per-period), which is statistically correct for
         periods of different lengths and volatilities.
 
+=======
+    
+    def _aggregate_metrics(self) -> Dict[str, float]:
+        """
+        Aggregate metrics across all periods.
+        
+        Sharpe and Sortino are computed on the CONCATENATED return series
+        (not averaged per-period), which is statistically correct for
+        periods of different lengths and volatilities.
+        
+>>>>>>> origin/main
         Returns:
             Dictionary with aggregate metrics
         """
@@ -385,6 +503,7 @@ class WalkForwardBacktester:
         period_drawdowns = []
         period_win_rates = []
         period_profit_factors = []
+<<<<<<< HEAD
 
         # Collect raw daily returns from each period for proper aggregation
         all_daily_returns = []
@@ -399,22 +518,56 @@ class WalkForwardBacktester:
             # Collect raw daily returns if available
             if "daily_returns" in metrics and metrics["daily_returns"] is not None:
                 dr = metrics["daily_returns"]
+=======
+        
+        # Collect raw daily returns from each period for proper aggregation
+        all_daily_returns = []
+        
+        for period_data in self.per_period_metrics:
+            metrics = period_data['metrics']
+            period_returns.append(metrics['total_return'])
+            period_drawdowns.append(metrics['max_drawdown'])
+            period_win_rates.append(metrics['win_rate'])
+            period_profit_factors.append(metrics['profit_factor'])
+            
+            # Collect raw daily returns if available
+            if 'daily_returns' in metrics and metrics['daily_returns'] is not None:
+                dr = metrics['daily_returns']
+>>>>>>> origin/main
                 if isinstance(dr, pd.Series):
                     all_daily_returns.append(dr)
                 elif isinstance(dr, list):
                     all_daily_returns.append(pd.Series(dr))
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Compute aggregate Sharpe on concatenated returns (statistically correct)
         if all_daily_returns:
             concat_returns = pd.concat(all_daily_returns, ignore_index=True)
             if len(concat_returns) > 1 and concat_returns.std() > 0:
                 from backtests.metrics import TRADING_DAYS_PER_YEAR
+<<<<<<< HEAD
 
                 aggregate_sharpe = (concat_returns.mean() / concat_returns.std()) * np.sqrt(TRADING_DAYS_PER_YEAR)
                 # Sortino on concatenated returns
                 downside = concat_returns[concat_returns < 0]
                 if len(downside) > 0 and downside.std() > 0:
                     aggregate_sortino = (concat_returns.mean() / downside.std()) * np.sqrt(TRADING_DAYS_PER_YEAR)
+=======
+                aggregate_sharpe = (
+                    (concat_returns.mean() / concat_returns.std())
+                    * np.sqrt(TRADING_DAYS_PER_YEAR)
+                )
+                # Sortino on concatenated returns
+                downside = concat_returns[concat_returns < 0]
+                if len(downside) > 0 and downside.std() > 0:
+                    aggregate_sortino = (
+                        (concat_returns.mean() / downside.std())
+                        * np.sqrt(TRADING_DAYS_PER_YEAR)
+                    )
+>>>>>>> origin/main
                 else:
                     aggregate_sortino = 0.0
             else:
@@ -422,6 +575,7 @@ class WalkForwardBacktester:
                 aggregate_sortino = 0.0
         else:
             # Fallback to per-period average if raw returns not available
+<<<<<<< HEAD
             per_period_sharpes = [p["metrics"]["sharpe_ratio"] for p in self.per_period_metrics]
             aggregate_sharpe = np.mean(per_period_sharpes)
             aggregate_sortino = 0.0
@@ -443,6 +597,33 @@ class WalkForwardBacktester:
             "num_periods_completed": len(self.per_period_metrics),
             "min_return": np.min(period_returns),
             "max_return": np.max(period_returns),
+=======
+            per_period_sharpes = [
+                p['metrics']['sharpe_ratio'] for p in self.per_period_metrics
+            ]
+            aggregate_sharpe = np.mean(per_period_sharpes)
+            aggregate_sortino = 0.0
+        
+        # Compute per-period Sharpe std for reporting
+        per_period_sharpes = [
+            p['metrics']['sharpe_ratio'] for p in self.per_period_metrics
+        ]
+        aggregate_sharpe_std = float(np.std(per_period_sharpes)) if len(per_period_sharpes) > 1 else 0.0
+
+        return {
+            'aggregate_return': np.mean(period_returns),
+            'aggregate_return_std': np.std(period_returns),
+            'aggregate_sharpe_ratio': aggregate_sharpe,
+            'aggregate_sharpe_std': aggregate_sharpe_std,
+            'aggregate_sortino_ratio': aggregate_sortino,
+            'aggregate_max_drawdown': np.mean(period_drawdowns),
+            'aggregate_drawdown_std': np.std(period_drawdowns),
+            'aggregate_win_rate': np.mean(period_win_rates),
+            'aggregate_profit_factor': np.mean(period_profit_factors),
+            'num_periods_completed': len(self.per_period_metrics),
+            'min_return': np.min(period_returns),
+            'max_return': np.max(period_returns)
+>>>>>>> origin/main
         }
 
     def print_summary(self) -> str:

@@ -10,6 +10,10 @@ Tests:
 - Deployment scenarios
 """
 
+<<<<<<< HEAD
+=======
+import pytest
+>>>>>>> origin/main
 from pathlib import Path
 
 import pytest
@@ -78,7 +82,11 @@ class TestDockerCompose:
 
     def test_docker_compose_version(self, docker_compose_content):
         """Test docker-compose has required structure."""
+<<<<<<< HEAD
         assert "services:" in docker_compose_content
+=======
+        assert 'services:' in docker_compose_content
+>>>>>>> origin/main
 
     def test_docker_compose_services(self, docker_compose_content):
         """Test required services are configured."""
@@ -141,7 +149,19 @@ class TestEnvironmentConfiguration:
 
     def test_env_example_has_sections(self, env_example_content):
         """Test .env.example has organized sections."""
+<<<<<<< HEAD
         sections = ["Environment", "Logging", "Caching", "API", "Broker", "Risk", "Security"]
+=======
+        sections = [
+            'Environment',
+            'Logging',
+            'Caching',
+            'API',
+            'Broker',
+            'Risk',
+            'Security'
+        ]
+>>>>>>> origin/main
 
         for section in sections:
             assert section in env_example_content
@@ -149,12 +169,21 @@ class TestEnvironmentConfiguration:
     def test_env_example_has_required_variables(self, env_example_content):
         """Test .env.example contains all required variables."""
         required_vars = [
+<<<<<<< HEAD
             "ENVIRONMENT",
             "LOG_LEVEL",
             "MAX_DAILY_LOSS_PERCENT",
             "MAX_POSITION_SIZE",
             "FLASK_ENV",
             "REDIS_HOST",
+=======
+            'ENVIRONMENT',
+            'LOG_LEVEL',
+            'MAX_DAILY_LOSS_PERCENT',
+            'MAX_POSITION_SIZE',
+            'FLASK_ENV',
+            'REDIS_HOST'
+>>>>>>> origin/main
         ]
 
         for var in required_vars:
@@ -234,8 +263,13 @@ class TestDeploymentValidation:
         assert compose_file.exists()
 
         # Should be valid YAML
+<<<<<<< HEAD
         content = compose_file.read_text(encoding="utf-8")
         assert "services:" in content
+=======
+        content = compose_file.read_text(encoding='utf-8')
+        assert 'services:' in content
+>>>>>>> origin/main
 
     def test_dockerfile_validation(self):
         """Test Dockerfile is valid."""
@@ -309,9 +343,15 @@ class TestSecurityConfiguration:
 
     def test_docker_compose_resource_limits(self):
         """Test resource limits in docker-compose."""
+<<<<<<< HEAD
         compose_file = Path("docker-compose.yml")
         compose_file.read_text(encoding="utf-8")
 
+=======
+        compose_file = Path('docker-compose.yml')
+        compose_file.read_text(encoding='utf-8')
+        
+>>>>>>> origin/main
         # Should mention resource limits (optional but good practice)
         # This is a best practice check
         pass

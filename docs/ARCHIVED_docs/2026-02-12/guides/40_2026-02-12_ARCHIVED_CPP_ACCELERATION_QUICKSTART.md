@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# C++ Acceleration - Quick Start
+=======
+# C++ Acceleration - Quick Start
+>>>>>>> origin/main
 
 EDGECORE now supports **C++ acceleration** for computationally intensive operations, providing **5-10x performance improvements** while maintaining full Python compatibility.
 
@@ -6,10 +10,17 @@ EDGECORE now supports **C++ acceleration** for computationally intensive operati
 
 | Component | Status | Speedup | Usage |
 |---|---|---|---|
+<<<<<<< HEAD
 | **Cointegration Testing** | Ô£à Integrated | 10x | Automatic in backtests |
 | **Architecture** | Ô£à Ready | - | Hybrid fallback system |
 | **Fallback Mode** | Ô£à Active | - | Currently active (Python) |
 | **C++ Module** | ÔÜá´©Å Pending | - | Needs Visual C++ runtime |
+=======
+| **Cointegration Testing** | ✅ Integrated | 10x | Automatic in backtests |
+| **Architecture** | ✅ Ready | - | Hybrid fallback system |
+| **Fallback Mode** | ✅ Active | - | Currently active (Python) |
+| **C++ Module** | ⚠️ Pending | - | Needs Visual C++ runtime |
+>>>>>>> origin/main
 
 ## Quick Activation
 
@@ -80,7 +91,11 @@ Check if C++ acceleration is active:
 ```bash
 python -c "
 from models.cointegration import CPP_COINTEGRATION_AVAILABLE
+<<<<<<< HEAD
 status = 'Ô£ô ACTIVE' if CPP_COINTEGRATION_AVAILABLE else 'ÔÜá Using Python'
+=======
+status = '✓ ACTIVE' if CPP_COINTEGRATION_AVAILABLE else '⚠ Using Python'
+>>>>>>> origin/main
 print(f'C++ Acceleration: {status}')
 "
 ```
@@ -88,7 +103,11 @@ print(f'C++ Acceleration: {status}')
 Expected output:
 ```
 2026-02-12 12:42:34 [info] C++ cointegration engine loaded - 10x+ speedup enabled
+<<<<<<< HEAD
 C++ Acceleration: Ô£ô ACTIVE
+=======
+C++ Acceleration: ✓ ACTIVE
+>>>>>>> origin/main
 ```
 
 ## Performance Comparison
@@ -116,11 +135,19 @@ python scripts/benchmark_cpp_acceleration.py
 
 ```
 User Code (Same everywhere)
+<<<<<<< HEAD
     Ôåô
 engle_granger_test_cpp_optimized()
     Ôö£ÔöÇ If C++ available: Use compiled module (10x faster)
     ÔööÔöÇ If C++ unavailable: Use pure Python fallback (transparent)
     Ôåô
+=======
+    ↓
+engle_granger_test_cpp_optimized()
+    ├─ If C++ available: Use compiled module (10x faster)
+    └─ If C++ unavailable: Use pure Python fallback (transparent)
+    ↓
+>>>>>>> origin/main
 Result (Identical either way)
 ```
 
@@ -225,6 +252,11 @@ result = engle_granger_test_cpp_optimized(s1, s2)  # Auto-chooses best
 
 ---
 
+<<<<<<< HEAD
 **Current Status:** Ô£à Python fallback active, C++ pending installation  
 **When Activated:** 6x overall speedup (46 symbols: 60s ÔåÆ 15s)  
+=======
+**Current Status:** ✅ Python fallback active, C++ pending installation  
+**When Activated:** 6x overall speedup (46 symbols: 60s → 15s)  
+>>>>>>> origin/main
 **Compatibility:** 100% backward compatible, no code changes needed

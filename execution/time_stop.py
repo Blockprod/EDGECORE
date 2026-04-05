@@ -1,11 +1,19 @@
 """
+<<<<<<< HEAD
 Time Stop Manager ��� Sprint 1.5 (fixes C-05: no max holding period).
+=======
+Time Stop Manager – Sprint 1.5 (fixes C-05: no max holding period).
+>>>>>>> origin/main
 
 Problem
 -------
 Without a time-based exit, positions that fail to mean-revert stay open
 indefinitely, accumulating borrowing costs and opportunity cost.
+<<<<<<< HEAD
 Statistical arbitrage positions that haven't reverted by 2+� half-life
+=======
+Statistical arbitrage positions that haven't reverted by 2× half-life
+>>>>>>> origin/main
 have a high probability of regime change (broken cointegration).
 
 Solution
@@ -16,14 +24,23 @@ For each pair with estimated half-life *h*, the maximum holding period is::
 
 After ``max_bars`` the position is **force-closed regardless of P&L**.
 
+<<<<<<< HEAD
 Post-v27 fix (+�tape 5): multiplier reduced from 3.0 ��� 2.0.  The 5 time
 stops in v27 (avg 22-day holding) cost -$17,912.  Cutting earlier at 2+� HL
+=======
+Post-v27 fix (Étape 5): multiplier reduced from 3.0 → 2.0.  The 5 time
+stops in v27 (avg 22-day holding) cost -$17,912.  Cutting earlier at 2× HL
+>>>>>>> origin/main
 limits exposure to divergent spreads.
 
    ============  ====  ========================
    half_life (h)  cap   max_holding_bars
    ============  ====  ========================
+<<<<<<< HEAD
    15             60    30  (= 2 +� 15)
+=======
+   15             60    30  (= 2 × 15)
+>>>>>>> origin/main
    40             60    60  (= min(80, 60))
    None           60    60  (fallback to cap)
    ============  ====  ========================
@@ -33,7 +50,11 @@ reduces average holding period, improves capital efficiency.
 """
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 
+=======
+from typing import Optional
+>>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -44,7 +65,11 @@ class TimeStopConfig:
     """Configuration for time-based stop."""
 
     half_life_multiplier: float = 2.0
+<<<<<<< HEAD
     """Close after ``multiplier +� half_life`` bars.  Post-v27: 2.0 (was 3.0)."""
+=======
+    """Close after ``multiplier × half_life`` bars.  Post-v27: 2.0 (was 3.0)."""
+>>>>>>> origin/main
 
     max_days_cap: int = 60
     """Absolute ceiling regardless of half-life."""
@@ -60,12 +85,20 @@ class TimeStopManager:
     Usage::
 
         tsm = TimeStopManager()
+<<<<<<< HEAD
         max_bars = tsm.max_holding_bars(half_life=25)  # ��� 50
+=======
+        max_bars = tsm.max_holding_bars(half_life=25)  # ↓ 50
+>>>>>>> origin/main
         # Each bar check:
         should_close, reason = tsm.should_exit(holding_bars=51, half_life=25)
     """
 
+<<<<<<< HEAD
     def __init__(self, config: TimeStopConfig | None = None):
+=======
+    def __init__(self, config: Optional[TimeStopConfig] = None):
+>>>>>>> origin/main
         self.config = config or TimeStopConfig()
         logger.info(
             "time_stop_manager_initialized",
@@ -74,15 +107,26 @@ class TimeStopManager:
             default=self.config.default_max_bars,
         )
 
+<<<<<<< HEAD
     def max_holding_bars(self, half_life: int | None = None) -> int:
+=======
+    def max_holding_bars(self, half_life: Optional[int] = None) -> int:
+>>>>>>> origin/main
         """Return the maximum number of bars a position may be held.
 
         Args:
             half_life: Estimated half-life of mean reversion (bars/days).
+<<<<<<< HEAD
                        ``None`` ��� use ``default_max_bars`` from config.
 
         Returns:
             int ��� strict upper bound on holding period.
+=======
+                       ``None`` ↓ use ``default_max_bars`` from config.
+
+        Returns:
+            int – strict upper bound on holding period.
+>>>>>>> origin/main
         """
         if half_life is None or half_life <= 0:
             return self.config.default_max_bars
@@ -93,7 +137,11 @@ class TimeStopManager:
     def should_exit(
         self,
         holding_bars: int,
+<<<<<<< HEAD
         half_life: int | None = None,
+=======
+        half_life: Optional[int] = None,
+>>>>>>> origin/main
     ) -> tuple:
         """Check whether the position should be force-closed.
 
@@ -115,4 +163,7 @@ class TimeStopManager:
             return True, reason
 
         return False, None
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main

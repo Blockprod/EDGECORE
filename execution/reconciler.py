@@ -9,6 +9,14 @@ Ensures broker state matches internal tracking:
 - Automatic recovery procedures
 """
 
+<<<<<<< HEAD
+=======
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from structlog import get_logger
+from enum import Enum
+>>>>>>> origin/main
 import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -298,7 +306,11 @@ class BrokerReconciler:
         Raises:
              ValueError: If any input is invalid
         """
+<<<<<<< HEAD
         start_time = datetime.now(UTC)
+=======
+        start_time = datetime.now(timezone.utc)
+>>>>>>> origin/main
         self.divergences = []  # Reset divergences for this reconciliation
 
         # Reconcile each component
@@ -313,9 +325,15 @@ class BrokerReconciler:
             status = ReconciliationStatus.CRITICAL
         else:
             status = ReconciliationStatus.WARNING
+<<<<<<< HEAD
 
         duration = (datetime.now(UTC) - start_time).total_seconds()
 
+=======
+        
+        duration = (datetime.now(timezone.utc) - start_time).total_seconds()
+        
+>>>>>>> origin/main
         report = ReconciliationReport(
             status=status,
             timestamp=start_time,
@@ -366,9 +384,17 @@ class BrokerReconciler:
                     actions.append("CLOSE: Liquidate missing position immediately")
                 else:
                     actions.append("SYNC: Recheck position sizes")
+<<<<<<< HEAD
 
             elif divergence.type == "order":
                 if divergence.severity == "high":
                     actions.append("CANCEL: Stale order found on broker")
 
+=======
+            
+            elif divergence.type == "order":
+                if divergence.severity == "high":
+                    actions.append("CANCEL: Stale order found on broker")
+        
+>>>>>>> origin/main
         return actions

@@ -8,6 +8,11 @@ Provides:
 - Protocol definitions for interfaces
 """
 
+<<<<<<< HEAD
+=======
+from typing import TypedDict, Dict, List, Any, Literal
+from typing_extensions import NotRequired
+>>>>>>> origin/main
 from datetime import datetime
 from enum import Enum
 from typing import Any, Literal, TypedDict
@@ -34,8 +39,12 @@ class OrderType(Enum):
 
 
 class OrderStatus(Enum):
+<<<<<<< HEAD
     """Order execution status ��� aligned with execution.base.OrderStatus."""
 
+=======
+    """Order execution status — aligned with execution.base.OrderStatus."""
+>>>>>>> origin/main
     PENDING = "PENDING"
     FILLED = "FILLED"
     PARTIAL = "PARTIAL"
@@ -109,6 +118,7 @@ class DepthMode(Enum):
 
 class VenueType(Enum):
     """Trading venue type."""
+<<<<<<< HEAD
 
     CME_FUTURES = "cme"  # CME futures
     NASDAQ_EQUITIES = "nasdaq"  # US equities (Nasdaq)
@@ -117,6 +127,12 @@ class VenueType(Enum):
     CENTRALIZED_EXCHANGE = "centralized_exchange"
     DECENTRALIZED_EXCHANGE = "decentralized_exchange"
     CRYPTO_SPOT = "crypto_spot"
+=======
+    CME_FUTURES = "cme"               # CME futures
+    NASDAQ_EQUITIES = "nasdaq"        # US equities (Nasdaq)
+    NYSE_EQUITIES = "nyse"            # US equities (NYSE)
+    IBKR_SMART = "smart"             # IBKR Smart Routing (default)
+>>>>>>> origin/main
 
 
 class TraceLevel(Enum):
@@ -825,7 +841,10 @@ class AlerterConfig(TypedDict):
 
 class BacktestConfigSimple(TypedDict):
     """Backtest configuration (simple, flat fields)."""
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
     start_date: str
     end_date: str
     initial_equity: Equity

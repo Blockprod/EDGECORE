@@ -16,6 +16,15 @@ Original docstring:
     - Mode-specific implementations: Paper, Live, Backtest
 """
 
+<<<<<<< HEAD:execution/modes_legacy.py
+=======
+from abc import ABC, abstractmethod
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from structlog import get_logger
+>>>>>>> origin/main:execution/modes.py
 import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -38,6 +47,19 @@ class ModeType(StrEnum):
     BACKTEST = "backtest"
 
 
+<<<<<<< HEAD:execution/modes_legacy.py
+=======
+class OrderStatus(str, Enum):
+    """Order lifecycle states — delegates to execution.base.OrderStatus values."""
+    PENDING = "PENDING"
+    SUBMITTED = "SUBMITTED"
+    FILLED = "FILLED"
+    PARTIALLY_FILLED = "PARTIALLY_FILLED"
+    CANCELLED = "CANCELLED"
+    FAILED = "FAILED"
+
+
+>>>>>>> origin/main:execution/modes.py
 @dataclass
 class Order:
     """Order data structure."""
@@ -422,7 +444,11 @@ class LiveTradingMode(ExecutionMode):
         self.max_daily_loss_pct_absolute = 0.02  # 2% max daily loss
         self.max_equity_drawdown_pct_absolute = 0.15  # 15% max drawdown
         self.emergency_close_price_threshold = 0.10  # 10% move -> check sanity
+<<<<<<< HEAD:execution/modes_legacy.py
 
+=======
+        
+>>>>>>> origin/main:execution/modes.py
         # Tracking
         self.max_equity_reached = initial_equity
         self.api_error_count = 0

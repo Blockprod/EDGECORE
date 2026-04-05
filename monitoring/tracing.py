@@ -8,6 +8,15 @@ Provides OpenTelemetry-like tracing capabilities for order execution:
 - Hierarchical span relationships
 """
 
+<<<<<<< HEAD
+=======
+import uuid
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any, Callable
+from datetime import datetime
+import logging
+from contextlib import contextmanager
+>>>>>>> origin/main
 import json
 import logging
 import uuid
@@ -16,7 +25,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Callable
 
+<<<<<<< HEAD
 from common.types import TraceContext, TraceLevel
+=======
+from common.types import TraceLevel, TraceContext
+>>>>>>> origin/main
 
 logger = logging.getLogger(__name__)
 

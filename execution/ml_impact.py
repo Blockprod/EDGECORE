@@ -7,6 +7,13 @@ Provides neural network models for predicting market impact based on:
 - ML confidence scoring with interpolation
 """
 
+<<<<<<< HEAD
+=======
+import numpy as np
+from typing import Dict, Optional, List, Tuple, Literal
+from dataclasses import dataclass
+from datetime import datetime
+>>>>>>> origin/main
 import logging
 import pickle
 from dataclasses import dataclass
@@ -223,7 +230,11 @@ class MLImpactPredictor:
         Simplified version: assume trained model if available.
         """
         self._encode_features(features)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Without actual SHAP, use simple sensitivity analysis
         importance = {
             "order_size_pct": 0.35,  # Size is most important
@@ -358,7 +369,11 @@ class MLImpactPredictor:
 
                 # MSE loss (simplified backward pass omitted for brevity)
                 np.mean((predictions - y_batch) ** 2)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Evaluate
         predictions, _ = self.model.forward(X)
         mse = np.mean((predictions - y) ** 2)

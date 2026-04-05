@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Sprint 1.2 ÔÇô Formal anti-look-ahead-bias test.
+=======
+"""
+Sprint 1.2 – Formal anti-look-ahead-bias test.
+>>>>>>> origin/main
 
 Verifies that the StrategyBacktestSimulator NEVER sees data beyond the
 current bar when discovering pairs or generating signals.
@@ -9,21 +14,35 @@ Strategy:
   - Before T: symbols are cointegrated.
   - After T: one symbol becomes a random walk (break cointegration).
   - Run the simulator and verify that pairs discovered BEFORE T
+<<<<<<< HEAD
     remain unchanged ÔÇô proving no future data leaked into the past.
+=======
+    remain unchanged – proving no future data leaked into the past.
+>>>>>>> origin/main
 """
 
 import numpy as np
 import pandas as pd
 
+<<<<<<< HEAD
 from backtests.cost_model import CostModel, CostModelConfig
 from backtests.metrics import BacktestMetrics
 from backtests.strategy_simulator import StrategyBacktestSimulator
+=======
+from backtests.strategy_simulator import StrategyBacktestSimulator
+from backtests.cost_model import CostModel, CostModelConfig
+from backtests.metrics import BacktestMetrics
+
+>>>>>>> origin/main
 
 # --------------------------------------------------------------------------
 # Helpers
 # --------------------------------------------------------------------------
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 def _make_cointegrated_then_break(
     n_bars: int = 400,
     break_bar: int = 250,
@@ -31,7 +50,11 @@ def _make_cointegrated_then_break(
 ) -> pd.DataFrame:
     """
     Create two price series:
+<<<<<<< HEAD
       - [0, break_bar): strongly cointegrated  (Y Ôëê 2*X + noise)
+=======
+      - [0, break_bar): strongly cointegrated  (Y ≈ 2*X + noise)
+>>>>>>> origin/main
       - [break_bar, n_bars): Y becomes an independent random walk
     """
     rng = np.random.default_rng(seed)
@@ -50,14 +73,23 @@ def _make_cointegrated_then_break(
     y_rw = y_prices[break_bar - 1] * np.exp(np.cumsum(y_rw_returns))
     y_prices[break_bar:] = y_rw
 
+<<<<<<< HEAD
     return pd.DataFrame({"SYM_A": x_prices, "SYM_B": y_prices}, index=dates)
+=======
+    return pd.DataFrame(
+        {"SYM_A": x_prices, "SYM_B": y_prices}, index=dates
+    )
+>>>>>>> origin/main
 
 
 # --------------------------------------------------------------------------
 # Tests
 # --------------------------------------------------------------------------
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 class TestNoLookAheadBias:
     """Ensure the unified simulator does not peek at future data."""
 
@@ -114,9 +146,14 @@ class TestNoLookAheadBias:
 
         observed_lengths = []
 
+<<<<<<< HEAD
         def _recording_generate(
             _self_strategy, market_data, _discovered_pairs=None, **_kwargs
         ):  # mirrors generate_signals signature
+=======
+
+        def _recording_generate(self_strategy, market_data, discovered_pairs=None, **kwargs):
+>>>>>>> origin/main
             """Record the length of market_data passed to generate_signals."""
             observed_lengths.append(len(market_data))
             return []  # Return no signals to keep test fast
@@ -146,19 +183,29 @@ class TestNoLookAheadBias:
 
     def test_legacy_run_emits_deprecation_warning(self):
         """BacktestRunner.run() must emit DeprecationWarning (C-02 label)."""
+<<<<<<< HEAD
         import warnings
 
         from backtests.runner import BacktestRunner
+=======
+        from backtests.runner import BacktestRunner
+        import warnings
+>>>>>>> origin/main
 
         runner = BacktestRunner()
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
             try:
+<<<<<<< HEAD
                 # Will likely fail on network ÔÇô we only care about the warning
+=======
+                # Will likely fail on network – we only care about the warning
+>>>>>>> origin/main
                 runner.run(symbols=["FAKE"], use_synthetic=True)
             except Exception:
                 pass
 
+<<<<<<< HEAD
         deprecation_warnings = [w for w in caught if issubclass(w.category, DeprecationWarning)]
         assert len(deprecation_warnings) >= 1, "BacktestRunner.run() should emit a DeprecationWarning"
         assert "look-ahead" in str(deprecation_warnings[0].message).lower()
@@ -310,3 +357,12 @@ class TestT1ExecutionTiming:
         )
         metrics = sim.run(prices, fixed_pairs=[("AAA", "BBB", 0.05, 1.5)])
         assert isinstance(metrics, BacktestMetrics)
+=======
+        deprecation_warnings = [
+            w for w in caught if issubclass(w.category, DeprecationWarning)
+        ]
+        assert len(deprecation_warnings) >= 1, (
+            "BacktestRunner.run() should emit a DeprecationWarning"
+        )
+        assert "look-ahead" in str(deprecation_warnings[0].message).lower()
+>>>>>>> origin/main

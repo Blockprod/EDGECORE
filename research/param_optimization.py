@@ -7,6 +7,10 @@ TODO:
 - Correlation analysis of parameters
 """
 
+<<<<<<< HEAD
+=======
+import pandas as pd
+>>>>>>> origin/main
 from itertools import product
 
 import pandas as pd

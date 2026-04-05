@@ -217,7 +217,11 @@ class TestLatencyContext:
     def test_context_manager_success(self):
         """Test context manager for successful operation."""
         initialize_global_latency_monitor("test_service")
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         with LatencyContext("test_op", "component_a", "component_b"):
             time.sleep(0.02)
 
@@ -323,7 +327,11 @@ class TestLatencyIntegration:
                 monitor.start_operation(op)
                 time.sleep(0.01 + 0.001 * trial)
                 monitor.end_operation(op)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/main
         # Verify all operations were tracked
         summary = monitor.get_summary()
         assert summary["operations_monitored"] == 3

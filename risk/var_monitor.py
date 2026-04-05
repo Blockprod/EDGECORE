@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 2.3 ÔÇö Portfolio VaR / CVaR Monitor.
+=======
+"""
+Phase 2.3 — Portfolio VaR / CVaR Monitor.
+>>>>>>> origin/main
 
 Computes rolling historical VaR and CVaR (Expected Shortfall) at the
 95% confidence level over a lookback window. When VaR exceeds a threshold
@@ -9,6 +14,10 @@ Implementation uses historical simulation (no parametric assumptions).
 """
 
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+from typing import List, Optional, Tuple
+>>>>>>> origin/main
 
 import numpy as np
 from structlog import get_logger
@@ -47,11 +56,19 @@ class VaRMonitor:
         is_ok, breach_info = vm.check_limit(portfolio_value)
     """
 
+<<<<<<< HEAD
     def __init__(self, config: VaRConfig | None = None):
         self.config = config or VaRConfig()
         self._returns: list[float] = []
         self._current_var: float | None = None
         self._current_cvar: float | None = None
+=======
+    def __init__(self, config: Optional[VaRConfig] = None):
+        self.config = config or VaRConfig()
+        self._returns: List[float] = []
+        self._current_var: Optional[float] = None
+        self._current_cvar: Optional[float] = None
+>>>>>>> origin/main
         logger.info(
             "var_monitor_initialized",
             confidence=self.config.confidence_level,
@@ -86,6 +103,7 @@ class VaRMonitor:
         else:
             self._current_cvar = self._current_var
 
+<<<<<<< HEAD
     def current_var(self) -> float | None:
         """Return current 1-day VaR as a positive fraction (e.g. 0.015 = 1.5%)."""
         return self._current_var
@@ -95,6 +113,17 @@ class VaRMonitor:
         return self._current_cvar
 
     def check_limit(self, portfolio_value: float) -> tuple[bool, str | None]:
+=======
+    def current_var(self) -> Optional[float]:
+        """Return current 1-day VaR as a positive fraction (e.g. 0.015 = 1.5%)."""
+        return self._current_var
+
+    def current_cvar(self) -> Optional[float]:
+        """Return current 1-day CVaR (Expected Shortfall) as positive fraction."""
+        return self._current_cvar
+
+    def check_limit(self, portfolio_value: float) -> Tuple[bool, Optional[str]]:
+>>>>>>> origin/main
         """Check if current VaR breaches the limit.
 
         Returns:

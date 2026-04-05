@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python
+=======
+#!/usr/bin/env python
+>>>>>>> origin/main
 """Test environment-specific configuration loading."""
 import os
 import sys
@@ -44,5 +48,9 @@ if __name__ == '__main__':
         print()
     
     print("=" * 70)
+<<<<<<< HEAD
     print("  ALL TESTS PASSED Ô£ô")
+=======
+    print("  ALL TESTS PASSED ✓")
+>>>>>>> origin/main
     print("=" * 70)

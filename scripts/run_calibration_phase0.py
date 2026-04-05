@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿#!/usr/bin/env python
+=======
+#!/usr/bin/env python
+>>>>>>> origin/main
 """EDGECORE Calibration Study -- Kelly + Almgren-Chriss Tuning.
 
 Ablation showed:

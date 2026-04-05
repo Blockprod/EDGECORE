@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Tests for signal_engine.momentum ÔÇö MomentumOverlay (v31 Etape 2).
+=======
+"""
+Tests for signal_engine.momentum — MomentumOverlay (v31 Etape 2).
+>>>>>>> origin/main
 
 Covers:
     - Relative strength computation
@@ -15,6 +20,10 @@ import pytest
 
 from signal_engine.momentum import MomentumOverlay, MomentumResult
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

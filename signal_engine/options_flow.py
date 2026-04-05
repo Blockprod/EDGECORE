@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 4.2 ÔÇö Options Flow Signal.
 
@@ -5,6 +6,15 @@ Extracts directional bias from options market data:
   1. Put/Call ratio: high P/C ÔåÆ bearish pressure, low ÔåÆ bullish.
   2. Implied Volatility skew: put IV > call IV ÔåÆ fear premium.
   3. Unusual options activity: volume spike ÔåÆ smart money positioning.
+=======
+"""
+Phase 4.2 — Options Flow Signal.
+
+Extracts directional bias from options market data:
+  1. Put/Call ratio: high P/C → bearish pressure, low → bullish.
+  2. Implied Volatility skew: put IV > call IV → fear premium.
+  3. Unusual options activity: volume spike → smart money positioning.
+>>>>>>> origin/main
 
 For pair trading, the score reflects relative options sentiment
 between the two legs.  Positive = sym1 more bullish options flow.
@@ -20,6 +30,10 @@ Data source strategy:
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
+=======
+from typing import Dict, Optional
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -80,7 +94,11 @@ class OptionsFlowSignal:
         self.vol_lookback = vol_lookback
 
         # symbol -> OptionsFlowSnapshot
+<<<<<<< HEAD
         self._snapshots: dict[str, OptionsFlowSnapshot] = {}
+=======
+        self._snapshots: Dict[str, OptionsFlowSnapshot] = {}
+>>>>>>> origin/main
 
     def update(self, prices_df: pd.DataFrame) -> None:
         """Update options flow estimates from daily prices.
@@ -106,8 +124,13 @@ class OptionsFlowSignal:
                 continue
 
             # --- Put/Call ratio proxy ---
+<<<<<<< HEAD
             # Bearish momentum ÔåÆ high P/C ÔåÆ negative score
             # Bullish momentum ÔåÆ low P/C ÔåÆ positive score
+=======
+            # Bearish momentum → high P/C → negative score
+            # Bullish momentum → low P/C → positive score
+>>>>>>> origin/main
             recent_ret = returns.iloc[-self.pc_lookback:].mean()
             recent_vol = returns.iloc[-self.pc_lookback:].std()
             if recent_vol > 1e-10:
@@ -118,14 +141,24 @@ class OptionsFlowSignal:
                 pc_score = 0.0
 
             # --- IV skew proxy ---
+<<<<<<< HEAD
             # When short-term vol >> long-term vol ÔåÆ fear premium (bearish)
             # When short-term vol << long-term vol ÔåÆ calm (bullish)
+=======
+            # When short-term vol >> long-term vol → fear premium (bearish)
+            # When short-term vol << long-term vol → calm (bullish)
+>>>>>>> origin/main
             short_vol = returns.iloc[-self.iv_lookback:].std()
             long_vol = returns.iloc[-self.vol_lookback:].std()
             if long_vol > 1e-10:
                 vol_ratio = short_vol / long_vol
+<<<<<<< HEAD
                 # vol_ratio > 1 ÔåÆ elevated fear ÔåÆ negative score
                 # vol_ratio < 1 ÔåÆ compressed ÔåÆ positive score
+=======
+                # vol_ratio > 1 → elevated fear → negative score
+                # vol_ratio < 1 → compressed → positive score
+>>>>>>> origin/main
                 iv_score = float(np.clip(-(vol_ratio - 1.0) * 3.0, -1.0, 1.0))
             else:
                 iv_score = 0.0
@@ -177,7 +210,11 @@ class OptionsFlowSignal:
         diff = c1 - c2
         return float(np.clip(diff, -1.0, 1.0))
 
+<<<<<<< HEAD
     def get_snapshot(self, symbol: str) -> OptionsFlowSnapshot | None:
+=======
+    def get_snapshot(self, symbol: str) -> Optional[OptionsFlowSnapshot]:
+>>>>>>> origin/main
         """Return the latest options flow snapshot for a symbol."""
         return self._snapshots.get(symbol)
 

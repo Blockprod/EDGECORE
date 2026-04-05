@@ -10,7 +10,11 @@ Provides:
 """
 
 import math
+<<<<<<< HEAD
 import time
+=======
+from structlog import get_logger
+>>>>>>> origin/main
 from dataclasses import dataclass
 from functools import wraps
 from typing import Any, Callable, TypeVar
@@ -111,7 +115,11 @@ def retry_with_backoff(policy: RetryPolicy | None = None, on_retry: Callable | N
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> origin/main
             for attempt in range(policy.max_attempts):
                 try:
                     result = func(*args, **kwargs)
@@ -127,6 +135,10 @@ def retry_with_backoff(policy: RetryPolicy | None = None, on_retry: Callable | N
                     return result
 
                 except Exception as e:
+<<<<<<< HEAD
+=======
+                    
+>>>>>>> origin/main
                     # Check if exception is retryable
                     if not isinstance(e, policy.retryable_exceptions):
                         logger.error(
@@ -158,7 +170,11 @@ def retry_with_backoff(policy: RetryPolicy | None = None, on_retry: Callable | N
                         max_attempts=policy.max_attempts,
                         delay_seconds=delay,
                         exc_type=type(e).__name__,
+<<<<<<< HEAD
                         message=str(e),
+=======
+                        message=str(e)
+>>>>>>> origin/main
                     )
 
                     # Call on_retry callback if provided

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# EDGECORE ÔÇö Equity Test Configuration
+=======
+# EDGECORE — Equity Test Configuration
+>>>>>>> origin/main
 # Market: US Equities via Interactive Brokers (sandbox)
 # Small universe for fast unit tests and CI.
 
@@ -10,7 +14,11 @@ market:
 strategy:
   lookback_window: 252
   entry_z_score: 2.0
+<<<<<<< HEAD
   exit_z_score: 0.5
+=======
+  exit_z_score: 0.0
+>>>>>>> origin/main
   min_correlation: 0.7
   max_half_life: 60
   use_kalman: true
@@ -36,6 +44,10 @@ execution:
   engine: "ibkr"
   timeout_seconds: 10
   max_retries: 3
+<<<<<<< HEAD
+=======
+  slippage_bps: 2.0
+>>>>>>> origin/main
   use_sandbox: true
   paper_trading_loop_interval_seconds: 60
   initial_capital: 50000.0
@@ -47,6 +59,7 @@ backtest:
   commission_bps: 2.0
   walk_forward_periods: 4
   out_of_sample_ratio: 0.2
+<<<<<<< HEAD
   feature_store_dir: data/feature_store_test/  # P2: isolated test cache
 
 costs:
@@ -57,3 +70,5 @@ costs:
   borrowing_cost_annual: 0.005
   max_slippage_bps: 50.0
   slippage_model: "fixed_bps"
+=======
+>>>>>>> origin/main

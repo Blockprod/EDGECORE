@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿"""
+=======
+"""
+>>>>>>> origin/main
 Tests for S4.2: Advanced Caching (Distributed + Persistent + Advanced Eviction).
 
 Tests cover:
@@ -10,6 +14,7 @@ Tests cover:
 - Statistics and monitoring
 """
 
+<<<<<<< HEAD
 import tempfile
 import time
 from pathlib import Path
@@ -21,6 +26,18 @@ from monitoring.cache_advanced import (
     DistributedCacheManager,
     LFUEvictionPolicy,
     PersistentCacheManager,
+=======
+import pytest
+import time
+import tempfile
+from pathlib import Path
+
+from monitoring.cache_advanced_s42 import (
+    LFUEvictionPolicy,
+    ARCEvictionPolicy,
+    DistributedCacheManager,
+    PersistentCacheManager
+>>>>>>> origin/main
 )
 
 

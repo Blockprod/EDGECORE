@@ -4,8 +4,19 @@ Type-annotated wrapper functions for production APIs.
 Provides fully typed interfaces to all public APIs.
 """
 
+<<<<<<< HEAD
 from dataclasses import dataclass
 from typing import Any, Callable
+=======
+from typing import Dict, Optional, Any, Tuple, Callable
+from common.types import (
+    AlertRecord, ValidationResult, RiskCheckResult,
+    Price, Quantity, Symbol, OrderID,
+    OrderSide, OrderType
+)
+from dataclasses import dataclass
+import pandas as pd
+>>>>>>> origin/main
 
 import pandas as pd
 import structlog

@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Portfolio Engine Module ÔÇö Capital allocation, concentration, and hedging.
+=======
+"""
+Portfolio Engine Module — Capital allocation, concentration, and hedging.
+>>>>>>> origin/main
 
 Provides:
     - PortfolioAllocator: Position sizing and capital allocation

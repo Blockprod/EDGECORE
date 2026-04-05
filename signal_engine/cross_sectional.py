@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Cross-Sectional Momentum Signal ÔÇö Relative ranking for pair trading.
+=======
+"""
+Cross-Sectional Momentum Signal — Relative ranking for pair trading.
+>>>>>>> origin/main
 
 For a pair (A, B), ranks both legs by their return over multiple windows
 (1M, 3M, 6M, 12M). The signal reflects whether A is strong relative
@@ -13,6 +18,11 @@ Phase 1, Etape 1.2.
 
 from __future__ import annotations
 
+<<<<<<< HEAD
+=======
+from typing import Dict, List, Optional
+
+>>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -43,7 +53,11 @@ class CrossSectionalMomentum:
 
     def __init__(
         self,
+<<<<<<< HEAD
         windows: list[int] | None = None,
+=======
+        windows: Optional[List[int]] = None,
+>>>>>>> origin/main
         min_history: int = 63,
     ):
         """
@@ -54,7 +68,11 @@ class CrossSectionalMomentum:
         self.windows = windows or self.DEFAULT_WINDOWS
         self.min_history = min_history
         # symbol -> composite percentile rank (0..1)
+<<<<<<< HEAD
         self._rankings: dict[str, float] = {}
+=======
+        self._rankings: Dict[str, float] = {}
+>>>>>>> origin/main
 
     def update_rankings(self, prices: pd.DataFrame) -> None:
         """Recompute cross-sectional rankings from a universe price DataFrame.
@@ -92,7 +110,11 @@ class CrossSectionalMomentum:
             return
 
         composite = rank_sum / valid_windows
+<<<<<<< HEAD
         self._rankings = {str(k): v for k, v in composite.to_dict().items()}
+=======
+        self._rankings = composite.to_dict()
+>>>>>>> origin/main
 
     def compute_score(self, sym_a: str, sym_b: str) -> float:
         """Compute cross-sectional momentum score for pair (A, B).
@@ -118,6 +140,10 @@ class CrossSectionalMomentum:
         return float(np.clip(score, -1.0, 1.0))
 
     @property
+<<<<<<< HEAD
     def rankings(self) -> dict[str, float]:
+=======
+    def rankings(self) -> Dict[str, float]:
+>>>>>>> origin/main
         """Current symbol rankings (read-only copy)."""
         return dict(self._rankings)

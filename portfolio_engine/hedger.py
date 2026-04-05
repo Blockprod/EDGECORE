@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿"""
 Portfolio Hedger ÔÇö Beta-neutral hedging and PCA factor monitoring.
 
@@ -5,6 +6,15 @@ Composes:
     1. BetaNeutralHedger  ÔÇö Hedges residual market beta via benchmark ETF
     2. PCASpreadMonitor   ÔÇö Detects hidden factor concentration across spreads
     3. SpreadCorrelationGuard ÔÇö Rejects entries correlated with existing positions
+=======
+"""
+Portfolio Hedger — Beta-neutral hedging and PCA factor monitoring.
+
+Composes:
+    1. BetaNeutralHedger  — Hedges residual market beta via benchmark ETF
+    2. PCASpreadMonitor   — Detects hidden factor concentration across spreads
+    3. SpreadCorrelationGuard — Rejects entries correlated with existing positions
+>>>>>>> origin/main
 
 These three layers work together to ensure the portfolio maintains
 genuine diversification, not just position-count diversification.
@@ -12,14 +22,24 @@ genuine diversification, not just position-count diversification.
 
 from __future__ import annotations
 
+<<<<<<< HEAD
 from typing import Any
+=======
+from typing import Any, Dict, Optional, Tuple
+>>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
 
+<<<<<<< HEAD
 from risk.beta_neutral import BetaNeutralConfig, BetaNeutralHedger
 from risk.pca_spread_monitor import PCASpreadConfig, PCASpreadMonitor
 from risk.spread_correlation import SpreadCorrelationConfig, SpreadCorrelationGuard
+=======
+from risk.beta_neutral import BetaNeutralHedger, BetaNeutralConfig
+from risk.pca_spread_monitor import PCASpreadMonitor, PCASpreadConfig
+from risk.spread_correlation import SpreadCorrelationGuard, SpreadCorrelationConfig
+>>>>>>> origin/main
 
 logger = get_logger(__name__)
 
@@ -91,7 +111,11 @@ class PortfolioHedger:
         self,
         pair_key: str,
         candidate_spread: pd.Series,
+<<<<<<< HEAD
     ) -> tuple[bool, str]:
+=======
+    ) -> Tuple[bool, str]:
+>>>>>>> origin/main
         """
         Check if a new pair would degrade portfolio diversification.
 
@@ -122,7 +146,11 @@ class PortfolioHedger:
         portfolio_returns: pd.Series,
         benchmark_returns: pd.Series,
         portfolio_value: float,
+<<<<<<< HEAD
     ) -> dict[str, Any]:
+=======
+    ) -> Dict[str, Any]:
+>>>>>>> origin/main
         """
         Compute benchmark hedge recommendation.
 
@@ -135,6 +163,10 @@ class PortfolioHedger:
             portfolio_value=portfolio_value,
         )
 
+<<<<<<< HEAD
     def get_beta(self) -> float | None:
+=======
+    def get_beta(self) -> Optional[float]:
+>>>>>>> origin/main
         """Return the last estimated portfolio beta."""
         return self.beta_hedger._last_beta

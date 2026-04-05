@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 ﻿# EDGECORE ÔÇö Equity Development Configuration
 # Market: US Equities via Interactive Brokers
 # Annualisation: 252 trading days
 # audit 2026-02-22 ÔÇö equity migration (Option A: 100% US equities via IBKR)
+=======
+# EDGECORE — Equity Development Configuration
+# Market: US Equities via Interactive Brokers
+# Annualisation: 252 trading days
+# audit 2026-02-22 — equity migration (Option A: 100% US equities via IBKR)
+>>>>>>> origin/main
 #
 # Pair selection rationale:
 #   Sector-matched pairs with genuine economic cointegration drivers
@@ -35,6 +42,7 @@ regime:
   neutral_band_pct: 0.02
   trend_favorable_sizing: 0.80    # v30: sizing for favorable side in trends
   neutral_sizing: 0.65            # v30: sizing for both sides in NEUTRAL
+<<<<<<< HEAD
   # C-02: Dispersion filter
   dispersion_filter_enabled: true
   dispersion_filter_lookback: 60
@@ -42,6 +50,8 @@ regime:
   # C-09: Adaptive threshold ramp
   dispersion_ideal_index: 0.30
   dispersion_max_entry_adj: 0.50
+=======
+>>>>>>> origin/main
 
 momentum:
   enabled: true
@@ -201,6 +211,10 @@ execution:
   engine: "ibkr"
   timeout_seconds: 30
   max_retries: 3
+<<<<<<< HEAD
+=======
+  slippage_bps: 2.0
+>>>>>>> origin/main
   use_sandbox: true               # IB paper trading gateway
   initial_capital: 100000.0
 
@@ -211,7 +225,10 @@ backtest:
   commission_bps: 2.0
   walk_forward_periods: 6
   out_of_sample_ratio: 0.2
+<<<<<<< HEAD
   feature_store_dir: data/feature_store/  # P2: versioned spread cache
+=======
+>>>>>>> origin/main
 
 risk:
   max_concurrent_positions: 20    # v31: raised from 10 for more simultaneous trades
@@ -220,6 +237,7 @@ risk:
   max_daily_loss_pct: 0.02        # 2% daily drawdown circuit breaker
   max_leverage: 2.0
   max_drawdown_pct: 0.10          # 10% portfolio drawdown hard stop
+<<<<<<< HEAD
 
 costs:
   slippage_bps: 2.0               # Base slippage — aligné sur CostModelConfig large-cap (2 bps)
@@ -228,3 +246,5 @@ costs:
   maker_fee_bps: 1.5              # Maker rebate / exécution passive
   borrowing_cost_annual: 0.005    # 0.5 % GC rate (general collateral ETB)
   slippage_model: "almgren_chriss"  # Modèle institutionnel 3-composantes
+=======
+>>>>>>> origin/main

@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# EDGECORE Architecture
+=======
+# EDGECORE Architecture
+>>>>>>> origin/main
 
 **Version**: 3.0 (Post-S3.2: Half-Life Refinement Integration)  
 **Last Updated**: February 12, 2026  
@@ -6,7 +10,11 @@
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒÄ» Overview
+=======
+## 🎯 Overview
+>>>>>>> origin/main
 
 EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs with mean-reverting spreads. The system implements a seven-stage pipeline from data ingestion through execution, with comprehensive risk controls and out-of-sample validation.
 
@@ -19,7 +27,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒôè Signal Generation Pipeline
+=======
+## 📊 Signal Generation Pipeline
+>>>>>>> origin/main
 
 ### Stage 1: Pair Discovery (Daily, Cached per Period)
 
@@ -33,7 +45,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
    - Convert to log returns: `r_t = ln(P_t / P_{t-1})`
    - Verify no missing data or extreme price moves
 
+<<<<<<< HEAD
 2. **Screening Phase (╬▒ = 0.05)**
+=======
+2. **Screening Phase (α = 0.05)**
+>>>>>>> origin/main
    ```python
    for symbol_pair in all_pairs:
        # Engle-Granger test at standard significance level
@@ -44,7 +60,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
    - Expected result: ~5-10% of all pairs pass
    - Output: 50-100 candidate pairs (depending on universe size)
 
+<<<<<<< HEAD
 3. **Bonferroni Correction (╬▒_corrected)**
+=======
+3. **Bonferroni Correction (α_corrected)**
+>>>>>>> origin/main
    ```python
    n_pairs = len(all_pairs)
    alpha_corrected = 0.05 / (n_pairs * (n_pairs - 1) / 2)
@@ -54,7 +74,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
        if p.pvalue < alpha_corrected
    ]
    ```
+<<<<<<< HEAD
    - Adjusts for multiple testing: if 1,000 pairs tested, ╬▒ Ôëê 0.0001
+=======
+   - Adjusts for multiple testing: if 1,000 pairs tested, α ≈ 0.0001
+>>>>>>> origin/main
    - Expected result: 15-25 confirmed pairs (80% false positive reduction)
 
 4. **Additional Filters**
@@ -112,8 +136,13 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
    - Surviving pairs confidence increased
 
 3. **Metrics**
+<<<<<<< HEAD
    - **OOS Correlation Consistency**: corr_train Ôëê corr_oos (┬▒10%)
    - **OOS Half-Life Stability**: hl_train Ôëê hl_oos (┬▒20%)
+=======
+   - **OOS Correlation Consistency**: corr_train ≈ corr_oos (±10%)
+   - **OOS Half-Life Stability**: hl_train ≈ hl_oos (±20%)
+>>>>>>> origin/main
    - **Survival Rate**: Expected 70-80% (rejects false positives)
 
 **Runtime**: ~5-10 seconds per 50 pair pair discovery  
@@ -124,7 +153,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 ### Stage 3: Spread Modeling (Dynamic, Monthly Re-estimate)
 
 **Input**: Price series for cointegrated pair (Y, X)  
+<<<<<<< HEAD
 **Output**: Spread = Y - ╬▓*X, with hedge ratio ╬▓
+=======
+**Output**: Spread = Y - β*X, with hedge ratio β
+>>>>>>> origin/main
 
 **Process**:
 
@@ -213,8 +246,13 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 3. **Half-Life Estimation Process** (NEW: S3.2 Implementation)
    ```python
+<<<<<<< HEAD
    # Fit AR(1) model to spread: s_t = ╬╝ + ¤ü*(s_{t-1} - ╬╝) + ╬Á_t
    # Extract ¤ü (autocorrelation coefficient) via OLS on centered spread
+=======
+   # Fit AR(1) model to spread: s_t = μ + ρ*(s_{t-1} - μ) + ε_t
+   # Extract ρ (autocorrelation coefficient) via OLS on centered spread
+>>>>>>> origin/main
    
    centered_spread = spread - spread.mean()
    X = centered_spread.shift(1).dropna()
@@ -246,7 +284,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 ### Stage 5: Signal Generation (Per-Bar)
 
 **Input**: Z-score, regime, position state  
+<<<<<<< HEAD
 **Output**: Signal Ôêê {Entry, Exit, Hold}
+=======
+**Output**: Signal ∈ {Entry, Exit, Hold}
+>>>>>>> origin/main
 
 **Process**:
 
@@ -284,7 +326,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
    ```
    - Locks in gains if spread detaches from mean
    - Limits loss if mean-reversion fails
+<<<<<<< HEAD
    - Width: 1-2¤â from entry
+=======
+   - Width: 1-2σ from entry
+>>>>>>> origin/main
 
    **Exit 3: Regime Kill-Switch (Risk Protection)**
    ```python
@@ -311,7 +357,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 **Signal Reliability**:
 - **Entry Accuracy**: 55-65% winning trades (before costs)
+<<<<<<< HEAD
 - **Exit Timeliness**: 70-80% close near mean (within 1¤â)
+=======
+- **Exit Timeliness**: 70-80% close near mean (within 1σ)
+>>>>>>> origin/main
 - **Zero Lookahead**: All price data strictly backward-looking
 
 ---
@@ -385,7 +435,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
    ```
 
 **Risk Hierarchy** (Evaluated in Order):
+<<<<<<< HEAD
 1. Daily loss limit (highest priority ÔåÆ kills all)
+=======
+1. Daily loss limit (highest priority → kills all)
+>>>>>>> origin/main
 2. Position count limit
 3. Sector concentration
 4. Symbol concentration
@@ -413,7 +467,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 2. **Cost Assumptions**
    ```python
+<<<<<<< HEAD
    slippage_bps = 5        # ┬▒5 basis points (0.05%)
+=======
+   slippage_bps = 5        # ±5 basis points (0.05%)
+>>>>>>> origin/main
    commission_rate = 0.001 # 0.1% taker fee
    total_cost_bps = 25     # ~25 basis points round-trip
    
@@ -449,12 +507,20 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 **Execution Quality Metrics**:
 - **Fill Rate**: >99% for size < 0.1% of symbol daily volume
+<<<<<<< HEAD
 - **Slippage Impact**: Entry ┬▒5 bps, Exit ┬▒10 bps (avg)
+=======
+- **Slippage Impact**: Entry ±5 bps, Exit ±10 bps (avg)
+>>>>>>> origin/main
 - **Latency**: <100 ms order placement to fill (IBKR spot)
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒøí´©Å Risk Management Framework
+=======
+## 🛡️ Risk Management Framework
+>>>>>>> origin/main
 
 ### Position-Level Risks
 
@@ -486,14 +552,22 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒôê Model Maintenance
+=======
+## 📈 Model Maintenance
+>>>>>>> origin/main
 
 ### Monitoring
 
 **Daily Checks**:
 - Pair cointegration: Verify pvalue trend (should be stable)
 - Spread properties: Monitor mean and std (should be stable)
+<<<<<<< HEAD
 - Half-life: Track estimated HL (should be within ┬▒20% of discovery)
+=======
+- Half-life: Track estimated HL (should be within ±20% of discovery)
+>>>>>>> origin/main
 
 **Weekly Reviews**:
 - Win rate: Should be 55-65% (by pair)
@@ -519,7 +593,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒöº System Dependencies
+=======
+## 🔧 System Dependencies
+>>>>>>> origin/main
 
 ### Data Requirements
 - **Historical OHLCV**: 252 days minimum
@@ -528,7 +606,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 - **Forward Period**: 21 days for OOS validation
 
 ### Computational Requirements
+<<<<<<< HEAD
 - **Pair Discovery**: O(n┬▓) complexity, ~100ms per 1,000 pairs
+=======
+- **Pair Discovery**: O(n²) complexity, ~100ms per 1,000 pairs
+>>>>>>> origin/main
 - **Spread Modeling**: O(n) complexity, <1ms per pair
 - **Z-Score Calculation**: O(n) rolling window, <1ms per bar
 - **Total Pipeline**: <10 seconds for 50-100 pairs per day
@@ -541,7 +623,11 @@ EDGECORE is a **statistical arbitrage engine** that discovers and trades pairs w
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒôï Configuration Reference
+=======
+## 📋 Configuration Reference
+>>>>>>> origin/main
 
 ### Strategy Parameters
 ```yaml
@@ -575,7 +661,11 @@ execution:
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒº¬ Testing Strategy
+=======
+## 🧪 Testing Strategy
+>>>>>>> origin/main
 
 All components tested with:
 - **Unit Tests**: Individual functions (16+ test classes)
@@ -588,7 +678,11 @@ All components tested with:
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒôÜ Related Documentation
+=======
+## 📚 Related Documentation
+>>>>>>> origin/main
 
 - [Configuration Guide](CONFIG.md) - Setup and parameter tuning
 - [Operations Runbook](OPERATIONS_RUNBOOK.md) - Troubleshooting and monitoring
@@ -597,14 +691,22 @@ All components tested with:
 
 ---
 
+<<<<<<< HEAD
 ## ­ƒÄô Glossary
+=======
+## 🎓 Glossary
+>>>>>>> origin/main
 
 **Term** | **Definition** | **Typical Range**
 ---|---|---
 **Half-Life** | Time for spread to revert 50% toward mean | 5-200 days
 **Z-Score** | Distance from mean in standard deviations | [-3, +3]
 **Bonferroni Alpha** | Multiple testing correction factor | 0.001-0.01
+<<<<<<< HEAD
 **Hedge Ratio** | Weighting coefficient ╬▓ in spread = Y - ╬▓*X | 0.5-2.0
+=======
+**Hedge Ratio** | Weighting coefficient β in spread = Y - β*X | 0.5-2.0
+>>>>>>> origin/main
 **Sharpe Ratio** | Risk-adjusted return metric | 0.5-2.0 target
 **Drawdown** | Peak-to-trough portfolio loss | Should not exceed -3%
 **Regime** | Market state (normal, high-vol, decorrelation) | Detected daily

@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 ﻿version: '3.8'
+=======
+>>>>>>> origin/main
 services:
   # Main trading engine application
   trading-engine:
@@ -137,8 +140,12 @@ services:
     container_name: trading-elasticsearch
     environment:
       - discovery.type=single-node
+<<<<<<< HEAD
       - xpack.security.enabled=true
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?ELASTIC_PASSWORD env var is required}
+=======
+      - xpack.security.enabled=false
+>>>>>>> origin/main
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - bootstrap.memory_lock=true
     ulimits:

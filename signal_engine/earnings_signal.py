@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Phase 4.1 ÔÇö Earnings Surprise Signal (PEAD).
+=======
+"""
+Phase 4.1 — Earnings Surprise Signal (PEAD).
+>>>>>>> origin/main
 
 Post-Earnings Announcement Drift is one of the most documented alpha
 sources.  When a company reports earnings that surprise the market
@@ -21,7 +26,11 @@ Data source strategy:
 from __future__ import annotations
 
 from dataclasses import dataclass
+<<<<<<< HEAD
 from typing import cast
+=======
+from typing import Dict, Optional, Tuple
+>>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -33,11 +42,18 @@ logger = get_logger(__name__)
 @dataclass
 class EarningsEvent:
     """Detected earnings event for a single symbol."""
+<<<<<<< HEAD
 
     date: pd.Timestamp
     gap_pct: float  # overnight return (close-to-open gap proxy)
     surprise_score: float  # normalised surprise in [-1, 1]
     drift_days: int  # days since the event
+=======
+    date: pd.Timestamp
+    gap_pct: float        # overnight return (close-to-open gap proxy)
+    surprise_score: float  # normalised surprise in [-1, 1]
+    drift_days: int        # days since the event
+>>>>>>> origin/main
 
 
 class EarningsSurpriseSignal:
@@ -68,7 +84,11 @@ class EarningsSurpriseSignal:
         Args:
             gap_threshold: Minimum |daily return| to classify as earnings gap.
             drift_window: Days over which PEAD decays (default 45 ~= 2 months).
+<<<<<<< HEAD
             volume_confirm_mult: Gap only counts if volume > mult ├ù avg vol
+=======
+            volume_confirm_mult: Gap only counts if volume > mult × avg vol
+>>>>>>> origin/main
                 (set to 0 to disable volume confirmation in backtest).
             max_events: Maximum number of recent events to track per symbol.
         """
@@ -83,13 +103,21 @@ class EarningsSurpriseSignal:
         self.max_events = max_events
 
         # symbol -> list of EarningsEvent (most recent first)
+<<<<<<< HEAD
         self._events: dict[str, list] = {}
+=======
+        self._events: Dict[str, list] = {}
+>>>>>>> origin/main
         self._last_bar_idx: int = -1
 
     def update(
         self,
         prices_df: pd.DataFrame,
+<<<<<<< HEAD
         volumes_df: pd.DataFrame | None = None,
+=======
+        volumes_df: Optional[pd.DataFrame] = None,
+>>>>>>> origin/main
     ) -> None:
         """Scan price data for earnings-like gaps.
 
@@ -127,7 +155,15 @@ class EarningsSurpriseSignal:
                 continue
 
             # Volume confirmation (if available)
+<<<<<<< HEAD
             if volumes_df is not None and sym in volumes_df.columns and self.volume_confirm_mult > 0:
+=======
+            if (
+                volumes_df is not None
+                and sym in volumes_df.columns
+                and self.volume_confirm_mult > 0
+            ):
+>>>>>>> origin/main
                 vol_series = volumes_df[sym].dropna()
                 if len(vol_series) >= 21:
                     avg_vol = vol_series.iloc[-21:-1].mean()
@@ -138,7 +174,11 @@ class EarningsSurpriseSignal:
             # Create event
             surprise = float(np.clip(daily_ret / (self.gap_threshold * 3), -1.0, 1.0))
             event = EarningsEvent(
+<<<<<<< HEAD
                 date=cast(pd.Timestamp, prices_df.index[-1]) if len(prices_df.index) > 0 else pd.Timestamp.now(),
+=======
+                date=prices_df.index[-1] if hasattr(prices_df.index, '__getitem__') else pd.Timestamp.now(),
+>>>>>>> origin/main
                 gap_pct=daily_ret,
                 surprise_score=surprise,
                 drift_days=0,
@@ -152,7 +192,11 @@ class EarningsSurpriseSignal:
             if event.date not in existing_dates:
                 self._events[sym].insert(0, event)
                 # Keep only max_events
+<<<<<<< HEAD
                 self._events[sym] = self._events[sym][: self.max_events]
+=======
+                self._events[sym] = self._events[sym][:self.max_events]
+>>>>>>> origin/main
                 logger.debug(
                     "earnings_event_detected",
                     symbol=sym,
@@ -199,8 +243,13 @@ class EarningsSurpriseSignal:
         Positive = sym1 has stronger upward drift (or less downward).
         Negative = sym2 has stronger upward drift.
 
+<<<<<<< HEAD
         For pair trading: if score > 0 ÔåÆ favour long spread (long sym1, short sym2).
         If score < 0 ÔåÆ favour short spread.
+=======
+        For pair trading: if score > 0 → favour long spread (long sym1, short sym2).
+        If score < 0 → favour short spread.
+>>>>>>> origin/main
 
         Returns:
             Score in [-1, 1].

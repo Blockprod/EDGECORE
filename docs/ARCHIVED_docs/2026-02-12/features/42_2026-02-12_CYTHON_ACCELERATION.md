@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 ﻿# Cython Acceleration Guide
+=======
+# Cython Acceleration Guide
+>>>>>>> origin/main
 
 ## Overview
 
@@ -28,6 +32,7 @@ The previous C++ approach had several issues:
 
 ```
 models/cointegration.py (Main API)
+<<<<<<< HEAD
     Ôö£ÔöÇ engle_granger_test() [Pure Python]
     ÔööÔöÇ engle_granger_test_cpp_optimized() [Tries Cython, falls back to Python]
         Ôö£ÔöÇ Call: _engle_granger_cython() [Cython, if available]
@@ -40,6 +45,20 @@ models/cointegration_fast.pyx (Cython Implementation)
     Ôöé   ÔööÔöÇ Fast OLS regression in typed Cython
     ÔööÔöÇ half_life_fast(spread) ÔåÆ int
         ÔööÔöÇ Fast AR(1) half-life calculation
+=======
+    ├─ engle_granger_test() [Pure Python]
+    └─ engle_granger_test_cpp_optimized() [Tries Cython, falls back to Python]
+        ├─ Call: _engle_granger_cython() [Cython, if available]
+        │   └─ Returns: {'beta', 'intercept', 'residuals', 'error', ...}
+        ├─ Wrapper: Calls adfuller() on residuals [statsmodels C]
+        └─ Result: Same format as pure Python version
+
+models/cointegration_fast.pyx (Cython Implementation)
+    ├─ engle_granger_fast(y, x) → dict
+    │   └─ Fast OLS regression in typed Cython
+    └─ half_life_fast(spread) → int
+        └─ Fast AR(1) half-life calculation
+>>>>>>> origin/main
 ```
 
 ## Compilation
@@ -176,7 +195,11 @@ rm models/cointegration_fast.cp311-win_amd64.pyd
 - [Setup.py with Cython](https://docs.cython.org/en/latest/src/userguide/source_files_and_compilation.html)
 - [Performance Tips](https://cython.readthedocs.io/en/latest/src/userguide/source_files_and_compilation.html#cython-directives)
 
+<<<<<<< HEAD
 ## Status: Ô£à COMPLETE
+=======
+## Status: ✅ COMPLETE
+>>>>>>> origin/main
 
 - [x] Cython implementation written
 - [x] Module compiled successfully

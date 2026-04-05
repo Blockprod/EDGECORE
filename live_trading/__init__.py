@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿"""
 Live Trading Module ÔÇö Production trading loop orchestration.
+=======
+"""
+Live Trading Module — Production trading loop orchestration.
+>>>>>>> origin/main
 
 Provides:
     - LiveTradingRunner:  Full live trading loop (all modules composed)

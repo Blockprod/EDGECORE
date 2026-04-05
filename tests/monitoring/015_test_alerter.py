@@ -4,7 +4,12 @@ import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
+<<<<<<< HEAD
 
+=======
+import json
+from datetime import datetime, timedelta, timezone
+>>>>>>> origin/main
 from monitoring.alerter import (
     Alert,
     AlertCategory,
@@ -66,7 +71,11 @@ class TestAlertRecord:
 
     def test_alert_age_seconds(self):
         """Test alert age calculation."""
+<<<<<<< HEAD
         now = datetime.now(UTC)
+=======
+        now = datetime.now(timezone.utc)
+>>>>>>> origin/main
         old_time = now - timedelta(seconds=60)
 
         alert = Alert(
@@ -235,9 +244,18 @@ class TestAlertHandlers:
             called.append(alert)
 
         manager.register_category_handler(AlertCategory.ORDER, handler)
+<<<<<<< HEAD
 
         manager.create_alert(
             severity=AlertSeverity.WARNING, category=AlertCategory.ORDER, title="Order Alert", message="Test"
+=======
+        
+        manager.create_alert(
+            severity=AlertSeverity.WARNING,
+            category=AlertCategory.ORDER,
+            title="Order Alert",
+            message="Test"
+>>>>>>> origin/main
         )
 
         assert len(called) == 1
@@ -498,9 +516,20 @@ class TestAlertGenerators:
     def test_alert_order_timeout(self):
         """Test order timeout alert."""
         manager = AlertManager()
+<<<<<<< HEAD
 
         alert = alert_order_timeout(manager, order_id="order_123", symbol="AAPL", timeout_seconds=300.0)
 
+=======
+        
+        alert = alert_order_timeout(
+            manager,
+            order_id="order_123",
+            symbol="AAPL",
+            timeout_seconds=300.0
+        )
+        
+>>>>>>> origin/main
         assert alert is not None
         assert alert.category == AlertCategory.ORDER
         assert "order_123" in alert.message

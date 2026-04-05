@@ -1,13 +1,22 @@
+<<<<<<< HEAD
 ﻿# AUDIT TECHNIQUE ÔÇö EDGECORE
 
 **Date de l'audit**: 7 f├®vrier 2026  
 **Scope**: Analyse compl├¿te du syst├¿me EDGECORE v1.1  
 **├ëvaluateur**: Lead Software Architect, sp├®cialiste syst├¿mes de trading  
+=======
+# AUDIT TECHNIQUE — EDGECORE
+
+**Date de l'audit**: 7 février 2026  
+**Scope**: Analyse complète du système EDGECORE v1.1  
+**Évaluateur**: Lead Software Architect, spécialiste systèmes de trading  
+>>>>>>> origin/main
 
 ---
 
 ## 1. Vue d'ensemble du projet
 
+<<<<<<< HEAD
 ### Objectif r├®el
 
 Syst├¿me de **trading quantitatif pair trading** (arbitrage statistique par mean reversion sur paires cointegrated), pr├®sent├® comme candidat ├á la production live avec argent r├®el sur equity (IBKR API/IBKR) et actions (IBKR).
@@ -26,10 +35,31 @@ Signaux d'alerte :
 - Pas de kill-switch absolu hard-coded
 - Confirmation live par email + 2 questions ÔåÆ **suffisant ? Non**
 - Risque de d├®fit r├®el non quantifi├®
+=======
+### Objectif réel
+
+Système de **trading quantitatif pair trading** (arbitrage statistique par mean reversion sur paires cointegrated), présenté comme candidat à la production live avec argent réel sur equity (IBKR API/IBKR) et actions (IBKR).
+
+### Type de système
+
+- **Segment**: Recherche + backtest + paper trading + live trading
+- **Architecture**: Event-driven Python 3.11, stratégie déterministe, C++ optionnel (hybrid)
+- **Brokers**: IBKR API (equity), IBKR (composé, pas activé)
+
+### Niveau de maturité réel
+
+**ALPHA / PRE-PRODUCTION** — Le code fonctionne, mais **dangereux pour capital réel**.
+
+Signaux d'alerte :
+- Pas de kill-switch absolu hard-coded
+- Confirmation live par email + 2 questions → **suffisant ? Non**
+- Risque de défit réel non quantifié
+>>>>>>> origin/main
 - Infrastructure de monitoring insuffisante
 - Gestion d'erreurs lacunaire
 - Tests fonctionnels minimalistes
 
+<<<<<<< HEAD
 ### Points forts r├®els
 
 Ô£à **Bonne separation of concerns** (strategy/risk/execution/backtest)  
@@ -95,10 +125,78 @@ config/          ÔåÆ Environment-based config
 ### S├®paration strat├®gie / risk / ex├®cution / monitoring
 
 **Ô£à Bonne en th├®orie, ÔÜá´©Å fragile en pratique** :
+=======
+### Points forts réels
+
+✅ **Bonne separation of concerns** (strategy/risk/execution/backtest)  
+✅ **Logging structuré struclog + JSON** (traçabilité OK)  
+✅ **Abstraction broker** (IBKR API pluggable, IBKR possibilité future)  
+✅ **Risk engine indépendant** (existence + concept correct)  
+✅ **Configuration par YAML** (reproductibilité)  
+✅ **Tests de base présents** (couverture ~30-40%)  
+✅ **Hybrid Python/C++** (optimisation future, bien pensée)  
+
+### Signaux d'alerte globaux
+
+🟠 **AUCUNE validation d'entrée métier** (paramètres de risque peuvent être garbage)  
+🟠 **État du système mal trackké** (pas de state machine explicite, edge cases non couverts)  
+🟠 **Pas de circuit breaker** (une exception tue silencieusement les requêtes suivantes)  
+🟠 **Hardcoding de paramètres critiques** (equity initiale = 100k, invariant hard)  
+🟠 **Pas de reconciliation broker** (idempotence manquante, ordres créés mais jamais annulés)  
+🟠 **API keys en env → secrets non chiffrés** (danger si .env committed ou copie système)  
+
+---
+
+## 2. Architecture & design système
+
+### Organisation des dossiers et responsabilités effectives
+
+```
+strategies/      → Signal generation (pair trading, multi-timeframe logic)
+  pair_trading.py
+    └─ Engle-Granger test, Z-score signals, spread model
+    └─ Cache pairs avec pickle (atomic writes OK)
+    └─ Signal format: namedtuple(symbol_pair, side, z_score, entry_price)
+
+risk/            → Risk enforcement (position limits, drawdown, loss streak)
+  engine.py
+    └─ Position tracking: Dict[symbol] → Position(entry_price, qty, pnl)
+    └─ Daily loss limit, consecutive loss tracking, volatility regime check
+    └─ ❌ État initial hardcodé (equity = 100k)
+
+execution/       → Broker abstraction
+  base.py        → ABC: submit_order, cancel, get_positions, get_balance
+  IBKR API_engine.py → IBKR API implementation (IBKR, etc.)
+  ibkr_engine.py → IBKR skeleton (non actif)
+
+backtests/       → Vectorized performance testing
+  runner.py      → Simple simulation (non-realistic pour pair trading)
+  metrics.py     → PnL, Sharpe, max drawdown calculation
+  walk_forward.py → Walk-forward analysis (stub)
+
+data/            → OHLCV fetching and caching
+  loader.py
+    └─ IBKR API fetch, CSV load, parquet cache
+    └─ ❌ Pas de validation d'intégrité (gaps, NaN, volumes)
+
+monitoring/      → Logging + metrics
+  logger.py      → structlog + JSON output to file
+  metrics.py     → Performance tracking (basic)
+  events.py      → Event types enum + TradingEvent dataclass
+
+config/          → Environment-based config
+  settings.py    → Singleton dataclass + YAML override
+```
+
+### Séparation stratégie / risk / exécution / monitoring
+
+**✅ Bonne en théorie, ⚠️ fragile en pratique** :
+>>>>>>> origin/main
 
 ```python
 # main.py : flow correcte
 for signal in strategy.generate_signals(prices_df):
+<<<<<<< HEAD
     can_enter, reason = risk_engine.can_enter_trade(...)  # ÔåÉ Check
     order = Order(...)
     order_id = execution_engine.submit_order(order)      # ÔåÉ Execute
@@ -113,27 +211,56 @@ Mais :
 ### Couplage et d├®pendances critiques
 
 **­ƒö┤ Critique : Risk engine d├®pend de volatilit├® pass├®e en argument**
+=======
+    can_enter, reason = risk_engine.can_enter_trade(...)  # ← Check
+    order = Order(...)
+    order_id = execution_engine.submit_order(order)      # ← Execute
+    logger.info(...)                                       # ← Log
+```
+
+Mais :
+- **Risk engine ne voit pas la volatilité réelle** (passée en argument, jamais validée)
+- **Pas de feedback loop** : si une order échoue, risk engine n'est pas notifié
+- **Pas de reconciliation** après execution (2 ordres identiques peuvent se créer)
+
+### Couplage et dépendances critiques
+
+**🔴 Critique : Risk engine dépend de volatilité passée en argument**
+>>>>>>> origin/main
 
 ```python
 # risk/engine.py
 def can_enter_trade(self, symbol_pair, position_size, current_equity, volatility):
+<<<<<<< HEAD
     # volatility re├ºu d'o├╣ ? pas d'origine trac├®e
+=======
+    # volatility reçu d'où ? pas d'origine tracée
+>>>>>>> origin/main
     risk_amount = position_size * volatility
 ```
 
 **Consequence** : Pas de validation que `volatility` est sain. Quelqu'un peut passer `volatility = 0` ou `volatility = 1000` sans alerte.
 
+<<<<<<< HEAD
 **­ƒƒá Majeur : Pas de d├®pendance explicite entre composants**
 
 Chaque module importe `get_settings()` ind├®pendamment ÔåÆ singleton, pas d'inversion de contr├┤le ÔåÆ difficile ├á tester, ├®tat partag├®.
 
 **­ƒƒá Majeur : Configuration runtime non valid├®e**
+=======
+**🟠 Majeur : Pas de dépendance explicite entre composants**
+
+Chaque module importe `get_settings()` indépendamment → singleton, pas d'inversion de contrôle → difficile à tester, état partagé.
+
+**🟠 Majeur : Configuration runtime non validée**
+>>>>>>> origin/main
 
 ```python
 # config/settings.py
 def _load_yaml(self, path: Path) -> None:
     config = yaml.safe_load(f)
     for key, value in config['risk'].items():
+<<<<<<< HEAD
         setattr(self.risk, key, value)  # ÔåÉ Pas de type check, pas de bornes
 ```
 
@@ -152,21 +279,48 @@ def _load_yaml(self, path: Path) -> None:
 ### Probl├¿mes structurels bloquants pour trading live
 
 **­ƒö┤ #1 : Pas de synchronisation au d├®marrage**
+=======
+        setattr(self.risk, key, value)  # ← Pas de type check, pas de bornes
+```
+
+`max_risk_per_trade = 1.0` (100%) → valide par le code, pas par le domaine.
+
+### Respect des principes clean architecture
+
+| Critère | État | Verdict |
+|---------|------|---------|
+| **Dependency Inversion** | ❌ Imports absolus, singletons partout | Mauvais |
+| **Single Responsibility** | ✅ Chaque module a 1 rôle clair | Bon |
+| **Open/Closed** | ✅ IBKR API/IBKR abstraction OK | Bon |
+| **Liskov Substitution** | ✅ BaseExecutionEngine interface OK | Bon |
+| **Interface Segregation** | ⚠️ Order a trop de champs, mutable | Moyen |
+
+### Problèmes structurels bloquants pour trading live
+
+**🔴 #1 : Pas de synchronisation au démarrage**
+>>>>>>> origin/main
 
 ```python
 # main.py : run_paper_trading() / run_live_trading()
 equity = execution_engine.get_account_balance()
 ```
 
+<<<<<<< HEAD
 Si IBKR retourne un solde stale/corrompu ÔåÆ syst├¿me ne s'en rend pas compte. Pas de s├®quence d'initialisation forc├®e.
 
 **­ƒö┤ #2 : ├ëtat du RiskEngine jamais synchronis├® avec broker**
+=======
+Si IBKR retourne un solde stale/corrompu → système ne s'en rend pas compte. Pas de séquence d'initialisation forcée.
+
+**🔴 #2 : État du RiskEngine jamais synchronisé avec broker**
+>>>>>>> origin/main
 
 ```python
 # risk/engine.py : __init__
 self.positions = {}  # Local tracking uniquement
 ```
 
+<<<<<<< HEAD
 Si un ordre remonte manuellement IBKR (ou via une autre API session), risk engine ne le voit pas. Pas de `reconcile()` au d├®marrage.
 
 **­ƒö┤ #3 : Pas de kill-switch configur├®**
@@ -174,11 +328,21 @@ Si un ordre remonte manuellement IBKR (ou via une autre API session), risk engin
 ```python
 # main.py : run_live_trading()
 print("ÔÜá´©Å  LIVE TRADING ALERT...")
+=======
+Si un ordre remonte manuellement IBKR (ou via une autre API session), risk engine ne le voit pas. Pas de `reconcile()` au démarrage.
+
+**🔴 #3 : Pas de kill-switch configuré**
+
+```python
+# main.py : run_live_trading()
+print("⚠️  LIVE TRADING ALERT...")
+>>>>>>> origin/main
 confirm = input("Type 'I UNDERSTAND THE RISKS'...")
 if confirm != "I UNDERSTAND THE RISKS":
     return
 ```
 
+<<<<<<< HEAD
 Apr├¿s la question, le syst├¿me ex├®cute **la m├¬me fonction paper_trading()** ÔåÆ pas de garde-fou hard-coded (ex: check env var, check API key domain, check time limit).
 
 **­ƒö┤ #4 : Ordre de lifecycle pas d'ordre d├®fini**
@@ -190,16 +354,37 @@ Un ordre peut ├¬tre :
 4. Filled partiellement
 5. Expir├®
 6. Annul├®
+=======
+Après la question, le système exécute **la même fonction paper_trading()** → pas de garde-fou hard-coded (ex: check env var, check API key domain, check time limit).
+
+**🔴 #4 : Ordre de lifecycle pas d'ordre défini**
+
+Un ordre peut être :
+1. Créé (local)
+2. Soumis (broker)
+3. Filled totalement
+4. Filled partiellement
+5. Expiré
+6. Annulé
+>>>>>>> origin/main
 
 Le code traite 1-2-3, mais pas 4-5-6. Aucun timeout sur les ordres en attente.
 
 ---
 
+<<<<<<< HEAD
 ## 3. Qualit├® du code
 
 ### Lisibilit├® et coh├®rence
 
 **Ô£à Bonne** (noms explicites, docstrings pr├®sentes, structures claires)
+=======
+## 3. Qualité du code
+
+### Lisibilité et cohérence
+
+**✅ Bonne** (noms explicites, docstrings présentes, structures claires)
+>>>>>>> origin/main
 
 ```python
 # Bon : noms explicites
@@ -208,6 +393,7 @@ def can_enter_trade(self, symbol_pair, position_size, current_equity, volatility
         return False, f"Max concurrent positions ({...}) reached"
 ```
 
+<<<<<<< HEAD
 **ÔÜá´©Å Points faibles** :
 
 - Inconsistance: `symbol_pair` vs `symbol` vs `pair` utilis├®s indiff├®remment
@@ -224,6 +410,24 @@ if confirm != "I UNDERSTAND THE RISKS":  # ÔåÉ Magic string, typo = catastrop
 ### Complexit├® inutile ou pr├®matur├®e
 
 **Ô£à Peu de complexit├® pr├®matur├®e** (bonne restraint)
+=======
+**⚠️ Points faibles** :
+
+- Inconsistance: `symbol_pair` vs `symbol` vs `pair` utilisés indifféremment
+- Docstrings parfois vagues (ex: `volatility: float` → quelle métrique ? annualisée ?)
+- Pas de constants pour les chaînes magiques
+
+```python
+# Bad: chaînes magiques
+event = TradingEvent(event_type=EventType.TRADE_EXIT, ...)  # OK
+logger.info("trade_approved", ...)  # OK
+if confirm != "I UNDERSTAND THE RISKS":  # ← Magic string, typo = catastrophe
+```
+
+### Complexité inutile ou prématurée
+
+**✅ Peu de complexité prématurée** (bonne restraint)
+>>>>>>> origin/main
 
 Mais quelques areas :
 
@@ -237,11 +441,19 @@ def _test_pair_cointegration(args: Tuple) -> Optional[Tuple[str, str, float, flo
         return None
 ```
 
+<<<<<<< HEAD
 **Complexit├® justified ?** Pas vraiment pour la plupart des users (< 100 pairs). Introduit bug surface (pickle serialization, process pool overhead).
 
 ### Duplication de logique
 
 **­ƒƒá Majeur : `run_paper_trading()` et `run_live_trading()` r├®pliquent le m├¬me code**
+=======
+**Complexité justified ?** Pas vraiment pour la plupart des users (< 100 pairs). Introduit bug surface (pickle serialization, process pool overhead).
+
+### Duplication de logique
+
+**🟠 Majeur : `run_paper_trading()` et `run_live_trading()` répliquent le même code**
+>>>>>>> origin/main
 
 ```python
 # main.py: 200+ lignes de code quasiment identiques
@@ -254,14 +466,24 @@ def run_paper_trading(symbols, settings):
 
 def run_live_trading(symbols, settings):
     # ... pre-checks ...
+<<<<<<< HEAD
     run_paper_trading(symbols, settings)  # ÔåÉ Appel r├®cursif
+=======
+    run_paper_trading(symbols, settings)  # ← Appel récursif
+>>>>>>> origin/main
 ```
 
 **Risque** : Tous les bugs de paper trading se propagent en live.
 
+<<<<<<< HEAD
 ### Gestion des erreurs et ├®tats invalides
 
 **­ƒö┤ Critique : Pas de gestion d'exception uniformes**
+=======
+### Gestion des erreurs et états invalides
+
+**🔴 Critique : Pas de gestion d'exception uniformes**
+>>>>>>> origin/main
 
 ```python
 # main.py
@@ -273,16 +495,25 @@ try:
             prices[symbol] = df['close']
         except Exception as e:
             logger.error("data_load_failed", ...)
+<<<<<<< HEAD
             continue  # ÔåÉ Silently continue
+=======
+            continue  # ← Silently continue
+>>>>>>> origin/main
     
     if not prices:
         logger.warning("no_valid_price_data", ...)
         time.sleep(5)
+<<<<<<< HEAD
         continue  # ÔåÉ Retry indefinitely
+=======
+        continue  # ← Retry indefinitely
+>>>>>>> origin/main
 except KeyboardInterrupt:
     break
 except Exception as e:
     logger.error("paper_trading_loop_error", ...)
+<<<<<<< HEAD
     time.sleep(5)  # ÔåÉ Retry, pas d'exponential backoff
 ```
 
@@ -293,6 +524,18 @@ except Exception as e:
 3. **No state tracking** : Combien de fois failed? Depuis quand? ÔåÆ Impossible ├á debuguer.
 
 **­ƒƒá Majeur : Pas d'assertion sur invariants critiques**
+=======
+    time.sleep(5)  # ← Retry, pas d'exponential backoff
+```
+
+**Problèmes identifiés** :
+
+1. **Silent failures** : Si tous les symbols échouent, la boucle attend 5s et continue. Pas de limit max d'erreurs.
+2. **No exponential backoff** : Constant 5s delay → Hammer le broker API.
+3. **No state tracking** : Combien de fois failed? Depuis quand? → Impossible à debuguer.
+
+**🟠 Majeur : Pas d'assertion sur invariants critiques**
+>>>>>>> origin/main
 
 ```python
 # risk/engine.py
@@ -300,6 +543,7 @@ if self.daily_loss / current_equity > self.config.max_daily_loss_pct:
     return False, reason
 ```
 
+<<<<<<< HEAD
 **Faille** : Si `current_equity = 0`, division par z├®ro silencieuse (Python retourne inf).
 
 ### Typage, validation des entr├®es, assertions critiques
@@ -309,6 +553,17 @@ if self.daily_loss / current_equity > self.config.max_daily_loss_pct:
 ```python
 # No type hints
 def generate_signals(self, prices_df):  # ÔåÉ prices_df : what structure? validation?
+=======
+**Faille** : Si `current_equity = 0`, division par zéro silencieuse (Python retourne inf).
+
+### Typage, validation des entrées, assertions critiques
+
+**⚠️ Faible** :
+
+```python
+# No type hints
+def generate_signals(self, prices_df):  # ← prices_df : what structure? validation?
+>>>>>>> origin/main
     # Pas de check : prices_df is DataFrame? has columns? not empty? non-NaN?
 
 # No input validation
@@ -330,6 +585,7 @@ assert symbol_pair in self.universe, "Symbol not in universe"
 
 ---
 
+<<<<<<< HEAD
 ## 4. Robustesse & fiabilit├® (TRADING-CRITICAL)
 
 ### Gestion des ├®tats incoh├®rents
@@ -339,12 +595,24 @@ assert symbol_pair in self.universe, "Symbol not in universe"
 ```python
 # Scenario 1: Order submitted, but network drops before confirmation
 order_id = execution_engine.submit_order(order)  # ÔåÉ Returns order_id
+=======
+## 4. Robustesse & fiabilité (TRADING-CRITICAL)
+
+### Gestion des états incohérents
+
+**🔴 Critique : Risque state machine invalide**
+
+```python
+# Scenario 1: Order submitted, but network drops before confirmation
+order_id = execution_engine.submit_order(order)  # ← Returns order_id
+>>>>>>> origin/main
 # Network dies here
 logger.info("order_submitted", order_id=order_id, ...)
 # Order opened on IBKR. Risk engine n'en sait rien.
 
 # Scenario 2: Risk engine pense qu'il y a 2 positions, mais broker n'en a 1
 risk_engine.positions = {"AAPL_MSFT": Position(...), "XRP_USDT": Position(...)}
+<<<<<<< HEAD
 # Broker crash/rollback ÔåÆ seulement "AAPL_MSFT" filled reellement
 broker_positions = {"AAPL_MSFT": 100}
 # Mismatch non d├®tect├®
@@ -358,6 +626,21 @@ broker_positions = {"AAPL_MSFT": 100}
 ### R├®silience aux donn├®es manquantes / corrompues
 
 **­ƒö┤ Critique : Pas de validation d'int├®grit├® des donn├®es OHLCV**
+=======
+# Broker crash/rollback → seulement "AAPL_MSFT" filled reellement
+broker_positions = {"AAPL_MSFT": 100}
+# Mismatch non détecté
+```
+
+**State incohérent possible** :
+- Local positions != broker positions
+- Equity calcula faux (delta mal raketé)
+- Risk contraints basées sur état faux
+
+### Résilience aux données manquantes / corrompues
+
+**🔴 Critique : Pas de validation d'intégrité des données OHLCV**
+>>>>>>> origin/main
 
 ```python
 # data/loader.py
@@ -370,23 +653,39 @@ df.set_index('timestamp', inplace=True)
 # - Gaps (missing candles)?
 # - Duplicate timestamps?
 
+<<<<<<< HEAD
 # Consequence: cointegration test peut ├®chouer silencieusement
 # ou donner r├®sultats trash
+=======
+# Consequence: cointegration test peut échouer silencieusement
+# ou donner résultats trash
+>>>>>>> origin/main
 ```
 
 **Scenario de danger** :
 
 ```python
+<<<<<<< HEAD
 # IBKR API error ÔåÆ retourne donn├®es de 2023 (stale)
 # Data loader returns cached/corrupted data
 # Cointegration scores invalides
 # Signaux g├®n├®r├®s sur ancien data
+=======
+# IBKR API error → retourne données de 2023 (stale)
+# Data loader returns cached/corrupted data
+# Cointegration scores invalides
+# Signaux générés sur ancien data
+>>>>>>> origin/main
 # Ordres ouverts sur pairs non-cointegrated actuellement
 ```
 
 ### Risques de crash silencieux
 
+<<<<<<< HEAD
 **­ƒƒá Majeur : Exceptions logg├®es mais pas arr├¬t├®es**
+=======
+**🟠 Majeur : Exceptions loggées mais pas arrêtées**
+>>>>>>> origin/main
 
 ```python
 # main.py: loop principal
@@ -396,11 +695,16 @@ while attempt < max_attempts:
     except Exception as e:
         logger.error("paper_trading_loop_error", ...)
         time.sleep(5)
+<<<<<<< HEAD
         # ÔåÉ Continue boucle, pas d'abort
+=======
+        # ← Continue boucle, pas d'abort
+>>>>>>> origin/main
 ```
 
 **Resultat** :
 
+<<<<<<< HEAD
 - Erreur r├®seau ÔåÆ retry
 - Erreur API ÔåÆ retry
 - Erreur logique (NaN dans signals) ÔåÆ log + retry
@@ -418,6 +722,25 @@ Trading flow:
 ```
 
 **Pas d'h├®bergement de l'ordre localement** :
+=======
+- Erreur réseau → retry
+- Erreur API → retry
+- Erreur logique (NaN dans signals) → log + retry
+- 100 retries échouent → juste continue
+
+### Points de défaillance unique (SPOF)
+
+**🔴 Critical : Broker est SPOF**
+
+```
+Trading flow:
+  Strategy → Risk → Execution(Broker)
+                      ↑
+                      └─ Si broker down, tout down
+```
+
+**Pas d'hébergement de l'ordre localement** :
+>>>>>>> origin/main
 
 ```python
 # IBKR returns error 500
@@ -425,12 +748,17 @@ try:
     broker_order_id = self.broker.create_limit_order(...)
 except Exception as e:
     logger.error("order_submission_failed", ...)
+<<<<<<< HEAD
     raise  # ÔåÉ Exception propag├®e, ordre perdu
+=======
+    raise  # ← Exception propagée, ordre perdu
+>>>>>>> origin/main
 ```
 
 **Pas de retry avec idempotence** :
 
 ```python
+<<<<<<< HEAD
 # Correct solution: g├®n├®rer order_id localement, retry avec idempotence key
 # Wrong: appeler create_limit_order() sans idempotence ÔåÆ 2 ordres possibles
 ```
@@ -442,6 +770,19 @@ Si RiskEngine crash (e.g., malformed JSON config), **aucun fil d'ex├®cution n
 ### Sc├®narios dangereux non couverts
 
 **Scenario A : Drawdown > limit mais posititon pas ferm├®e**
+=======
+# Correct solution: générer order_id localement, retry avec idempotence key
+# Wrong: appeler create_limit_order() sans idempotence → 2 ordres possibles
+```
+
+**🔴 Critique : Risk engine est SPOF interne**
+
+Si RiskEngine crash (e.g., malformed JSON config), **aucun fil d'exécution ne peut continuer**. Pas de fallback (e.g., "conservateur defaults" ou "read-only mode").
+
+### Scénarios dangereux non couverts
+
+**Scenario A : Drawdown > limit mais posititon pas fermée**
+>>>>>>> origin/main
 
 ```
 Initial Equity: 100,000
@@ -462,7 +803,11 @@ Risk check:
   - Risk engine allows NEW trade!
   
 Worse: Position stays open, continues losing
+<<<<<<< HEAD
 ÔåÆ No hard position exit at max loss
+=======
+→ No hard position exit at max loss
+>>>>>>> origin/main
 ```
 
 **Scenario B : Liquidation cascade**
@@ -478,8 +823,13 @@ Equity: 90k
 
 Next loop: Only 2 positions remain open (max_concurrent=5 limit)
 But existing positions aren't auto-liquidated
+<<<<<<< HEAD
 ÔåÆ Can open NEW positions on only 2 pairs now?
 ÔåÆ Concentration grows
+=======
+→ Can open NEW positions on only 2 pairs now?
+→ Concentration grows
+>>>>>>> origin/main
 ```
 
 **Scenario C : Timeframe mismatch**
@@ -494,11 +844,19 @@ Applied to hourly = false trades
 
 ---
 
+<<<<<<< HEAD
 ## 5. Performance & scalabilit├®
 
 ### Bottlenecks probables
 
 **­ƒƒí Minor impact, d├®tectable facilement** :
+=======
+## 5. Performance & scalabilité
+
+### Bottlenecks probables
+
+**🟡 Minor impact, détectable facilement** :
+>>>>>>> origin/main
 
 ```python
 # strategies/pair_discovery.py : Multiprocessing
@@ -507,6 +865,7 @@ for pair in all_pairs:
 ```
 
 **For 1000 pairs** :
+<<<<<<< HEAD
 - Cointegration test ~1s per pair (serial) ÔåÆ 1000s = 16 min
 - With 8-core pool ÔåÆ ~2 min (overhead ~15%)
 - Acceptable pour init daily, not for live pair discovery
@@ -525,13 +884,39 @@ For 50 pairs traded ÔåÆ 100 API calls per loop ÔåÆ rate limit reached easi
 
 **CPU** :
 - Cointegration test (Engle-Granger) : O(n┬▓) for n symbols
+=======
+- Cointegration test ~1s per pair (serial) → 1000s = 16 min
+- With 8-core pool → ~2 min (overhead ~15%)
+- Acceptable pour init daily, not for live pair discovery
+
+**🟡 Data loader : Pas de batch fetching**
+
+```python
+for symbol in symbols:
+    df = loader.load_IBKR API_data(...)  # ← Individual IBKR API API call per symbol
+    # Max 1200 calls/min on IBKR → 20 symbols max/sec-ish
+```
+
+For 50 pairs traded → 100 API calls per loop → rate limit reached easily.
+
+### Coûts CPU / mémoire / I/O
+
+**CPU** :
+- Cointegration test (Engle-Granger) : O(n²) for n symbols
+>>>>>>> origin/main
 - Spreadsheet : O(n) every tick
 - Z-score calculation : O(lookback) every tick
 - Total: **Acceptable for <100 pairs, problematic for >1000**
 
+<<<<<<< HEAD
 **M├®moire** :
 - OHLCV data: 500 pairs ├ù 500 days ├ù 5 cols = 1.25M floats = ~10 MB
 - Spread series cache : 500 ├ù 500 floats = 1M floats = ~8 MB
+=======
+**Mémoire** :
+- OHLCV data: 500 pairs × 500 days × 5 cols = 1.25M floats = ~10 MB
+- Spread series cache : 500 × 500 floats = 1M floats = ~8 MB
+>>>>>>> origin/main
 - Total: **Acceptable (<500 MB)**
 
 **I/O** :
@@ -540,6 +925,7 @@ For 50 pairs traded ÔåÆ 100 API calls per loop ÔåÆ rate limit reached easi
 - Total per loop: ~1-5min for 50 symbols
 - **Spinning up new data every 60s possible, but tight**
 
+<<<<<<< HEAD
 ### Ce qui ne passera pas ├á l'├®chelle
 
 **ÔØî Paper trading loop avec 100+ symbols**
@@ -554,10 +940,27 @@ while attempt < max_attempts:
             can_enter = risk_engine.can_enter_trade(...)
             order = execution_engine.submit_order(...)  # ÔåÉ 100 API calls
     time.sleep(10)  # ÔåÉ Total time > 10s, can't cycle every 10s
+=======
+### Ce qui ne passera pas à l'échelle
+
+**❌ Paper trading loop avec 100+ symbols**
+
+```python
+while attempt < max_attempts:
+    for symbol in symbols:  # ← 100 symbols
+        df = loader.load_IBKR API_data(...)  # ← 500ms × 100 = 50s API calls
+        prices_df = pd.DataFrame(prices)
+        signals = strategy.generate_signals(prices_df)  # ← O(100²) = 10k operations
+        for signal in signals:  # ← Potential 100s of signals
+            can_enter = risk_engine.can_enter_trade(...)
+            order = execution_engine.submit_order(...)  # ← 100 API calls
+    time.sleep(10)  # ← Total time > 10s, can't cycle every 10s
+>>>>>>> origin/main
 ```
 
 **Solution needed** : Async I/O, batch IBKR API requests, decouple signal gen from request.
 
+<<<<<<< HEAD
 ### Ce qui est acceptable pour une premi├¿re version live
 
 Ô£à **50 pairs, 1h candles, daily rebalance** :
@@ -565,14 +968,29 @@ while attempt < max_attempts:
 - Signal gen per hour: 10-30s (OK)
 - Order submission: 30s for 5-10 signals (OK)
 - Total cycle: <2 minutes Ôù╝ acceptable holearly
+=======
+### Ce qui est acceptable pour une première version live
+
+✅ **50 pairs, 1h candles, daily rebalance** :
+- Cointegration run: 2-3 min (daily, OK)
+- Signal gen per hour: 10-30s (OK)
+- Order submission: 30s for 5-10 signals (OK)
+- Total cycle: <2 minutes ◼ acceptable holearly
+>>>>>>> origin/main
 
 ---
 
 ## 6. Risk management & capital protection
 
+<<<<<<< HEAD
 ### Existence r├®elle d'un moteur de risque ind├®pendant
 
 **Ô£à Existe, mais fragile**
+=======
+### Existence réelle d'un moteur de risque indépendant
+
+**✅ Existe, mais fragile**
+>>>>>>> origin/main
 
 ```python
 # risk/engine.py: Independent class, called before every trade
@@ -586,18 +1004,30 @@ class RiskEngine:
         return True, None
 ```
 
+<<<<<<< HEAD
 **Ô£à Checks correctly enforced** :
+=======
+**✅ Checks correctly enforced** :
+>>>>>>> origin/main
 - Position count limit
 - Risk per trade limit
 - Daily loss limit
 - Consecutive loss streak limit
 
+<<<<<<< HEAD
 **ÔØî But not truly independent** :
+=======
+**❌ But not truly independent** :
+>>>>>>> origin/main
 - Can be bypassed if called with `volatility=0` or `current_equity=fake`
 - No out-of-process validation
 - No circuit breaker if limit hit (logs warning, doesn't force all positions close)
 
+<<<<<<< HEAD
 ### Respect des r├¿gles de risk-first design
+=======
+### Respect des règles de risk-first design
+>>>>>>> origin/main
 
 **Risk-First Principle** : Risk engine decides, strategy proposes, execution obeys.
 
@@ -613,36 +1043,61 @@ order = Order(...)  # Step 2: Proposal
 execution_engine.submit_order(order)  # Step 3: Execution
 ```
 
+<<<<<<< HEAD
 **Ô£à Correct structure**
 
 **ÔØî But risk engine misses critical scenarios** :
+=======
+**✅ Correct structure**
+
+**❌ But risk engine misses critical scenarios** :
+>>>>>>> origin/main
 
 1. **No hard equity stop loss** (only daily loss %)
 2. **No max absolute drawdown** (only % drop scenarios)
 3. **No position-level stop loss** (positions can sit indefinitely)
 4. **No forced liquidation** at limit (just rejects new trades)
 
+<<<<<<< HEAD
 ### Sc├®narios de perte non contr├┤l├®s
 
 **­ƒö┤ Scenario 1 : "Death spiral" via margin call (if leverage)**
+=======
+### Scénarios de perte non contrôlés
+
+**🔴 Scenario 1 : "Death spiral" via margin call (if leverage)**
+>>>>>>> origin/main
 
 Currently no leverage implemented, but if added:
 
 ```
 Equity: 100k
+<<<<<<< HEAD
 Positions: 5 ├ù 20k each = 100k notional
 Leverage: 2x ÔåÆ 50k borrowed
+=======
+Positions: 5 × 20k each = 100k notional
+Leverage: 2x → 50k borrowed
+>>>>>>> origin/main
 
 Market moves 5% against = -5k equity
 Broker margin level: (100k - 5k) / 200k = 47.5% (liquidation at 25%)
 
 Next move 5% = -10k total equity
+<<<<<<< HEAD
 Margin level: 45k / 200k = 22.5% < 25% ÔåÆ Liquidation cascade
+=======
+Margin level: 45k / 200k = 22.5% < 25% → Liquidation cascade
+>>>>>>> origin/main
 ```
 
 **Code missing** : No leverage checks, no margin level monitoring.
 
+<<<<<<< HEAD
 **­ƒö┤ Scenario 2 : "Stuck position" - Can't exit when needed**
+=======
+**🔴 Scenario 2 : "Stuck position" - Can't exit when needed**
+>>>>>>> origin/main
 
 ```
 Position opened on SHIB-USD when spread looked statARBed
@@ -659,7 +1114,11 @@ Large unexpected loss, drawdown spike
 
 **Code missing** : No liquidity check before entry, no market impact model.
 
+<<<<<<< HEAD
 **­ƒö┤ Scenario 3 : "Regulatory halt" - broker closes pair mid-trade**
+=======
+**🔴 Scenario 3 : "Regulatory halt" - broker closes pair mid-trade**
+>>>>>>> origin/main
 
 ```
 Position open on AAPL
@@ -685,9 +1144,15 @@ run_paper_trading(symbols, settings)
 ```
 
 **Issues** :
+<<<<<<< HEAD
 - ÔØî Only pre-flight, not runtime
 - ÔØî Can be disabled by changing code
 - ÔØî No automated kill-based on metrics
+=======
+- ❌ Only pre-flight, not runtime
+- ❌ Can be disabled by changing code
+- ❌ No automated kill-based on metrics
+>>>>>>> origin/main
 
 **Drawdown**
 
@@ -697,9 +1162,15 @@ self.daily_loss / current_equity > self.config.max_daily_loss_pct
 ```
 
 **Issues** :
+<<<<<<< HEAD
 - Ô£à Enforced (rejects new trades)
 - ÔØî Doesn't close existing positions
 - ÔØî Only daily, not monthly/total
+=======
+- ✅ Enforced (rejects new trades)
+- ❌ Doesn't close existing positions
+- ❌ Only daily, not monthly/total
+>>>>>>> origin/main
 
 **Exposure**
 
@@ -710,6 +1181,7 @@ if len(self.positions) >= self.config.max_concurrent_positions:
 ```
 
 **Issues** :
+<<<<<<< HEAD
 - Ô£à Position count limited
 - ÔØî No notional exposure limit (5 pos ├ù 100k each = 500k exposure on 100k equity = 5x leverage)
 - ÔØî No sector/correlation exposure tracking
@@ -718,6 +1190,16 @@ if len(self.positions) >= self.config.max_concurrent_positions:
 ### Niveau de danger actuel pour du capital r├®el
 
 **­ƒö┤ TR├êS RISQU├ë** (6/10 danger level, where 10 = certain loss)
+=======
+- ✅ Position count limited
+- ❌ No notional exposure limit (5 pos × 100k each = 500k exposure on 100k equity = 5x leverage)
+- ❌ No sector/correlation exposure tracking
+- ❌ No single-symbol concentration limit
+
+### Niveau de danger actuel pour du capital réel
+
+**🔴 TRÈS RISQUÉ** (6/10 danger level, where 10 = certain loss)
+>>>>>>> origin/main
 
 **Quantified risk** :
 
@@ -729,19 +1211,28 @@ Best case (all params correct, market cooperates):
   - Sharpe ~0.8
   - Max drawdown ~12%
   - Annual return ~18%
+<<<<<<< HEAD
   ÔåÆ 18k real profit possible
+=======
+  → 18k real profit possible
+>>>>>>> origin/main
 
 Worst case (params wrong, market regime shift, black swan):
   - Win rate ~35%
   - Sharpe ~-0.5
   - Max drawdown ~35%+ (no hard protection)
+<<<<<<< HEAD
   - Potential loss ~35k ÔåÆ 65k left
+=======
+  - Potential loss ~35k → 65k left
+>>>>>>> origin/main
   
 Likely case ("nice" market, but bugs):
   - Win rate ~45%
   - Sharpe ~0.2
   - Max drawdown ~15%
   - Stalled position risk: 5-10% of equity locked in stuck orders
+<<<<<<< HEAD
   ÔåÆ Break-even to small loss
 ```
 
@@ -763,6 +1254,29 @@ Likely case ("nice" market, but bugs):
 ### Gestion des secrets
 
 **­ƒö┤ UNSAFE : API keys in environment**
+=======
+  → Break-even to small loss
+```
+
+**Primary danger zones** :
+1. **Stuck orders** (network issues, broker halt) → 5-10% loss
+2. **Regime change** (cointegration break) → 10-20% loss
+3. **Data corruption** (stale OHLCV) → 15-30% loss
+4. **No hard liquidation** (reaches 50%+ down) → 50%+ loss
+
+**Verdict** :
+- ✅ Can risk 1-5% of portfolio (cold start, watch mode)
+- ⚠️ Don't risk 50%+ of portfolio (bugs too likely)
+- 🔴 Don't automate: requires live monitoring & manual kill-switch
+
+---
+
+## 7. Sécurité
+
+### Gestion des secrets
+
+**🔴 UNSAFE : API keys in environment**
+>>>>>>> origin/main
 
 ```python
 # execution/IBKR API_engine.py
@@ -772,7 +1286,11 @@ api_secret = os.getenv('broker_API_SECRET')
 
 **Issues** :
 
+<<<<<<< HEAD
 1. `.env` file in repo if committed ÔåÆ compromised
+=======
+1. `.env` file in repo if committed → compromised
+>>>>>>> origin/main
 2. `ps aux` output visible if key logged
 3. No key rotation mechanism
 4. No IP whitelist checking
@@ -790,14 +1308,22 @@ api_secret = os.getenv('broker_API_SECRET')
 
 ### Risques d'exposition (logs, config, env)
 
+<<<<<<< HEAD
 **­ƒƒá Major : Logs peuvent contenir secrets**
+=======
+**🟠 Major : Logs peuvent contenir secrets**
+>>>>>>> origin/main
 
 ```python
 # main.py
 logger.critical("live_trading_starting",
                symbols=symbols,
                broker=settings.execution.broker,
+<<<<<<< HEAD
                user_email=confirm2)  # ÔåÉ Email logged plaintext
+=======
+               user_email=confirm2)  # ← Email logged plaintext
+>>>>>>> origin/main
 ```
 
 **Issues** :
@@ -822,21 +1348,35 @@ logger.info(
     "order_submitted",
     order_id="123",
     symbol="AAPL"
+<<<<<<< HEAD
     # ÔåÉ Never log keys, emails, amounts
+=======
+    # ← Never log keys, emails, amounts
+>>>>>>> origin/main
 )
 
 # Separate audit log:
 audit_log.info("live_trade_initiated", user="****@gmail.com", timestamp=...)
 ```
 
+<<<<<<< HEAD
 ### Mauvaises pratiques ├®videntes
 
 **­ƒö┤ pickle.load() in cache**
+=======
+### Mauvaises pratiques évidentes
+
+**🔴 pickle.load() in cache**
+>>>>>>> origin/main
 
 ```python
 # strategies/pair_trading.py
 with open(cache_file, 'rb') as f:
+<<<<<<< HEAD
     pairs = pickle.load(f)  # ÔåÉ Arbitrary code execution vulnerability
+=======
+    pairs = pickle.load(f)  # ← Arbitrary code execution vulnerability
+>>>>>>> origin/main
 ```
 
 **Fixed by** :
@@ -846,11 +1386,19 @@ import json
 pairs = json.load(f)  # Safe, only deserializes data
 ```
 
+<<<<<<< HEAD
 **­ƒƒá YAML.safe_load() used, OK**
 
 ```python
 # config/settings.py
 config = yaml.safe_load(f)  # ÔåÉ Good, uses safe_load
+=======
+**🟠 YAML.safe_load() used, OK**
+
+```python
+# config/settings.py
+config = yaml.safe_load(f)  # ← Good, uses safe_load
+>>>>>>> origin/main
 ```
 
 **But no schema validation** :
@@ -865,12 +1413,20 @@ config = yaml.safe_load(f)  # ÔåÉ Good, uses safe_load
 
 **Better practice** : Use pydantic for validation.
 
+<<<<<<< HEAD
 **­ƒƒí No rate limiting on IBKR API calls**
+=======
+**🟡 No rate limiting on IBKR API calls**
+>>>>>>> origin/main
 
 ```python
 # execution/IBKR API_engine.py
 self.broker = broker_class({
+<<<<<<< HEAD
     'enableRateLimit': True,  # ÔåÉ Good
+=======
+    'enableRateLimit': True,  # ← Good
+>>>>>>> origin/main
     ...
 })
 ```
@@ -879,7 +1435,11 @@ self.broker = broker_class({
 
 ```python
 for symbol in symbols:
+<<<<<<< HEAD
     self.broker.create_limit_order(...)  # ÔåÉ Not throttled by app
+=======
+    self.broker.create_limit_order(...)  # ← Not throttled by app
+>>>>>>> origin/main
 ```
 
 IBKR API will backoff internally, but only for 1 broker. If multiple symbols hit rate limit simultaneously, requests queue up unpredictably.
@@ -890,11 +1450,19 @@ IBKR API will backoff internally, but only for 1 broker. If multiple symbols hit
 
 | Aspect | Risk | Severity |
 |--------|------|----------|
+<<<<<<< HEAD
 | API key exposure | High | ­ƒö┤ |
 | PII in logs | Medium | ­ƒƒá |
 | No input validation | High | ­ƒö┤ |
 | Pickle deserialization | Medium | ­ƒƒá |
 | Config injection | Low | ­ƒƒí |
+=======
+| API key exposure | High | 🔴 |
+| PII in logs | Medium | 🟠 |
+| No input validation | High | 🔴 |
+| Pickle deserialization | Medium | 🟠 |
+| Config injection | Low | 🟡 |
+>>>>>>> origin/main
 
 **Mitigations** :
 1. Never commit `.env` (use `.env.example`)
@@ -907,9 +1475,15 @@ IBKR API will backoff internally, but only for 1 broker. If multiple symbols hit
 
 ## 8. Tests & validation
 
+<<<<<<< HEAD
 ### Pr├®sence r├®elle des tests
 
 **Ô£à Tests exist, but minimal**
+=======
+### Présence réelle des tests
+
+**✅ Tests exist, but minimal**
+>>>>>>> origin/main
 
 ```
 tests/ contains:
@@ -917,7 +1491,11 @@ tests/ contains:
   test_cointegration.py      (50 lines)
   test_data.py               (80 lines)
   test_execution.py          (60 lines)
+<<<<<<< HEAD
   test_hybrid_wrappers.py    (310 lines) ÔåÉ Good
+=======
+  test_hybrid_wrappers.py    (310 lines) ← Good
+>>>>>>> origin/main
   test_integration.py        (100 lines)
   test_performance_optimization.py (120 lines)
   test_risk_engine.py        (80 lines)
@@ -932,9 +1510,15 @@ tests/ contains:
 
 Acceptable minimum is 40-60%. EDGECORE is **below minimum**.
 
+<<<<<<< HEAD
 ### Qualit├® et pertinence
 
 **Ô£à Test good**
+=======
+### Qualité et pertinence
+
+**✅ Test good**
+>>>>>>> origin/main
 
 ```python
 # test_risk_engine.py
@@ -952,7 +1536,11 @@ def test_risk_engine_position_limit():
 
 Tests the critical path: position limits enforced.
 
+<<<<<<< HEAD
 **ÔØî Tests missing**
+=======
+**❌ Tests missing**
+>>>>>>> origin/main
 
 ```python
 # NO TEST for:
@@ -972,6 +1560,7 @@ Tests the critical path: position limits enforced.
 
 | Component | Coverage | Status |
 |-----------|----------|--------|
+<<<<<<< HEAD
 | Risk engine | 40% | ­ƒƒí |
 | Strategy signals | 30% | ­ƒƒí |
 | Data loading | 50% | ­ƒƒí |
@@ -986,6 +1575,22 @@ Tests the critical path: position limits enforced.
 ### Parties non test├®es critiques
 
 **­ƒö┤ NEVER TESTED** :
+=======
+| Risk engine | 40% | 🟡 |
+| Strategy signals | 30% | 🟡 |
+| Data loading | 50% | 🟡 |
+| Execution base | 20% | 🔴 |
+| IBKR API engine | 15% | 🔴 |
+| Config/settings | 10% | 🔴 |
+| Backtests | 45% | 🟡 |
+| Monitoring | 5% | 🔴 |
+
+**Estimated overall coverage** : **25-30%** (below 40% minimum).
+
+### Parties non testées critiques
+
+**🔴 NEVER TESTED** :
+>>>>>>> origin/main
 
 1. **Live execution flow** (IBKR API order submission, fills, rejections)
 2. **Risk engine with real equity values** (off-by-one on daily resets)
@@ -997,7 +1602,11 @@ Tests the critical path: position limits enforced.
 
 ### Niveau de confiance avant mise en production
 
+<<<<<<< HEAD
 **­ƒö┤ TR├êS BAS (2/10)**
+=======
+**🔴 TRÈS BAS (2/10)**
+>>>>>>> origin/main
 
 Reasoning :
 
@@ -1018,11 +1627,19 @@ Most likely failure mode :
 
 ---
 
+<<<<<<< HEAD
 ## 9. Observabilit├® & maintenance
 
 ### Logging (qualit├®, structure, utilit├® r├®elle)
 
 **Ô£à Structured logging with structlog + JSON**
+=======
+## 9. Observabilité & maintenance
+
+### Logging (qualité, structure, utilité réelle)
+
+**✅ Structured logging with structlog + JSON**
+>>>>>>> origin/main
 
 ```python
 logger.info(
@@ -1037,12 +1654,20 @@ logger.info(
 # {"event": "order_submitted", "order_id": "123abc", ...}
 ```
 
+<<<<<<< HEAD
 **Ô£à Benefits** :
+=======
+**✅ Benefits** :
+>>>>>>> origin/main
 - Machine parseable (grep, ELK, Datadog)
 - Searchable by key
 - Timestamp auto-added
 
+<<<<<<< HEAD
 **ÔØî Issues** :
+=======
+**❌ Issues** :
+>>>>>>> origin/main
 
 1. **No log levels honored** - All events logged at INFO level
    ```python
@@ -1058,7 +1683,11 @@ logger.info(
    # Missing trace_id or request_id
    ```
 
+<<<<<<< HEAD
 3. **No sampling** - Every trade/order logged ÔåÆ logs bloat
+=======
+3. **No sampling** - Every trade/order logged → logs bloat
+>>>>>>> origin/main
    ```python
    # With 1000 trades/day = 1000 log lines
    # With structured logging = ~1MB/day OK but...
@@ -1067,7 +1696,11 @@ logger.info(
 
 ### Monitoring
 
+<<<<<<< HEAD
 **ÔÜá´©Å Minimal/ Placeholder**
+=======
+**⚠️ Minimal/ Placeholder**
+>>>>>>> origin/main
 
 ```python
 # monitoring/metrics.py exists but:
@@ -1086,6 +1719,7 @@ logger.info(
 
 ```
 Real-time dashboards:
+<<<<<<< HEAD
   Ô£à Current equity
   Ô£à Daily PnL
   Ô£à Position count
@@ -1103,19 +1737,46 @@ Health checks:
   Ô£à Broker API reachable
   Ô£à Data source responsive
   Ô£à Configuration valid
+=======
+  ✅ Current equity
+  ✅ Daily PnL
+  ✅ Position count
+  ✅ Order status
+  ✅ Error rate
+  ✅ Latency (API calls)
+  
+Alerts:
+  ✅ Equity drop > threshold
+  ✅ Order timeout (>5 minutes)
+  ✅ Data freshness (last data >1 hour old)
+  ✅ Strategy signal > threshold
+  
+Health checks:
+  ✅ Broker API reachable
+  ✅ Data source responsive
+  ✅ Configuration valid
+>>>>>>> origin/main
 ```
 
 **Current state** : 0/10 monitoring coverage.
 
 ### Alerting
 
+<<<<<<< HEAD
 **­ƒö┤ NONE**
+=======
+**🔴 NONE**
+>>>>>>> origin/main
 
 No alerting system.
 
 If something breaks, humans don't know until checking logs manually.
 
+<<<<<<< HEAD
 ### Capacit├® ├á diagnostiquer un incident live
+=======
+### Capacité à diagnostiquer un incident live
+>>>>>>> origin/main
 
 **Very hard**
 
@@ -1124,6 +1785,7 @@ Scenario: "Live trading stopped generating signals at 2pm"
 ```
 Steps to debug:
 1. $ tail -f logs/main_*.log | grep "signal"
+<<<<<<< HEAD
    ÔåÆ 1000 events in JSON
 2. $ grep "error" logs/main_*.log
    ÔåÆ 50 errors (which one relevant?)
@@ -1133,6 +1795,17 @@ Steps to debug:
    ÔåÆ Need to query live manually
 5. Check strategy code changed?
    ÔåÆ Need to check git logs
+=======
+   → 1000 events in JSON
+2. $ grep "error" logs/main_*.log
+   → 50 errors (which one relevant?)
+3. Check IBKR API down?
+   → Need manual test
+4. Check data stale?
+   → Need to query live manually
+5. Check strategy code changed?
+   → Need to check git logs
+>>>>>>> origin/main
 
 Time to diagnose: 30-60 minutes
 ```
@@ -1141,18 +1814,30 @@ With proper monitoring :
 
 ```
 Dashboard shows:
+<<<<<<< HEAD
   - Last signal: 1:45pm (15 min ago) Ô£ù
   - Data latency: 45 minutes Ô£ù
   - IBKR API API response: 500 Server Error Ô£ù
+=======
+  - Last signal: 1:45pm (15 min ago) ✗
+  - Data latency: 45 minutes ✗
+  - IBKR API API response: 500 Server Error ✗
+>>>>>>> origin/main
   
   Likely cause: Data feed down after 1:45pm
   
 Time to diagnose: < 2 minutes
 ```
 
+<<<<<<< HEAD
 ### Maintenabilit├® ├á 6ÔÇô12 mois
 
 **ÔÜá´©Å Moderate difficulty**
+=======
+### Maintenabilité à 6–12 mois
+
+**⚠️ Moderate difficulty**
+>>>>>>> origin/main
 
 Positives :
 - Code reasonably clean
@@ -1173,6 +1858,7 @@ Negatives :
 
 ## 10. Dette technique
 
+<<<<<<< HEAD
 ### Liste pr├®cise des dettes
 
 | Item | Impact | Effort | Risk |
@@ -1197,6 +1883,32 @@ Negatives :
 ### Dette acceptable ├á court terme
 
 Ô£à **OK for alpha/beta** (watch closely) :
+=======
+### Liste précise des dettes
+
+| Item | Impact | Effort | Risk |
+|------|--------|--------|------|
+| **Hardcoded equity (100k)** | 🔴 High | 🟢 1h | 🔴 Critical if wrong |
+| **No input validation** | 🔴 High | 🟠 8h | 🔴 Crashes possible |
+| **Paper/live code duplication** | 🟠 Medium | 🟠 4h | 🟠 Feature drift |
+| **No type hints** | 🟡 Low | 🟠 6h | 🟡 Refactor risk |
+| **Missing integration tests** | 🔴 High | 🟠 16h | 🔴 Blind spots |
+| **No monitoring/alerting** | 🔴 High | 🟠 12h | 🔴 Unaware of failures |
+| **No reconciliation logic** | 🔴 High | 🟠 8h | 🔴 State divergence |
+| **Multiprocessing overhead** | 🟡 Low | 🟢 2h | 🟡 Edge cases |
+| **YAML safe_load (no schema)** | 🟠 Medium | 🟢 2h | 🟠 Config injection |
+| **No API key expiration** | 🟠 Medium | 🟢 1h | 🟠 Security drift |
+| **No position-level stops** | 🔴 High | 🟠 6h | 🔴 Runaway losses |
+| **No async I/O** | 🟡 Low | 🟠 20h | 🟡 Scalability limit |
+| **Pickle cache (security)** | 🟠 Medium | 🟢 1h | 🟠 Code injection |
+| **No log rotation** | 🟡 Low | 🟢 2h | 🟡 Disk full risk |
+
+**Total estimated effort** : ~100 hours to clear all critical debt.
+
+### Dette acceptable à court terme
+
+✅ **OK for alpha/beta** (watch closely) :
+>>>>>>> origin/main
 
 ```
 - No async I/O (OK for <100 orders/hour)
@@ -1207,7 +1919,11 @@ Negatives :
 
 ### Dette dangereuse
 
+<<<<<<< HEAD
 ­ƒö┤ **Must fix before any live trading** :
+=======
+🔴 **Must fix before any live trading** :
+>>>>>>> origin/main
 
 ```
 - No input validation (crashes possible)
@@ -1217,6 +1933,7 @@ Negatives :
 - No monitoring (blind operation)
 ```
 
+<<<<<<< HEAD
 ### Dette bloquante pour toute ├®volution s├®rieuse
 
 ­ƒö┤ **Prevent future feature additions** :
@@ -1227,15 +1944,35 @@ Negatives :
 - No architecture docs ÔåÆ New features hard to integrate
 - No integration tests ÔåÆ Can't verify new features work
 - Hardcoded config ÔåÆ Can't support multiple accounts
+=======
+### Dette bloquante pour toute évolution sérieuse
+
+🔴 **Prevent future feature additions** :
+
+```
+- Code duplication (paper/live) → Adds bugs faster
+- No type hints → Refactoring risky
+- No architecture docs → New features hard to integrate
+- No integration tests → Can't verify new features work
+- Hardcoded config → Can't support multiple accounts
+>>>>>>> origin/main
 ```
 
 ---
 
+<<<<<<< HEAD
 ## 11. Recommandations prioris├®es
 
 ### Top 5 actions imm├®diates (ordre strict, non-n├®gociable)
 
 **­ƒö┤ #1. ELIMINATE input validation holes (Effort: 8h, Impact: ­ƒö┤ Critical)**
+=======
+## 11. Recommandations priorisées
+
+### Top 5 actions immédiates (ordre strict, non-négociable)
+
+**🔴 #1. ELIMINATE input validation holes (Effort: 8h, Impact: 🔴 Critical)**
+>>>>>>> origin/main
 
 ```python
 # BEFORE: Vulnerable
@@ -1266,7 +2003,11 @@ assert 0 < current_equity < 1_000_000_000, "Equity sanity check"
 assert 0 < volatility< 10, "Volatility sanity check"
 ```
 
+<<<<<<< HEAD
 **­ƒö┤ #2. INJECT equity configuration (Effort: 2h, Impact: ­ƒö┤ Critical)**
+=======
+**🔴 #2. INJECT equity configuration (Effort: 2h, Impact: 🔴 Critical)**
+>>>>>>> origin/main
 
 ```python
 # BEFORE: Hardcoded
@@ -1285,7 +2026,11 @@ settings = get_settings()
 risk_engine = RiskEngine(initial_equity=settings.backtest.initial_capital)
 ```
 
+<<<<<<< HEAD
 **­ƒö┤ #3. IMPLEMENT reconciliation at startup (Effort: 6h, Impact: ­ƒö┤ Critical)**
+=======
+**🔴 #3. IMPLEMENT reconciliation at startup (Effort: 6h, Impact: 🔴 Critical)**
+>>>>>>> origin/main
 
 ```python
 # New method: RiskEngine.reconcile()
@@ -1312,7 +2057,11 @@ execution_engine = IBKR APIExecutionEngine()
 risk_engine.reconcile_with_broker(execution_engine)  # MUST pass before trading
 ```
 
+<<<<<<< HEAD
 **­ƒö┤ #4. ADD monitoring + alerting (Effort: 12h, Impact: ­ƒö┤ Critical)**
+=======
+**🔴 #4. ADD monitoring + alerting (Effort: 12h, Impact: 🔴 Critical)**
+>>>>>>> origin/main
 
 ```python
 # New: monitoring/alerter.py
@@ -1334,12 +2083,20 @@ if daily_loss / current_equity > self.config.max_daily_loss_pct:
     return False, reason
 ```
 
+<<<<<<< HEAD
 **­ƒö┤ #5. ADD integration tests (end-to-end) (Effort: 16h, Impact: ­ƒö┤ Critical)**
+=======
+**🔴 #5. ADD integration tests (end-to-end) (Effort: 16h, Impact: 🔴 Critical)**
+>>>>>>> origin/main
 
 ```python
 # tests/test_integration_e2e.py
 def test_complete_trade_flow():
+<<<<<<< HEAD
     """Test: data load ÔåÆ signal ÔåÆ risk check ÔåÆ order ÔåÆ fill."""
+=======
+    """Test: data load → signal → risk check → order → fill."""
+>>>>>>> origin/main
     
     # Setup
     loader = DataLoader()
@@ -1380,7 +2137,11 @@ def test_complete_trade_flow():
 
 ---
 
+<<<<<<< HEAD
 ### Actions ├á moyen terme
+=======
+### Actions à moyen terme
+>>>>>>> origin/main
 
 **6. Eliminate code duplication (refactor paper/live)**
    - Extract common loop into `_run_trading_loop()`
@@ -1398,7 +2159,11 @@ def test_complete_trade_flow():
    - Effort: 4h, Payoff: Catch config typos immediately
 
 **9. Implement order timeout logic**
+<<<<<<< HEAD
    - Orders older than 5 min ÔåÆ force cancel or manual review
+=======
+   - Orders older than 5 min → force cancel or manual review
+>>>>>>> origin/main
    - Effort: 3h, Payoff: Prevent stuck orders
 
 **10. Add position-level stop losses**
@@ -1431,7 +2196,11 @@ def test_complete_trade_flow():
 
 ### Score global sur 10
 
+<<<<<<< HEAD
 **­ƒƒá Score: 4/10**
+=======
+**🟠 Score: 4/10**
+>>>>>>> origin/main
 
 Breakdown :
 
@@ -1446,12 +2215,17 @@ Breakdown :
 | Performance | 6/10 | Acceptable for <100 symbols |
 | Documentation | 5/10 | Code comments OK, no arch docs |
 
+<<<<<<< HEAD
 **Overall** : 4.25 / 10  ÔåÆ **ALPHA grade**
+=======
+**Overall** : 4.25 / 10  → **ALPHA grade**
+>>>>>>> origin/main
 
 ### Justification concise
 
 EDGECORE has **solid architecture and intent** but **dangerous execution flaws** :
 
+<<<<<<< HEAD
 1. Ô£à **Right separation** (strategy/risk/execution)
 2. ÔØî **Wrong validation** (None)
 3. ÔØî **Wrong error handling** (Silent failures)
@@ -1463,13 +2237,30 @@ EDGECORE has **solid architecture and intent** but **dangerous execution flaws**
 ### Probabilit├® de succ├¿s du projet si l'├®tat reste inchang├®
 
 **­ƒö┤ Failure probability: 75-85% within 30 days of live trading**
+=======
+1. ✅ **Right separation** (strategy/risk/execution)
+2. ❌ **Wrong validation** (None)
+3. ❌ **Wrong error handling** (Silent failures)
+4. ❌ **Wrong state management** (Local state != Broker)
+5. ❌ **Wrong monitoring** (Logs, no alerts)
+
+**With 20 hours of critical fixes** (#1-5 above), could reach **7/10 (Beta grade)**.
+
+### Probabilité de succès du projet si l'état reste inchangé
+
+**🔴 Failure probability: 75-85% within 30 days of live trading**
+>>>>>>> origin/main
 
 Most likely failure scenarios (rank by probability) :
 
 | # | Failure Mode | Prob | Time to Detect | Loss |
 |---|--------------|------|-----------------|------|
 | 1 | Stuck order (broker halt/timeout) | 40% | 2-6 hours | $1k-10k |
+<<<<<<< HEAD
 | 2 | State divergence (local Ôëá broker) | 25% | 1-8 hours | $1k-50k |
+=======
+| 2 | State divergence (local ≠ broker) | 25% | 1-8 hours | $1k-50k |
+>>>>>>> origin/main
 | 3 | Data corruption (stale OHLCV) | 20% | 1-4 hours | $2k-20k |
 | 4 | Config load failure (typo) | 10% | 1-2 min | $0 (caught pre-flight) |
 | 5 | Cointegration regime break | 15% | 1-48 hours | $5k-100k |
@@ -1478,7 +2269,11 @@ Most likely failure scenarios (rank by probability) :
 
 ### Verdict clair
 
+<<<<<<< HEAD
 ­ƒæë **CANNOT trade real money in this state**
+=======
+👉 **CANNOT trade real money in this state**
+>>>>>>> origin/main
 
 **If deployed as-is** :
 
@@ -1492,11 +2287,19 @@ Day 31: Live trading shut down, post-mortem begins
 
 **Minimum before deployment** (critical fixes only, ~20h work) :
 
+<<<<<<< HEAD
 - Ô£à Input validation on all risk/strategy calls
 - Ô£à Equity config injected (not hardcoded)
 - Ô£à Reconciliation at startup + periodically
 - Ô£à Order timeout + forced cancel logic
 - Ô£à Monitoring + Slack alerts for critical events
+=======
+- ✅ Input validation on all risk/strategy calls
+- ✅ Equity config injected (not hardcoded)
+- ✅ Reconciliation at startup + periodically
+- ✅ Order timeout + forced cancel logic
+- ✅ Monitoring + Slack alerts for critical events
+>>>>>>> origin/main
 
 **Then can deploy with caution** :
 
@@ -1507,6 +2310,7 @@ Day 31: Live trading shut down, post-mortem begins
 
 ---
 
+<<<<<<< HEAD
 ## 13. Checklist pr├®-d├®ploiement (Oui/Non/Partiel/N/A)
 
 | Item | Status | Notes |
@@ -1526,6 +2330,27 @@ Day 31: Live trading shut down, post-mortem begins
 
 **Passed items** : 0 / 12  
 **Status** : ­ƒö┤ **NOT READY FOR LIVE** (0% checklist passed)
+=======
+## 13. Checklist pré-déploiement (Oui/Non/Partiel/N/A)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Input validation everywhere | ❌ Non | See #1 recommendations |
+| Config not hardcoded | ❌ Non | Equity = 100k hardcoded |
+| Reconciliation implemented | ❌ Non | See #3 recommendations |
+| Integration tests passing | ❌ Non | <30% coverage |
+| Monitoring + alerts | ❌ Non | See #4 recommendations |
+| Order timeout handling | ❌ Non | Orders can sit forever |
+| Position-level stops | ❌ Non | Only portfolio-level |
+| API key scoped minimal | ❌ Non | Full account access |
+| Kill-switch tested | ⚠️ Partial | Pre-flight only, no runtime |
+| Backtest realistic | ❌ Non | Simplified simulation |
+| Stress tested (50+ symbols) | ❌ Non | Never tested at scale |
+| Load tested (100+ orders/hour) | ❌ Non | Never tested at load |
+
+**Passed items** : 0 / 12  
+**Status** : 🔴 **NOT READY FOR LIVE** (0% checklist passed)
+>>>>>>> origin/main
 
 ---
 
