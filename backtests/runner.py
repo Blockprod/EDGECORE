@@ -231,7 +231,7 @@ class BacktestRunner:
         # Suppress info/warning logs from IBKR during validation
         logging.getLogger("execution.ibkr_engine").setLevel(logging.ERROR)
 
-        print("[IBKR Validation] D├®marrage de la validation des symboles...")
+        logger.info("ibkr_validation_start")
 
         # Defensive sanitization: ensure top-level `symbols` list contains plain strings.
         def _sanitize_symbols(sym_list):
@@ -274,7 +274,7 @@ class BacktestRunner:
         if _os.path.exists(_cache_path):
             _age_days = (_time.time() - _os.path.getmtime(_cache_path)) / 86400
             if _age_days < _cache_max_age_days:
-                print(f"[IBKR Validation] Cache hit ({_age_days:.1f}d old) ÔÇö skipping IBKR data load.")
+                logger.debug("ibkr_validation_cache_hit", age_days=round(_age_days, 1))
                 import pandas as _pd
 
                 _cached = _pd.read_parquet(_cache_path)
@@ -301,7 +301,7 @@ class BacktestRunner:
             # Send one fast probe (1 day SPY) with a 45s timeout to trigger
             # HMDS wake-up. If it times out, HMDS is genuinely unreachable and
             # the user must reconnect via IB Gateway ÔåÆ Help ÔåÆ Reconnect Data.
-            print("[IBKR] V├®rification HMDS (donn├®es historiques)...")
+            logger.info("ibkr_hmds_check_start")
             _probe = engine.get_historical_data("SPY", duration="2 D", bar_size="1 day", what_to_show="TRADES")
             if not _probe:
                 raise RuntimeError(
@@ -314,7 +314,7 @@ class BacktestRunner:
                     "  Ôòæ  Puis relancer ce script.                            Ôòæ\n"
                     "  ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ\n"
                 )
-            print(f"[IBKR] HMDS OK ÔÇö {len(_probe)} bars SPY re├ºus. Chargement en cours...")
+            logger.info("ibkr_hmds_ok", spy_bars=len(_probe))
 
             try:
                 for sym in symbols:
@@ -368,7 +368,7 @@ class BacktestRunner:
             finally:
                 engine.disconnect()
 
-        print(f"[IBKR Validation] Termin├®. {len(price_data)} symboles valides, {len(failed_symbols)} invalides.")
+        logger.info("ibkr_validation_complete", valid_symbols=len(price_data), invalid_symbols=len(failed_symbols))
         # Log des symboles invalides dans un fichier s├®par├®
         if failed_symbols:
             with open("ibkr_invalid_symbols.txt", "w", encoding="utf-8") as f:
@@ -388,8 +388,8 @@ class BacktestRunner:
         # Save to disk cache for future runs (avoids IBKR re-fetch on same session)
         try:
             prices_df.to_parquet(_cache_path)
-            print(
-                f"[IBKR Validation] Data cached to {_cache_path} ({len(prices_df)} rows, {len(prices_df.columns)} symbols)"
+            logger.debug(
+                "ibkr_validation_cache_saved", path=_cache_path, rows=len(prices_df), symbols=len(prices_df.columns)
             )
         except Exception as _ce:
             logger.warning("price_cache_write_failed", error=str(_ce))

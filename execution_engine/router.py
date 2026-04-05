@@ -297,8 +297,24 @@ class ExecutionRouter:
         # Rate-limit before hitting IBKR API (50 req/s hard cap)
         self._rate_limiter.acquire()
 
-        # Submit through IBKR engine
-        submitted_order_id = self._ibkr_engine.submit_order(ibkr_order)
+        # Submit through IBKR engine — with retry on transient connection errors
+        from common.retry import RetryPolicy, retry_with_backoff
+
+        _ibkr_submit_policy = RetryPolicy(
+            max_attempts=3,
+            initial_delay_seconds=1.0,
+            max_delay_seconds=10.0,
+            exponential_base=2.0,
+            jitter_factor=0.2,
+            retryable_exceptions=(ConnectionError, TimeoutError, OSError),
+        )
+        _engine = self._ibkr_engine  # local ref — non-None guaranteed by _ensure_connected above
+
+        @retry_with_backoff(policy=_ibkr_submit_policy)
+        def _submit_with_retry(o):
+            return _engine.submit_order(o)
+
+        submitted_order_id = _submit_with_retry(ibkr_order)
 
         # Poll for fill (timeout after 60 seconds)
         max_wait = 60

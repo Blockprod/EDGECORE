@@ -319,10 +319,13 @@ class StrategyBacktestSimulator:
         strategy = self._create_fresh_strategy()
 
         # === DIAGNOSTIC : Afficher bornes de dates et config avant la boucle ===
-        print("[DEBUG][PRE-BOUCLE] prices_df.index.min=", prices_df.index.min())
-        print("[DEBUG][PRE-BOUCLE] prices_df.index.max=", prices_df.index.max())
-        print("[DEBUG][PRE-BOUCLE] len(prices_df)=", len(prices_df))
-        print(f"[DEBUG][PRE-BOUCLE] oos_start_date={oos_start_date}")
+        logger.debug(
+            "pre_loop_prices_range",
+            index_min=str(prices_df.index.min()),
+            index_max=str(prices_df.index.max()),
+            n_bars=len(prices_df),
+            oos_start_date=str(oos_start_date),
+        )
 
         # ---- Set sector map on strategy for intra-sector pair discovery ----
         if sector_map is not None:
@@ -499,15 +502,17 @@ class StrategyBacktestSimulator:
                         date=str(prices_df.index[bar_idx])[:10],
                         pairs_found=len(current_pairs) if current_pairs else 0,
                     )
-                    print(f"[DEBUG] Paires cointégrées candidates (bar {bar_idx}): {len(current_pairs)}")
+                    logger.debug("cointegrated_pairs_candidates", bar=bar_idx, count=len(current_pairs))
                     if not current_pairs:
-                        print(f"[DEBUG] Colonnes disponibles: {_discovery_prices.columns.tolist()}")
-                        print(f"[DEBUG] Aperçu données: {_discovery_prices.head(2)}")
-                        from config.settings import get_settings
+                        from config.settings import get_settings as _gs_debug
 
-                        s = get_settings()
-                        print(
-                            f"[DEBUG] entry_z_score={s.strategy.entry_z_score} min_correlation={s.strategy.min_correlation} lookback_window={s.strategy.lookback_window}"
+                        s = _gs_debug()
+                        logger.debug(
+                            "no_pairs_found_debug",
+                            columns=_discovery_prices.columns.tolist(),
+                            entry_z_score=s.strategy.entry_z_score,
+                            min_correlation=s.strategy.min_correlation,
+                            lookback_window=s.strategy.lookback_window,
                         )
                 else:
                     bars_since_discovery += 1
@@ -602,7 +607,7 @@ class StrategyBacktestSimulator:
                 discovered_pairs=current_pairs,
                 weekly_prices=weekly_prices,
             )
-            print(f"[DEBUG] Bar {bar_idx}: {len(signals)} signaux générés")
+            logger.debug("signals_generated", bar=bar_idx, count=len(signals))
 
             # ---- Post-v27: Market regime filter (SPY-based) ---------
             # Classify the current market regime using SPY data.

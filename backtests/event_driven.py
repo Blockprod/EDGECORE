@@ -228,6 +228,7 @@ class EventDrivenBacktester:
         volume_df: pd.DataFrame | None = None,
         fixed_pairs: list[tuple[str, str, float, float]] | None = None,
         allocation_per_pair_pct: float = 2.0,
+        exdates_df: pd.DataFrame | None = None,
     ) -> BacktestMetrics:
         """
         Run an event-driven backtest.
@@ -243,6 +244,11 @@ class EventDrivenBacktester:
             Pre-discovered pairs ``(sym1, sym2, pvalue, half_life)``.
         allocation_per_pair_pct : float
             Percent of capital allocated per pair per entry.
+        exdates_df : pd.DataFrame or None
+            Output of :func:`~data.preprocessing.mark_exdates`.
+            Must have an ``is_exdate`` boolean column aligned to *prices_df*.
+            When provided, new entries are suppressed on ex-date bars to avoid
+            entering positions right before a structural price adjustment.
 
         Returns
         -------
@@ -280,6 +286,15 @@ class EventDrivenBacktester:
             current_bar = prices_df.iloc[bar_idx]
             prev_bar = prices_df.iloc[bar_idx - 1] if bar_idx > 0 else None
 
+            # P-01: suppress new entries on corporate-action ex-dates to avoid
+            # entering a pair position right before a structural price adjustment.
+            _bar_is_exdate = (
+                exdates_df is not None
+                and "is_exdate" in exdates_df.columns
+                and bar_idx < len(exdates_df)
+                and bool(exdates_df["is_exdate"].iloc[bar_idx])
+            )
+
             # --- Generate signals via live strategy code ---
             try:
                 signals = strategy.generate_signals(
@@ -300,6 +315,16 @@ class EventDrivenBacktester:
 
                 if sig.side in ("long", "short") and pair_key not in positions:
                     # ---- ENTRY ----
+                    # Skip new entries on ex-date bars (P-01: corporate actions guard)
+                    if _bar_is_exdate:
+                        logger.debug(
+                            "event_driven_entry_skipped_exdate",
+                            pair=pair_key,
+                            bar=bar_idx,
+                            date=str(prices_df.index[bar_idx])[:10],
+                        )
+                        continue
+
                     alloc = capital * (allocation_per_pair_pct / 100.0)
 
                     # Build market states

@@ -56,3 +56,35 @@ def remove_outliers(series: pd.Series, method: str = "iqr", threshold: float = 3
         mask = z_scores > threshold
 
     return series.where(~mask, np.nan)
+
+
+def mark_exdates(
+    prices_df: pd.DataFrame,
+    symbols: list[str] | None = None,
+    use_cache: bool = True,
+) -> pd.DataFrame:
+    """
+    Add an ``is_exdate`` boolean column to *prices_df*.
+
+    Delegates to :class:`~data.corporate_actions.CorporateActionsProvider`.
+    A bar is marked ``True`` if any symbol has a split or dividend ex-date
+    on that date.
+
+    Parameters
+    ----------
+    prices_df : pd.DataFrame
+        Index = DatetimeIndex, columns = symbol names.
+    symbols : list[str] or None
+        Symbols to check.  Defaults to all columns in *prices_df*.
+    use_cache : bool
+        Whether to use the disk cache for corporate-action data.
+
+    Returns
+    -------
+    pd.DataFrame
+        The original DataFrame with an additional ``is_exdate`` column.
+    """
+    from data.corporate_actions import CorporateActionsProvider
+
+    provider = CorporateActionsProvider(use_cache=use_cache)
+    return provider.mark_exdates(prices_df, symbols=symbols)

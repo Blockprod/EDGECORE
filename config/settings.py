@@ -195,6 +195,8 @@ class BacktestConfig:
     walk_forward_periods: int = 4
     out_of_sample_ratio: float = 0.2
     feature_store_dir: str = "data/feature_store/"  # P2: versioned spread cache
+    # P-01: mark split/dividend ex-dates in prices and suppress new entries that bar
+    adjust_for_corporate_actions: bool = True
 
 
 @dataclass
