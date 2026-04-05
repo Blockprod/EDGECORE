@@ -9,10 +9,6 @@ Tests complete trading workflows:
 - API endpoint availability
 """
 
-import pytest
-from unittest.mock import patch
-import pandas as pd
-import numpy as np
 import json
 from unittest.mock import patch
 
@@ -28,14 +24,6 @@ from monitoring.email_alerter import EmailAlerter
 from monitoring.slack_alerter import SlackAlerter
 from risk.engine import RiskEngine
 from strategies.pair_trading import PairTradingStrategy
-
-
-@pytest.fixture(autouse=True)
-def _reset_ibkr_client_ids():
-    """Clear IBKRExecutionEngine client_id registry between tests."""
-    IBKRExecutionEngine._active_client_ids.clear()
-    yield
-    IBKRExecutionEngine._active_client_ids.clear()
 
 
 @pytest.fixture(autouse=True)

@@ -22,7 +22,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import pandas as pd
 from structlog import get_logger

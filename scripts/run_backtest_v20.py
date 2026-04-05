@@ -15,6 +15,7 @@ All Phase 0-3 corrections active:
 """
 
 import os, sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -23,39 +24,82 @@ from backtests.runner import BacktestRunner
 # Curated universe: 31 symbols across 6 sectors (same as v19c)
 SYMBOLS = [
     # Technology (7)
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
     # Financials (7)
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
     # Energy (4)
-    "XOM", "CVX", "COP", "EOG",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
     # Consumer Staples (5)
-    "KO", "PEP", "PG", "CL", "WMT",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
     # Industrials (4)
-    "CAT", "HON", "DE", "GE", "RTX",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
     # Utilities (3)
-    "NEE", "DUK", "SO",
+    "NEE",
+    "DUK",
+    "SO",
 ]
 
 SECTOR_MAP = {
     # Tech
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
     "AVGO": "technology",
     # Financials
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
     # Energy
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
     # Consumer Staples
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
     "WMT": "consumer_staples",
     # Industrials
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
     # Utilities
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
 }
 
 
@@ -77,6 +121,7 @@ def main():
 
     # Strategy params (proven from v17f → v19c)
     from config.settings import get_settings
+
     settings = get_settings()
     settings.strategy.lookback_window = 252
     settings.strategy.additional_lookback_windows = [126]
@@ -88,9 +133,7 @@ def main():
     settings.strategy.z_score_stop = 3.5
 
     n_intra = sum(
-        1 for i, s1 in enumerate(SYMBOLS)
-        for s2 in SYMBOLS[i + 1:]
-        if SECTOR_MAP.get(s1) == SECTOR_MAP.get(s2)
+        1 for i, s1 in enumerate(SYMBOLS) for s2 in SYMBOLS[i + 1 :] if SECTOR_MAP.get(s1) == SECTOR_MAP.get(s2)
     )
 
     print("=" * 60)
@@ -101,7 +144,7 @@ def main():
     print(f"  Period:   {args.start} -> {args.end}")
     print(f"  Capital:  {args.capital:,.0f} EUR")
     print(f"  Alloc:    {args.alloc}% per pair (2x leverage)")
-    print(f"  Stop:     {args.stop*100}% | Heat: {args.heat*100}%")
+    print(f"  Stop:     {args.stop * 100}% | Heat: {args.heat * 100}%")
     print(f"  Z-score:  entry=2.0, exit=0.5, z_stop=3.5")
     print(f"  Lookback: 252 + [126]")
     print(f"  Rediscovery: every {args.rediscovery} bar(s)")
@@ -126,7 +169,6 @@ def main():
     print(f"Number of symbols in universe: {len(SYMBOLS)}")
 
     # Save results
-    import json
     summary = metrics.summary()
     with open(os.path.join(_ROOT, "results", "bt_results_v20_summary.txt"), "w", encoding="utf-8") as f:
         f.write(summary)

@@ -15,7 +15,6 @@ Verifies:
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from signal_engine.market_regime import (
     MarketRegime,
@@ -166,8 +165,8 @@ class TestMarketRegimeState:
         assert state.realized_vol >= 0
         assert state.vol_threshold == 0.18
         # v30: per-side sizing
-        assert hasattr(state, 'long_sizing')
-        assert hasattr(state, 'short_sizing')
+        assert hasattr(state, "long_sizing")
+        assert hasattr(state, "short_sizing")
 
     def test_last_state_property(self):
         """last_state should reflect the most recent classify() call."""
@@ -181,8 +180,12 @@ class TestMarketRegimeState:
     def test_sizing_values_bounded_0_1(self):
         """Per-side sizing multipliers should be in [0.0, 1.0]."""
         mrf = MarketRegimeFilter()
-        for factory in [_make_bull_market, _make_bear_market_high_vol,
-                        _make_bear_market_low_vol, _make_sideways_market]:
+        for factory in [
+            _make_bull_market,
+            _make_bear_market_high_vol,
+            _make_bear_market_low_vol,
+            _make_sideways_market,
+        ]:
             spy = factory(n=300)
             state = mrf.classify(spy)
             assert 0.0 <= state.long_sizing <= 1.0

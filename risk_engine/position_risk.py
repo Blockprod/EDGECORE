@@ -14,7 +14,6 @@ all checks and returns the first triggered exit, if any.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 import pandas as pd
 from structlog import get_logger

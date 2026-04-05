@@ -8,8 +8,6 @@ Provides:
 - Protocol definitions for interfaces
 """
 
-from typing import TypedDict, Dict, List, Any, Literal
-from typing_extensions import NotRequired
 from datetime import datetime
 from enum import Enum
 from typing import Any, Literal, TypedDict

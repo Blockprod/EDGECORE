@@ -12,7 +12,6 @@ pair characteristics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import pandas as pd
 from structlog import get_logger

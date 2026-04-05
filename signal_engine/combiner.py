@@ -14,7 +14,6 @@ v31 ÔÇö Phase 1, Etape 3.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 from structlog import get_logger
@@ -26,6 +25,7 @@ logger = get_logger(__name__)
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SignalSource:
     """
@@ -36,6 +36,7 @@ class SignalSource:
         weight:  Contribution to the composite score (>= 0).
         enabled: Whether this source is active.
     """
+
     name: str
     weight: float
     enabled: bool = True
@@ -57,6 +58,7 @@ class CompositeSignal:
         source_weights:  Weights used {name: weight}.
         confidence:      How much of the total weight was available (0-1).
     """
+
     composite_score: float
     direction: str
     source_scores: dict[str, float] = field(default_factory=dict)
@@ -67,6 +69,7 @@ class CompositeSignal:
 # ---------------------------------------------------------------------------
 # SignalCombiner
 # ---------------------------------------------------------------------------
+
 
 class SignalCombiner:
     """
@@ -109,9 +112,7 @@ class SignalCombiner:
         if exit_threshold < 0:
             raise ValueError(f"exit_threshold must be >= 0, got {exit_threshold}")
         if exit_threshold >= entry_threshold:
-            raise ValueError(
-                f"exit_threshold ({exit_threshold}) must be < entry_threshold ({entry_threshold})"
-            )
+            raise ValueError(f"exit_threshold ({exit_threshold}) must be < entry_threshold ({entry_threshold})")
 
         self.sources = sources or [
             SignalSource("zscore", weight=0.70),
@@ -121,9 +122,7 @@ class SignalCombiner:
         self.exit_threshold = exit_threshold
 
         # Build lookup dict
-        self._source_map: dict[str, SignalSource] = {
-            s.name: s for s in self.sources
-        }
+        self._source_map: dict[str, SignalSource] = {s.name: s for s in self.sources}
 
     # ------------------------------------------------------------------
     # Public API

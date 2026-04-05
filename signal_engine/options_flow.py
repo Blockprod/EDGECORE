@@ -20,7 +20,6 @@ Data source strategy:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -32,10 +31,11 @@ logger = get_logger(__name__)
 @dataclass
 class OptionsFlowSnapshot:
     """Options flow metrics for a single symbol at a point in time."""
-    pc_ratio_score: float     # Put/Call ratio signal [-1, 1]
-    iv_skew_score: float      # IV skew signal [-1, 1]
-    unusual_activity: float   # Unusual activity indicator [0, 1]
-    composite: float          # Weighted composite [-1, 1]
+
+    pc_ratio_score: float  # Put/Call ratio signal [-1, 1]
+    iv_skew_score: float  # IV skew signal [-1, 1]
+    unusual_activity: float  # Unusual activity indicator [0, 1]
+    composite: float  # Weighted composite [-1, 1]
 
 
 class OptionsFlowSignal:
@@ -109,8 +109,8 @@ class OptionsFlowSignal:
             # --- Put/Call ratio proxy ---
             # Bearish momentum ÔåÆ high P/C ÔåÆ negative score
             # Bullish momentum ÔåÆ low P/C ÔåÆ positive score
-            recent_ret = returns.iloc[-self.pc_lookback:].mean()
-            recent_vol = returns.iloc[-self.pc_lookback:].std()
+            recent_ret = returns.iloc[-self.pc_lookback :].mean()
+            recent_vol = returns.iloc[-self.pc_lookback :].std()
             if recent_vol > 1e-10:
                 # Sharpe-like momentum measure
                 mom_signal = recent_ret / recent_vol
@@ -121,8 +121,8 @@ class OptionsFlowSignal:
             # --- IV skew proxy ---
             # When short-term vol >> long-term vol ÔåÆ fear premium (bearish)
             # When short-term vol << long-term vol ÔåÆ calm (bullish)
-            short_vol = returns.iloc[-self.iv_lookback:].std()
-            long_vol = returns.iloc[-self.vol_lookback:].std()
+            short_vol = returns.iloc[-self.iv_lookback :].std()
+            long_vol = returns.iloc[-self.vol_lookback :].std()
             if long_vol > 1e-10:
                 vol_ratio = short_vol / long_vol
                 # vol_ratio > 1 ÔåÆ elevated fear ÔåÆ negative score
@@ -134,23 +134,21 @@ class OptionsFlowSignal:
             # --- Unusual activity proxy ---
             # Based on percentile of today's absolute return
             abs_ret = abs(returns.iloc[-1])
-            historical_abs = returns.iloc[-self.vol_lookback:].abs()
+            historical_abs = returns.iloc[-self.vol_lookback :].abs()
             if len(historical_abs) > 5:
                 percentile = (historical_abs < abs_ret).mean()
-                unusual = float(
-                    max(0.0, (percentile - self.unusual_threshold) / (1.0 - self.unusual_threshold))
-                ) if percentile > self.unusual_threshold else 0.0
+                unusual = (
+                    float(max(0.0, (percentile - self.unusual_threshold) / (1.0 - self.unusual_threshold)))
+                    if percentile > self.unusual_threshold
+                    else 0.0
+                )
             else:
                 unusual = 0.0
 
             # Directional unusual activity: same sign as recent return
             unusual_dir = unusual * (1.0 if returns.iloc[-1] > 0 else -1.0)
 
-            composite = (
-                self.PC_WEIGHT * pc_score
-                + self.IV_WEIGHT * iv_score
-                + self.UNUSUAL_WEIGHT * unusual_dir
-            )
+            composite = self.PC_WEIGHT * pc_score + self.IV_WEIGHT * iv_score + self.UNUSUAL_WEIGHT * unusual_dir
             composite = float(np.clip(composite, -1.0, 1.0))
 
             self._snapshots[sym] = OptionsFlowSnapshot(

@@ -9,8 +9,6 @@ from structlog import get_logger
 import config.settings as settings_mod
 from common.validators import (
     EquityError,
-    ValidationError,
-    VolatilityError,
     validate_equity,
     validate_position_size,
     validate_volatility,

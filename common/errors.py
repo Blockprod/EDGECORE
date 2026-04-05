@@ -9,7 +9,6 @@ Provides:
 """
 
 from enum import Enum
-from typing import Optional
 
 
 class ErrorCategory(Enum):

@@ -9,7 +9,6 @@ Implementation uses historical simulation (no parametric assumptions).
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import numpy as np
 from structlog import get_logger
@@ -66,7 +65,7 @@ class VaRMonitor:
 
         # Keep only lookback window
         if len(self._returns) > self.config.lookback_window:
-            self._returns = self._returns[-self.config.lookback_window:]
+            self._returns = self._returns[-self.config.lookback_window :]
 
         if len(self._returns) >= self.config.min_observations:
             self._recompute()

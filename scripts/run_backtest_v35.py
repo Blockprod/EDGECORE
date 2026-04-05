@@ -23,34 +23,84 @@ from config.settings import get_settings
 V35_SYMBOLS = [
     # === BASE (37) ===
     "SPY",
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "XOM", "CVX", "COP", "EOG",
-    "KO", "PEP", "PG", "CL", "WMT",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "NEE", "DUK", "SO",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
+    "NEE",
+    "DUK",
+    "SO",
+    "JNJ",
+    "PFE",
+    "UNH",
+    "MRK",
+    "ABBV",
     # === SURGICAL ADDITIONS (2) ===
-    "XLK",   # tech ETF
-    "MCD",   # consumer
+    "XLK",  # tech ETF
+    "MCD",  # consumer
 ]
 
 V35_SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
     "AVGO": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
     "WMT": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
-    "JNJ": "healthcare", "PFE": "healthcare", "UNH": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
+    "JNJ": "healthcare",
+    "PFE": "healthcare",
+    "UNH": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
     "XLK": "technology",
     "MCD": "consumer_staples",
 }
@@ -102,12 +152,16 @@ def main():
     s.pair_blacklist.max_consecutive_losses = 5
     s.pair_blacklist.cooldown_days = 10
     s.risk.max_concurrent_positions = 10
-    if hasattr(s.strategy, 'fdr_q_level'):
+    if hasattr(s.strategy, "fdr_q_level"):
         s.strategy.fdr_q_level = 0.25
 
-    time_stop = TimeStopManager(TimeStopConfig(
-        half_life_multiplier=1.5, max_days_cap=30, default_max_bars=30,
-    ))
+    time_stop = TimeStopManager(
+        TimeStopConfig(
+            half_life_multiplier=1.5,
+            max_days_cap=30,
+            default_max_bars=30,
+        )
+    )
 
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
@@ -116,10 +170,15 @@ def main():
     t0 = time.time()
 
     metrics = runner.run_unified(
-        symbols=V35_SYMBOLS, start_date="2023-03-04", end_date="2026-03-04",
-        sector_map=V35_SECTOR_MAP, pair_rediscovery_interval=2,
-        allocation_per_pair_pct=50.0, max_position_loss_pct=0.07,
-        max_portfolio_heat=3.0, time_stop=time_stop,
+        symbols=V35_SYMBOLS,
+        start_date="2023-03-04",
+        end_date="2026-03-04",
+        sector_map=V35_SECTOR_MAP,
+        pair_rediscovery_interval=2,
+        allocation_per_pair_pct=50.0,
+        max_position_loss_pct=0.07,
+        max_portfolio_heat=3.0,
+        time_stop=time_stop,
     )
 
     elapsed = time.time() - t0
@@ -133,52 +192,56 @@ def main():
         "win_rate": round(metrics.win_rate * 100, 1),
         "trades": metrics.total_trades,
         "max_dd": round(metrics.max_drawdown * 100, 2),
-        "calmar": round(metrics.calmar_ratio, 2),
+        "calmar": round(metrics.calmar_ratio or 0.0, 2),
     }
 
     base = {
-        "return_pct": 7.86, "sharpe": 1.27, "pf": 4.82,
-        "win_rate": 68.2, "trades": 22, "max_dd": -1.11, "calmar": 7.06,
+        "return_pct": 7.86,
+        "sharpe": 1.27,
+        "pf": 4.82,
+        "win_rate": 68.2,
+        "trades": 22,
+        "max_dd": -1.11,
+        "calmar": 7.06,
     }
 
     print("=" * 75)
     print("  v35 RESULTS vs v34c BASELINE")
     print("=" * 75)
-    print("  Return:  %+.2f%%  (v34c: +%.2f%%)  delta=%+.2f%%" % (
-        r['return_pct'], base['return_pct'], r['return_pct'] - base['return_pct']))
-    print("  Sharpe:  %.2f   (v34c: %.2f)  delta=%+.2f" % (
-        r['sharpe'], base['sharpe'], r['sharpe'] - base['sharpe']))
-    print("  PF:      %.2f   (v34c: %.2f)  delta=%+.2f" % (
-        r['pf'], base['pf'], r['pf'] - base['pf']))
-    print("  WR:      %.1f%%   (v34c: %.1f%%)" % (r['win_rate'], base['win_rate']))
-    print("  Trades:  %d     (v34c: %d)  delta=%+d" % (
-        r['trades'], base['trades'], r['trades'] - base['trades']))
-    print("  MaxDD:   %.2f%%  (v34c: %.2f%%)" % (r['max_dd'], base['max_dd']))
-    print("  Calmar:  %.2f   (v34c: %.2f)" % (r['calmar'], base['calmar']))
+    print(
+        "  Return:  %+.2f%%  (v34c: +%.2f%%)  delta=%+.2f%%"
+        % (r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
+    )
+    print("  Sharpe:  %.2f   (v34c: %.2f)  delta=%+.2f" % (r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
+    print("  PF:      %.2f   (v34c: %.2f)  delta=%+.2f" % (r["pf"], base["pf"], r["pf"] - base["pf"]))
+    print("  WR:      %.1f%%   (v34c: %.1f%%)" % (r["win_rate"], base["win_rate"]))
+    print("  Trades:  %d     (v34c: %d)  delta=%+d" % (r["trades"], base["trades"], r["trades"] - base["trades"]))
+    print("  MaxDD:   %.2f%%  (v34c: %.2f%%)" % (r["max_dd"], base["max_dd"]))
+    print("  Calmar:  %.2f   (v34c: %.2f)" % (r["calmar"], base["calmar"]))
     print()
 
     # Phase 2 acceptance criteria:
     # - Sharpe >= 1.2 maintained
     # - DD should improve (more granular management)
     # - Return can drop slightly (risk modules reject some marginal trades)
-    sharpe_ok = r['sharpe'] >= 1.20
-    dd_ok = r['max_dd'] >= base['max_dd']  # less negative = better
+    sharpe_ok = r["sharpe"] >= 1.20
+    dd_ok = r["max_dd"] >= base["max_dd"]  # less negative = better
 
     print("  PHASE 2 ACCEPTANCE:")
-    print("    Sharpe >= 1.20:  %s (%.2f)" % ("PASS" if sharpe_ok else "FAIL", r['sharpe']))
-    print("    DD maintained:   %s (%.2f%% vs %.2f%%)" % (
-        "PASS" if dd_ok else "FAIL", r['max_dd'], base['max_dd']))
+    print("    Sharpe >= 1.20:  %s (%.2f)" % ("PASS" if sharpe_ok else "FAIL", r["sharpe"]))
+    print("    DD maintained:   %s (%.2f%% vs %.2f%%)" % ("PASS" if dd_ok else "FAIL", r["max_dd"], base["max_dd"]))
     print()
 
     if sharpe_ok:
         print("  >> v35 PASSES -- Phase 2 risk controls validated")
     else:
         print("  >> v35 BELOW TARGET -- investigate risk module impact")
-        if r['sharpe'] >= 1.0:
+        if r["sharpe"] >= 1.0:
             print("     Sharpe >= 1.0 -- acceptable with institutional risk controls")
 
     # Save results
     import json
+
     results = {
         "version": "v35",
         "phase": "Phase 2 - Risk Management Institutionnel",
@@ -193,8 +256,9 @@ def main():
         "baseline_v34c": base,
         "elapsed_s": round(elapsed, 1),
     }
-    out_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "results", "bt_v35_output.json")
+    out_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "results", "bt_v35_output.json"
+    )
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(results, f, indent=2)

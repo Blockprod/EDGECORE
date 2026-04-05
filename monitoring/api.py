@@ -1,7 +1,5 @@
 ﻿"""Flask API endpoints for EDGECORE dashboard."""
 
-from typing import Optional, Dict, Any, Tuple
-from flask import Flask, request
 from datetime import datetime
 from typing import Any
 

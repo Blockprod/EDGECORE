@@ -34,75 +34,128 @@ from execution.time_stop import TimeStopConfig, TimeStopManager
 
 V41FG_SYMBOLS = [
     "SPY",
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO", "XLK",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "XOM", "CVX", "COP", "EOG",
-    "KO", "PEP", "PG", "CL", "WMT",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "NEE", "DUK", "SO",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
+    "XLK",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
+    "NEE",
+    "DUK",
+    "SO",
+    "JNJ",
+    "PFE",
+    "UNH",
+    "MRK",
+    "ABBV",
     "MCD",
 ]
 
 V41FG_SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
-    "AVGO": "technology", "XLK": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
+    "AVGO": "technology",
+    "XLK": "technology",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
-    "WMT": "consumer_staples", "MCD": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
-    "JNJ": "healthcare", "PFE": "healthcare", "UNH": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
+    "WMT": "consumer_staples",
+    "MCD": "consumer_staples",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
+    "JNJ": "healthcare",
+    "PFE": "healthcare",
+    "UNH": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
     "SPY": "benchmark",
 }
 
 
 def _apply_base_settings(entry_z, exit_z, half_life_cap, rediscovery):
     s = get_settings()
-    s.strategy.lookback_window             = 120
+    s.strategy.lookback_window = 120
     s.strategy.additional_lookback_windows = [63]
-    s.strategy.entry_z_score               = entry_z
-    s.strategy.exit_z_score                = exit_z
-    s.strategy.entry_z_min_spread          = 0.30
-    s.strategy.z_score_stop                = 2.5
-    s.strategy.min_correlation             = 0.65
-    s.strategy.max_half_life               = half_life_cap
-    s.strategy.max_position_loss_pct       = 0.03
-    s.strategy.internal_max_drawdown_pct   = 0.12
-    s.strategy.use_kalman                  = True
-    s.strategy.bonferroni_correction       = True
-    s.strategy.johansen_confirmation       = True
-    s.strategy.newey_west_consensus        = True
-    s.strategy.weekly_zscore_entry_gate    = 0.3
-    s.strategy.regime_directional_filter   = False
-    s.strategy.trend_long_sizing           = 0.75
+    s.strategy.entry_z_score = entry_z
+    s.strategy.exit_z_score = exit_z
+    s.strategy.entry_z_min_spread = 0.30
+    s.strategy.z_score_stop = 2.5
+    s.strategy.min_correlation = 0.65
+    s.strategy.max_half_life = half_life_cap
+    s.strategy.max_position_loss_pct = 0.03
+    s.strategy.internal_max_drawdown_pct = 0.12
+    s.strategy.use_kalman = True
+    s.strategy.bonferroni_correction = True
+    s.strategy.johansen_confirmation = True
+    s.strategy.newey_west_consensus = True
+    s.strategy.weekly_zscore_entry_gate = 0.3
+    s.strategy.regime_directional_filter = False
+    s.strategy.trend_long_sizing = 0.75
     s.strategy.disable_shorts_in_bull_trend = False
-    s.strategy.short_sizing_multiplier     = 0.50
-    s.regime.enabled           = True
-    s.regime.ma_fast           = 50
-    s.regime.ma_slow           = 200
-    s.regime.vol_threshold     = 0.18
-    s.regime.vol_window        = 20
-    s.regime.neutral_band_pct  = 0.02
+    s.strategy.short_sizing_multiplier = 0.50
+    s.regime.enabled = True
+    s.regime.ma_fast = 50
+    s.regime.ma_slow = 200
+    s.regime.vol_threshold = 0.18
+    s.regime.vol_window = 20
+    s.regime.neutral_band_pct = 0.02
     s.regime.trend_favorable_sizing = 1.0
-    s.regime.neutral_sizing    = 0.70
-    s.momentum.enabled         = True
-    s.momentum.lookback        = 20
-    s.momentum.weight          = 0.30
-    s.momentum.min_strength    = 1.0
-    s.momentum.max_boost       = 1.0
-    s.pair_blacklist.enabled                = True
+    s.regime.neutral_sizing = 0.70
+    s.momentum.enabled = True
+    s.momentum.lookback = 20
+    s.momentum.weight = 0.30
+    s.momentum.min_strength = 1.0
+    s.momentum.max_boost = 1.0
+    s.pair_blacklist.enabled = True
     s.pair_blacklist.max_consecutive_losses = 5
-    s.pair_blacklist.cooldown_days          = 10
-    s.risk.max_concurrent_positions         = 10
-    if hasattr(s.strategy, 'fdr_q_level'):
+    s.pair_blacklist.cooldown_days = 10
+    s.risk.max_concurrent_positions = 10
+    if hasattr(s.strategy, "fdr_q_level"):
         s.strategy.fdr_q_level = 0.25
 
 
@@ -124,13 +177,12 @@ def main():
     # (a) Cython acceleration is confirmed active before any timing starts,
     # (b) the Python↔C boundary is warmed up and excluded from benchmarks.
     _CYTHON_KERNELS = (
-        "engle_granger_fast", "half_life_fast",
-        "compute_zscore_last_fast", "brownian_bridge_batch_fast",
+        "engle_granger_fast",
+        "half_life_fast",
+        "compute_zscore_last_fast",
+        "brownian_bridge_batch_fast",
     )
     try:
-        from models.cointegration_fast import (
-            brownian_bridge_batch_fast as _bb_fast,
-        )
         from models.cointegration_fast import (
             compute_zscore_last_fast as _zs_fast,
         )
@@ -140,6 +192,7 @@ def main():
         from models.cointegration_fast import (
             half_life_fast as _hl_fast,
         )
+
         _w = np.linspace(100.0, 160.0, 60)
         _x = np.linspace(200.0, 260.0, 60)
         _eg_fast(_w, _x)
@@ -156,8 +209,7 @@ def main():
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
 
-    print("  %-28s  %7s  %6s  %6s  %6s  %11s  %7s" % (
-        "Config", "Return", "Sharpe", "PF", "WR", "Trades", "MaxDD"))
+    print("  %-28s  %7s  %6s  %6s  %6s  %11s  %7s" % ("Config", "Return", "Sharpe", "PF", "WR", "Trades", "MaxDD"))
     print("  " + "-" * 80)
 
     configs = [
@@ -169,11 +221,13 @@ def main():
     results = []
     for label, entry_z, exit_z, rd, hl, ts_cap in configs:
         _apply_base_settings(entry_z, exit_z, hl, rd)
-        time_stop = TimeStopManager(TimeStopConfig(
-            half_life_multiplier=1.2,
-            max_days_cap=ts_cap,
-            default_max_bars=ts_cap,
-        ))
+        time_stop = TimeStopManager(
+            TimeStopConfig(
+                half_life_multiplier=1.2,
+                max_days_cap=ts_cap,
+                default_max_bars=ts_cap,
+            )
+        )
         t0 = time.time()
         metrics = runner.run_unified(
             symbols=V41FG_SYMBOLS,
@@ -189,14 +243,16 @@ def main():
         )
         elapsed = int(time.time() - t0)
         ret = metrics.total_return * 100
-        sh  = metrics.sharpe_ratio
-        pf  = metrics.profit_factor
-        wr  = metrics.win_rate * 100
-        t   = metrics.total_trades
-        dd  = metrics.max_drawdown * 100
+        sh = metrics.sharpe_ratio
+        pf = metrics.profit_factor
+        wr = metrics.win_rate * 100
+        t = metrics.total_trades
+        dd = metrics.max_drawdown * 100
         tpy = t / 3.0
-        print("  %-28s  %+6.2f%%  S=%5.2f  PF=%5.2f  WR=%4.1f%%  t=%2d (~%3.0f/yr)  DD=%5.2f%%  [%ds]" % (
-            label, ret, sh, pf, wr, t, tpy, dd, elapsed))
+        print(
+            "  %-28s  %+6.2f%%  S=%5.2f  PF=%5.2f  WR=%4.1f%%  t=%2d (~%3.0f/yr)  DD=%5.2f%%  [%ds]"
+            % (label, ret, sh, pf, wr, t, tpy, dd, elapsed)
+        )
         results.append((label, metrics, tpy))
 
     print()
@@ -205,25 +261,26 @@ def main():
     print("=" * 80)
     print()
     full_results = [
-        ("v39 baseline (z=1.8)",    1.82, 9.06, 65.2,  8, -2.69),
-        ("v41a (z=1.6)",            2.00, 7.51, 70.4,  9, -3.01),
-        ("v41b (z=1.4)",            1.77, 4.75, 65.5, 10, -4.34),
-        ("v41c (z=1.2)",            1.87, 5.00, 67.7, 10, -4.34),
-        ("v41d (z=1.0)",            1.32, 2.51, 60.0, 13, -5.84),
-        ("v41e (z=1.4 rd=1)",       0.78, 1.61, 46.7, 10, -6.98),
+        ("v39 baseline (z=1.8)", 1.82, 9.06, 65.2, 8, -2.69),
+        ("v41a (z=1.6)", 2.00, 7.51, 70.4, 9, -3.01),
+        ("v41b (z=1.4)", 1.77, 4.75, 65.5, 10, -4.34),
+        ("v41c (z=1.2)", 1.87, 5.00, 67.7, 10, -4.34),
+        ("v41d (z=1.0)", 1.32, 2.51, 60.0, 13, -5.84),
+        ("v41e (z=1.4 rd=1)", 0.78, 1.61, 46.7, 10, -6.98),
     ]
     for label, sh, pf, wr, tpy, dd in full_results:
         p3 = "PASS" if sh >= 1.5 and tpy >= 50 else ("S-PASS" if sh >= 1.5 else "miss")
-        print("  %-28s  S=%5.2f  PF=%5.2f  WR=%4.1f%%  t=~%2d/yr  DD=%5.2f%%  [%s]" % (
-            label, sh, pf, wr, tpy, dd, p3))
+        print("  %-28s  S=%5.2f  PF=%5.2f  WR=%4.1f%%  t=~%2d/yr  DD=%5.2f%%  [%s]" % (label, sh, pf, wr, tpy, dd, p3))
     for label, m, tpy in results:
-        sh  = m.sharpe_ratio
-        pf  = m.profit_factor
-        wr  = m.win_rate * 100
-        dd  = m.max_drawdown * 100
-        p3  = "PASS" if sh >= 1.5 and tpy >= 50 else ("S-PASS" if sh >= 1.5 else "miss")
-        print("  %-28s  S=%5.2f  PF=%5.2f  WR=%4.1f%%  t=~%2d/yr  DD=%5.2f%%  [%s]" % (
-            label, sh, pf, wr, int(tpy), dd, p3))
+        sh = m.sharpe_ratio
+        pf = m.profit_factor
+        wr = m.win_rate * 100
+        dd = m.max_drawdown * 100
+        p3 = "PASS" if sh >= 1.5 and tpy >= 50 else ("S-PASS" if sh >= 1.5 else "miss")
+        print(
+            "  %-28s  S=%5.2f  PF=%5.2f  WR=%4.1f%%  t=~%2d/yr  DD=%5.2f%%  [%s]"
+            % (label, sh, pf, wr, int(tpy), dd, p3)
+        )
 
     print()
     print("  CONCLUSION:")

@@ -13,8 +13,6 @@ Phase 1, Etape 1.3.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -56,15 +54,11 @@ class VolatilityRegimeSignal:
         if fast_window < 5:
             raise ValueError(f"fast_window must be >= 5, got {fast_window}")
         if slow_window <= fast_window:
-            raise ValueError(
-                f"slow_window ({slow_window}) must be > fast_window ({fast_window})"
-            )
+            raise ValueError(f"slow_window ({slow_window}) must be > fast_window ({fast_window})")
         if entry_threshold <= 0:
             raise ValueError(f"entry_threshold must be > 0, got {entry_threshold}")
         if exit_threshold <= entry_threshold:
-            raise ValueError(
-                f"exit_threshold ({exit_threshold}) must be > entry_threshold ({entry_threshold})"
-            )
+            raise ValueError(f"exit_threshold ({exit_threshold}) must be > entry_threshold ({entry_threshold})")
 
         self.fast_window = fast_window
         self.slow_window = slow_window
@@ -85,7 +79,7 @@ class VolatilityRegimeSignal:
         if len(returns) < self.slow_window:
             return None
 
-        fast_vol = float(returns.iloc[-self.fast_window:].std())
+        fast_vol = float(returns.iloc[-self.fast_window :].std())
         slow_vol = float(returns.rolling(self.slow_window).std().iloc[-1])
 
         if slow_vol < 1e-12:

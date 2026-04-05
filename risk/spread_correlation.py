@@ -27,7 +27,6 @@ concentrated drawdowns from correlated mean-reversion failures.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -131,8 +130,7 @@ class SpreadCorrelationGuard:
 
         if worst_corr > self.config.max_correlation:
             reason = (
-                f"SPREAD_CORR_GUARD: |rho|={worst_corr:.3f} with {worst_pair} "
-                f"> threshold {self.config.max_correlation}"
+                f"SPREAD_CORR_GUARD: |rho|={worst_corr:.3f} with {worst_pair} > threshold {self.config.max_correlation}"
             )
             logger.info(
                 "spread_correlation_entry_rejected",

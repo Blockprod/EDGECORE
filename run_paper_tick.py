@@ -22,10 +22,10 @@ Usage:
     pythonw -B run_paper_tick.py             # silent (Task Scheduler)
 """
 
-import sys
-import os
 import logging
-from datetime import datetime, timedelta
+import os
+import sys
+from datetime import datetime
 from pathlib import Path
 
 # Project root
@@ -39,6 +39,7 @@ CONTINUOUS_MODE = "--continuous" in sys.argv
 # Load .env variables (SMTP, Slack, IBKR, etc.)
 try:
     from dotenv import load_dotenv
+
     load_dotenv(ROOT / ".env")
 except ImportError:
     pass  # python-dotenv not installed — rely on system env vars
@@ -50,7 +51,7 @@ log_file = LOG_DIR / f"edgecore_paper_{datetime.now():%Y%m%d}.log"
 
 # In continuous mode: file-only logging (dashboard replaces console output)
 # In single-tick mode: file + console logging
-_handlers = [logging.FileHandler(log_file, encoding="utf-8")]
+_handlers: list[logging.Handler] = [logging.FileHandler(log_file, encoding="utf-8")]
 if not CONTINUOUS_MODE:
     _handlers.append(logging.StreamHandler(sys.stdout))
 
@@ -64,6 +65,7 @@ log = logging.getLogger("edgecore.paper")
 # Suppress structlog console output in continuous mode
 if CONTINUOUS_MODE:
     import structlog
+
     structlog.configure(
         processors=[
             structlog.stdlib.filter_by_level,
@@ -97,13 +99,11 @@ if CONTINUOUS_MODE:
 # Rich Dashboard — Premium Terminal UI
 # ══════════════════════════════════════════════════════════════════════
 
+from rich import box
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
-from rich.align import Align
-from rich import box
 
 _rich_console = Console(highlight=False)
 
@@ -112,15 +112,16 @@ from monitoring.rich_dashboard import build_dashboard, format_duration
 
 # Color aliases for shutdown message
 _C_ACCENT = "#6366F1"
-_C_DIM    = "#64748B"
-_C_RED    = "#EF4444"
+_C_DIM = "#64748B"
+_C_RED = "#EF4444"
 
 
 def _get_entry_z() -> float:
     """Get current entry z-score threshold."""
     try:
         from config.settings import get_settings
-        return getattr(get_settings().strategy, 'entry_z_score', 2.0)
+
+        return getattr(get_settings().strategy, "entry_z_score", 2.0)
     except Exception:
         return 1.5
 
@@ -132,42 +133,88 @@ def _render_shutdown(tick_count: int, start_time: datetime) -> None:
     t.add_column(style=_C_DIM)
     t.add_column(style=_C_ACCENT)
     t.add_row("Ticks completed", f"[bold {_C_ACCENT}]{tick_count}[/bold {_C_ACCENT}]")
-    t.add_row("Total uptime",    f"[bold {_C_ACCENT}]{format_duration(total)}[/bold {_C_ACCENT}]")
-    t.add_row("Log file",        f"[{_C_DIM}]{log_file}[/{_C_DIM}]")
+    t.add_row("Total uptime", f"[bold {_C_ACCENT}]{format_duration(total)}[/bold {_C_ACCENT}]")
+    t.add_row("Log file", f"[{_C_DIM}]{log_file}[/{_C_DIM}]")
     _rich_console.print()
-    _rich_console.print(Panel(
-        t,
-        title=f"[bold {_C_RED}]■  EDGECORE — Paper Trading Stopped[/bold {_C_RED}]",
-        border_style=_C_RED,
-        box=box.ROUNDED,
-        padding=(1, 3),
-    ))
+    _rich_console.print(
+        Panel(
+            t,
+            title=f"[bold {_C_RED}]■  EDGECORE — Paper Trading Stopped[/bold {_C_RED}]",
+            border_style=_C_RED,
+            box=box.ROUNDED,
+            padding=(1, 3),
+        )
+    )
     _rich_console.print()
+
 
 # ── Universe (same 31 symbols as backtest v22) ──────────────────────
 SYMBOLS = [
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "XOM", "CVX", "COP", "EOG",
-    "KO", "PEP", "PG", "CL", "WMT",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "NEE", "DUK", "SO",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
+    "NEE",
+    "DUK",
+    "SO",
 ]
 
 SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
     "AVGO": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
     "WMT": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
 }
 
 
@@ -183,6 +230,7 @@ def main() -> int:
     slack_alerter = None
     try:
         from monitoring.email_alerter import EmailAlerter
+
         email_alerter = EmailAlerter.from_env()
         if email_alerter:
             email_alerter.trading_mode = "paper"
@@ -194,6 +242,7 @@ def main() -> int:
 
     try:
         from monitoring.slack_alerter import SlackAlerter
+
         slack_alerter = SlackAlerter(webhook_url=os.getenv("SLACK_WEBHOOK_URL"))
         if slack_alerter.enabled:
             log.info("Slack alerter initialised")
@@ -221,19 +270,22 @@ def main() -> int:
 
         log.info(
             "Strategy params: entry_z=%.1f exit_z=%.1f fdr_q=%.2f corr=%.2f hl=%d",
-            strat.entry_z_score, strat.exit_z_score,
-            strat.fdr_q_level, strat.min_correlation, strat.max_half_life,
+            strat.entry_z_score,
+            strat.exit_z_score,
+            strat.fdr_q_level,
+            strat.min_correlation,
+            strat.max_half_life,
         )
 
         # ── 2. Initialize paper trading runner ───────────────────────
-        from live_trading.runner import TradingLoopConfig
         from live_trading.paper_runner import PaperTradingRunner
+        from live_trading.runner import TradingLoopConfig
 
         config = TradingLoopConfig(
             symbols=SYMBOLS,
             sector_map=SECTOR_MAP,
-            bar_interval_seconds=86400,      # not used in single-tick
-            pair_rediscovery_hours=0,         # force rediscovery every tick
+            bar_interval_seconds=86400,  # not used in single-tick
+            pair_rediscovery_hours=0,  # force rediscovery every tick
             max_positions=4,
             initial_capital=100_000.0,
             allocation_per_pair_pct=90.0,
@@ -262,10 +314,11 @@ def main() -> int:
 
         if continuous:
             log.info("CONTINUOUS MODE — interval=%ds (Ctrl+C to stop)", interval)
-            import time
             import signal
             import threading
-            tick_count   = 0
+            import time
+
+            tick_count = 0
             tick_elapsed = 0.0
 
             # ── Reliable Ctrl+C on Windows ───────────────────────────
@@ -282,32 +335,43 @@ def main() -> int:
 
             with Live(
                 build_dashboard(
-                    runner, tick_count=0, tick_elapsed=0,
-                    start_time=start, interval=interval,
-                    status="INITIALIZING", sector_map=SECTOR_MAP,
+                    runner,
+                    tick_count=0,
+                    tick_elapsed=0,
+                    start_time=start,
+                    interval=interval,
+                    status="INITIALIZING",
+                    sector_map=SECTOR_MAP,
                 ),
                 console=_rich_console,
                 screen=True,
                 auto_refresh=False,
                 transient=False,
             ) as live:
-
                 while not _stop_event.is_set():
                     tick_count += 1
-                    tick_start  = datetime.now()
+                    tick_start = datetime.now()
                     log.info("Tick #%d starting at %s", tick_count, tick_start.isoformat())
 
-                    live.update(build_dashboard(
-                        runner, tick_count=tick_count, tick_elapsed=tick_elapsed,
-                        start_time=start, interval=interval, status="COMPUTING", sector_map=SECTOR_MAP,
-                    ))
+                    live.update(
+                        build_dashboard(
+                            runner,
+                            tick_count=tick_count,
+                            tick_elapsed=tick_elapsed,
+                            start_time=start,
+                            interval=interval,
+                            status="COMPUTING",
+                            sector_map=SECTOR_MAP,
+                        )
+                    )
                     live.refresh()
 
                     runner._tick()
                     tick_elapsed = (datetime.now() - tick_start).total_seconds()
                     log.info(
                         "Tick #%d completed in %.1fs — pairs=%d positions=%d",
-                        tick_count, tick_elapsed,
+                        tick_count,
+                        tick_elapsed,
                         len(runner._active_pairs),
                         len(runner._positions),
                     )
@@ -318,12 +382,18 @@ def main() -> int:
                     while remaining >= 0 and not _stop_event.is_set():
                         now_t = time.monotonic()
                         if now_t - last_render >= 1.0:
-                            live.update(build_dashboard(
-                                runner, tick_count=tick_count,
-                                tick_elapsed=tick_elapsed,
-                                start_time=start, interval=interval,
-                                status="RUNNING", next_tick_in=remaining, sector_map=SECTOR_MAP,
-                            ))
+                            live.update(
+                                build_dashboard(
+                                    runner,
+                                    tick_count=tick_count,
+                                    tick_elapsed=tick_elapsed,
+                                    start_time=start,
+                                    interval=interval,
+                                    status="RUNNING",
+                                    next_tick_in=remaining,
+                                    sector_map=SECTOR_MAP,
+                                )
+                            )
                             live.refresh()
                             last_render = now_t
                             remaining -= 1
@@ -331,12 +401,18 @@ def main() -> int:
 
                 # ── STOPPED state: shown for 2 s then terminal restored ──
                 log.info("Stop signal received — stopped after %d ticks.", tick_count)
-                live.update(build_dashboard(
-                    runner, tick_count=tick_count,
-                    tick_elapsed=tick_elapsed,
-                    start_time=start, interval=interval,
-                    status="STOPPED", next_tick_in=0, sector_map=SECTOR_MAP,
-                ))
+                live.update(
+                    build_dashboard(
+                        runner,
+                        tick_count=tick_count,
+                        tick_elapsed=tick_elapsed,
+                        start_time=start,
+                        interval=interval,
+                        status="STOPPED",
+                        next_tick_in=0,
+                        sector_map=SECTOR_MAP,
+                    )
+                )
                 live.refresh()
                 time.sleep(2)
 

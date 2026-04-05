@@ -23,6 +23,7 @@ from backtests.runner import BacktestRunner, _generate_cointegrated_pair
 # Helpers
 # --------------------------------------------------
 
+
 def _make_uncorrelated_prices(n: int = 200, seed: int = 99) -> pd.DataFrame:
     """Create two completely uncorrelated random walks - will NOT be cointegrated."""
     rng = np.random.RandomState(seed)
@@ -37,6 +38,7 @@ def _make_uncorrelated_prices(n: int = 200, seed: int = 99) -> pd.DataFrame:
 # Core Sprint 2.6 Tests: No Synthetic Fallback
 # --------------------------------------------------
 
+
 class TestNoSyntheticFallback:
     """Verify the synthetic fallback block was removed."""
 
@@ -49,6 +51,7 @@ class TestNoSyntheticFallback:
     def test_no_syntha_synthb_in_runner(self):
         """The SYNTHA/SYNTHB synthetic symbols should not appear in runner source."""
         import inspect
+
         source = inspect.getsource(BacktestRunner.run)
         assert "SYNTHA" not in source
         assert "SYNTHB" not in source
@@ -61,6 +64,7 @@ class TestNoSyntheticFallback:
         """
         runner = BacktestRunner()
         import warnings
+
         with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             with pytest.raises(NotImplementedError, match="look-ahead bias"):
@@ -73,6 +77,7 @@ class TestNoSyntheticFallback:
         """
         runner = BacktestRunner()
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             with pytest.raises(NotImplementedError):
@@ -87,6 +92,7 @@ class TestNoSyntheticFallback:
         """C-02: run() raises NotImplementedError — no trades by definition."""
         runner = BacktestRunner()
         import warnings
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             with pytest.raises(NotImplementedError):
@@ -97,14 +103,13 @@ class TestNoSyntheticFallback:
                     use_synthetic=True,
                 )
 
-        assert result.total_trades == 0
-
     def test_no_synthetic_columns_added(self):
         """
         When 0 pairs found, no SYNTHA/SYNTHB columns should be added to prices_df.
         We verify via source code inspection that no mutation happens.
         """
         import inspect
+
         source = inspect.getsource(BacktestRunner.run)
         # After Sprint 2.6, there should be no SYNTHA/SYNTHB injection
         assert "SYNTHA" not in source
@@ -116,6 +121,7 @@ class TestNoSyntheticFallback:
 # --------------------------------------------------
 # Synthetic data loading still works (use_synthetic=True)
 # --------------------------------------------------
+
 
 class TestSyntheticDataLoading:
     """
@@ -148,6 +154,7 @@ class TestSyntheticDataLoading:
 # BacktestMetrics note field
 # --------------------------------------------------
 
+
 class TestBacktestMetricsNote:
     """Verify note field propagation."""
 
@@ -176,8 +183,9 @@ class TestBacktestMetricsNote:
 # Regression safety: run_unified path
 # --------------------------------------------------
 
+
 class TestRunUnifiedNoPairs:
-    """run_unified delegates to StrategyBacktestSimulator - 
+    """run_unified delegates to StrategyBacktestSimulator -
     verify it doesn't inject synthetic data either."""
 
     def test_run_unified_no_synthetic_injection(self):
@@ -190,7 +198,8 @@ class TestRunUnifiedNoPairs:
 
         prices_df = _make_uncorrelated_prices(n=200)
         simulator = StrategyBacktestSimulator(
-            cost_model=CostModel(), initial_capital=100_000,
+            cost_model=CostModel(),
+            initial_capital=100_000,
         )
         result = simulator.run(prices_df)
 

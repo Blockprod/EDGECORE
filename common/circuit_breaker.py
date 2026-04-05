@@ -8,11 +8,6 @@ Provides:
 - Per-endpoint circuit breakers
 """
 
-from typing import Callable, TypeVar, Any, Optional, Dict
-from enum import Enum
-from datetime import datetime, timezone
-from structlog import get_logger
-from dataclasses import dataclass, field
 import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime

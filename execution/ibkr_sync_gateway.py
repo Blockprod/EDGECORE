@@ -195,7 +195,12 @@ class IBGatewaySync:
             return list(self.wrapper.contract_details)
 
     def get_historical_data(
-        self, symbol: str, duration: str = "1 Y", bar_size: str = "1 day", what_to_show: str = "TRADES"
+        self,
+        symbol: str,
+        duration: str = "1 Y",
+        bar_size: str = "1 day",
+        what_to_show: str = "TRADES",
+        end_date: str = "",
     ) -> list[Any] | None:
         if not self.connect():
             return None
@@ -219,7 +224,7 @@ class IBGatewaySync:
         self.client.reqHistoricalData(
             req_id,
             contract,
-            endDateTime="",
+            endDateTime=end_date,
             durationStr=duration,
             barSizeSetting=bar_size,
             whatToShow=what_to_show,

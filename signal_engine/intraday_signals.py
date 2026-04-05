@@ -15,7 +15,6 @@ Target: augment daily signals with intraday timing,
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -27,6 +26,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 # 3.2.1 ÔÇö Intraday Mean-Reversion Signal (fast z-score)
 # ---------------------------------------------------------------------------
+
 
 class IntradayMeanReversionSignal:
     """Fast z-score on 5-min spread for intraday timing.
@@ -61,7 +61,7 @@ class IntradayMeanReversionSignal:
         if len(s) < self.lookback:
             return 0.0
 
-        window = s.iloc[-self.lookback:]
+        window = s.iloc[-self.lookback :]
         mu = window.mean()
         sigma = window.std()
         if sigma < 1e-10:
@@ -75,6 +75,7 @@ class IntradayMeanReversionSignal:
 # ---------------------------------------------------------------------------
 # 3.2.2 ÔÇö Gap Reversion Signal
 # ---------------------------------------------------------------------------
+
 
 class GapReversionSignal:
     """Overnight gap detection and mean-reversion signal.
@@ -144,6 +145,7 @@ class GapReversionSignal:
 # 3.2.3 ÔÇö Volume Profile Signal
 # ---------------------------------------------------------------------------
 
+
 class VolumeProfileSignal:
     """Volume-weighted spread confirmation signal.
 
@@ -189,7 +191,7 @@ class VolumeProfileSignal:
             return 0.0
 
         # Combined volume
-        vol_combined = (volume_a + volume_b).iloc[-self.lookback:]
+        vol_combined = (volume_a + volume_b).iloc[-self.lookback :]
         vol_mean = vol_combined.mean()
         if vol_mean < 1e-10:
             return 0.0
@@ -198,7 +200,7 @@ class VolumeProfileSignal:
         vol_ratio = current_vol / vol_mean
 
         # Spread z-score
-        s = spread.iloc[-self.lookback:]
+        s = spread.iloc[-self.lookback :]
         mu = s.mean()
         sigma = s.std()
         if sigma < 1e-10:
@@ -220,9 +222,11 @@ class VolumeProfileSignal:
 # Composite intraday signal wrapper
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class IntradaySignalResult:
     """Aggregated intraday signal output."""
+
     intraday_mr_score: float = 0.0
     gap_score: float = 0.0
     volume_score: float = 0.0

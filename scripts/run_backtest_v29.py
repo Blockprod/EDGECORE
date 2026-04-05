@@ -47,69 +47,110 @@ from backtests.runner import BacktestRunner
 SYMBOLS = [
     "SPY",  # Index -- required for market regime filter
     # Technology
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
     # Financials (strong mean-reversion sector)
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
     # Energy
-    "XOM", "CVX", "COP", "EOG",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
     # Consumer Staples (defensive / low-vol -- good MR)
-    "KO", "PEP", "PG", "CL", "WMT",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
     # Industrials
-    "CAT", "HON", "DE", "GE", "RTX",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
     # Utilities (best MR sector)
-    "NEE", "DUK", "SO",
+    "NEE",
+    "DUK",
+    "SO",
 ]
 
 SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
     "AVGO": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
     "WMT": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
 }
 
 # == v29 Optimised Parameters =============================================
-ENTRY_Z = 2.0           # Proven threshold
-EXIT_Z = 0.5            # Take profit faster (was 0.3)
-ALLOC_PCT = 30.0        # Per-pair allocation (was 90%) -- diversification
-HEAT = 2.0              # Max portfolio heat 200% (was 400%)
-STOP_PCT = 0.05         # 5% P&L stop per position (was 10%) -- tighter
-MIN_CORR = 0.70         # High quality pairs only
-MAX_HALF_LIFE = 45      # Only fast-reverting pairs (was 120)
-FDR_Q = 0.20            # BH-FDR threshold
-REDISCOVERY = 3         # Pair rediscovery interval (bars)
-MIN_SPREAD = 0.50       # Min absolute spread ($)
-Z_SCORE_STOP = 3.0      # Z-score stop-loss (was 3.5) -- tighter
+ENTRY_Z = 2.0  # Proven threshold
+EXIT_Z = 0.5  # Take profit faster (was 0.3)
+ALLOC_PCT = 30.0  # Per-pair allocation (was 90%) -- diversification
+HEAT = 2.0  # Max portfolio heat 200% (was 400%)
+STOP_PCT = 0.05  # 5% P&L stop per position (was 10%) -- tighter
+MIN_CORR = 0.70  # High quality pairs only
+MAX_HALF_LIFE = 45  # Only fast-reverting pairs (was 120)
+FDR_Q = 0.20  # BH-FDR threshold
+REDISCOVERY = 3  # Pair rediscovery interval (bars)
+MIN_SPREAD = 0.50  # Min absolute spread ($)
+Z_SCORE_STOP = 3.0  # Z-score stop-loss (was 3.5) -- tighter
 # Directional regime (NEW)
 REGIME_DIRECTIONAL = True
-TREND_LONG_SIZING = 0.75   # Longs at 75% in TRENDING
+TREND_LONG_SIZING = 0.75  # Longs at 75% in TRENDING
 # Shorts
-SHORT_MULT = 0.50       # Shorts at 50% in NEUTRAL (irrelevant in TRENDING -- blocked)
+SHORT_MULT = 0.50  # Shorts at 50% in NEUTRAL (irrelevant in TRENDING -- blocked)
 DISABLE_SHORTS_BULL = True  # No shorts at all in TRENDING
 # Time stop
-TIME_STOP_MULT = 1.5    # 1.5x half-life (was 2.0)
-MAX_HOLD_DAYS = 30      # Cap at 30 days (was 60)
+TIME_STOP_MULT = 1.5  # 1.5x half-life (was 2.0)
+MAX_HOLD_DAYS = 30  # Cap at 30 days (was 60)
 # Blacklist
-BL_MAX_LOSSES = 3       # Blacklist after 3 consecutive losses (was 2)
-BL_COOLDOWN = 20        # 20-day cooldown (was 30)
+BL_MAX_LOSSES = 3  # Blacklist after 3 consecutive losses (was 2)
+BL_COOLDOWN = 20  # 20-day cooldown (was 30)
 # Weekly gate
-WEEKLY_Z_GATE = 0.5     # Lower weekly z gate (was 1.0) -- more entries
+WEEKLY_Z_GATE = 0.5  # Lower weekly z gate (was 1.0) -- more entries
 
 
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="EDGECORE Backtest v29 -- Directional Regime Strategy"
-    )
+    parser = argparse.ArgumentParser(description="EDGECORE Backtest v29 -- Directional Regime Strategy")
     parser.add_argument("--start", default="2023-03-04")
     parser.add_argument("--end", default="2026-03-04")
     parser.add_argument("--capital", type=float, default=100_000)
@@ -117,6 +158,7 @@ def main():
 
     # == Configure settings (Singleton) ====================================
     from config.settings import get_settings
+
     settings = get_settings()
 
     # Strategy core
@@ -159,32 +201,31 @@ def main():
     # The simulator creates TimeStopManager() which reads TimeStopConfig defaults.
     # We change the class-level defaults before the simulator instantiates it.
     from execution.time_stop import TimeStopConfig as _TSC
+
     _TSC.half_life_multiplier = TIME_STOP_MULT
     _TSC.max_days_cap = MAX_HOLD_DAYS
     _TSC.default_max_bars = MAX_HOLD_DAYS
 
     # FDR level
-    if hasattr(settings.strategy, 'fdr_q_level'):
+    if hasattr(settings.strategy, "fdr_q_level"):
         settings.strategy.fdr_q_level = FDR_Q
 
     runner = BacktestRunner()
     runner.config.initial_capital = args.capital
 
     n_intra = sum(
-        1 for i, s1 in enumerate(SYMBOLS)
-        for s2 in SYMBOLS[i + 1:]
-        if SECTOR_MAP.get(s1) == SECTOR_MAP.get(s2)
+        1 for i, s1 in enumerate(SYMBOLS) for s2 in SYMBOLS[i + 1 :] if SECTOR_MAP.get(s1) == SECTOR_MAP.get(s2)
     )
 
     print("=" * 70)
     print("  EDGECORE BACKTEST v29 -- Directional Regime Strategy")
     print("=" * 70)
-    print(f"  Symbols:      {len(SYMBOLS)} ({len(SYMBOLS)-1} trading + SPY regime ref)")
+    print(f"  Symbols:      {len(SYMBOLS)} ({len(SYMBOLS) - 1} trading + SPY regime ref)")
     print(f"  Pairs:        {n_intra} intra-sector")
     print(f"  Period:       {args.start} -> {args.end} (3 years rolling)")
     print(f"  Capital:      ${args.capital:,.0f}")
-    print(f"  Alloc/pair:   {ALLOC_PCT}% | Heat: {HEAT*100:.0f}%")
-    print(f"  Stop:         {STOP_PCT*100:.0f}% | z_stop={Z_SCORE_STOP}")
+    print(f"  Alloc/pair:   {ALLOC_PCT}% | Heat: {HEAT * 100:.0f}%")
+    print(f"  Stop:         {STOP_PCT * 100:.0f}% | z_stop={Z_SCORE_STOP}")
     print(f"  Z-score:      entry={ENTRY_Z}, exit={EXIT_Z}")
     print(f"  Min spread:   ${MIN_SPREAD:.2f}")
     print(f"  Half-life:    max={MAX_HALF_LIFE}d | Time stop={TIME_STOP_MULT}x HL (cap {MAX_HOLD_DAYS}d)")
@@ -229,7 +270,7 @@ def main():
         f.write(f"{'=' * 60}\n")
         f.write(f"Period: {args.start} -> {args.end}\n")
         f.write(f"Capital: ${args.capital:,.0f}\n")
-        f.write(f"Alloc: {ALLOC_PCT}% | Heat: {HEAT*100:.0f}%\n")
+        f.write(f"Alloc: {ALLOC_PCT}% | Heat: {HEAT * 100:.0f}%\n")
         f.write(f"Z-score: entry={ENTRY_Z}, exit={EXIT_Z} | min_spread=${MIN_SPREAD}\n")
         f.write(f"Half-life max={MAX_HALF_LIFE} | Time stop={TIME_STOP_MULT}x HL (cap {MAX_HOLD_DAYS}d)\n")
         f.write(f"Directional regime: ON (trend_long_sizing={TREND_LONG_SIZING})\n")
@@ -246,11 +287,11 @@ def main():
     print("=" * 70)
 
     checks = []
-    win_rate = getattr(metrics, 'win_rate', None)
-    max_dd = getattr(metrics, 'max_drawdown_pct', None)
-    total_return = getattr(metrics, 'total_return_pct', None)
-    sharpe = getattr(metrics, 'sharpe_ratio', None)
-    total_trades = getattr(metrics, 'total_trades', None)
+    win_rate = getattr(metrics, "win_rate", None)
+    max_dd = getattr(metrics, "max_drawdown_pct", None)
+    total_return = getattr(metrics, "total_return_pct", None)
+    sharpe = getattr(metrics, "sharpe_ratio", None)
+    total_trades = getattr(metrics, "total_trades", None)
 
     if total_trades is not None:
         checks.append(("Total trades", f"{total_trades}", total_trades >= 10))
@@ -284,8 +325,6 @@ def main():
     # == Detailed trade analysis ===========================================
     print("\n--- Trade Breakdown ---")
     # Count long vs short wins/losses from the trade log
-    long_count = 0
-    short_count = 0
     # These would need the internal trades list, approximate from metrics
     if total_trades is not None and total_trades > 0:
         if win_rate is not None:

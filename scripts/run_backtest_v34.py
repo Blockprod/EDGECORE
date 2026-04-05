@@ -19,50 +19,119 @@ from config.settings import get_settings
 V34_SYMBOLS = [
     # === BASE (37) ===
     "SPY",
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "XOM", "CVX", "COP", "EOG",
-    "KO", "PEP", "PG", "CL", "WMT",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "NEE", "DUK", "SO",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
+    "NEE",
+    "DUK",
+    "SO",
+    "JNJ",
+    "PFE",
+    "UNH",
+    "MRK",
+    "ABBV",
     # === KEPT from Phase 1.5 (17) ===
     # Active winners (improve Sharpe/PF)
-    "INTC", "QCOM", "TXN", "ADBE", "CRM", "CSCO",  # tech
-    "XLK",                                            # tech ETF
-    "MCD",                                            # consumer
+    "INTC",
+    "QCOM",
+    "TXN",
+    "ADBE",
+    "CRM",
+    "CSCO",  # tech
+    "XLK",  # tech ETF
+    "MCD",  # consumer
     # Neutral (diversification, cross-pair potential)
-    "SLB", "MPC",                                     # energy
-    "LLY", "TMO", "ABT", "BMY",                      # healthcare
-    "NKE", "HD", "LOW",                               # consumer disc
+    "SLB",
+    "MPC",  # energy
+    "LLY",
+    "TMO",
+    "ABT",
+    "BMY",  # healthcare
+    "NKE",
+    "HD",
+    "LOW",  # consumer disc
 ]
 
 V34_SECTOR_MAP = {
     # Base
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
     "AVGO": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
     "WMT": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
-    "JNJ": "healthcare", "PFE": "healthcare", "UNH": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
+    "JNJ": "healthcare",
+    "PFE": "healthcare",
+    "UNH": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
     # New
-    "INTC": "technology", "QCOM": "technology", "TXN": "technology",
-    "ADBE": "technology", "CRM": "technology", "CSCO": "technology",
+    "INTC": "technology",
+    "QCOM": "technology",
+    "TXN": "technology",
+    "ADBE": "technology",
+    "CRM": "technology",
+    "CSCO": "technology",
     "XLK": "technology",
     "MCD": "consumer_staples",
-    "SLB": "energy", "MPC": "energy",
-    "LLY": "healthcare", "TMO": "healthcare", "ABT": "healthcare",
+    "SLB": "energy",
+    "MPC": "energy",
+    "LLY": "healthcare",
+    "TMO": "healthcare",
+    "ABT": "healthcare",
     "BMY": "healthcare",
-    "NKE": "consumer_discretionary", "HD": "consumer_discretionary",
+    "NKE": "consumer_discretionary",
+    "HD": "consumer_discretionary",
     "LOW": "consumer_discretionary",
 }
 
@@ -112,12 +181,16 @@ def main():
     s.pair_blacklist.max_consecutive_losses = 5
     s.pair_blacklist.cooldown_days = 10
     s.risk.max_concurrent_positions = 10
-    if hasattr(s.strategy, 'fdr_q_level'):
+    if hasattr(s.strategy, "fdr_q_level"):
         s.strategy.fdr_q_level = 0.25
 
-    time_stop = TimeStopManager(TimeStopConfig(
-        half_life_multiplier=1.5, max_days_cap=30, default_max_bars=30,
-    ))
+    time_stop = TimeStopManager(
+        TimeStopConfig(
+            half_life_multiplier=1.5,
+            max_days_cap=30,
+            default_max_bars=30,
+        )
+    )
 
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
@@ -126,10 +199,15 @@ def main():
     t0 = time.time()
 
     metrics = runner.run_unified(
-        symbols=V34_SYMBOLS, start_date="2023-03-04", end_date="2026-03-04",
-        sector_map=V34_SECTOR_MAP, pair_rediscovery_interval=2,
-        allocation_per_pair_pct=50.0, max_position_loss_pct=0.07,
-        max_portfolio_heat=3.0, time_stop=time_stop,
+        symbols=V34_SYMBOLS,
+        start_date="2023-03-04",
+        end_date="2026-03-04",
+        sector_map=V34_SECTOR_MAP,
+        pair_rediscovery_interval=2,
+        allocation_per_pair_pct=50.0,
+        max_position_loss_pct=0.07,
+        max_portfolio_heat=3.0,
+        time_stop=time_stop,
     )
 
     elapsed = time.time() - t0
@@ -144,7 +222,7 @@ def main():
         "win_rate": round(metrics.win_rate * 100, 1),
         "trades": metrics.total_trades,
         "max_dd": round(metrics.max_drawdown * 100, 2),
-        "calmar": round(metrics.calmar_ratio, 2),
+        "calmar": round(metrics.calmar_ratio or 0.0, 2),
     }
 
     # v32j baseline for comparison
@@ -153,22 +231,20 @@ def main():
     print("=" * 75)
     print("  v34 RESULTS vs v32j BASELINE")
     print("=" * 75)
-    print(f"  Return:  {r['return_pct']:+.2f}%  (v32j: +{base['return_pct']}%)  "
-          f"delta={r['return_pct'] - base['return_pct']:+.2f}%")
-    print(f"  Sharpe:  {r['sharpe']:.2f}   (v32j: {base['sharpe']})  "
-          f"delta={r['sharpe'] - base['sharpe']:+.2f}")
-    print(f"  PF:      {r['pf']:.2f}   (v32j: {base['pf']})  "
-          f"delta={r['pf'] - base['pf']:+.2f}")
+    print(
+        f"  Return:  {r['return_pct']:+.2f}%  (v32j: +{base['return_pct']}%)  "
+        f"delta={r['return_pct'] - base['return_pct']:+.2f}%"
+    )
+    print(f"  Sharpe:  {r['sharpe']:.2f}   (v32j: {base['sharpe']})  delta={r['sharpe'] - base['sharpe']:+.2f}")
+    print(f"  PF:      {r['pf']:.2f}   (v32j: {base['pf']})  delta={r['pf'] - base['pf']:+.2f}")
     print(f"  WR:      {r['win_rate']:.1f}%")
-    print(f"  Trades:  {r['trades']}     (v32j: {base['trades']})  "
-          f"delta={r['trades'] - base['trades']:+d}")
+    print(f"  Trades:  {r['trades']}     (v32j: {base['trades']})  delta={r['trades'] - base['trades']:+d}")
     print(f"  MaxDD:   {r['max_dd']:.2f}%  (v32j: {base['max_dd']}%)")
     print(f"  Calmar:  {r['calmar']:.2f}")
     print()
 
     # Verdict
-    improved = (r['sharpe'] >= base['sharpe'] and r['pf'] >= base['pf']
-                and r['trades'] >= base['trades'])
+    improved = r["sharpe"] >= base["sharpe"] and r["pf"] >= base["pf"] and r["trades"] >= base["trades"]
     if improved:
         print("  ✅ v34 PASSES — adopt as new baseline")
     else:

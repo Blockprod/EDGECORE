@@ -24,7 +24,6 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Dict
 
 from structlog import get_logger
 
@@ -34,15 +33,16 @@ logger = get_logger(__name__)
 @dataclass
 class RateLimitConfig:
     """Rate limit budget configuration."""
+
     # Global message rate
-    max_messages_per_second: int = 45       # conservative (IBKR limit: 50)
+    max_messages_per_second: int = 45  # conservative (IBKR limit: 50)
     # Historical data pacing
-    max_historical_per_10min: int = 55      # conservative (IBKR limit: 60)
+    max_historical_per_10min: int = 55  # conservative (IBKR limit: 60)
     historical_min_interval_sec: float = 0.5  # min gap between hist requests
     # Scanner pacing
-    max_scanner_concurrent: int = 8         # conservative (IBKR limit: 10)
+    max_scanner_concurrent: int = 8  # conservative (IBKR limit: 10)
     # Contract details pacing
-    max_contract_per_second: int = 10       # conservative estimate
+    max_contract_per_second: int = 10  # conservative estimate
 
 
 class _SlidingWindowCounter:
@@ -125,18 +125,10 @@ class IBKRRateLimiter:
 
         # Category-specific sliding windows
         self._windows: dict[str, _SlidingWindowCounter] = {
-            "message": _SlidingWindowCounter(
-                self.config.max_messages_per_second, 1.0
-            ),
-            "historical": _SlidingWindowCounter(
-                self.config.max_historical_per_10min, 600.0
-            ),
-            "contract": _SlidingWindowCounter(
-                self.config.max_contract_per_second, 1.0
-            ),
-            "scanner": _SlidingWindowCounter(
-                self.config.max_scanner_concurrent, 1.0
-            ),
+            "message": _SlidingWindowCounter(self.config.max_messages_per_second, 1.0),
+            "historical": _SlidingWindowCounter(self.config.max_historical_per_10min, 600.0),
+            "contract": _SlidingWindowCounter(self.config.max_contract_per_second, 1.0),
+            "scanner": _SlidingWindowCounter(self.config.max_scanner_concurrent, 1.0),
         }
         self._lock = threading.Lock()
         self._total_waits = 0.0
@@ -200,9 +192,7 @@ class IBKRRateLimiter:
         return {
             "total_acquires": self._total_acquires,
             "total_wait_seconds": round(self._total_waits, 2),
-            "avg_wait_ms": round(
-                (self._total_waits / max(1, self._total_acquires)) * 1000, 1
-            ),
+            "avg_wait_ms": round((self._total_waits / max(1, self._total_acquires)) * 1000, 1),
             "current_msg_rate": self._windows["message"].current_count,
             "current_hist_10min": self._windows["historical"].current_count,
         }

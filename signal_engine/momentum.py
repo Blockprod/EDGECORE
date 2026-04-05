@@ -15,7 +15,6 @@ v31 ÔÇö Phase 1, Etape 2.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -28,19 +27,22 @@ logger = get_logger(__name__)
 # Data classes
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MomentumResult:
     """Output of the momentum overlay computation."""
-    relative_strength: float       # RS = ret_A - ret_B over lookback
-    momentum_score: float          # Normalised score in [-1, 1]
-    confirms_signal: bool          # True if momentum agrees with z-score side
-    adjusted_strength: float       # Final signal strength after adjustment
-    raw_strength: float            # Original z-score-based strength
+
+    relative_strength: float  # RS = ret_A - ret_B over lookback
+    momentum_score: float  # Normalised score in [-1, 1]
+    confirms_signal: bool  # True if momentum agrees with z-score side
+    adjusted_strength: float  # Final signal strength after adjustment
+    raw_strength: float  # Original z-score-based strength
 
 
 # ---------------------------------------------------------------------------
 # MomentumOverlay
 # ---------------------------------------------------------------------------
+
 
 class MomentumOverlay:
     """

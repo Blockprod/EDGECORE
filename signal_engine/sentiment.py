@@ -18,7 +18,6 @@ Pair score = sym1_sentiment - sym2_sentiment.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -30,10 +29,11 @@ logger = get_logger(__name__)
 @dataclass
 class SentimentSnapshot:
     """Sentiment metrics for a single symbol."""
-    momentum_divergence: float   # Price vs sector momentum divergence
-    conviction: float            # Volume-weighted momentum conviction
-    surprise_factor: float       # Cross-sectional return anomaly
-    composite: float             # Weighted composite [-1, 1]
+
+    momentum_divergence: float  # Price vs sector momentum divergence
+    conviction: float  # Volume-weighted momentum conviction
+    surprise_factor: float  # Cross-sectional return anomaly
+    composite: float  # Weighted composite [-1, 1]
 
 
 class SentimentSignal:
@@ -102,7 +102,7 @@ class SentimentSignal:
         if len(returns) < self.lookback:
             return
 
-        recent_returns = returns.iloc[-self.lookback:]
+        recent_returns = returns.iloc[-self.lookback :]
         universe_mean = recent_returns.mean(axis=1)  # daily cross-sectional mean
 
         # Pre-compute sector averages
@@ -127,7 +127,7 @@ class SentimentSignal:
             if sym_returns is None or len(sym_returns) < self.lookback:
                 continue
 
-            sym_recent = sym_returns.iloc[-self.lookback:]
+            sym_recent = sym_returns.iloc[-self.lookback :]
 
             # --- 1. Momentum divergence ---
             sector = sector_map.get(sym) if sector_map else None
@@ -175,12 +175,12 @@ class SentimentSignal:
             self._history[sym].append(raw_composite)
             # Keep bounded history
             if len(self._history[sym]) > self.smoothing * 3:
-                self._history[sym] = self._history[sym][-self.smoothing * 3:]
+                self._history[sym] = self._history[sym][-self.smoothing * 3 :]
 
             if len(self._history[sym]) >= self.smoothing:
                 alpha = 2.0 / (self.smoothing + 1)
                 ema = self._history[sym][-self.smoothing]
-                for v in self._history[sym][-self.smoothing + 1:]:
+                for v in self._history[sym][-self.smoothing + 1 :]:
                     ema = alpha * v + (1 - alpha) * ema
                 composite = float(np.clip(ema, -1.0, 1.0))
             else:

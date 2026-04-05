@@ -2,9 +2,6 @@
 
 # pyright: reportUnusedVariable=false
 
-from unittest.mock import patch, MagicMock
-from monitoring.email_alerter import EmailAlerter
-import smtplib
 import os
 import smtplib
 from unittest.mock import MagicMock, patch

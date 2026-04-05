@@ -37,75 +37,129 @@ from execution.time_stop import TimeStopConfig, TimeStopManager
 # -- Universe (identical to v41a) --------------------------------------------
 WF_SYMBOLS = [
     "SPY",
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO", "XLK",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "XOM", "CVX", "COP", "EOG",
-    "KO", "PEP", "PG", "CL", "WMT",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "NEE", "DUK", "SO",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
+    "XLK",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
+    "NEE",
+    "DUK",
+    "SO",
+    "JNJ",
+    "PFE",
+    "UNH",
+    "MRK",
+    "ABBV",
     "MCD",
 ]
 
 WF_SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
-    "AVGO": "technology", "XLK": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
+    "AVGO": "technology",
+    "XLK": "technology",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
-    "WMT": "consumer_staples", "MCD": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
-    "JNJ": "healthcare", "PFE": "healthcare", "UNH": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
+    "WMT": "consumer_staples",
+    "MCD": "consumer_staples",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
+    "JNJ": "healthcare",
+    "PFE": "healthcare",
+    "UNH": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
     "SPY": "benchmark",
 }
+
 
 # -- v41a frozen params -------------------------------------------------------
 def _apply_v41a_settings():
     s = get_settings()
-    s.strategy.lookback_window             = 120
+    s.strategy.lookback_window = 120
     s.strategy.additional_lookback_windows = [63]
-    s.strategy.entry_z_score               = 1.6
-    s.strategy.exit_z_score                = 0.2
-    s.strategy.entry_z_min_spread          = 0.30
-    s.strategy.z_score_stop                = 2.5
-    s.strategy.min_correlation             = 0.65
-    s.strategy.max_half_life               = 60
-    s.strategy.max_position_loss_pct       = 0.03
-    s.strategy.internal_max_drawdown_pct   = 0.12
-    s.strategy.use_kalman                  = True
-    s.strategy.bonferroni_correction       = True
-    s.strategy.johansen_confirmation       = True
-    s.strategy.newey_west_consensus        = True
-    s.strategy.weekly_zscore_entry_gate    = 0.3
-    s.strategy.regime_directional_filter   = False
-    s.strategy.trend_long_sizing           = 0.75
+    s.strategy.entry_z_score = 1.6
+    s.strategy.exit_z_score = 0.2
+    s.strategy.entry_z_min_spread = 0.30
+    s.strategy.z_score_stop = 2.5
+    s.strategy.min_correlation = 0.65
+    s.strategy.max_half_life = 60
+    s.strategy.max_position_loss_pct = 0.03
+    s.strategy.internal_max_drawdown_pct = 0.12
+    s.strategy.use_kalman = True
+    s.strategy.bonferroni_correction = True
+    s.strategy.johansen_confirmation = True
+    s.strategy.newey_west_consensus = True
+    s.strategy.weekly_zscore_entry_gate = 0.3
+    s.strategy.regime_directional_filter = False
+    s.strategy.trend_long_sizing = 0.75
     s.strategy.disable_shorts_in_bull_trend = False
-    s.strategy.short_sizing_multiplier     = 0.50
-    s.regime.enabled          = True
-    s.regime.ma_fast          = 50
-    s.regime.ma_slow          = 200
-    s.regime.vol_threshold    = 0.18
-    s.regime.vol_window       = 20
+    s.strategy.short_sizing_multiplier = 0.50
+    s.regime.enabled = True
+    s.regime.ma_fast = 50
+    s.regime.ma_slow = 200
+    s.regime.vol_threshold = 0.18
+    s.regime.vol_window = 20
     s.regime.neutral_band_pct = 0.02
     s.regime.trend_favorable_sizing = 1.0
-    s.regime.neutral_sizing   = 0.70
-    s.momentum.enabled        = True
-    s.momentum.lookback       = 20
-    s.momentum.weight         = 0.30
-    s.momentum.min_strength   = 1.0
-    s.momentum.max_boost      = 1.0
-    s.pair_blacklist.enabled                = True
+    s.regime.neutral_sizing = 0.70
+    s.momentum.enabled = True
+    s.momentum.lookback = 20
+    s.momentum.weight = 0.30
+    s.momentum.min_strength = 1.0
+    s.momentum.max_boost = 1.0
+    s.pair_blacklist.enabled = True
     s.pair_blacklist.max_consecutive_losses = 5
-    s.pair_blacklist.cooldown_days          = 10
-    s.risk.max_concurrent_positions         = 10
-    if hasattr(s.strategy, 'fdr_q_level'):
+    s.pair_blacklist.cooldown_days = 10
+    s.risk.max_concurrent_positions = 10
+    if hasattr(s.strategy, "fdr_q_level"):
         s.strategy.fdr_q_level = 0.25
 
 
@@ -139,15 +193,18 @@ def main():
 
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
-    ts20 = TimeStopManager(TimeStopConfig(
-        half_life_multiplier=1.2,
-        max_days_cap=20,
-        default_max_bars=20,
-    ))
+    ts20 = TimeStopManager(
+        TimeStopConfig(
+            half_life_multiplier=1.2,
+            max_days_cap=20,
+            default_max_bars=20,
+        )
+    )
 
-    print("  %-12s  %-22s  %-22s  %7s  %6s  %5s  %6s  %9s  %7s" % (
-        "Window", "Train", "OOS", "Return", "Sharpe", "PF", "WR",
-        "t (~ann)", "MaxDD"))
+    print(
+        "  %-12s  %-22s  %-22s  %7s  %6s  %5s  %6s  %9s  %7s"
+        % ("Window", "Train", "OOS", "Return", "Sharpe", "PF", "WR", "t (~ann)", "MaxDD")
+    )
     print("  " + "-" * 98)
 
     results = []
@@ -158,9 +215,9 @@ def main():
         try:
             metrics = runner.run_unified(
                 symbols=WF_SYMBOLS,
-                start_date=train_start,   # include training window for lookback warmup
+                start_date=train_start,  # include training window for lookback warmup
                 end_date=oos_end,
-                oos_start_date=oos_start, # collect metrics from OOS start only
+                oos_start_date=oos_start,  # collect metrics from OOS start only
                 sector_map=WF_SECTOR_MAP,
                 pair_rediscovery_interval=2,
                 allocation_per_pair_pct=50.0,
@@ -171,19 +228,33 @@ def main():
             )
             elapsed = int(time.time() - t0)
             ret = metrics.total_return * 100
-            sh  = metrics.sharpe_ratio
-            pf  = metrics.profit_factor
-            wr  = metrics.win_rate * 100
-            t   = metrics.total_trades
-            dd  = metrics.max_drawdown * 100
-            tpy = t * 2      # 6-month OOS x2 = annualised estimate
+            sh = metrics.sharpe_ratio
+            pf = metrics.profit_factor
+            wr = metrics.win_rate * 100
+            t = metrics.total_trades
+            dd = metrics.max_drawdown * 100
+            tpy = t * 2  # 6-month OOS x2 = annualised estimate
             verdict = "PASS" if sh >= 1.2 else ("S-PASS" if sh >= 0.8 else "FAIL")
-            print("  %-12s  %s->%s  %s->%s  %+6.2f%%  S=%5.2f  %5.2f  %5.1f%%"
-                  "  t=%2d(~%2.0f)  %+6.2f%%  [%s/%ds]" % (
-                      label,
-                      train_start[:7], train_end[:7],
-                      oos_start[:7],   oos_end[:7],
-                      ret, sh, pf, wr, t, tpy, dd, verdict, elapsed))
+            print(
+                "  %-12s  %s->%s  %s->%s  %+6.2f%%  S=%5.2f  %5.2f  %5.1f%%"
+                "  t=%2d(~%2.0f)  %+6.2f%%  [%s/%ds]"
+                % (
+                    label,
+                    train_start[:7],
+                    train_end[:7],
+                    oos_start[:7],
+                    oos_end[:7],
+                    ret,
+                    sh,
+                    pf,
+                    wr,
+                    t,
+                    tpy,
+                    dd,
+                    verdict,
+                    elapsed,
+                )
+            )
             results.append((label, metrics, sh, verdict))
         except Exception as e:
             elapsed = int(time.time() - t0)
@@ -197,15 +268,15 @@ def main():
     print("=" * 82)
     print()
 
-    valid   = [(l, m, sh, v) for l, m, sh, v in results if sh is not None]
-    passes  = sum(1 for _, _, sh, v in valid if v == "PASS")
-    spasses = sum(1 for _, _, sh, v in valid if v == "S-PASS")
-    fails   = sum(1 for _, _, sh, v in valid if v == "FAIL")
-    errors  = sum(1 for _, _, sh, v in results if v == "ERROR")
+    valid = [(l, m, sh, v) for l, m, sh, v in results if sh is not None]
+    passes = sum(1 for _, _, _, v in valid if v == "PASS")
+    spasses = sum(1 for _, _, _, v in valid if v == "S-PASS")
+    fails = sum(1 for _, _, _, v in valid if v == "FAIL")
+    errors = sum(1 for _, _, _, v in results if v == "ERROR")
 
     sharpes = [sh for _, _, sh, _ in valid]
-    avg_sh  = sum(sharpes) / len(sharpes) if sharpes else 0.0
-    min_sh  = min(sharpes) if sharpes else 0.0
+    avg_sh = sum(sharpes) / len(sharpes) if sharpes else 0.0
+    min_sh = min(sharpes) if sharpes else 0.0
 
     print("  Resultats OOS (%d/5 fenetres):" % len(valid))
     print("    PASS    (S>=1.2) : %d/5" % passes)
@@ -222,13 +293,13 @@ def main():
 
     if passes >= 4:
         overall = "PASS -- Strategie validee OOS"
-        detail  = "Sharpe OOS robuste sur >=4/5 fenetres. Pret pour Phase 5."
+        detail = "Sharpe OOS robuste sur >=4/5 fenetres. Pret pour Phase 5."
     elif passes + spasses >= 4:
         overall = "S-PASS -- Strategie acceptable"
-        detail  = "Perf OOS legerement degradee mais positive. Verifier fenetres FAIL."
+        detail = "Perf OOS legerement degradee mais positive. Verifier fenetres FAIL."
     else:
         overall = "FAIL -- Overfitting detecte"
-        detail  = "Strategie ne se generalise pas OOS. Revoir parametres v41a."
+        detail = "Strategie ne se generalise pas OOS. Revoir parametres v41a."
 
     print("  >>> %s <<<" % overall)
     print("  %s" % detail)
@@ -239,8 +310,10 @@ def main():
         print("    -> Objectif : 50+ trades/an  (vs ~9/an actuellement)")
         print()
         print("  Pour sauvegarder les resultats :")
-        print("    .\\venv\\Scripts\\python.exe scripts\\run_backtest_v42_wf.py"
-              " 2>&1 | Tee-Object results\\v42_wf_output.txt")
+        print(
+            "    .\\venv\\Scripts\\python.exe scripts\\run_backtest_v42_wf.py"
+            " 2>&1 | Tee-Object results\\v42_wf_output.txt"
+        )
     else:
         print("    -> Revoir entry_z / leverage / TimeStop avant expansion")
     print()

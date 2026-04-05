@@ -9,8 +9,6 @@ Provides:
 - Breakeven protection logic
 """
 
-from typing import Dict, Optional, Tuple, List
-from datetime import datetime
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any

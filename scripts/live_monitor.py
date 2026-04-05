@@ -29,14 +29,9 @@ from __future__ import annotations
 import argparse
 import json
 import signal
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
 from structlog import get_logger
 
 logger = get_logger(__name__)

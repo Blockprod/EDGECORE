@@ -8,7 +8,6 @@ Tests:
 - Integration with main.py data loading
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
 import pytest

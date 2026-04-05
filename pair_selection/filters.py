@@ -15,8 +15,6 @@ Filters:
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Tuple
-
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -157,7 +155,6 @@ class PairFilters:
             return 0 < hl <= max_half_life
         except Exception:
             return True  # degrade gracefully
-
 
 
 class MomentumDivergenceFilter:

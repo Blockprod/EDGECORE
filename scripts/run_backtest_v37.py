@@ -27,34 +27,84 @@ from execution.time_stop import TimeStopConfig, TimeStopManager
 V37_SYMBOLS = [
     # === BASE (37) ===
     "SPY",
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "XOM", "CVX", "COP", "EOG",
-    "KO", "PEP", "PG", "CL", "WMT",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "NEE", "DUK", "SO",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "AMD",
+    "AVGO",
+    "JPM",
+    "GS",
+    "BAC",
+    "MS",
+    "WFC",
+    "C",
+    "SCHW",
+    "XOM",
+    "CVX",
+    "COP",
+    "EOG",
+    "KO",
+    "PEP",
+    "PG",
+    "CL",
+    "WMT",
+    "CAT",
+    "HON",
+    "DE",
+    "GE",
+    "RTX",
+    "NEE",
+    "DUK",
+    "SO",
+    "JNJ",
+    "PFE",
+    "UNH",
+    "MRK",
+    "ABBV",
     # === SURGICAL ADDITIONS (2) ===
-    "XLK",   # tech ETF
-    "MCD",   # consumer
+    "XLK",  # tech ETF
+    "MCD",  # consumer
 ]
 
 V37_SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
+    "AAPL": "technology",
+    "MSFT": "technology",
+    "GOOGL": "technology",
+    "META": "technology",
+    "NVDA": "technology",
+    "AMD": "technology",
     "AVGO": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
+    "JPM": "financials",
+    "GS": "financials",
+    "BAC": "financials",
+    "MS": "financials",
+    "WFC": "financials",
+    "C": "financials",
     "SCHW": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
+    "XOM": "energy",
+    "CVX": "energy",
+    "COP": "energy",
+    "EOG": "energy",
+    "KO": "consumer_staples",
+    "PEP": "consumer_staples",
+    "PG": "consumer_staples",
+    "CL": "consumer_staples",
     "WMT": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
-    "JNJ": "healthcare", "PFE": "healthcare", "UNH": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare",
+    "CAT": "industrials",
+    "HON": "industrials",
+    "DE": "industrials",
+    "GE": "industrials",
+    "RTX": "industrials",
+    "NEE": "utilities",
+    "DUK": "utilities",
+    "SO": "utilities",
+    "JNJ": "healthcare",
+    "PFE": "healthcare",
+    "UNH": "healthcare",
+    "MRK": "healthcare",
+    "ABBV": "healthcare",
     "XLK": "technology",
     "MCD": "consumer_staples",
 }
@@ -107,12 +157,16 @@ def main():
     s.pair_blacklist.max_consecutive_losses = 5
     s.pair_blacklist.cooldown_days = 10
     s.risk.max_concurrent_positions = 10
-    if hasattr(s.strategy, 'fdr_q_level'):
+    if hasattr(s.strategy, "fdr_q_level"):
         s.strategy.fdr_q_level = 0.25
 
-    time_stop = TimeStopManager(TimeStopConfig(
-        half_life_multiplier=1.2, max_days_cap=20, default_max_bars=20,
-    ))
+    time_stop = TimeStopManager(
+        TimeStopConfig(
+            half_life_multiplier=1.2,
+            max_days_cap=20,
+            default_max_bars=20,
+        )
+    )
 
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
@@ -121,10 +175,15 @@ def main():
     t0 = time.time()
 
     metrics = runner.run_unified(
-        symbols=V37_SYMBOLS, start_date="2023-03-04", end_date="2026-03-04",
-        sector_map=V37_SECTOR_MAP, pair_rediscovery_interval=2,
-        allocation_per_pair_pct=50.0, max_position_loss_pct=0.07,
-        max_portfolio_heat=3.0, time_stop=time_stop,
+        symbols=V37_SYMBOLS,
+        start_date="2023-03-04",
+        end_date="2026-03-04",
+        sector_map=V37_SECTOR_MAP,
+        pair_rediscovery_interval=2,
+        allocation_per_pair_pct=50.0,
+        max_position_loss_pct=0.07,
+        max_portfolio_heat=3.0,
+        time_stop=time_stop,
     )
 
     elapsed = time.time() - t0
@@ -138,38 +197,42 @@ def main():
         "win_rate": round(metrics.win_rate * 100, 1),
         "trades": metrics.total_trades,
         "max_dd": round(metrics.max_drawdown * 100, 2),
-        "calmar": round(metrics.calmar_ratio, 2),
+        "calmar": round(metrics.calmar_ratio or 0.0, 2),
     }
 
     base = {
-        "return_pct": 10.46, "sharpe": 1.33, "pf": 4.22,
-        "win_rate": 66.7, "trades": 21, "max_dd": -1.91, "calmar": 5.48,
+        "return_pct": 10.46,
+        "sharpe": 1.33,
+        "pf": 4.22,
+        "win_rate": 66.7,
+        "trades": 21,
+        "max_dd": -1.91,
+        "calmar": 5.48,
     }
 
     print("=" * 75)
     print("  v37 RESULTS vs v36 BASELINE")
     print("=" * 75)
-    print("  Return:  %+.2f%%  (v36: +%.2f%%)  delta=%+.2f%%" % (
-        r['return_pct'], base['return_pct'], r['return_pct'] - base['return_pct']))
-    print("  Sharpe:  %.2f   (v36: %.2f)  delta=%+.2f" % (
-        r['sharpe'], base['sharpe'], r['sharpe'] - base['sharpe']))
-    print("  PF:      %.2f   (v36: %.2f)  delta=%+.2f" % (
-        r['pf'], base['pf'], r['pf'] - base['pf']))
-    print("  WR:      %.1f%%   (v36: %.1f%%)" % (r['win_rate'], base['win_rate']))
-    print("  Trades:  %d     (v36: %d)  delta=%+d" % (
-        r['trades'], base['trades'], r['trades'] - base['trades']))
-    print("  MaxDD:   %.2f%%  (v36: %.2f%%)" % (r['max_dd'], base['max_dd']))
-    print("  Calmar:  %.2f   (v36: %.2f)" % (r['calmar'], base['calmar']))
+    print(
+        "  Return:  %+.2f%%  (v36: +%.2f%%)  delta=%+.2f%%"
+        % (r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
+    )
+    print("  Sharpe:  %.2f   (v36: %.2f)  delta=%+.2f" % (r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
+    print("  PF:      %.2f   (v36: %.2f)  delta=%+.2f" % (r["pf"], base["pf"], r["pf"] - base["pf"]))
+    print("  WR:      %.1f%%   (v36: %.1f%%)" % (r["win_rate"], base["win_rate"]))
+    print("  Trades:  %d     (v36: %d)  delta=%+d" % (r["trades"], base["trades"], r["trades"] - base["trades"]))
+    print("  MaxDD:   %.2f%%  (v36: %.2f%%)" % (r["max_dd"], base["max_dd"]))
+    print("  Calmar:  %.2f   (v36: %.2f)" % (r["calmar"], base["calmar"]))
     print()
 
     # Phase 4 target check
     target_sharpe = 2.0
     target_pf = 2.5
-    sharpe_ok = r['sharpe'] >= target_sharpe
-    pf_ok = r['pf'] >= target_pf
+    sharpe_ok = r["sharpe"] >= target_sharpe
+    pf_ok = r["pf"] >= target_pf
     print("  TARGET CHECK:")
-    print("    Sharpe >= %.1f : %s (%.2f)" % (target_sharpe, "PASS" if sharpe_ok else "MISS", r['sharpe']))
-    print("    PF     >= %.1f : %s (%.2f)" % (target_pf, "PASS" if pf_ok else "MISS", r['pf']))
+    print("    Sharpe >= %.1f : %s (%.2f)" % (target_sharpe, "PASS" if sharpe_ok else "MISS", r["sharpe"]))
+    print("    PF     >= %.1f : %s (%.2f)" % (target_pf, "PASS" if pf_ok else "MISS", r["pf"]))
     if sharpe_ok and pf_ok:
         print("    >>> ALL TARGETS MET — Phase 4 VALIDATED <<<")
     else:

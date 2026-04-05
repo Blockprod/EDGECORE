@@ -8,10 +8,6 @@ Provides Monte Carlo simulation for order book dynamics, supporting:
 - Statistical analysis of price distributions
 """
 
-import numpy as np
-from dataclasses import dataclass
-from typing import Dict, List, Tuple, Optional
-from datetime import datetime
 import logging
 from dataclasses import dataclass
 from datetime import datetime
@@ -379,4 +375,3 @@ def analyze_risk_metrics(
         logger.info(f"  {conf * 100:.0f}% Confidence: VaR={var:.4f}, CVaR={cvar:.4f}")
 
     return metrics
-

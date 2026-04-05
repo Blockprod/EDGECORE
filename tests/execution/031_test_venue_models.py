@@ -2,17 +2,13 @@
 
 from common.types import VenueType
 from execution.venue_models import (
+    CEXVenueModel,
     CMEVenueModel,
+    DEXVenueModel,
     IBKRSmartVenueModel,
     NasdaqVenueModel,
     NYSEVenueModel,
     OrderExecutionMicrostructure,
-    CMEVenueModel,
-    DEXVenueModel,
-    NasdaqVenueModel,
-    NYSEVenueModel,
-    OrderExecutionMicrostructure,
-    SpotCryptoVenueModel,
     get_venue_model,
 )
 

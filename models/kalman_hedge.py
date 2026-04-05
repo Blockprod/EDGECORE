@@ -21,7 +21,6 @@ Usage:
 
 import numpy as np
 import pandas as pd
-from typing import Tuple, Optional, List
 from structlog import get_logger
 
 logger = get_logger(__name__)

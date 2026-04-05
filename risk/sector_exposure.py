@@ -10,7 +10,6 @@ correlation. This module handles the *aggregate* sector dimension.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple
 
 from structlog import get_logger
 

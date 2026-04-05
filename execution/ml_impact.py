@@ -7,10 +7,6 @@ Provides neural network models for predicting market impact based on:
 - ML confidence scoring with interpolation
 """
 
-import numpy as np
-from typing import Dict, Optional, List, Tuple, Literal
-from dataclasses import dataclass
-from datetime import datetime
 import logging
 import pickle
 from dataclasses import dataclass
@@ -412,4 +408,3 @@ class MLImpactPredictor:
         predictor = cls(model=model)
         logger.info(f"Loaded predictor with model from {filepath}")
         return predictor
-

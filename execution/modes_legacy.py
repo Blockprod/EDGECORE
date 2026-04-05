@@ -16,22 +16,14 @@ Original docstring:
     - Mode-specific implementations: Paper, Live, Backtest
 """
 
-from abc import ABC, abstractmethod
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
-from structlog import get_logger
 import threading
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import StrEnum
+from enum import Enum, StrEnum
 from typing import Any
 
 from structlog import get_logger
-
-from execution.base import OrderStatus
 
 logger = get_logger(__name__)
 
@@ -46,6 +38,7 @@ class ModeType(StrEnum):
 
 class OrderStatus(str, Enum):
     """Order lifecycle states — delegates to execution.base.OrderStatus values."""
+
     PENDING = "PENDING"
     SUBMITTED = "SUBMITTED"
     FILLED = "FILLED"
@@ -439,7 +432,6 @@ class LiveTradingMode(ExecutionMode):
         self.max_equity_drawdown_pct_absolute = 0.15  # 15% max drawdown
         self.emergency_close_price_threshold = 0.10  # 10% move -> check sanity
 
-        
         # Tracking
         self.max_equity_reached = initial_equity
         self.api_error_count = 0

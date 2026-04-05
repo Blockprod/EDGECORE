@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Optional
 
 from structlog import get_logger
 
@@ -34,6 +33,7 @@ logger = get_logger(__name__)
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class SlippageConfig:
@@ -65,19 +65,48 @@ class SlippageConfig:
 # ADV estimates par tier de capitalisation
 # ---------------------------------------------------------------------------
 
-_ADV_MEGA_CAP = 500_000_000   # $500M/j ��� AAPL, MSFT, NVDA, GOOGL, AMZN, META, BRK
+_ADV_MEGA_CAP = 500_000_000  # $500M/j ��� AAPL, MSFT, NVDA, GOOGL, AMZN, META, BRK
 _ADV_LARGE_CAP = 150_000_000  # $150M/j ��� Most S&P 500 constituents
 
-_MEGA_CAP_SYMBOLS = frozenset({
-    "AAPL", "MSFT", "NVDA", "GOOGL", "GOOG", "AMZN", "META", "BRK.B", "LLY",
-    "AVGO", "TSLA", "NFLX", "JPM", "V", "MA", "UNH", "WMT", "XOM", "JNJ",
-    "PG", "HD", "ORCL", "COST", "CVX", "MRK", "KO", "PEP", "ABBV", "TMO",
-})
+_MEGA_CAP_SYMBOLS = frozenset(
+    {
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "GOOGL",
+        "GOOG",
+        "AMZN",
+        "META",
+        "BRK.B",
+        "LLY",
+        "AVGO",
+        "TSLA",
+        "NFLX",
+        "JPM",
+        "V",
+        "MA",
+        "UNH",
+        "WMT",
+        "XOM",
+        "JNJ",
+        "PG",
+        "HD",
+        "ORCL",
+        "COST",
+        "CVX",
+        "MRK",
+        "KO",
+        "PEP",
+        "ABBV",
+        "TMO",
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # SlippageModel
 # ---------------------------------------------------------------------------
+
 
 class SlippageModel:
     """Mod+�le de slippage +� 3 composantes pour backtests d'equities US.
@@ -157,10 +186,7 @@ class SlippageModel:
         sigma2: float = 0.02,
     ) -> float:
         """Co++t total d'ENTR+�E d'un pair trade (2 legs, 2 transactions)."""
-        return (
-            self.compute(notional_leg1, adv1, sigma1)
-            + self.compute(notional_leg2, adv2, sigma2)
-        )
+        return self.compute(notional_leg1, adv1, sigma1) + self.compute(notional_leg2, adv2, sigma2)
 
     def compute_pair_roundtrip_cost(
         self,
@@ -227,6 +253,7 @@ class SlippageModel:
 # Pre-built configs
 # ---------------------------------------------------------------------------
 
+
 def conservative_equity_slippage() -> SlippageConfig:
     """Slippage conservateur pour stress-tests institutionnels.
 
@@ -264,4 +291,3 @@ def zero_impact_slippage() -> SlippageConfig:
         eta=0.0,
         execution_delay_days=0.0,
     )
-
