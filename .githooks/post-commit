@@ -7,4 +7,12 @@ SCRIPT="$REPO_ROOT/scripts/update_lessons.py"
 
 if [ -f "$PYTHON" ] && [ -f "$SCRIPT" ]; then
     PYTHONIOENCODING=utf-8 "$PYTHON" "$SCRIPT" 2>&1 || true
+    # Auto-inclure tasks/lessons.md dans le commit qui vient d'être créé.
+    # --no-verify empêche la boucle infinie (ce hook ne sera pas rappelé).
+    LESSONS="$REPO_ROOT/tasks/lessons.md"
+    if [ -f "$LESSONS" ]; then
+        git add "$LESSONS"
+        git diff --cached --quiet "$LESSONS" || \
+            git commit --amend --no-edit --no-verify --quiet
+    fi
 fi

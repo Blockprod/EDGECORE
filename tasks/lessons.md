@@ -252,3 +252,12 @@
 **Ref** : `monitoring/cache.py`, `scripts/scheduler.py` — commit `8eae0c3` (2026-04-05)
 
 ---
+
+## L-26 · feat: P-01/P-02/P-04 + README redesign [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `a4f5bca` : feat: P-01/P-02/P-04 + README redesign. Fichiers : backtests/event_driven.py, backtests/runner.py
+**Erreur** : print() dans du code de production
+**Règle** : Utiliser structlog.get_logger(__name__) partout. print() interdit hors scripts/, examples/, research/.
+**Ref** : `backtests/event_driven.py`, `backtests/runner.py`, `backtests/strategy_simulator.py` — commit `a4f5bca` (2026-04-05)
+
+---
