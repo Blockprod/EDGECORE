@@ -131,8 +131,8 @@ def main():
     s = r["summary"]
     print("  COMPARISON")
     print("  " + "-" * 60)
-    print(f"  v31h (no costs): +8.17%  Sharpe 1.31  PF 3.88  WR 62.5%  24t  DD -1.79%")
-    print(f"  v32j (Phase 0):  +4.37%  Sharpe 0.80  PF 2.57  WR 55.6%  18t  DD -2.70%")
+    print("  v31h (no costs): +8.17%  Sharpe 1.31  PF 3.88  WR 62.5%  24t  DD -1.79%")
+    print("  v32j (Phase 0):  +4.37%  Sharpe 0.80  PF 2.57  WR 55.6%  18t  DD -2.70%")
     print(f"  >>> {r['label']} <<<")
     print(f"  Final Capital:     {s.get('final_capital', 0):>12,.2f} EUR")
     print(f"  Total Return:      {s.get('total_return_pct', 0):>10.2f}%")
@@ -148,7 +148,7 @@ def main():
     out = os.path.join(_ROOT, "results", "v33_phase1_results.txt")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w") as f:
-        f.write(f"v33 Phase 1 Multi-Signal Backtest\n")
+        f.write("v33 Phase 1 Multi-Signal Backtest\n")
         f.write(f"{'='*60}\n")
         for k, v in s.items():
             f.write(f"  {k}: {v}\n")

@@ -247,7 +247,7 @@ class TestAlertHandlers:
         manager = AlertManager()
 
         with pytest.raises(ValueError):
-            manager.register_severity_handler(AlertSeverity.WARNING, "not callable")  # type: ignore
+            manager.register_severity_handler(AlertSeverity.WARNING, "not callable")  # pyright: ignore[reportArgumentType]
 
 
 class TestAlertRetrieval:
@@ -534,3 +534,4 @@ class TestAlertIntegration:
         # Check dashboard
         status = manager.get_dashboard_status()
         assert status["active_alert_count"] == 1  # Only alert1 still active
+

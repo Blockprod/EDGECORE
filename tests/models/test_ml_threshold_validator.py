@@ -16,10 +16,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from models.ml_threshold_validator import (
-    MLThresholdValidator,
-    ValidationResult,
-)
 from models.ml_threshold_optimizer import (
     AdaptiveThresholdManager,
     MLThresholdOptimizer,

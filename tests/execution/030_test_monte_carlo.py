@@ -1,10 +1,10 @@
-"""Tests for Monte Carlo order book simulation."""
+﻿"""Tests for Monte Carlo order book simulation."""
 
-import numpy as np
 from datetime import datetime
 
 import numpy as np
 
+from common.types import MonteCarloConfig
 from execution.monte_carlo import (
     MonteCarloOrderBookSimulator,
     MonteCarloSimulation,
@@ -80,7 +80,7 @@ class TestMonteCarloSimulation:
 
     def test_simulation_creation(self):
         """Test creating simulation results."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 100,
             "time_steps": 10,
             "price_drift_bps": 0.0,
@@ -106,9 +106,9 @@ class TestMonteCarloSimulation:
             for _ in range(10)
         ]
 
-        sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
+        sim = MonteCarloSimulation(
             symbol="AAPL",
-            config=config,  # type: ignore[arg-type]
+            config=config,
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
@@ -120,7 +120,7 @@ class TestMonteCarloSimulation:
 
     def test_simulation_get_price_matrix(self):
         """Test extracting price matrix."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 5,
             "time_steps": 5,
             "price_drift_bps": 0.0,
@@ -146,9 +146,9 @@ class TestMonteCarloSimulation:
             for _ in range(5)
         ]
 
-        sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
+        sim = MonteCarloSimulation(
             symbol="AAPL",
-            config=config,  # type: ignore[arg-type]
+            config=config,
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
@@ -159,7 +159,7 @@ class TestMonteCarloSimulation:
 
     def test_simulation_statistics(self):
         """Test extracting statistics."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 100,
             "time_steps": 10,
             "price_drift_bps": 10.0,  # Positive drift
@@ -188,9 +188,9 @@ class TestMonteCarloSimulation:
                 )
             )
 
-        sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
+        sim = MonteCarloSimulation(
             symbol="AAPL",
-            config=config,  # type: ignore[arg-type]
+            config=config,
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
@@ -210,7 +210,7 @@ class TestMonteCarloOrderBookSimulator:
 
     def test_simulator_initialization(self):
         """Test simulator creation."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 10,
             "time_steps": 5,
             "price_drift_bps": 0.0,
@@ -220,8 +220,8 @@ class TestMonteCarloOrderBookSimulator:
             "volume_scaling": 1.0,
         }
 
-        simulator = MonteCarloOrderBookSimulator(  # type: ignore[arg-type]
-            config=config,  # type: ignore[arg-type]
+        simulator = MonteCarloOrderBookSimulator(
+            config=config,
             initial_price=100.0,
             seed=42,
         )
@@ -232,7 +232,7 @@ class TestMonteCarloOrderBookSimulator:
 
     def test_gbm_path_generation(self):
         """Test Geometric Brownian Motion path generation."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 1,
             "time_steps": 100,
             "price_drift_bps": 0.0,
@@ -242,8 +242,8 @@ class TestMonteCarloOrderBookSimulator:
             "volume_scaling": 1.0,
         }
 
-        simulator = MonteCarloOrderBookSimulator(  # type: ignore[arg-type]
-            config=config,  # type: ignore[arg-type]
+        simulator = MonteCarloOrderBookSimulator(
+            config=config,
             initial_price=100.0,
             seed=42,
         )
@@ -257,7 +257,7 @@ class TestMonteCarloOrderBookSimulator:
 
     def test_jump_diffusion_path_generation(self):
         """Test jump-diffusion process."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 1,
             "time_steps": 100,
             "price_drift_bps": 0.0,
@@ -267,8 +267,8 @@ class TestMonteCarloOrderBookSimulator:
             "volume_scaling": 1.0,
         }
 
-        simulator = MonteCarloOrderBookSimulator(  # type: ignore[arg-type]
-            config=config,  # type: ignore[arg-type]
+        simulator = MonteCarloOrderBookSimulator(
+            config=config,
             initial_price=100.0,
             seed=42,
         )
@@ -281,7 +281,7 @@ class TestMonteCarloOrderBookSimulator:
 
     def test_volume_path_generation(self):
         """Test stochastic volume generation."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 1,
             "time_steps": 50,
             "price_drift_bps": 0.0,
@@ -291,8 +291,8 @@ class TestMonteCarloOrderBookSimulator:
             "volume_scaling": 10.0,
         }
 
-        simulator = MonteCarloOrderBookSimulator(  # type: ignore[arg-type]
-            config=config,  # type: ignore[arg-type]
+        simulator = MonteCarloOrderBookSimulator(
+            config=config,
             initial_price=100.0,
         )
 
@@ -305,7 +305,7 @@ class TestMonteCarloOrderBookSimulator:
 
     def test_full_simulation(self):
         """Test complete Monte Carlo simulation."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 50,
             "time_steps": 10,
             "price_drift_bps": 5.0,
@@ -315,8 +315,8 @@ class TestMonteCarloOrderBookSimulator:
             "volume_scaling": 1.0,
         }
 
-        simulator = MonteCarloOrderBookSimulator(  # type: ignore[arg-type]
-            config=config,  # type: ignore[arg-type]
+        simulator = MonteCarloOrderBookSimulator(
+            config=config,
             initial_price=100.0,
             seed=42,
         )
@@ -329,7 +329,7 @@ class TestMonteCarloOrderBookSimulator:
 
     def test_reproducibility_with_seed(self):
         """Test that same seed produces same results."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 10,
             "time_steps": 20,
             "price_drift_bps": 0.0,
@@ -339,10 +339,10 @@ class TestMonteCarloOrderBookSimulator:
             "volume_scaling": 1.0,
         }
 
-        sim1 = MonteCarloOrderBookSimulator(config=config, initial_price=100.0, seed=123)  # type: ignore[arg-type]
+        sim1 = MonteCarloOrderBookSimulator(config=config, initial_price=100.0, seed=123)
         result1 = sim1.simulate()
 
-        sim2 = MonteCarloOrderBookSimulator(config=config, initial_price=100.0, seed=123)  # type: ignore[arg-type]
+        sim2 = MonteCarloOrderBookSimulator(config=config, initial_price=100.0, seed=123)
         result2 = sim2.simulate()
 
         prices1 = result1.get_price_matrix()
@@ -356,7 +356,7 @@ class TestCorrelatedSimulations:
 
     def test_correlated_simulation_creation(self):
         """Test generating correlated simulations."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 20,
             "time_steps": 10,
             "price_drift_bps": 0.0,
@@ -371,7 +371,7 @@ class TestCorrelatedSimulations:
         correlation_matrix = np.array([[1.0, 0.8], [0.8, 1.0]])
 
         results = create_correlated_simulations(
-            config=config,  # type: ignore[arg-type]
+            config=config,
             symbols=symbols,
             initial_prices=initial_prices,
             correlation_matrix=correlation_matrix,
@@ -388,7 +388,7 @@ class TestRiskMetrics:
 
     def test_var_cvar_calculation(self):
         """Test VaR and CVaR calculation."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 100,
             "time_steps": 1,
             "price_drift_bps": 0.0,
@@ -417,9 +417,9 @@ class TestRiskMetrics:
                 )
             )
 
-        sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
+        sim = MonteCarloSimulation(
             symbol="AAPL",
-            config=config,  # type: ignore[arg-type]
+            config=config,
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
@@ -433,7 +433,7 @@ class TestRiskMetrics:
 
     def test_analyze_risk_metrics(self):
         """Test risk metrics analysis function."""
-        config = {
+        config: MonteCarloConfig = {
             "num_simulations": 100,
             "time_steps": 5,
             "price_drift_bps": 0.0,
@@ -443,8 +443,8 @@ class TestRiskMetrics:
             "volume_scaling": 1.0,
         }
 
-        simulator = MonteCarloOrderBookSimulator(  # type: ignore[arg-type]
-            config=config,  # type: ignore[arg-type]
+        simulator = MonteCarloOrderBookSimulator(
+            config=config,
             initial_price=100.0,
             seed=42,
         )
@@ -464,3 +464,4 @@ class TestRiskMetrics:
 
         assert var_90 > var_95  # 90% VaR less severe than 95%
         assert var_95 > var_99  # etc
+

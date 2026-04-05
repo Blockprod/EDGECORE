@@ -367,9 +367,9 @@ class Phase4Validator:
         # Will be monitored during paper trading
         # For now, verify profiling exists
         try:
-            from monitoring.profiler import Profiler  # type: ignore[attr-defined]  # pyright: ignore[reportUnusedImport]
+            import importlib.util
 
-            return True
+            return importlib.util.find_spec("monitoring.profiler") is not None
         except ImportError:
             return False
 

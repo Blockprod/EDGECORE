@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v37 -- Phase 4: Signaux Avancés & ML.
 
@@ -187,7 +188,7 @@ def main():
     )
 
     elapsed = time.time() - t0
-    print("  Completed in %.0fs" % elapsed)
+    print(f"  Completed in {elapsed:.0f}s")
     print()
 
     r = {
@@ -214,15 +215,14 @@ def main():
     print("  v37 RESULTS vs v36 BASELINE")
     print("=" * 75)
     print(
-        "  Return:  %+.2f%%  (v36: +%.2f%%)  delta=%+.2f%%"
-        % (r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
+        "  Return:  {:+.2f}%  (v36: +{:.2f}%)  delta={:+.2f}%".format(r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
     )
-    print("  Sharpe:  %.2f   (v36: %.2f)  delta=%+.2f" % (r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
-    print("  PF:      %.2f   (v36: %.2f)  delta=%+.2f" % (r["pf"], base["pf"], r["pf"] - base["pf"]))
-    print("  WR:      %.1f%%   (v36: %.1f%%)" % (r["win_rate"], base["win_rate"]))
+    print("  Sharpe:  {:.2f}   (v36: {:.2f})  delta={:+.2f}".format(r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
+    print("  PF:      {:.2f}   (v36: {:.2f})  delta={:+.2f}".format(r["pf"], base["pf"], r["pf"] - base["pf"]))
+    print("  WR:      {:.1f}%   (v36: {:.1f}%)".format(r["win_rate"], base["win_rate"]))
     print("  Trades:  %d     (v36: %d)  delta=%+d" % (r["trades"], base["trades"], r["trades"] - base["trades"]))
-    print("  MaxDD:   %.2f%%  (v36: %.2f%%)" % (r["max_dd"], base["max_dd"]))
-    print("  Calmar:  %.2f   (v36: %.2f)" % (r["calmar"], base["calmar"]))
+    print("  MaxDD:   {:.2f}%  (v36: {:.2f}%)".format(r["max_dd"], base["max_dd"]))
+    print("  Calmar:  {:.2f}   (v36: {:.2f})".format(r["calmar"], base["calmar"]))
     print()
 
     # Phase 4 target check
@@ -231,8 +231,8 @@ def main():
     sharpe_ok = r["sharpe"] >= target_sharpe
     pf_ok = r["pf"] >= target_pf
     print("  TARGET CHECK:")
-    print("    Sharpe >= %.1f : %s (%.2f)" % (target_sharpe, "PASS" if sharpe_ok else "MISS", r["sharpe"]))
-    print("    PF     >= %.1f : %s (%.2f)" % (target_pf, "PASS" if pf_ok else "MISS", r["pf"]))
+    print("    Sharpe >= {:.1f} : {} ({:.2f})".format(target_sharpe, "PASS" if sharpe_ok else "MISS", r["sharpe"]))
+    print("    PF     >= {:.1f} : {} ({:.2f})".format(target_pf, "PASS" if pf_ok else "MISS", r["pf"]))
     if sharpe_ok and pf_ok:
         print("    >>> ALL TARGETS MET — Phase 4 VALIDATED <<<")
     else:

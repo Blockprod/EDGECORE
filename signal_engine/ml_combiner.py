@@ -32,7 +32,7 @@ logger = get_logger(__name__)
 
 # Try LightGBM first, fall back to sklearn
 try:
-    from lightgbm import LGBMClassifier as _TreeModel  # type: ignore[import-untyped]
+    from lightgbm import LGBMClassifier as _TreeModel  # pyright: ignore[reportMissingImports]
 
     _ML_BACKEND = "lightgbm"
 except ImportError:
@@ -136,6 +136,7 @@ class MLSignalCombiner:
 
         # C-09: PSI drift monitor
         from monitoring.ml_drift import MLFeatureDriftMonitor
+
         self._drift_monitor = MLFeatureDriftMonitor(
             feature_names=self.FEATURE_NAMES,
             check_interval_bars=252,
@@ -227,7 +228,7 @@ class MLSignalCombiner:
                     "verbose": -1,
                     "random_state": 42,
                 }
-                model = _TreeModel(**_lgbm_kwargs)  # type: ignore[call-arg]
+                model: Any = _TreeModel(**_lgbm_kwargs)
             else:
                 model = _TreeModel(
                     n_estimators=100,
@@ -318,7 +319,10 @@ class MLSignalCombiner:
 
         try:
             # Get probability of positive class
-            proba = self._model.predict_proba(X)[0]  # type: ignore[union-attr]
+            _model = self._model
+            assert _model is not None
+            _model_typed: Any = _model
+            proba = _model_typed.predict_proba(X)[0]
             # proba[1] = P(win), proba[0] = P(loss)
             # Map to [-1, 1]: 2 * P(win) - 1
             if len(proba) >= 2:

@@ -178,7 +178,7 @@ class TestJohansenCointegrationTest:
     def test_non_dataframe_rejected(self):
         """Non-DataFrame input should return error."""
         jt = JohansenCointegrationTest()
-        result = jt.test(np.random.randn(100, 2))  # type: ignore[arg-type]
+        result = jt.test(np.random.randn(100, 2))  # pyright: ignore[reportArgumentType]
 
         assert result["is_cointegrated"] is False
         assert result["error"] is not None
@@ -311,3 +311,4 @@ class TestConfigJohansenFlag:
 
         strategy = PairTradingStrategy()
         assert hasattr(strategy.config, "johansen_confirmation")
+

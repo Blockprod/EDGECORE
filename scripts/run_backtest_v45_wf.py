@@ -1,5 +1,5 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """EDGECORE v45 -- Walk-Forward: Expanded Universe (~103 symbols).
 
 v44b post-mortem — levier de params épuisé:
@@ -240,8 +240,7 @@ def main():
         _apply_v45_settings()
         t0 = time.time()
         print()
-        print("  Running %s (train %s -> %s | OOS %s -> %s)" % (
-            label, train_start, train_end, oos_start, oos_end))
+        print(f"  Running {label} (train {train_start} -> {train_end} | OOS {oos_start} -> {oos_end})")
         try:
             metrics = runner.run_unified(
                 symbols=WF_SYMBOLS,
@@ -269,7 +268,7 @@ def main():
         except Exception as e:
             elapsed = int(time.time() - t0)
             results.append((label, None, "ERROR", 0, 0, 0, 0, elapsed, str(e)[:120]))
-            print("  -> ERROR: %s" % str(e)[:120])
+            print(f"  -> ERROR: {str(e)[:120]}")
 
     # Summary
     valid   = [r for r in results if r[2] != "ERROR" and r[1] is not None]

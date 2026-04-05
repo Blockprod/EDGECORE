@@ -160,7 +160,7 @@ def main():
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
 
-    print(f"  Running backtest (2023-03-04 to 2026-03-04)...")
+    print("  Running backtest (2023-03-04 to 2026-03-04)...")
     t0 = time.time()
 
     metrics = runner.run_unified(

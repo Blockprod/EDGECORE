@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 import psutil
 import structlog
@@ -207,7 +207,8 @@ class DashboardGenerator:
         try:
             # Try to fetch open orders
             try:
-                open_orders = self.execution_engine.get_open_orders() or []  # type: ignore[attr-defined]
+                _get_orders: Any = getattr(self.execution_engine, "get_open_orders", None)
+                open_orders: list = cast(list, _get_orders()) if callable(_get_orders) else []
             except (AttributeError, NotImplementedError):
                 # Method might not exist or be implemented
                 logger.debug("get_open_orders_not_available")

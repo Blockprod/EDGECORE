@@ -377,6 +377,30 @@ class AuditTrail:
             logger.error("state_recovery_failed", error=str(e), file=str(self.trail_file))
             raise EquityError(f"Failed to recover state from audit trail: {e}") from e
 
+    def load_full_audit_trail(self) -> list[dict[str, str]]:
+        """
+        Read all records from the audit trail CSV file.
+
+        Returns:
+            List of row dicts (str→str) ordered chronologically.
+            Returns an empty list if the file does not exist.
+        """
+        if not self.trail_file.exists():
+            logger.warning("no_audit_trail_found", file=str(self.trail_file))
+            return []
+
+        records: list[dict[str, str]] = []
+        try:
+            with open(self.trail_file, newline="") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row and row.get("timestamp"):
+                        records.append(dict(row))
+            logger.info("audit_trail_loaded", records=len(records))
+        except OSError as e:
+            logger.error("audit_trail_load_failed", error=str(e))
+        return records
+
     def verify_trail_integrity(self) -> bool:
         """
         Check audit trail for corruption.

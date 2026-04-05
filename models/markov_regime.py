@@ -61,7 +61,7 @@ logger = get_logger(__name__)
 # ÔôÇÔôÇ Optional HMM import ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 GaussianHMM: Any = None  # pre-init; overwritten if hmmlearn is available
 try:
-    from hmmlearn.hmm import GaussianHMM  # type: ignore[import-untyped]
+    from hmmlearn.hmm import GaussianHMM  # pyright: ignore[reportMissingTypeStubs]
 
     _HMM_AVAILABLE = True
 except ImportError:
@@ -324,7 +324,9 @@ class MarkovRegimeDetector:
             # Use last N observations for prediction context
             context_len = min(len(self._obs), 20)
             obs = np.array(list(self._obs))[-context_len:].reshape(-1, 1)
-            hidden_states = self._model.predict(obs)  # type: ignore[union-attr]
+            assert self._model is not None
+            _model = self._model
+            hidden_states = _model.predict(obs)
             raw_state = hidden_states[-1]  # latest
 
             # Map to ordered regime

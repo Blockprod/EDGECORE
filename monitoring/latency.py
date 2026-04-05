@@ -404,22 +404,3 @@ class LatencyContext:
             logger.debug(f"ÔÅ▒´©Å  {self.operation}: {latency_ms:.2f}ms")
         else:
             logger.error(f"ÔØî {self.operation} failed: {latency_ms:.2f}ms")
-
-
-# Import numpy for percentile calculation (late import to avoid circular deps)
-try:
-    import numpy as np
-except ImportError:
-    # Fallback if numpy not available
-    def _percentile_fallback(data, p):
-        """Simple percentile calculation without numpy."""
-        sorted_data = sorted(data)
-        index = int((p / 100) * len(sorted_data))
-        return sorted_data[min(index, len(sorted_data) - 1)]
-
-    class _NpFallback:
-        @staticmethod
-        def percentile(data, p):
-            return _percentile_fallback(list(data), p)
-
-    np = _NpFallback()  # type: ignore[assignment]

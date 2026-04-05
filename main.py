@@ -26,10 +26,6 @@ from data.delisting_guard import DelistingGuard
 from data.liquidity_filter import LiquidityFilter
 from data.loader import DataLoader
 from data.validators import OHLCVValidator
-from strategies.pair_trading import PairTradingStrategy
-from risk.engine import RiskEngine
-from execution.ibkr_engine import IBKRExecutionEngine
-from execution.paper_execution import PaperExecutionEngine
 from execution.base import Order, OrderSide
 from execution.ibkr_engine import IBKRExecutionEngine
 from execution.order_lifecycle_integration import OrderLifecycleIntegration

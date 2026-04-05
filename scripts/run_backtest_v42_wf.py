@@ -1,5 +1,5 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """EDGECORE v42 -- Phase 4: Walk-Forward Out-of-Sample Validation.
 
 Parametres geles depuis v41a (meilleur resultat du sweep v41) :
@@ -285,8 +285,8 @@ def main():
     if errors:
         print("    ERREURS          : %d/5" % errors)
     print()
-    print("    Sharpe moyen OOS   : %.2f" % avg_sh)
-    print("    Sharpe minimum OOS : %.2f" % min_sh)
+    print(f"    Sharpe moyen OOS   : {avg_sh:.2f}")
+    print(f"    Sharpe minimum OOS : {min_sh:.2f}")
     print("    vs. In-Sample      : 2.00")
     print("    Ratio OOS/IS       : %.0f%%" % (avg_sh / 2.00 * 100 if avg_sh else 0))
     print()
@@ -301,8 +301,8 @@ def main():
         overall = "FAIL -- Overfitting detecte"
         detail = "Strategie ne se generalise pas OOS. Revoir parametres v41a."
 
-    print("  >>> %s <<<" % overall)
-    print("  %s" % detail)
+    print(f"  >>> {overall} <<<")
+    print(f"  {detail}")
     print()
     print("  PROCHAINE ETAPE :")
     if "FAIL" not in overall:

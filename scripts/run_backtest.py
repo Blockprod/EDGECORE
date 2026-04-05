@@ -31,6 +31,7 @@ v19d - Conditional Prefilter + v18 params.
 
 import os
 import sys
+from typing import Any
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,7 +39,6 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 from backtests.runner import BacktestRunner
 
 if __name__ == "__main__":
-
     runner = BacktestRunner()
 
     # --- Dynamic universe: scan 100% IBKR symbols (with filters) ---
@@ -62,10 +62,10 @@ if __name__ == "__main__":
         runner = BacktestRunner()
 
         # --- Dynamic universe: scan 100% IBKR symbols (with filters) ---
-        scanner = IBKRUniverseScanner()
-        scanner.batch_size = args.batch_size  # type: ignore[attr-defined]
-        scanner.async_mode = args.async_scan  # type: ignore[attr-defined]
-        scanned = scanner.scan(use_cache=True)  # set False to force fresh scan
+        _scanner: Any = IBKRUniverseScanner()
+        _scanner.batch_size = args.batch_size
+        _scanner.async_mode = args.async_scan
+        scanned = _scanner.scan(use_cache=True)  # set False to force fresh scan
         # Defensive: ensure all tickers are str and capture a debug snapshot
 
         symbols = []
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         with open(os.path.join(_ROOT, "results", "bt_results_summary.txt"), "w", encoding="utf-8") as f:
             f.write(summary)
         # Sauvegarde des m├®triques en JSON
-        metrics_dict = metrics.__dict__ if hasattr(metrics, "__dict__") else {}  # type: ignore[assignment]
+        metrics_dict = vars(metrics) if hasattr(metrics, "__dict__") else {}
         with open(os.path.join(_ROOT, "results", "bt_results_metrics.json"), "w", encoding="utf-8") as f:
             json.dump(metrics_dict, f, indent=2, ensure_ascii=False)
         # Sauvegarde des retours quotidiens en CSV

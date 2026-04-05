@@ -32,7 +32,6 @@ from common.types import (
     TradeRecord,
     ValidationResult,
 )
-from datetime import datetime
 
 
 class TestTypedDictStructures:

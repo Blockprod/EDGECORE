@@ -18,7 +18,6 @@ import pytest
 from models.cointegration import half_life_mean_reversion
 from models.half_life_estimator import SpreadHalfLifeEstimator, estimate_half_life
 
-
 # ---------------------------------------------------------------------------
 # Helper: generate OU process with known half-life
 # ---------------------------------------------------------------------------

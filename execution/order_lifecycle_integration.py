@@ -12,7 +12,6 @@ from datetime import UTC, datetime
 
 from structlog import get_logger
 
-from execution.order_lifecycle import OrderLifecycleManager, OrderStatus
 from execution.base import BaseExecutionEngine
 from execution.order_lifecycle import OrderLifecycleManager, OrderStatus
 
@@ -118,9 +117,7 @@ class OrderLifecycleIntegration:
             for order_id in expired_orders:
                 try:
                     symbol = self.order_mgr.orders[order_id].symbol
-                    age_seconds = (
-                        datetime.now(UTC) - self.order_mgr.orders[order_id].created_at
-                    ).total_seconds()
+                    age_seconds = (datetime.now(UTC) - self.order_mgr.orders[order_id].created_at).total_seconds()
 
                     # Cancel order on exchange
                     self.execution_engine.cancel_order(order_id)
@@ -192,4 +189,3 @@ class OrderLifecycleIntegration:
         lifecycle = self.order_mgr.orders[order_id]
         age = (datetime.now(UTC) - lifecycle.created_at).total_seconds()
         return max(0, age)
-

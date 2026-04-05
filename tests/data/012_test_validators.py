@@ -53,7 +53,7 @@ class TestValidateSymbol:
     def test_non_string_symbol(self):
         """Non-string symbol should raise."""
         with pytest.raises(SymbolError):
-            validate_symbol(123)  # type: ignore[arg-type]
+            validate_symbol(123)  # pyright: ignore[reportArgumentType]
 
     def test_symbol_missing_slash(self):
         """Non-alphanumeric symbol should raise."""
@@ -107,7 +107,7 @@ class TestValidatePositionSize:
     def test_non_numeric_position_size(self):
         """Non-numeric position size should raise."""
         with pytest.raises(ValidationError):
-            validate_position_size("10.0")  # type: ignore[arg-type]
+            validate_position_size("10.0")  # pyright: ignore[reportArgumentType]
 
     def test_position_size_below_minimum(self):
         """Position size below minimum should raise."""
@@ -152,7 +152,7 @@ class TestValidateEquity:
     def test_non_numeric_equity(self):
         """Non-numeric equity should raise."""
         with pytest.raises(EquityError):
-            validate_equity("100000.0")  # type: ignore[arg-type]
+            validate_equity("100000.0")  # pyright: ignore[reportArgumentType]
 
     def test_equity_too_low(self):
         """Equity below minimum should raise."""
@@ -197,7 +197,7 @@ class TestValidateVolatility:
     def test_non_numeric_volatility(self):
         """Non-numeric volatility should raise."""
         with pytest.raises(VolatilityError):
-            validate_volatility("0.05")  # type: ignore[arg-type]
+            validate_volatility("0.05")  # pyright: ignore[reportArgumentType]
 
     def test_volatility_too_low(self):
         """Volatility below minimum should raise."""
@@ -234,7 +234,7 @@ class TestValidateConfig:
     def test_config_not_dict(self):
         """Non-dict config should raise."""
         with pytest.raises(ConfigError):
-            validate_config([])  # type: ignore[arg-type]
+            validate_config([])  # pyright: ignore[reportArgumentType]
 
     def test_config_empty(self):
         """Empty config should raise."""
@@ -349,3 +349,4 @@ class TestSanityCheckContext:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+

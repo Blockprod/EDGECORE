@@ -26,11 +26,13 @@ from risk.engine import RiskEngine
 @pytest.fixture
 def test_config():
     """Create test configuration."""
-    return FullConfigSchema(
-        risk={"max_position_size": 0.1, "max_portfolio_heat": 0.2},  # type: ignore[arg-type]
-        strategy={"min_spread_bps": 5.0, "max_spread_bps": 50.0},  # type: ignore[arg-type]
-        execution={"mode": "paper"},  # type: ignore[arg-type]
-        data_source={"ohlcv_interval_minutes": 5},  # type: ignore[arg-type]
+    return FullConfigSchema.model_validate(
+        {
+            "risk": {"max_position_size": 0.1, "max_portfolio_heat": 0.2},
+            "strategy": {"min_spread_bps": 5.0, "max_spread_bps": 50.0},
+            "execution": {"mode": "paper"},
+            "data_source": {"ohlcv_interval_minutes": 5},
+        }
     )
 
 

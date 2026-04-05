@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import threading
 import time
+from typing import Any
 from unittest.mock import MagicMock
 
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
@@ -24,13 +25,14 @@ def _make_runner() -> LiveTradingRunner:
     runner._kill_switch = None
     runner._portfolio_risk = None
     runner._position_risk = None
-    runner._trailing_stop = None  # type: ignore[assignment]
-    runner._time_stop = None  # type: ignore[assignment]
-    runner._partial_profit = None  # type: ignore[assignment]
-    runner._correlation_monitor = None  # type: ignore[assignment]
-    runner._shutdown_mgr = None  # type: ignore[assignment]
+    _r: Any = runner
+    _r._trailing_stop = None
+    _r._time_stop = None
+    _r._partial_profit = None
+    _r._correlation_monitor = None
+    _r._shutdown_mgr = None
     runner._metrics = MagicMock()
-    runner._data_loader = None  # type: ignore[assignment]
+    _r._data_loader = None
     runner._allocator = None
     runner._email_alerter = None
     runner._slack_alerter = None

@@ -110,7 +110,7 @@ def main():
     print(f"  Z-score:      entry={ENTRY_Z}, exit={EXIT_Z}")
     print(f"  FDR q:        {FDR_Q} | Corr min: {MIN_CORR} | HL max: {MAX_HALF_LIFE}")
     print(f"  Rediscovery:  every {REDISCOVERY} bar(s)")
-    print(f"  Statistics:   Bonferroni + Johansen + Newey-West + Kalman")
+    print("  Statistics:   Bonferroni + Johansen + Newey-West + Kalman")
     print("=" * 70)
     print()
 

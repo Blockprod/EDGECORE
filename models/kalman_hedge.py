@@ -119,7 +119,9 @@ class KalmanHedgeRatio:
 
         # --- Prediction step ---
         theta_pred = np.array([self.beta, self.intercept])
-        P_pred = self.P + self.Q
+        _P_cur = self.P
+        assert _P_cur is not None
+        P_pred: np.ndarray = _P_cur + self.Q
 
         # Observation vector: y_t = H @ theta + eps, where H = [x, 1]
         H = np.array([x, 1.0])
@@ -136,11 +138,11 @@ class KalmanHedgeRatio:
         theta_new = theta_pred + K * innovation
         self.beta = float(theta_new[0])
         self.intercept = float(theta_new[1])
-        self.P = P_pred - np.outer(K, H) @ P_pred
-
+        _P: np.ndarray = P_pred - np.outer(K, H) @ P_pred
         # Ensure P stays positive semi-definite (numerical stability)
-        self.P = (self.P + self.P.T) / 2.0  # type: ignore[operator]
-        np.fill_diagonal(self.P, np.maximum(np.diag(self.P), 1e-12))  # type: ignore[arg-type]
+        _P = (_P + _P.T) / 2.0
+        np.fill_diagonal(_P, np.maximum(np.diag(_P), 1e-12))
+        self.P = _P
 
         # --- Adaptive R: exponential smoothing of squared innovation ---
         if self.r_smoothing > 0 and self.bars_processed > 5:
@@ -168,7 +170,7 @@ class KalmanHedgeRatio:
         self.beta_history.append(self.beta)
         self.spread_history.append(spread)
         self.innovation_history.append(normalized_innovation)
-        self.P_history.append(float(self.P[0, 0]) if self.P is not None else 0.0)  # type: ignore[index]
+        self.P_history.append(float(self.P.item(0, 0)) if self.P is not None else 0.0)
 
         self.bars_processed += 1
         return self.beta, spread, normalized_innovation

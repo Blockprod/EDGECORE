@@ -204,7 +204,7 @@ def main():
     print(f"  min_spread:   {MIN_SPREAD} (was 0.30)")
     print(f"  min_corr:     {MIN_CORR} (was 0.65)")
     print(f"  time_stop:    {TIME_STOP_MULT}x HL, cap={MAX_HOLD_DAYS}d")
-    print(f"  momentum:     STRICT")
+    print("  momentum:     STRICT")
     print("=" * 70)
     print()
 
@@ -244,7 +244,7 @@ def main():
         f.write(f"entry_z={ENTRY_Z}, exit_z={EXIT_Z}, min_spread=${MIN_SPREAD}\n")
         f.write(f"stop={STOP_PCT} | max_HL={MAX_HALF_LIFE} | corr={MIN_CORR} | FDR q={FDR_Q}\n")
         f.write(f"time_stop={TIME_STOP_MULT}x HL, cap={MAX_HOLD_DAYS}d\n")
-        f.write(f"Momentum: STRICT\n")
+        f.write("Momentum: STRICT\n")
         f.write(f"Elapsed: {elapsed:.1f}s\n\n")
         f.write(summary)
     print(f"\n[Saved] {out_path}")

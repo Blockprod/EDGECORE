@@ -11,7 +11,8 @@ Key changes vs v20:
   - max_half_life: 90 -> 120 (accept slower mean-reversion)
 """
 
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -100,9 +101,9 @@ def main():
     print(f"  Alloc:    {args.alloc}% per pair (max ~3 concurrent)")
     print(f"  Heat:     {args.heat*100:.0f}% max portfolio utilization")
     print(f"  Stop:     {args.stop*100:.0f}% per position | z_stop=3.5")
-    print(f"  Z-score:  entry=1.5, exit=0.5")
-    print(f"  FDR:      q=0.20 (relaxed)")
-    print(f"  Lookback: 252 + [126]")
+    print("  Z-score:  entry=1.5, exit=0.5")
+    print("  FDR:      q=0.20 (relaxed)")
+    print("  Lookback: 252 + [126]")
     print(f"  Rediscovery: every {args.rediscovery} bar(s)")
     print("=" * 60)
     print()

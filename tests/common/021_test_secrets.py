@@ -164,7 +164,7 @@ class TestSecretsVault:
             vault.store_secret("", "value")
 
         with pytest.raises(SecretsError):
-            vault.store_secret(None, "value")  # type: ignore[arg-type]
+            vault.store_secret(None, "value")  # pyright: ignore[reportArgumentType]
 
     def test_store_invalid_value(self):
         """Test rejection of invalid secret value."""
@@ -174,7 +174,7 @@ class TestSecretsVault:
             vault.store_secret("KEY", "")
 
         with pytest.raises(SecretsError):
-            vault.store_secret("KEY", None)  # type: ignore[arg-type]
+            vault.store_secret("KEY", None)  # pyright: ignore[reportArgumentType]
 
     def test_retrieve_nonexistent_secret(self):
         """Test retrieving non-existent secret."""
@@ -218,7 +218,9 @@ class TestSecretsVault:
 
         retrieved = vault.get_secret("MY_KEY")
         assert retrieved == "new_value"
-        assert vault.get_metadata("MY_KEY").rotated_at is not None  # type: ignore[union-attr]
+        _meta_r = vault.get_metadata("MY_KEY")
+        assert _meta_r is not None
+        assert _meta_r.rotated_at is not None
 
     def test_rotate_nonexistent_secret(self):
         """Test rotating non-existent secret."""
@@ -233,13 +235,19 @@ class TestSecretsVault:
 
         vault.store_secret("MY_KEY", "value")
 
-        assert vault.get_metadata("MY_KEY").access_count == 0  # type: ignore[union-attr]
+        _meta0 = vault.get_metadata("MY_KEY")
+        assert _meta0 is not None
+        assert _meta0.access_count == 0
 
         vault.get_secret("MY_KEY")
-        assert vault.get_metadata("MY_KEY").access_count == 1  # type: ignore[union-attr]
+        _meta1 = vault.get_metadata("MY_KEY")
+        assert _meta1 is not None
+        assert _meta1.access_count == 1
 
         vault.get_secret("MY_KEY")
-        assert vault.get_metadata("MY_KEY").access_count == 2  # type: ignore[union-attr]
+        _meta2 = vault.get_metadata("MY_KEY")
+        assert _meta2 is not None
+        assert _meta2.access_count == 2
 
     def test_rotation_interval_check(self):
         """Test rotation interval checking."""
@@ -454,17 +462,23 @@ class TestSecretsIntegration:
         # Store
         vault.store_secret("API_KEY", "initial_value")
         assert vault.get_secret("API_KEY") == "initial_value"
-        assert vault.get_metadata("API_KEY").access_count == 1  # type: ignore[union-attr]
+        _m1 = vault.get_metadata("API_KEY")
+        assert _m1 is not None
+        assert _m1.access_count == 1
 
         # Access again
         vault.get_secret("API_KEY")
-        assert vault.get_metadata("API_KEY").access_count == 2  # type: ignore[union-attr]
+        _m2 = vault.get_metadata("API_KEY")
+        assert _m2 is not None
+        assert _m2.access_count == 2
 
         # Rotate
         vault.rotate_secret("API_KEY", "new_value")
         assert vault.get_secret("API_KEY") == "new_value"
-        assert vault.get_metadata("API_KEY").access_count == 3  # Incremented by get_secret  # type: ignore[union-attr]
-        assert vault.get_metadata("API_KEY").rotated_at is not None  # type: ignore[union-attr]
+        _m3 = vault.get_metadata("API_KEY")
+        assert _m3 is not None
+        assert _m3.access_count == 3  # Incremented by get_secret
+        assert _m3.rotated_at is not None
 
         # Check audit trail
         audit = vault.get_audit_log()

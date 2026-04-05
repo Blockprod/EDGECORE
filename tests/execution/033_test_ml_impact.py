@@ -1,7 +1,5 @@
 ﻿"""Tests for ML-based market impact prediction."""
 
-import numpy as np
-from pathlib import Path
 import tempfile
 from pathlib import Path
 from typing import cast
@@ -160,7 +158,7 @@ class TestMLImpactPredictor:
             "order_urgency": "passive",
         }
 
-        prediction = predictor.predict(features)  # type: ignore[arg-type]
+        prediction = predictor.predict(cast(ImpactFeatures, features))
 
         assert "predicted_impact_bps" in prediction
         assert "confidence_interval_lower" in prediction
@@ -189,7 +187,7 @@ class TestMLImpactPredictor:
             "order_urgency": "aggressive",
         }
 
-        prediction = predictor.predict(features)  # type: ignore[arg-type]
+        prediction = predictor.predict(cast(ImpactFeatures, features))
 
         # Untrained model should still produce valid predictions
         assert 0 <= prediction["predicted_impact_bps"] <= 200
@@ -253,7 +251,7 @@ class TestModelTraining:
         ]
         impacts_list = [1.0 + np.random.normal(0, 0.1) for _ in range(50)]
 
-        predictor.train_on_data(features_list, impacts_list)  # type: ignore[arg-type]
+        predictor.train_on_data(cast(list[ImpactFeatures], features_list), impacts_list)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             filepath = Path(tmpdir) / "trained_model.pkl"
@@ -322,7 +320,7 @@ class TestPredictionQuality:
             "order_urgency": "normal",
         }
 
-        prediction = predictor.predict(features)  # type: ignore[arg-type]
+        prediction = predictor.predict(cast(ImpactFeatures, features))
 
         # CI should be wider than point prediction
         mean = prediction["predicted_impact_bps"]
@@ -380,3 +378,4 @@ class TestPredictionQuality:
         aggressive_impact = predictor.predict(cast(ImpactFeatures, aggressive_features))["predicted_impact_bps"]
 
         assert aggressive_impact > passive_impact
+

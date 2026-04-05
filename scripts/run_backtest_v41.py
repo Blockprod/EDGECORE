@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v41 -- Phase 3 (Revised): Daily Data, Lower Entry Threshold.
 
@@ -234,9 +235,8 @@ def main():
     print()
     if best:
         label, m, tpy = best
-        print("  >>> Best Phase 3 candidate: %s <<<" % label)
-        print("       Trades ~%.0f/yr  Sharpe %.2f  WR %.1f%%  Return %+.2f%%" % (
-            tpy, m.sharpe_ratio, m.win_rate * 100, m.total_return * 100))
+        print(f"  >>> Best Phase 3 candidate: {label} <<<")
+        print(f"       Trades ~{tpy:.0f}/yr  Sharpe {m.sharpe_ratio:.2f}  WR {m.win_rate * 100:.1f}%  Return {m.total_return * 100:+.2f}%")
         print("       -> Use this config as v42 baseline")
     else:
         print("  >>> No config passes all Phase 3 targets at once <<<")
@@ -244,8 +244,7 @@ def main():
         pos = [(l, m, t) for l, m, t in results if m.sharpe_ratio > 0]
         if pos:
             best_s = max(pos, key=lambda x: x[1].sharpe_ratio)
-            print("  >>> Best positive Sharpe: %s  S=%.2f  trades=~%.0f/yr <<<" % (
-                best_s[0], best_s[1].sharpe_ratio, best_s[2]))
+            print(f"  >>> Best positive Sharpe: {best_s[0]}  S={best_s[1].sharpe_ratio:.2f}  trades=~{best_s[2]:.0f}/yr <<<")
             print("       -> Phase 3 target may need to be revised to: Trades>=30/yr")
         else:
             print("  >>> All configs negative Sharpe -- investigate pair quality <<<")

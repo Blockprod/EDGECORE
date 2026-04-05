@@ -7,7 +7,6 @@ TODO:
 - Correlation analysis of parameters
 """
 
-import pandas as pd
 from itertools import product
 
 import pandas as pd

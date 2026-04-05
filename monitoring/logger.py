@@ -1,5 +1,5 @@
 ﻿import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import structlog
@@ -20,7 +20,7 @@ def setup_logger(name: str, log_level: str = "INFO", log_dir: str = "logs") -> s
     Path(log_dir).mkdir(exist_ok=True)
 
     # Standard library logging config
-    handler = logging.FileHandler(f"{log_dir}/{name}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.log")
+    handler = logging.FileHandler(f"{log_dir}/{name}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.log")
     handler.setFormatter(logging.Formatter("%(message)s"))
 
     root_logger = logging.getLogger()

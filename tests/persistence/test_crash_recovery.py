@@ -8,6 +8,7 @@ Scenarios:
 """
 
 import json
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # 1. IBKRExecutionEngine order map — truncated .tmp
@@ -102,7 +103,8 @@ class TestKillSwitchCrashRecovery:
         ks._reason = KillReason("manual_activation")
         ks._message = ""
         ks._activated_at = None
-        ks._callbacks = []  # type: ignore[attr-defined]
+        _ks: Any = ks
+        _ks._callbacks = []
 
         # Write an initial state so the file exists
         ks._save_state()
@@ -151,7 +153,8 @@ class TestPairCacheCrashRecovery:
 
         disc = PairDiscoveryEngine.__new__(PairDiscoveryEngine)
         disc._cache_dir = tmp_path
-        disc._max_cache_age_hours = 24  # type: ignore[attr-defined]
+        _disc: Any = disc
+        _disc._max_cache_age_hours = 24
 
         result = disc._load_cache()
         assert result is None

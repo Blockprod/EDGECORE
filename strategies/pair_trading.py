@@ -454,10 +454,24 @@ class PairTradingStrategy(BaseStrategy):
             (sym1, sym2, raw_pvalue, half_life) or None if fails
             correlation or half-life checks.
         """
+        _args: Any = args
         if len(args) >= 9:
-            sym1, sym2, series1, series2, min_corr, max_hl, _num_symbols, _johansen_flag, nw_consensus_flag = args[:9]  # type: ignore[misc]
+            sym1 = _args[0]
+            sym2 = _args[1]
+            series1 = _args[2]
+            series2 = _args[3]
+            min_corr = _args[4]
+            max_hl = _args[5]
+            _num_symbols = _args[6]
+            _johansen_flag = _args[7]
+            nw_consensus_flag = _args[8]
         else:
-            sym1, sym2, series1, series2, min_corr, max_hl = args[:6]  # type: ignore[misc]
+            sym1 = _args[0]
+            sym2 = _args[1]
+            series1 = _args[2]
+            series2 = _args[3]
+            min_corr = _args[4]
+            max_hl = _args[5]
             nw_consensus_flag = False
 
         try:

@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v40 -- Phase 3 Validation: Intraday 1-Hour Synthetic Bars.
 
@@ -141,8 +142,7 @@ def main():
     print("  Universe: %d symbols (v37/v39 core, identical)" % len(V40_SYMBOLS))
     print("  Bars:     %d/day (1-hour, synthetic via Brownian bridge)" % BARS_PER_DAY)
     print("  Leverage: 1.5x gross exposure (Phase 3 roadmap)")
-    print("  Window:   %s to %s (3 years = 756 trading days x 7 = 5292 bars)" % (
-        START_DATE, END_DATE))
+    print(f"  Window:   {START_DATE} to {END_DATE} (3 years = 756 trading days x 7 = 5292 bars)")
     print()
     print("  Phase 3 targets: Trades >= 200/yr  Sharpe >= 1.5  MaxDD > -8%")
     print("  v39 baseline:    23t  S=1.82  +42.55%  DD=-2.69%  (2.5x daily)")
@@ -218,8 +218,7 @@ def main():
     )
     print("       Intraday bars: %d rows x %d symbols (%.1fs)" % (
         len(intraday_prices), len(intraday_prices.columns), time.time() - t1))
-    print("       Period: %s -> %s" % (
-        str(intraday_prices.index[0])[:16], str(intraday_prices.index[-1])[:16]))
+    print(f"       Period: {str(intraday_prices.index[0])[:16]} -> {str(intraday_prices.index[-1])[:16]}")
 
     # ---- Step 3: Run intraday simulator -------------------------------------
     print("  [3/3] Running intraday backtest (bars_per_day=%d, leverage=1.5x)..." % BARS_PER_DAY)
@@ -238,7 +237,7 @@ def main():
     )
     metrics = sim.run(intraday_prices, sector_map=V40_SECTOR_MAP)
     elapsed = time.time() - t2
-    print("       Completed in %.1fs" % elapsed)
+    print(f"       Completed in {elapsed:.1f}s")
     print()
 
     # ---- Results ------------------------------------------------------------
@@ -261,34 +260,34 @@ def main():
     print("  v40 PHASE 3 RESULTS (1-hour synthetic, 1.5x leverage)")
     print("=" * 75)
     print()
-    print("  Return     : %+.2f%%" % ret)
+    print(f"  Return     : {ret:+.2f}%")
     print("  Sharpe     : %.2f   (annualized at 252 x %d = %d bars/year)" % (
         sh, BARS_PER_DAY, 252 * BARS_PER_DAY))
-    print("  PF         : %.2f" % pf)
-    print("  WR         : %.1f%%" % wr)
+    print(f"  PF         : {pf:.2f}")
+    print(f"  WR         : {wr:.1f}%")
     print("  Trades     : %d total  (~%.0f/year)" % (t, trades_per_year))
-    print("  MaxDD      : %.2f%%" % dd)
-    print("  Calmar     : %.2f" % cal)
+    print(f"  MaxDD      : {dd:.2f}%")
+    print(f"  Calmar     : {cal:.2f}")
     print()
     print("  PHASE 3 TARGET CHECK:")
-    print("    Trades >= 200/year (go-criteria) : %s (~%.0f/yr)" % (
+    print("    Trades >= 200/year (go-criteria) : {} (~{:.0f}/yr)".format(
         "PASS" if trades_per_year >= 200 else "MISS", trades_per_year))
-    print("    Sharpe >= 1.5 (go-criteria)      : %s (%.2f)" % (
+    print("    Sharpe >= 1.5 (go-criteria)      : {} ({:.2f})".format(
         "PASS" if sh >= 1.5 else "MISS", sh))
-    print("    Sharpe >= 2.0 (stretch goal)     : %s (%.2f)" % (
+    print("    Sharpe >= 2.0 (stretch goal)     : {} ({:.2f})".format(
         "PASS" if sh >= 2.0 else "MISS", sh))
-    print("    PF     >= 2.5                    : %s (%.2f)" % (
+    print("    PF     >= 2.5                    : {} ({:.2f})".format(
         "PASS" if pf >= 2.5 else "MISS", pf))
-    print("    WR     >= 50%%                   : %s (%.1f%%)" % (
+    print("    WR     >= 50%                   : {} ({:.1f}%)".format(
         "PASS" if wr >= 50.0 else "MISS", wr))
-    print("    MaxDD  > -8%%                    : %s (%.2f%%)" % (
+    print("    MaxDD  > -8%                    : {} ({:.2f}%)".format(
         "PASS" if dd > -8.0 else "MISS", dd))
     print()
     print("  vs v39 BASELINE (2.5x daily):")
-    print("    Return  : %+.2f%%  (v39: +42.55%%)  delta=%+.2f%%" % (ret, ret - 42.55))
-    print("    Sharpe  : %.2f   (v39: 1.82)  delta=%+.2f" % (sh, sh - 1.82))
+    print(f"    Return  : {ret:+.2f}%  (v39: +42.55%)  delta={ret - 42.55:+.2f}%")
+    print(f"    Sharpe  : {sh:.2f}   (v39: 1.82)  delta={sh - 1.82:+.2f}")
     print("    Trades  : %d/yr  (v39: ~8/yr)" % int(trades_per_year))
-    print("    MaxDD   : %.2f%%  (v39: -2.69%%)" % dd)
+    print(f"    MaxDD   : {dd:.2f}%  (v39: -2.69%)")
     print()
 
     phase3_pass = (trades_per_year >= 200 and sh >= 1.5 and dd > -8.0)

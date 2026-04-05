@@ -46,7 +46,7 @@ class DisasterRecovery:
         try:
             # Step 1: Load audit trail
             logger.info("recovery_step", step=1, action="loading_audit_trail")
-            audit_data = self.audit_trail.load_full_audit_trail()  # type: ignore[attr-defined]
+            audit_data = self.audit_trail.load_full_audit_trail()
             report["steps"].append(
                 {
                     "step": 1,
@@ -236,7 +236,7 @@ class DisasterRecovery:
         backup_file = backup_path / f"audit_trail_backup_{timestamp}.csv"
 
         # Load audit trail
-        audit_data = self.audit_trail.load_full_audit_trail()  # type: ignore[attr-defined]
+        audit_data = self.audit_trail.load_full_audit_trail()
 
         # Write to file
         with open(backup_file, "w") as f:
@@ -318,7 +318,7 @@ def backup_audit_trail() -> str:
 def verify_data_integrity() -> dict:
     """Verify data integrity of audit trail."""
     recovery = DisasterRecovery()
-    audit_data = recovery.audit_trail.load_full_audit_trail()  # type: ignore[attr-defined]
+    audit_data = recovery.audit_trail.load_full_audit_trail()
     return recovery.verify_data_integrity(audit_data)
 
 

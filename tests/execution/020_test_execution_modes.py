@@ -342,7 +342,9 @@ class TestPaperTradingMode:
         cancelled = mode.cancel_order(order_id)
         assert cancelled is True
         assert context.get_order(order_id) is not None
-        assert context.get_order(order_id).status == OrderStatus.CANCELLED  # type: ignore[union-attr]
+        _order = context.get_order(order_id)
+        assert _order is not None
+        assert _order.status == OrderStatus.CANCELLED
 
     def test_paper_open_position(self):
         """Test opening position in paper mode."""

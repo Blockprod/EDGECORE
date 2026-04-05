@@ -14,7 +14,8 @@ All Phase 0-3 corrections active:
   - Portfolio heat limit, drawdown circuit breaker
 """
 
-import os, sys
+import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -145,8 +146,8 @@ def main():
     print(f"  Capital:  {args.capital:,.0f} EUR")
     print(f"  Alloc:    {args.alloc}% per pair (2x leverage)")
     print(f"  Stop:     {args.stop * 100}% | Heat: {args.heat * 100}%")
-    print(f"  Z-score:  entry=2.0, exit=0.5, z_stop=3.5")
-    print(f"  Lookback: 252 + [126]")
+    print("  Z-score:  entry=2.0, exit=0.5, z_stop=3.5")
+    print("  Lookback: 252 + [126]")
     print(f"  Rediscovery: every {args.rediscovery} bar(s)")
     print("=" * 60)
     print()

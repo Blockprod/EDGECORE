@@ -17,7 +17,8 @@ v17d - Institutional R:R with per-sector FDR + z-score exits.
          (vs v17's entry_z=1.0: R:R = 1:2.7, needed 73% WR)
 """
 
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backtests.runner import BacktestRunner

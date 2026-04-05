@@ -10,6 +10,7 @@ Verifies the full tick pipeline with mocked infrastructure:
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -105,7 +106,7 @@ class TestTickHappyPath:
         with patch.object(runner, "_fetch_market_data", return_value=_mock_market_data()):
             runner._tick()
 
-        assert runner._router.submit_order.called  # type: ignore[union-attr]
+        assert cast(Any, runner._router).submit_order.called
         assert runner._iteration == 1
 
     def test_tick_increments_iteration(self):
@@ -117,12 +118,12 @@ class TestTickHappyPath:
 
     def test_tick_no_order_when_risk_rejects(self):
         runner = self._setup_mocks(self._make_runner())
-        runner._risk_facade.can_enter_trade.return_value = (False, "risk rejected")  # type: ignore[union-attr]
+        cast(Any, runner._risk_facade).can_enter_trade.return_value = (False, "risk rejected")
 
         with patch.object(runner, "_fetch_market_data", return_value=_mock_market_data()):
             runner._tick()
 
-        runner._router.submit_order.assert_not_called()  # type: ignore[union-attr]
+        cast(Any, runner._router).submit_order.assert_not_called()
 
     def test_tick_updates_metrics(self):
         runner = self._setup_mocks(self._make_runner())
@@ -147,11 +148,12 @@ class TestTickDisconnect:
         runner._portfolio_risk = None
         runner._allocator = None
         runner._router = None
-        runner._trailing_stop = None  # type: ignore[assignment]
-        runner._time_stop = None  # type: ignore[assignment]
-        runner._partial_profit = None  # type: ignore[assignment]
-        runner._shutdown_mgr = None  # type: ignore[assignment]
-        runner._correlation_monitor = None  # type: ignore[assignment]
+        _r: Any = runner
+        _r._trailing_stop = None
+        _r._time_stop = None
+        _r._partial_profit = None
+        _r._shutdown_mgr = None
+        _r._correlation_monitor = None
         runner._reconciler = None
         runner._last_reconciliation = None
         runner._reconciliation_interval = timedelta(minutes=5)
@@ -178,11 +180,12 @@ class TestTickDisconnect:
         runner._reconciler = None
         runner._last_reconciliation = None
         runner._reconciliation_interval = timedelta(minutes=5)
-        runner._trailing_stop = None  # type: ignore[assignment]
-        runner._time_stop = None  # type: ignore[assignment]
-        runner._partial_profit = None  # type: ignore[assignment]
-        runner._shutdown_mgr = None  # type: ignore[assignment]
-        runner._correlation_monitor = None  # type: ignore[assignment]
+        _r2: Any = runner
+        _r2._trailing_stop = None
+        _r2._time_stop = None
+        _r2._partial_profit = None
+        _r2._shutdown_mgr = None
+        _r2._correlation_monitor = None
         runner._risk_facade = MagicMock()
         runner._risk_facade.is_halted = False
         from monitoring.metrics import SystemMetrics

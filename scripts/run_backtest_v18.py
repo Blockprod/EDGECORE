@@ -25,7 +25,8 @@ v18 - Curated Universe + All Structural Fixes.
         400% heat (allows ~4 concurrent leveraged pairs)
 """
 
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backtests.runner import BacktestRunner

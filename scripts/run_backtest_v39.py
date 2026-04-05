@@ -1,4 +1,5 @@
-﻿#!/usr/bin/env python
+# ruff: noqa: UP031
+#!/usr/bin/env python
 """EDGECORE v39 -- Phase 5.3: Leverage 2.5x (optimal frontier).
 
 Leverage frontier validated on v37 core (39 symbols, 2023-03-04 to 2026-03-04):
@@ -163,22 +164,21 @@ def main():
         ret, s, pf, wr, t, dd))
     print()
     print("  vs v37 UNLEVERED BASELINE:")
-    print("    Return     : %+.2f%%  (v37: +13.92%%)  delta=%+.2f%%  (%.1fx return)" % (
-        ret, ret - 13.92, ret / 13.92))
-    print("    Sharpe     : %.2f   (v37: 1.67)  delta=%+.2f" % (s, s - 1.67))
-    print("    PF         : %.2f" % pf)
-    print("    WR         : %.1f%%" % wr)
+    print(f"    Return     : {ret:+.2f}%  (v37: +13.92%)  delta={ret - 13.92:+.2f}%  ({ret / 13.92:.1f}x return)")
+    print(f"    Sharpe     : {s:.2f}   (v37: 1.67)  delta={s - 1.67:+.2f}")
+    print(f"    PF         : {pf:.2f}")
+    print(f"    WR         : {wr:.1f}%")
     print("    Trades     : %d" % t)
-    print("    MaxDD      : %.2f%%  (v37: -1.13%%)" % dd)
-    print("    Calmar     : %.2f" % cal)
+    print(f"    MaxDD      : {dd:.2f}%  (v37: -1.13%)")
+    print(f"    Calmar     : {cal:.2f}")
     print()
     print("  PHASE 5 TARGET CHECK:")
-    print("    Sharpe >= 1.5 (go-criteria) : %s (%.2f)" % ("PASS" if s >= 1.5 else "MISS", s))
-    print("    Sharpe >= 2.0 (stretch)     : %s (%.2f)" % ("PASS" if s >= 2.0 else "MISS", s))
-    print("    PF     >= 2.5               : %s (%.2f)" % ("PASS" if pf >= 2.5 else "MISS", pf))
-    print("    DD     > -8%%               : %s (%.2f%%)" % ("PASS" if dd > -8.0 else "MISS", dd))
+    print("    Sharpe >= 1.5 (go-criteria) : {} ({:.2f})".format("PASS" if s >= 1.5 else "MISS", s))
+    print("    Sharpe >= 2.0 (stretch)     : {} ({:.2f})".format("PASS" if s >= 2.0 else "MISS", s))
+    print("    PF     >= 2.5               : {} ({:.2f})".format("PASS" if pf >= 2.5 else "MISS", pf))
+    print("    DD     > -8%               : {} ({:.2f}%)".format("PASS" if dd > -8.0 else "MISS", dd))
     print("    Trades >= v37 (23)          : %s (%d)" % ("PASS" if t >= 23 else "MISS", t))
-    print("    Return 3x+ vs unlevered     : %s (%.1fx)" % ("PASS" if ret >= 41.76 else "MISS", ret / 13.92))
+    print("    Return 3x+ vs unlevered     : {} ({:.1f}x)".format("PASS" if ret >= 41.76 else "MISS", ret / 13.92))
     print()
     if s >= 1.5 and t >= 23 and dd > -8.0:
         print("  >>> Phase 5.3 PASS: Leverage 2.5x operational <<<")

@@ -152,7 +152,7 @@ def main():
     print(f"  Min spread:   ${MIN_SPREAD:.2f}")
     print(f"  FDR q:        {FDR_Q} | Corr min: {MIN_CORR} | HL max: {MAX_HALF_LIFE}")
     print(f"  Rediscovery:  every {REDISCOVERY} bar(s)")
-    print(f"  Statistics:   Bonferroni + Johansen + Newey-West + Kalman")
+    print("  Statistics:   Bonferroni + Johansen + Newey-West + Kalman")
     print("  --- Corrections -------------------------------------------")
     print(f"  [E1] Regime:    ENABLED (SPY MA{settings.regime.ma_fast}/{settings.regime.ma_slow}, vol>{settings.regime.vol_threshold})")
     print(f"  [E2] Entry Z:   {ENTRY_Z} (was 1.5) + min spread ${MIN_SPREAD}")

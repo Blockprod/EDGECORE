@@ -2,8 +2,11 @@
 """Demo du EDGECORE Premium Dashboard."""
 
 from datetime import datetime, timedelta
-from monitoring.rich_dashboard import build_dashboard
+
 from rich.console import Console
+
+from monitoring.rich_dashboard import build_dashboard
+
 
 # Mock runner object with realistic demo data
 class MockRunner:

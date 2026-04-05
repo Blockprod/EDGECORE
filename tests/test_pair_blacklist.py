@@ -191,7 +191,7 @@ class TestBlacklistConfig:
         from config.settings import Settings, get_settings
 
         # Force reload
-        Settings._initialized = False  # type: ignore[attr-defined]
+        Settings._initialized = False  # pyright: ignore[reportAttributeAccessIssue]
         Settings._instance = None
         s = get_settings()
         assert hasattr(s, "pair_blacklist")

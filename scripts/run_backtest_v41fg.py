@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v41fg -- Phase 3 sweep completion: v41f + v41g only.
 
@@ -117,7 +118,7 @@ V41FG_SECTOR_MAP = {
 }
 
 
-def _apply_base_settings(entry_z, exit_z, half_life_cap, rediscovery):
+def _apply_base_settings(entry_z, exit_z, half_life_cap, _rediscovery):
     s = get_settings()
     s.strategy.lookback_window = 120
     s.strategy.additional_lookback_windows = [63]

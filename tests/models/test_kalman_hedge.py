@@ -126,8 +126,9 @@ class TestKalmanHedgeRatioCore:
             # 2D state: check beta variance is small (alpha may remain larger)
             assert P[0, 0] < 0.01, f"Steady-state P[0,0] (beta var)={P[0, 0]:.8f} should be small for delta=1e-5"
         else:
-            assert P < 0.01, (  # type: ignore[operator]
-                f"Steady-state P={P:.8f} should be small for delta=1e-5"
+            assert P is not None
+            assert float(P) < 0.01, (  # pyright: ignore[reportArgumentType]
+                f"Steady-state P={float(P):.8f} should be small for delta=1e-5"
             )
 
     def test_get_confidence_interval(self):

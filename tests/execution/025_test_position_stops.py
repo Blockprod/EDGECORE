@@ -416,7 +416,9 @@ class TestPositionStopStatus:
 
         status = stop.get_status()
         assert status.get("time_to_hard_exit") is not None
-        assert 0 < status.get("time_to_hard_exit") <= 1800  # Between 0-30 min  # type: ignore[operator]
+        _t = status.get("time_to_hard_exit")
+        assert _t is not None
+        assert 0 < _t <= 1800  # Between 0-30 min
 
 
 class TestPositionStopManager:

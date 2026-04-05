@@ -328,7 +328,7 @@ def main() -> int:
             # then poll that event every 0.1 s in the countdown loop.
             _stop_event = threading.Event()
 
-            def _sigint_handler(sig, frame):
+            def _sigint_handler(_sig, _frame):
                 _stop_event.set()
 
             signal.signal(signal.SIGINT, _sigint_handler)

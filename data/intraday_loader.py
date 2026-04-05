@@ -172,7 +172,7 @@ class IntradayLoader:
             chunk_end: pd.Timestamp = cast(pd.Timestamp, pd.Timestamp(end_date))
 
             while chunk_start < chunk_end:
-                req_end = min(chunk_start + pd.Timedelta(days=_CHUNK_DAYS), chunk_end)
+                req_end: pd.Timestamp = cast(pd.Timestamp, min(chunk_start + pd.Timedelta(days=_CHUNK_DAYS), chunk_end))
                 duration = f"{(req_end - chunk_start).days} D"
                 try:
                     bars = engine.get_historical_data(

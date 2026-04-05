@@ -36,7 +36,7 @@ class ModeType(StrEnum):
     BACKTEST = "backtest"
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(str, Enum):  # noqa: UP042
     """Order lifecycle states — delegates to execution.base.OrderStatus values."""
 
     PENDING = "PENDING"

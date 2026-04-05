@@ -25,7 +25,7 @@ from execution.base import BaseExecutionEngine, Order, OrderSide, OrderStatus
 
 # Backward-compat re-exports (C-16): callers that import IBGatewaySync or
 # IBWrapper from this module will continue to work transparently.
-from execution.ibkr_sync_gateway import IBGatewaySync, IBWrapper  # noqa: F401  # type: ignore[reportUnusedImport]
+from execution.ibkr_sync_gateway import IBGatewaySync, IBWrapper  # noqa: F401  # pyright: ignore[reportUnusedImport]
 
 load_dotenv()
 

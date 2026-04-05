@@ -1,5 +1,5 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """EDGECORE v47 -- Walk-Forward: Cross-Sectional Dispersion Gate.
 
 v46 post-mortem — key findings:
@@ -254,8 +254,7 @@ def main():
         _apply_v47_settings()
         t0 = time.time()
         print()
-        print("  Running %s (train %s -> %s | OOS %s -> %s)" % (
-            label, train_start, train_end, oos_start, oos_end))
+        print(f"  Running {label} (train {train_start} -> {train_end} | OOS {oos_start} -> {oos_end})")
         try:
             metrics = runner.run_unified(
                 symbols=WF_SYMBOLS,
@@ -284,7 +283,7 @@ def main():
         except Exception as e:
             elapsed = int(time.time() - t0)
             results.append((label, None, "ERROR", 0, 0, 0, 0, elapsed, str(e)[:120]))
-            print("  -> ERROR: %s" % str(e)[:120])
+            print(f"  -> ERROR: {str(e)[:120]}")
 
     # Summary
     valid   = [r for r in results if r[2] != "ERROR" and r[1] is not None]
@@ -330,7 +329,7 @@ def main():
             tag = label.split()[0]  # P1, P2, etc.
             v47_sharpes[tag] = sh
             delta = sh - v46.get(tag, 0.0)
-            print("  %s=%+.2f(%+.2f)" % (tag, sh, delta), end="")
+            print(f"  {tag}={sh:+.2f}({delta:+.2f})", end="")
     print()
     print()
 

@@ -19,7 +19,6 @@ from portfolio_engine.allocator import (
 from portfolio_engine.concentration import ConcentrationManager
 from portfolio_engine.hedger import PortfolioHedger
 
-
 # ======================================================================
 # PortfolioAllocator
 # ======================================================================

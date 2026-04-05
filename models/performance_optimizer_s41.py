@@ -14,7 +14,6 @@ S4.1 Enhancement:
 
 import functools
 from threading import Lock
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -38,7 +37,7 @@ class LRUSpreadModelCache:
         self.hits = 0
         self.misses = 0
 
-    def get(self, pair_key: str) -> Optional[Dict]:
+    def get(self, pair_key: str) -> dict | None:
         """Retrieve cached spread model metadata."""
         with self.lock:
             if pair_key in self.cache:
@@ -49,7 +48,7 @@ class LRUSpreadModelCache:
             self.misses += 1
             return None
 
-    def put(self, pair_key: str, model_data: Dict) -> None:
+    def put(self, pair_key: str, model_data: dict) -> None:
         """Cache spread model metadata."""
         with self.lock:
             if pair_key in self.cache:
@@ -66,7 +65,7 @@ class LRUSpreadModelCache:
             self.cache.clear()
             self.access_order.clear()
 
-    def stats(self) -> Dict:
+    def stats(self) -> dict:
         """Return cache hit/miss statistics."""
         total = self.hits + self.misses
         hit_rate = self.hits / total if total > 0 else 0
@@ -100,7 +99,7 @@ class VectorizedSignalGenerator:
         """Set ML-based adaptive threshold manager (S4.1)."""
         self.adaptive_threshold_manager = manager
 
-    def get_thresholds_for_pair(self, pair_key: str, **pair_characteristics) -> Tuple[float, float]:
+    def get_thresholds_for_pair(self, pair_key: str, **pair_characteristics) -> tuple[float, float]:
         """Get entry/exit thresholds for a pair (defaults or ML-optimized)."""
         if self.adaptive_threshold_manager is not None and pair_characteristics:
             return self.adaptive_threshold_manager.get_thresholds(pair_key, **pair_characteristics)
@@ -108,10 +107,10 @@ class VectorizedSignalGenerator:
 
     def generate_signals_batch(
         self,
-        z_scores_dict: Dict[str, pd.Series],
-        active_positions: Dict[str, bool],
-        pair_characteristics_dict: Optional[Dict[str, Dict]] = None,
-    ) -> Dict[str, str]:
+        z_scores_dict: dict[str, pd.Series],
+        active_positions: dict[str, bool],
+        pair_characteristics_dict: dict[str, dict] | None = None,
+    ) -> dict[str, str]:
         """Generate signals for multiple pairs using vectorized operations."""
         signals = {}
 
@@ -125,9 +124,9 @@ class VectorizedSignalGenerator:
 
         for pair in z_current.index:
             if pair_characteristics_dict and pair in pair_characteristics_dict:
-                entry_t, exit_t = self.get_thresholds_for_pair(pair, **pair_characteristics_dict[pair])
+                entry_t, exit_t = self.get_thresholds_for_pair(str(pair), **pair_characteristics_dict[pair])
             else:
-                entry_t, exit_t = self.get_thresholds_for_pair(pair)
+                entry_t, exit_t = self.get_thresholds_for_pair(str(pair))
 
             entry_thresholds[pair] = entry_t
             exit_thresholds[pair] = exit_t
@@ -160,8 +159,8 @@ class VectorizedSignalGenerator:
         return signals
 
     def compute_all_z_scores_vectorized(
-        self, spread_dict: Dict[str, pd.Series], lookback: int = 20
-    ) -> Dict[str, pd.Series]:
+        self, spread_dict: dict[str, pd.Series], lookback: int = 20
+    ) -> dict[str, pd.Series]:
         """Compute Z-scores for all pairs in vectorized fashion."""
         z_scores = {}
 
@@ -213,7 +212,7 @@ def cached_spread_model(maxsize: int = 128):
             x_tuple = tuple(x.flatten())
             return wrapper(y_tuple, x_tuple)
 
-        setattr(wrapper_func, "cache_clear", wrapper.cache_clear)
+        setattr(wrapper_func, "cache_clear", wrapper.cache_clear)  # noqa: B010
         return wrapper_func
 
     return decorator

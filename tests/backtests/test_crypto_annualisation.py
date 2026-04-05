@@ -13,7 +13,6 @@ import pytest
 # ---------------------------------------------------------------------------
 # Constant definition & export
 # ---------------------------------------------------------------------------
-
 from backtests.metrics import (
     TRADING_DAYS_PER_YEAR,
     BacktestMetrics,

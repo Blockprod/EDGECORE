@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v35 -- Phase 2: Risk Management Institutionnel.
 
@@ -182,7 +183,7 @@ def main():
     )
 
     elapsed = time.time() - t0
-    print("  Completed in %.0fs" % elapsed)
+    print(f"  Completed in {elapsed:.0f}s")
     print()
 
     r = {
@@ -209,15 +210,14 @@ def main():
     print("  v35 RESULTS vs v34c BASELINE")
     print("=" * 75)
     print(
-        "  Return:  %+.2f%%  (v34c: +%.2f%%)  delta=%+.2f%%"
-        % (r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
+        "  Return:  {:+.2f}%  (v34c: +{:.2f}%)  delta={:+.2f}%".format(r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
     )
-    print("  Sharpe:  %.2f   (v34c: %.2f)  delta=%+.2f" % (r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
-    print("  PF:      %.2f   (v34c: %.2f)  delta=%+.2f" % (r["pf"], base["pf"], r["pf"] - base["pf"]))
-    print("  WR:      %.1f%%   (v34c: %.1f%%)" % (r["win_rate"], base["win_rate"]))
+    print("  Sharpe:  {:.2f}   (v34c: {:.2f})  delta={:+.2f}".format(r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
+    print("  PF:      {:.2f}   (v34c: {:.2f})  delta={:+.2f}".format(r["pf"], base["pf"], r["pf"] - base["pf"]))
+    print("  WR:      {:.1f}%   (v34c: {:.1f}%)".format(r["win_rate"], base["win_rate"]))
     print("  Trades:  %d     (v34c: %d)  delta=%+d" % (r["trades"], base["trades"], r["trades"] - base["trades"]))
-    print("  MaxDD:   %.2f%%  (v34c: %.2f%%)" % (r["max_dd"], base["max_dd"]))
-    print("  Calmar:  %.2f   (v34c: %.2f)" % (r["calmar"], base["calmar"]))
+    print("  MaxDD:   {:.2f}%  (v34c: {:.2f}%)".format(r["max_dd"], base["max_dd"]))
+    print("  Calmar:  {:.2f}   (v34c: {:.2f})".format(r["calmar"], base["calmar"]))
     print()
 
     # Phase 2 acceptance criteria:
@@ -228,8 +228,8 @@ def main():
     dd_ok = r["max_dd"] >= base["max_dd"]  # less negative = better
 
     print("  PHASE 2 ACCEPTANCE:")
-    print("    Sharpe >= 1.20:  %s (%.2f)" % ("PASS" if sharpe_ok else "FAIL", r["sharpe"]))
-    print("    DD maintained:   %s (%.2f%% vs %.2f%%)" % ("PASS" if dd_ok else "FAIL", r["max_dd"], base["max_dd"]))
+    print("    Sharpe >= 1.20:  {} ({:.2f})".format("PASS" if sharpe_ok else "FAIL", r["sharpe"]))
+    print("    DD maintained:   {} ({:.2f}% vs {:.2f}%)".format("PASS" if dd_ok else "FAIL", r["max_dd"], base["max_dd"]))
     print()
 
     if sharpe_ok:

@@ -37,6 +37,7 @@ from __future__ import annotations
 import json
 import pathlib
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -257,7 +258,7 @@ def _run_scenario(scenario: _Scenario) -> dict[str, float]:
 
 def _load_snapshot(path: pathlib.Path) -> dict[str, float]:
     with path.open(encoding="utf-8") as fh:
-        return json.load(fh)  # type: ignore[no-any-return]
+        return cast(dict[str, float], json.load(fh))
 
 
 def _save_snapshot(path: pathlib.Path, data: dict[str, float]) -> None:

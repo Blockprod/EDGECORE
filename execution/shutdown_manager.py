@@ -89,7 +89,8 @@ class ShutdownManager:
             signal.signal(signal.SIGINT, _sigint_handler)
             signal.signal(signal.SIGTERM, _sigterm_handler)
             if hasattr(signal, "SIGUSR1"):
-                signal.signal(signal.SIGUSR1, _sigusr1_handler)  # type: ignore[attr-defined]
+                _sigusr1_num: int = getattr(signal, "SIGUSR1")  # noqa: B009
+                signal.signal(_sigusr1_num, _sigusr1_handler)
             else:
                 logger.info("sigusr1_not_available", reason="not supported on this platform")
             logger.debug("signal_handlers_registered")

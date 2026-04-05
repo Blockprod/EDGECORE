@@ -228,7 +228,7 @@ class TestPositionReconciliation:
         reconciler = BrokerReconciler(internal_equity=100000.0)
 
         with pytest.raises(ValueError):
-            reconciler.reconcile_positions("not a dict")  # type: ignore
+            reconciler.reconcile_positions("not a dict")  # pyright: ignore[reportArgumentType]
 
 
 class TestOrderReconciliation:
@@ -260,7 +260,7 @@ class TestOrderReconciliation:
         reconciler = BrokerReconciler(internal_equity=100000.0)
 
         with pytest.raises(ValueError):
-            reconciler.reconcile_orders("not a dict")  # type: ignore
+            reconciler.reconcile_orders("not a dict")  # pyright: ignore[reportArgumentType]
 
 
 class TestFullReconciliation:
@@ -402,3 +402,4 @@ class TestReconciliationIntegration:
 
         assert not report.positions_match
         assert len(report.divergences) > 0
+

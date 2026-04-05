@@ -3,6 +3,7 @@ Tests for ExecutionRouter ÔÇö verifies order routing across modes.
 """
 
 import time
+from typing import Any
 
 import pytest
 
@@ -203,7 +204,8 @@ class TestUnknownMode:
     def test_unknown_mode_raises(self, sample_order):
         """Invalid mode raises ValueError on submit."""
         router = ExecutionRouter(mode=ExecutionMode.PAPER)
-        router._mode = "INVALID"  # type: ignore[assignment]
+        _r: Any = router
+        _r._mode = "INVALID"
         with pytest.raises(ValueError, match="Unknown mode"):
             router.submit_order(sample_order)
 

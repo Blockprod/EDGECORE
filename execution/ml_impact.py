@@ -82,18 +82,26 @@ class NeuralNetworkModel:
             Predictions [batch_size, 1] and cache for backprop
         """
         # Normalize inputs
-        X_norm = (X - self.feature_mean) / (self.feature_std + 1e-8)  # type: ignore[operator]
+        feature_mean, feature_std = self.feature_mean, self.feature_std
+        W1, b1 = self.W1, self.b1
+        W2, b2 = self.W2, self.b2
+        W3, b3 = self.W3, self.b3
+        assert feature_mean is not None and feature_std is not None
+        assert W1 is not None and b1 is not None
+        assert W2 is not None and b2 is not None
+        assert W3 is not None and b3 is not None
+        X_norm = (X - feature_mean) / (feature_std + 1e-8)
 
         # Hidden layer 1
-        z1 = np.dot(X_norm, self.W1) + self.b1  # type: ignore[arg-type]
+        z1 = np.dot(X_norm, W1) + b1
         a1 = self._relu(z1)
 
         # Hidden layer 2
-        z2 = np.dot(a1, self.W2) + self.b2  # type: ignore[arg-type]
+        z2 = np.dot(a1, W2) + b2
         a2 = self._relu(z2)
 
         # Output layer (no activation)
-        z3 = np.dot(a2, self.W3) + self.b3  # type: ignore[arg-type]
+        z3 = np.dot(a2, W3) + b3
 
         # Denormalize output
         output = z3 * self.output_std + self.output_mean

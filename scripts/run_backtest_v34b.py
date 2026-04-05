@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v34b -- Active Winners Only.
 
@@ -189,7 +190,7 @@ def main():
     )
 
     elapsed = time.time() - t0
-    print("  Completed in %.0fs" % elapsed)
+    print(f"  Completed in {elapsed:.0f}s")
     print()
 
     r = {
@@ -208,15 +209,14 @@ def main():
     print("  v34b RESULTS vs v32j BASELINE")
     print("=" * 75)
     print(
-        "  Return:  %+.2f%%  (v32j: +%.2f%%)  delta=%+.2f%%"
-        % (r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
+        "  Return:  {:+.2f}%  (v32j: +{:.2f}%)  delta={:+.2f}%".format(r["return_pct"], base["return_pct"], r["return_pct"] - base["return_pct"])
     )
-    print("  Sharpe:  %.2f   (v32j: %.2f)  delta=%+.2f" % (r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
-    print("  PF:      %.2f   (v32j: %.2f)  delta=%+.2f" % (r["pf"], base["pf"], r["pf"] - base["pf"]))
-    print("  WR:      %.1f%%" % r["win_rate"])
+    print("  Sharpe:  {:.2f}   (v32j: {:.2f})  delta={:+.2f}".format(r["sharpe"], base["sharpe"], r["sharpe"] - base["sharpe"]))
+    print("  PF:      {:.2f}   (v32j: {:.2f})  delta={:+.2f}".format(r["pf"], base["pf"], r["pf"] - base["pf"]))
+    print("  WR:      {:.1f}%".format(r["win_rate"]))
     print("  Trades:  %d     (v32j: %d)  delta=%+d" % (r["trades"], base["trades"], r["trades"] - base["trades"]))
-    print("  MaxDD:   %.2f%%  (v32j: %.2f%%)" % (r["max_dd"], base["max_dd"]))
-    print("  Calmar:  %.2f" % r["calmar"])
+    print("  MaxDD:   {:.2f}%  (v32j: {:.2f}%)".format(r["max_dd"], base["max_dd"]))
+    print("  Calmar:  {:.2f}".format(r["calmar"]))
     print()
 
     improved = r["sharpe"] >= base["sharpe"] and r["pf"] >= base["pf"] and r["trades"] >= base["trades"]

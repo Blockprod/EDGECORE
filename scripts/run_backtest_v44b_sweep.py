@@ -1,5 +1,5 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """EDGECORE v44b -- Walk-Forward: Lower entry threshold (entry_z=1.4) sweep.
 
 v44 post-mortem:
@@ -313,12 +313,12 @@ def main():
     print()
 
     best = max(comparison, key=lambda x: x[1])
-    print("  Best: %s (avg=%.2f) -> %s" % (best[0], best[1], best[8]))
+    print(f"  Best: {best[0]} (avg={best[1]:.2f}) -> {best[8]}")
     print()
 
     if any(c[8] in ("PASS", "S-PASS") for c in comparison):
         champ = [c for c in comparison if c[8] in ("PASS", "S-PASS")][0]
-        print("  BREAKTHROUGH! %s -> %s (entry_z=%.1f)" % (champ[0], champ[8], champ[7]))
+        print(f"  BREAKTHROUGH! {champ[0]} -> {champ[8]} (entry_z={champ[7]:.1f})")
         print("  Next: Phase 5 planning, expand universe")
     elif best[3] >= 2:  # 2+ PASSes
         print("  NOTE: %s achieves %d/5 PASS (need 4). P4 remains persistent failure." % (best[0], best[3]))

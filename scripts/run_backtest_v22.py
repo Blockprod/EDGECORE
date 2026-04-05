@@ -14,7 +14,8 @@ v22 strategy: Keep high allocation (90%) + lower z-entry (1.5) + relaxed FDR:
   - max_portfolio_heat: 4.0 (400% = 4 concurrent positions)
 """
 
-import os, sys
+import os
+import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -92,9 +93,9 @@ def main():
     print(f"  Alloc:    {args.alloc}% per pair (high conviction)")
     print(f"  Heat:     {args.heat*100:.0f}% max portfolio")
     print(f"  Stop:     {args.stop*100:.0f}% per position | z_stop=3.5")
-    print(f"  Z-score:  entry=1.5, exit=0.3 (let winners run)")
-    print(f"  FDR:      q=0.20 (relaxed)")
-    print(f"  Lookback: 252 + [126]")
+    print("  Z-score:  entry=1.5, exit=0.3 (let winners run)")
+    print("  FDR:      q=0.20 (relaxed)")
+    print("  Lookback: 252 + [126]")
     print(f"  Rediscovery: every {args.rediscovery} bar(s)")
     print("=" * 60)
     print()

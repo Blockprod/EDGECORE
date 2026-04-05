@@ -30,49 +30,58 @@ from risk.engine import RiskEngine
 @pytest.fixture
 def production_config():
     """Production-like configuration."""
-    return FullConfigSchema(  # type: ignore[arg-type]
-        risk={
-            "max_position_size": 0.1,
-            "max_portfolio_heat": 0.2,
-            "max_loss_per_trade": 0.05,
-            "max_drawdown_pct": 10.0,
-            "max_correlation": 0.8,
-            "position_timeout_hours": 24,
-            "min_equity": 10000.0,
-        },  # type: ignore[arg-type]
-        strategy={
-            "min_spread_bps": 5.0,
-            "max_spread_bps": 50.0,
-            "fast_sma_periods": 20,
-            "slow_sma_periods": 50,
-            "entry_z_score": 2.0,
-            "exit_z_score": 1.0,
-            "profit_target_bps": 20.0,
-            "stop_loss_bps": 15.0,
-        },  # type: ignore[arg-type]
-        execution={"mode": "paper", "order_type": "market", "timeout_seconds": 30.0, "max_retries": 3},  # type: ignore[arg-type]
-        data_source={"feed_type": "rest", "ohlcv_interval_minutes": 5, "lookback_hours": 24, "buffer_size": 1000},  # type: ignore[arg-type]
-        alerter={"alert_modes": ["log", "email"], "deduplication_window_minutes": 5, "rate_limit_per_hour": 100},  # type: ignore[arg-type]
-        backtest={
-            "start_date": "2024-01-01",
-            "end_date": "2024-12-31",
-            "initial_equity": 100000.0,
-            "slippage_pct": 0.05,
-            "commission_pct": 0.1,
-        },  # type: ignore[arg-type]
+    return FullConfigSchema.model_validate(
+        {
+            "risk": {
+                "max_position_size": 0.1,
+                "max_portfolio_heat": 0.2,
+                "max_loss_per_trade": 0.05,
+                "max_drawdown_pct": 10.0,
+                "max_correlation": 0.8,
+                "position_timeout_hours": 24,
+                "min_equity": 10000.0,
+            },
+            "strategy": {
+                "min_spread_bps": 5.0,
+                "max_spread_bps": 50.0,
+                "fast_sma_periods": 20,
+                "slow_sma_periods": 50,
+                "entry_z_score": 2.0,
+                "exit_z_score": 1.0,
+                "profit_target_bps": 20.0,
+                "stop_loss_bps": 15.0,
+            },
+            "execution": {"mode": "paper", "order_type": "market", "timeout_seconds": 30.0, "max_retries": 3},
+            "data_source": {
+                "feed_type": "rest",
+                "ohlcv_interval_minutes": 5,
+                "lookback_hours": 24,
+                "buffer_size": 1000,
+            },
+            "alerter": {"alert_modes": ["log", "email"], "deduplication_window_minutes": 5, "rate_limit_per_hour": 100},
+            "backtest": {
+                "start_date": "2024-01-01",
+                "end_date": "2024-12-31",
+                "initial_equity": 100000.0,
+                "slippage_pct": 0.05,
+                "commission_pct": 0.1,
+            },
+        }
     )
 
 
 @pytest.fixture
 def minimal_config():
     """Minimal valid configuration for quick tests."""
-    return FullConfigSchema(  # type: ignore[arg-type]
-        risk={"max_position_size": 0.1},  # type: ignore[arg-type]
-        strategy={"min_spread_bps": 5.0},  # type: ignore[arg-type]
-        execution={"mode": "paper"},  # type: ignore[arg-type]
-        data_source={"feed_type": "rest"},  # type: ignore[arg-type]
-        alerter={"alert_modes": ["log"]},  # type: ignore[arg-type]
-        backtest={"initial_equity": 100000.0},  # type: ignore[arg-type]
+    return FullConfigSchema.model_validate(
+        {
+            "risk": {"max_position_size": 0.1},
+            "strategy": {"min_spread_bps": 5.0},
+            "execution": {"mode": "paper"},
+            "data_source": {"feed_type": "rest"},
+            "alerter": {"alert_modes": ["log"]},
+            "backtest": {"initial_equity": 100000.0},
+        }
     )
 
 
@@ -188,22 +197,16 @@ def independent_pair():
 
     X = 100 + np.cumsum(np.random.randn(200) * 0.5)
     Y = 200 + np.cumsum(np.random.randn(200) * 0.5)  # Independent brownian
-    
-    df_x = pd.DataFrame({
-        'open': X * 0.99, 'high': X * 1.01,
-        'low': X * 0.98, 'close': X, 'volume': 1000
-    }, index=dates)
-    
-    df_y = pd.DataFrame({
-        'open': Y * 0.99, 'high': Y * 1.01,
-        'low': Y * 0.98, 'close': Y, 'volume': 1000
-    }, index=dates)
-    
-    df_x['high'] = df_x[['open', 'high', 'close']].max(axis=1) + 1
-    df_x['low'] = df_x[['open', 'low', 'close']].min(axis=1) - 1
-    df_y['high'] = df_y[['open', 'high', 'close']].max(axis=1) + 1
-    df_y['low'] = df_y[['open', 'low', 'close']].min(axis=1) - 1
-    
+
+    df_x = pd.DataFrame({"open": X * 0.99, "high": X * 1.01, "low": X * 0.98, "close": X, "volume": 1000}, index=dates)
+
+    df_y = pd.DataFrame({"open": Y * 0.99, "high": Y * 1.01, "low": Y * 0.98, "close": Y, "volume": 1000}, index=dates)
+
+    df_x["high"] = df_x[["open", "high", "close"]].max(axis=1) + 1
+    df_x["low"] = df_x[["open", "low", "close"]].min(axis=1) - 1
+    df_y["high"] = df_y[["open", "high", "close"]].max(axis=1) + 1
+    df_y["low"] = df_y[["open", "low", "close"]].min(axis=1) - 1
+
     return {"AAPL": df_x, "MSFT": df_y}
 
     df_x = pd.DataFrame({"open": X * 0.99, "high": X * 1.01, "low": X * 0.98, "close": X, "volume": 1000}, index=dates)

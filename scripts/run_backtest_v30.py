@@ -252,7 +252,7 @@ def main():
     print(f"  Corr min:     {MIN_CORR} | FDR q={FDR_Q}")
     print(f"  Weekly gate:  |z| >= {WEEKLY_Z_GATE}")
     print("  --- v30 Key Changes ---")
-    print(f"  [NEW] Adaptive regime: 4-state (BULL/BEAR/MR/NEUTRAL)")
+    print("  [NEW] Adaptive regime: 4-state (BULL/BEAR/MR/NEUTRAL)")
     print(f"  [NEW] Trend favorable sizing: {TREND_FAVORABLE_SIZING:.0%}")
     print(f"  [NEW] Neutral sizing: {NEUTRAL_SIZING:.0%}")
     print(f"  [v30] Alloc: {ALLOC_PCT}% (was 30%)")
@@ -260,7 +260,7 @@ def main():
     print(f"  [v30] Stop: {STOP_PCT * 100:.0f}% (was 5%)")
     print(f"  [v30] Time stop: {TIME_STOP_MULT}x HL / cap {MAX_HOLD_DAYS}d")
     print(f"  [v30] Blacklist: {BL_MAX_LOSSES} losses -> {BL_COOLDOWN}d cooldown")
-    print(f"  [v30] Healthcare sector added (+5 symbols)")
+    print("  [v30] Healthcare sector added (+5 symbols)")
     print("=" * 70)
     print()
 

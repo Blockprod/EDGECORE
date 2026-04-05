@@ -78,13 +78,13 @@ class StrategyTradeBook:
         """Remove *pair_key* if present, returning its value (or *default*)."""
         return self._trades.pop(pair_key, default)
 
-    def keys(self) -> list[str]:  # type: ignore[override]
+    def keys(self) -> list[str]:
         return list(self._trades.keys())
 
-    def values(self) -> list[dict]:  # type: ignore[override]
+    def values(self) -> list[dict]:
         return list(self._trades.values())
 
-    def items(self) -> list[tuple[str, dict]]:  # type: ignore[override]
+    def items(self) -> list[tuple[str, dict]]:
         return list(self._trades.items())
 
     def __len__(self) -> int:

@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v38 -- Phase 5: Multi-Marché & Scaling.
 

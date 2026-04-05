@@ -22,16 +22,17 @@ Usage:
     cache.save_to_disk()
 """
 
-import time
 import json
+import multiprocessing as mp
 import pickle
 import threading
-from typing import Dict, Any, Optional, Tuple
-from collections import OrderedDict
-from pathlib import Path
-from datetime import datetime
+import time
 from abc import ABC, abstractmethod
-import multiprocessing as mp
+from collections import OrderedDict
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -51,7 +52,7 @@ class EvictionPolicy(ABC):
         pass
     
     @abstractmethod
-    def get_eviction_candidate(self) -> Optional[str]:
+    def get_eviction_candidate(self) -> str | None:
         """Returns key to evict, or None if cache not full."""
         pass
     
@@ -66,7 +67,7 @@ class LFUEvictionPolicy(EvictionPolicy):
     
     def __init__(self, max_size: int):
         self.max_size = max_size
-        self.frequency: Dict[str, int] = {}
+        self.frequency: dict[str, int] = {}
         self.cache_keys: set = set()
     
     def on_access(self, key: str) -> None:
@@ -80,7 +81,7 @@ class LFUEvictionPolicy(EvictionPolicy):
             self.frequency[key] = 0
         self.cache_keys.add(key)
     
-    def get_eviction_candidate(self) -> Optional[str]:
+    def get_eviction_candidate(self) -> str | None:
         """Return least frequently used key if at capacity."""
         if len(self.cache_keys) < self.max_size:
             return None
@@ -97,7 +98,7 @@ class LFUEvictionPolicy(EvictionPolicy):
         self.cache_keys.discard(key)
         self.frequency.pop(key, None)
     
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return frequency statistics."""
         if not self.frequency:
             return {'avg_frequency': 0, 'max_frequency': 0}
@@ -154,7 +155,7 @@ class ARCEvictionPolicy(EvictionPolicy):
             if key not in self.t1 and key not in self.t2:
                 self.t1[key] = True
     
-    def get_eviction_candidate(self) -> Optional[str]:
+    def get_eviction_candidate(self) -> str | None:
         """Return ghost entry to evict, considering T1 vs T2 balance."""
         with self.lock:
             total = len(self.t1) + len(self.t2)
@@ -199,7 +200,7 @@ class ARCEvictionPolicy(EvictionPolicy):
             while len(self.b2) > max_ghosts:
                 self.b2.popitem(last=False)
     
-    def stats(self) -> Dict[str, Any]:
+    def stats(self) -> dict[str, Any]:
         """Return ARC statistics."""
         with self.lock:
             return {
@@ -269,7 +270,7 @@ class DistributedCacheManager:
         if hasattr(self, '_eviction_policy'):
             self._eviction_policy.max_size = value
     
-    def set(self, key: str, value: Any, ttl_seconds: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl_seconds: float | None = None) -> None:
         """Set cache entry (shared across processes)."""
         with self._lock:
             ttl = ttl_seconds or self.default_ttl
@@ -291,7 +292,7 @@ class DistributedCacheManager:
                     self._eviction_policy.on_evict(evict_key)
                     self._eviction_count += 1
     
-    def get(self, key: str, bypass: bool = False) -> Optional[Any]:
+    def get(self, key: str, bypass: bool = False) -> Any | None:
         """Get cache entry (with TTL check and multiprocess safety)."""
         with self._lock:
             if bypass or key not in self._cache:
@@ -314,7 +315,7 @@ class DistributedCacheManager:
             
             return self._cache[key]
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
             total_requests = self._hit_count + self._miss_count
@@ -372,8 +373,8 @@ class PersistentCacheManager:
         self._max_size = 1000  # Default for persistence
         
         # Core cache
-        self._cache: Dict[str, Any] = {}
-        self._cache_times: Dict[str, Tuple[float, float]] = {}
+        self._cache: dict[str, Any] = {}
+        self._cache_times: dict[str, tuple[float, float]] = {}
         self._lock = threading.RLock()
         
         # Stats
@@ -406,7 +407,7 @@ class PersistentCacheManager:
         if hasattr(self, '_eviction_policy'):
             self._eviction_policy.max_size = value
     
-    def set(self, key: str, value: Any, ttl_seconds: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl_seconds: float | None = None) -> None:
         """Set cache entry."""
         with self._lock:
             ttl = ttl_seconds or self.default_ttl
@@ -425,7 +426,7 @@ class PersistentCacheManager:
                     self._eviction_policy.on_evict(evict_key)
                     self._eviction_count += 1
     
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get cache entry with TTL check."""
         with self._lock:
             if key not in self._cache:
@@ -513,7 +514,7 @@ class PersistentCacheManager:
             try:
                 # Deserialize
                 if self.serialize_format == 'json':
-                    with open(filepath, 'r') as f:
+                    with open(filepath) as f:
                         json_data = json.load(f)
                         data = json_data.get('entries', {})
                 else:  # pickle
@@ -544,7 +545,7 @@ class PersistentCacheManager:
                 logger.error("cache_load_failed", error=str(e), filepath=str(filepath))
                 return 0
     
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
             total_requests = self._hit_count + self._miss_count

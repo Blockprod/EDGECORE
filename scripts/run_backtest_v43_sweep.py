@@ -1,5 +1,5 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """EDGECORE v43 -- Regime Filter Sweep over Walk-Forward Windows.
 
 Diagnostic from v42 OOS FAIL:
@@ -234,7 +234,7 @@ def _run_all_windows(runner, ts20, regime_on, fdr_q, trend_fav_sz, vol_threshold
 def _print_config_results(cfg_label, description, results):
     """Print per-window results and verdict for one config."""
     print()
-    print("  [%s]  %s" % (cfg_label, description))
+    print(f"  [{cfg_label}]  {description}")
     print("  " + "-" * 95)
     for label, sh, v, ret, wr, t, dd, elapsed, err in results:
         if err:
@@ -280,8 +280,7 @@ def main():
     for lbl, ron, fq, tfz, vth, desc in SWEEP_CONFIGS:
         regime_str = "ON " if ron else "OFF"
         print(
-            "    [%s] regime=%s  fdr_q=%.2f  trend_fav_sz=%.2f  vol_th=%.2f  -- %s"
-            % (lbl, regime_str, fq, tfz, vth, desc)
+            f"    [{lbl}] regime={regime_str}  fdr_q={fq:.2f}  trend_fav_sz={tfz:.2f}  vol_th={vth:.2f}  -- {desc}"
         )
     print("=" * 95)
 
@@ -299,7 +298,7 @@ def main():
     for cfg_label, regime_on, fdr_q, trend_fav_sz, vol_threshold, desc in SWEEP_CONFIGS:
         print()
         print("=" * 95)
-        print("  Running %s ..." % cfg_label)
+        print(f"  Running {cfg_label} ...")
         print("=" * 95)
         results = _run_all_windows(runner, ts20, regime_on, fdr_q, trend_fav_sz, vol_threshold)
         summary = _print_config_results(cfg_label, desc, results)
@@ -328,20 +327,20 @@ def main():
             best_avg = avg_sh
             best_cfg = cfg_label
     print()
-    print("  Meilleure config OOS : %s  (Sharpe moyen = %.2f)" % (best_cfg, best_avg))
+    print(f"  Meilleure config OOS : {best_cfg}  (Sharpe moyen = {best_avg:.2f})")
     print()
 
     # Determine overall verdict
     best = next((s for s in all_summaries if s[0] == best_cfg), None)
     if best:
         _, avg_sh, min_sh, passes, spasses, fails, verdict = best
-        print("  VERDICT [%s] : %s" % (best_cfg, verdict))
+        print(f"  VERDICT [{best_cfg}] : {verdict}")
         if verdict == "PASS":
             print("  PROCHAINE ETAPE : Phase 5 -- Expansion Europe (CAC40/DAX ~100 sym)")
-            print("  Geler les params de %s comme v43_frozen." % best_cfg)
+            print(f"  Geler les params de {best_cfg} comme v43_frozen.")
         elif verdict == "S-PASS":
             print("  PROCHAINE ETAPE : Tester leverage reduit (2.0x) ou fenetres plus larges.")
-            print("  Geler %s comme candidat v43_frozen avec note de degradation OOS." % best_cfg)
+            print(f"  Geler {best_cfg} comme candidat v43_frozen avec note de degradation OOS.")
         else:
             print("  PROCHAINE ETAPE : Revoir entry_z (tester 1.8) ou allonger train window")
             print("  Hypothese: 18 mois train insuffisant pour des periodes volatiles.")

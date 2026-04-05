@@ -1,4 +1,4 @@
-"""C-06 — Tests: crash réseau mid-order + idempotence de persistance.
+﻿"""C-06 — Tests: crash réseau mid-order + idempotence de persistance.
 
 Scénarios couverts :
   1. L'order_id est persisté avec perm_id=0 *avant* le sleep/crash
@@ -12,6 +12,7 @@ Scénarios couverts :
 
 import json
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 from execution.base import Order, OrderSide
@@ -188,7 +189,8 @@ class TestAtomicOrderMapWrite:
         map_file = tmp_path / "ibkr_order_map.json"
         # Restaurer la vraie méthode _save_order_map (non mockée)
         engine._save_order_map = IBKRExecutionEngine._save_order_map.__get__(engine, IBKRExecutionEngine)
-        engine._ORDER_MAP_FILE = str(map_file)  # type: ignore[assignment]
+        _eng: Any = engine
+        _eng._ORDER_MAP_FILE = str(map_file)
         engine._persisted_order_ids = {"ORD-ATOM-001": 12345, "ORD-ATOM-002": 67890}
 
         engine._save_order_map()
@@ -202,7 +204,8 @@ class TestAtomicOrderMapWrite:
         engine = _build_engine()
         map_file = tmp_path / "ibkr_order_map.json"
         engine._save_order_map = IBKRExecutionEngine._save_order_map.__get__(engine, IBKRExecutionEngine)
-        engine._ORDER_MAP_FILE = str(map_file)  # type: ignore[assignment]
+        _eng: Any = engine
+        _eng._ORDER_MAP_FILE = str(map_file)
         engine._persisted_order_ids = {"ORD-JSON-001": 111, "ORD-JSON-002": 222}
 
         engine._save_order_map()
@@ -217,9 +220,12 @@ class TestAtomicOrderMapWrite:
 
         engine = _build_engine()
         engine._load_order_map = IBKRExecutionEngine._load_order_map.__get__(engine, IBKRExecutionEngine)
-        engine._ORDER_MAP_FILE = str(map_file)  # type: ignore[assignment]
+        _eng: Any = engine
+        _eng._ORDER_MAP_FILE = str(map_file)
         engine._persisted_order_ids = {}
 
         engine._load_order_map()
 
         assert engine._persisted_order_ids == {"ORD-LOAD-001": 555, "ORD-LOAD-002": 666}
+
+

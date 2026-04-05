@@ -14,7 +14,7 @@ Features:
 from collections import defaultdict
 from dataclasses import dataclass, field
 from threading import RLock
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any
 
 import numpy as np
 import structlog
@@ -30,8 +30,8 @@ class PairExposure:
     sym1: str
     sym2: str
     position_size: float = 1.0  # Base position size
-    long_symbols: Set[str] = field(default_factory=set)  # Symbols we're long
-    short_symbols: Set[str] = field(default_factory=set)  # Symbols we're short
+    long_symbols: set[str] = field(default_factory=set)  # Symbols we're long
+    short_symbols: set[str] = field(default_factory=set)  # Symbols we're short
 
     def __post_init__(self):
         """Initialize symbol sets based on pair type."""
@@ -40,7 +40,7 @@ class PairExposure:
         self.long_symbols.add(self.sym1)
         self.short_symbols.add(self.sym2)
 
-    def get_exposure(self) -> Dict[str, float]:
+    def get_exposure(self) -> dict[str, float]:
         """Get net symbol exposures (positive for long, negative for short)."""
         exposure = {}
         for sym in self.long_symbols:
@@ -55,10 +55,10 @@ class ClusterAnalysis:
     """Result of portfolio correlation clustering."""
 
     cluster_id: int
-    pairs: List[Tuple[str, str]]
+    pairs: list[tuple[str, str]]
     correlation_matrix: np.ndarray
     centroid: np.ndarray
-    members_correlation: Dict[str, float]  # Member -> avg correlation with others
+    members_correlation: dict[str, float]  # Member -> avg correlation with others
     concentration_risk: float  # 0.0 = diversified, 1.0 = fully concentrated
 
 
@@ -67,10 +67,10 @@ class CorrelationCalculator:
 
     def __init__(self):
         """Initialize correlation calculator."""
-        self._cache: Dict[Any, float] = {}
+        self._cache: dict[Any, float] = {}
         self._lock = RLock()
 
-    def calculate_pair_correlation(self, pair1: Tuple[str, str], pair2: Tuple[str, str]) -> float:
+    def calculate_pair_correlation(self, pair1: tuple[str, str], pair2: tuple[str, str]) -> float:
         """
         Calculate correlation between two pairs based on shared symbols.
 
@@ -118,7 +118,7 @@ class CorrelationCalculator:
 
         return correlation
 
-    def calculate_pair_matrix(self, pairs: List[Tuple[str, str]]) -> np.ndarray:
+    def calculate_pair_matrix(self, pairs: list[tuple[str, str]]) -> np.ndarray:
         """
         Calculate correlation matrix for list of pairs.
 
@@ -155,7 +155,7 @@ class PairClustering:
         self.correlation_threshold = correlation_threshold
         self.calculator = CorrelationCalculator()
 
-    def cluster_pairs(self, pairs: List[Tuple[str, str]]) -> List[ClusterAnalysis]:
+    def cluster_pairs(self, pairs: list[tuple[str, str]]) -> list[ClusterAnalysis]:
         """
         Cluster pairs into groups based on correlation.
 
@@ -231,7 +231,7 @@ class PortfolioConcentrationAnalyzer:
         """
         self.max_symbol_weight = max_symbol_weight
 
-    def analyze_concentration(self, pair_exposures: Dict[str, PairExposure]) -> Dict[str, Any]:
+    def analyze_concentration(self, pair_exposures: dict[str, PairExposure]) -> dict[str, Any]:
         """
         Analyze portfolio-level concentration risk.
 
@@ -242,7 +242,7 @@ class PortfolioConcentrationAnalyzer:
             Dict with concentration metrics
         """
         # Aggregate exposures
-        total_exposure: Dict[str, float] = defaultdict(float)
+        total_exposure: dict[str, float] = defaultdict(float)
         total_notional = 0.0
 
         for _, exposure in pair_exposures.items():
@@ -282,7 +282,7 @@ class PortfolioConcentrationAnalyzer:
             "top_symbols": sorted(symbol_weights.items(), key=lambda x: x[1], reverse=True)[:5],
         }
 
-    def get_rebalancing_adjustments(self, pair_exposures: Dict[str, PairExposure]) -> Dict[str, float]:
+    def get_rebalancing_adjustments(self, pair_exposures: dict[str, PairExposure]) -> dict[str, float]:
         """
         Calculate position size adjustments to fix concentration violations.
 
@@ -332,7 +332,7 @@ class PortfolioManager:
         self.max_symbol_weight = max_symbol_weight
         self.correlation_threshold = correlation_threshold
 
-        self.pair_exposures: Dict[str, PairExposure] = {}
+        self.pair_exposures: dict[str, PairExposure] = {}
         self.clustering = PairClustering(correlation_threshold)
         self.concentration = PortfolioConcentrationAnalyzer(max_symbol_weight)
         self._lock = RLock()
@@ -363,7 +363,7 @@ class PortfolioManager:
             if pair_id in self.pair_exposures:
                 self.pair_exposures[pair_id].position_size = size
 
-    def analyze_portfolio(self) -> Dict[str, Any]:
+    def analyze_portfolio(self) -> dict[str, Any]:
         """
         Comprehensive portfolio analysis.
 
@@ -398,7 +398,7 @@ class PortfolioManager:
                 "total_notional": concentration["total_notional"],
             }
 
-    def get_rebalancing_plan(self) -> Dict[str, Any]:
+    def get_rebalancing_plan(self) -> dict[str, Any]:
         """
         Get position sizing adjustments to manage portfolio risk.
 
@@ -417,7 +417,7 @@ class PortfolioManager:
                 "rebalancing_required": any(v < 1.0 for v in adjustments.values()),
             }
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get portfolio statistics."""
         with self._lock:
             if not self.pair_exposures:

@@ -25,7 +25,6 @@ from structlog import get_logger
 from backtests.cost_model import CostModel
 from backtests.runner import BacktestRunner
 from backtests.strategy_simulator import StrategyBacktestSimulator
-from backtests.cost_model import CostModel
 from strategies.pair_trading import PairTradingStrategy
 
 logger = get_logger(__name__)

@@ -263,7 +263,7 @@ class TestDataSourceConfigSchema:
     def test_invalid_feed_type(self):
         """Test rejection of invalid feed type."""
         with pytest.raises(ValidationError):
-            DataSourceConfigSchema(feed_type="invalid")  # type: ignore
+            DataSourceConfigSchema(feed_type="invalid")  # pyright: ignore[reportArgumentType]
 
     def test_invalid_timeout_zero(self):
         """Test rejection of zero timeout."""
@@ -360,7 +360,7 @@ class TestFullConfigSchema:
     def test_paper_trading_config(self):
         """Test paper trading configuration."""
         config_dict = {"execution": {"mode": "paper"}}
-        config = FullConfigSchema(**config_dict)  # type: ignore[arg-type]
+        config = FullConfigSchema.model_validate(config_dict)
 
         assert config.execution.mode == ExecutionMode.PAPER
 
@@ -391,7 +391,7 @@ class TestFullConfigSchema:
         }
 
         with pytest.raises(ValidationError):
-            FullConfigSchema(**config_dict)  # type: ignore[arg-type]
+            FullConfigSchema.model_validate(config_dict)
 
     def test_backtest_mode_with_config(self):
         """Test backtest mode with configuration."""

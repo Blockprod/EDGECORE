@@ -14,6 +14,7 @@ Expected improvements:
 
 import functools
 from threading import Lock
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -354,8 +355,9 @@ def cached_spread_model(maxsize: int = 128):
             x_tuple = tuple(x.flatten())
             return wrapper(y_tuple, x_tuple)
 
-        wrapper_func.cache_clear = wrapper.cache_clear  # type: ignore[attr-defined]
-        wrapper_func.cache_info = wrapper.cache_info  # type: ignore[attr-defined]
+        _wf: Any = wrapper_func
+        _wf.cache_clear = wrapper.cache_clear
+        _wf.cache_info = wrapper.cache_info
         return wrapper_func
 
     return decorator

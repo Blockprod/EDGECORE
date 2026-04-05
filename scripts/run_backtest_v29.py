@@ -233,7 +233,7 @@ def main():
     print(f"  Weekly gate:  |z| >= {WEEKLY_Z_GATE}")
     print("  --- v29 Key Changes ---")
     print(f"  [NEW] Directional regime: longs ALLOWED in TRENDING at {TREND_LONG_SIZING:.0%}")
-    print(f"  [NEW] Shorts in TRENDING: BLOCKED (disable_shorts=True)")
+    print("  [NEW] Shorts in TRENDING: BLOCKED (disable_shorts=True)")
     print(f"  [NEW] Shorts in NEUTRAL:  {SHORT_MULT:.0%} sizing")
     print(f"  [NEW] Blacklist: {BL_MAX_LOSSES} losses -> {BL_COOLDOWN}d cooldown")
     print("=" * 70)

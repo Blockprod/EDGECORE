@@ -9,7 +9,7 @@ Provides market models tailored to different trading venues:
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
 from common.types import Symbol, VenueCharacteristics, VenueType
 
@@ -500,4 +500,4 @@ def get_venue_model(venue: VenueType) -> VenueModelBase:
 
     model_class = models.get(venue, IBKRSmartVenueModel)
     logger.info(f"Using {model_class.__name__} for venue {venue}")
-    return model_class()  # type: ignore[abstract]
+    return cast(VenueModelBase, model_class())

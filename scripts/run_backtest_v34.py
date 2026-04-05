@@ -1,3 +1,4 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
 """EDGECORE v34 — Combined Universe Backtest.
 
@@ -251,7 +252,7 @@ def main():
         print("  ❌ v34 FAILS — keep v32j as baseline")
 
     print()
-    print("  Summary: %s" % metrics.summary())
+    print(f"  Summary: {metrics.summary()}")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
+# ruff: noqa: UP031
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """EDGECORE v46 -- Walk-Forward: Momentum Divergence Filter.
 
 v45b post-mortem — root cause identified from trade log analysis:
@@ -242,8 +242,7 @@ def main():
         _apply_v46_settings()
         t0 = time.time()
         print()
-        print("  Running %s (train %s -> %s | OOS %s -> %s)" % (
-            label, train_start, train_end, oos_start, oos_end))
+        print(f"  Running {label} (train {train_start} -> {train_end} | OOS {oos_start} -> {oos_end})")
         try:
             metrics = runner.run_unified(
                 symbols=WF_SYMBOLS,
@@ -272,7 +271,7 @@ def main():
         except Exception as e:
             elapsed = int(time.time() - t0)
             results.append((label, None, "ERROR", 0, 0, 0, 0, elapsed, str(e)[:120]))
-            print("  -> ERROR: %s" % str(e)[:120])
+            print(f"  -> ERROR: {str(e)[:120]}")
 
     # Summary
     valid   = [r for r in results if r[2] != "ERROR" and r[1] is not None]
@@ -313,7 +312,7 @@ def main():
     for label, sh, v, ret, wr, t, dd, elapsed, err in results:
         if sh is not None:
             tag = label.split()[0]  # P1, P2, etc.
-            print("  %s=%+.2f" % (tag, sh), end="")
+            print(f"  {tag}={sh:+.2f}", end="")
     print()
     print()
 

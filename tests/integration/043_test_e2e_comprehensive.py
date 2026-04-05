@@ -84,7 +84,7 @@ class TestFullTradingCycle:
         with patch.object(execution_engine, "submit_order") as mock_submit:
             mock_submit.return_value = {"id": "123456", "symbol": "AAPL", "status": "open"}
 
-            order = execution_engine.submit_order("AAPL", "buy", 100)  # type: ignore[call-arg]
+            order = execution_engine.submit_order("AAPL", "buy", 100)  # pyright: ignore[reportCallIssue]
             assert order is not None
 
 
@@ -237,7 +237,7 @@ class TestErrorHandlingChain:
             mock_submit.side_effect = Exception("Exchange unavailable")
 
             try:
-                execution_engine.submit_order("AAPL", "buy", 100)  # type: ignore[call-arg]
+                execution_engine.submit_order("AAPL", "buy", 100)  # pyright: ignore[reportCallIssue]
                 raise AssertionError("Should have raised")
             except Exception as e:
                 assert "Exchange unavailable" in str(e)
@@ -524,3 +524,4 @@ class TestSystemintegration:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
