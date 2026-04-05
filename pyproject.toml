@@ -146,3 +146,33 @@ skips = [
 ]
 severity = "medium"  # ne reporter que medium+ en CI
 confidence = "medium"
+
+[tool.coverage.run]
+# Limit instrumentation to production packages only — excludes tests/, build/,
+# scripts/, research/, venv/ and other non-production paths.
+omit = [
+    "tests/*",
+    "build/*",
+    "venv/*",
+    ".venv/*",
+    "scripts/*",
+    "docs/*",
+    "research/*",
+    "examples/*",
+    "tasks/*",
+    "backups/*",
+    "cache/*",
+    "results/*",
+    "logs/*",
+    "knowledge/*",
+    "setup.py",
+    "main.py",
+    "conftest.py",
+    "*/__pycache__/*",
+    "ARCHIVED_*",
+]
+
+[tool.coverage.report]
+# Only show files with less than 100% coverage in the terminal report.
+skip_covered = false
+show_missing = true

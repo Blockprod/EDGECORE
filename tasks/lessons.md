@@ -261,3 +261,12 @@
 **Ref** : `backtests/event_driven.py`, `backtests/runner.py`, `backtests/strategy_simulator.py` — commit `a4f5bca` (2026-04-05)
 
 ---
+
+## L-27 · test: remove 50 duplicate tests + narrow CI coverage scope [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `4374abe` : test: remove 50 duplicate tests + narrow CI coverage scope. Fichiers : tests/test_order_lifecycle.py, tests/test_walk_forward_integration.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `tests/test_order_lifecycle.py`, `tests/test_walk_forward_integration.py` — commit `4374abe` (2026-04-05)
+
+---

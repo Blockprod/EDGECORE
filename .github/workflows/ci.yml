@@ -132,9 +132,10 @@ jobs:
       # ─────────────────────────────
       - name: Core tests + coverage
         run: |
-          pytest -q -m "not slow" \
+          pytest -q -p no:cacheprovider -m "not slow" \
             --cov=. \
-            --cov-report=term-missing \
+            --cov-report=term \
+            --cov-config=pyproject.toml \
             --cov-fail-under=70
 
       - name: Statistical tests
