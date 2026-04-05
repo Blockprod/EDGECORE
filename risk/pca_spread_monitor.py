@@ -1,19 +1,10 @@
-<<<<<<< HEAD
 ﻿"""
 PCA Spread Factor Monitor ÔÇô Phase 3 (addresses audit ┬º8.2).
-=======
-"""
-PCA Spread Factor Monitor – Phase 3 (addresses audit §8.2).
->>>>>>> origin/main
 
 Problem
 -------
 The ``SpreadCorrelationGuard`` checks **pairwise** correlations between active
-<<<<<<< HEAD
 spreads.  Five spreads may each have |¤ü| < 0.60 with every other, yet all
-=======
-spreads.  Five spreads may each have |ρ| < 0.60 with every other, yet all
->>>>>>> origin/main
 be driven by the same **latent factor** (e.g. sector rotation in equities,
 or interest-rate sensitivity across financials).  Pairwise guards cannot detect this hidden
 concentration.
@@ -25,11 +16,7 @@ component explains more than ``max_pc1_variance`` (default 50%), the
 portfolio is factor-concentrated.  New entries that increase PC1 loading
 are rejected; existing positions may be flagged for reduction.
 
-<<<<<<< HEAD
 This runs **alongside** the pairwise ``SpreadCorrelationGuard`` ÔÇô it is
-=======
-This runs **alongside** the pairwise ``SpreadCorrelationGuard`` – it is
->>>>>>> origin/main
 an additional (not replacement) layer of risk control.
 
 Usage::
@@ -45,11 +32,7 @@ Usage::
 """
 
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import Any
-=======
-from typing import Dict, List, Optional, Tuple, Any
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -89,32 +72,19 @@ class PCASpreadMonitor:
     guards miss.
     """
 
-<<<<<<< HEAD
     def __init__(self, config: PCASpreadConfig | None = None):
         self.config = config or PCASpreadConfig()
         self._spreads: dict[str, pd.Series] = {}
         self._last_pca_result: dict[str, Any] | None = None
-=======
-    def __init__(self, config: Optional[PCASpreadConfig] = None):
-        self.config = config or PCASpreadConfig()
-        self._spreads: Dict[str, pd.Series] = {}
-        self._last_pca_result: Optional[Dict[str, Any]] = None
->>>>>>> origin/main
         logger.info(
             "pca_spread_monitor_initialized",
             max_pc1_variance=self.config.max_pc1_variance,
             min_spreads=self.config.min_spreads,
         )
 
-<<<<<<< HEAD
     # ÔôÇÔôÇ Public API ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
     def update_spreads(self, spreads: dict[str, pd.Series]) -> None:
-=======
-    # ⓀⓀ Public API ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-
-    def update_spreads(self, spreads: Dict[str, pd.Series]) -> None:
->>>>>>> origin/main
         """Replace the full set of active spreads (called each bar)."""
         self._spreads = dict(spreads)
 
@@ -130,11 +100,7 @@ class PCASpreadMonitor:
         self,
         candidate_key: str,
         candidate_spread: pd.Series,
-<<<<<<< HEAD
     ) -> tuple[bool, str | None]:
-=======
-    ) -> Tuple[bool, Optional[str]]:
->>>>>>> origin/main
         """Decide whether a new entry increases factor concentration.
 
         Args:
@@ -165,11 +131,7 @@ class PCASpreadMonitor:
         if pc1_var < self.config.max_pc1_variance:
             return True, None
 
-<<<<<<< HEAD
         # Portfolio IS concentrated ÔÇô check candidate's loading on PC1
-=======
-        # Portfolio IS concentrated – check candidate's loading on PC1
->>>>>>> origin/main
         cand_ret = candidate_spread.pct_change().dropna()
         if len(cand_ret) < self.config.min_observations:
             return True, None
@@ -182,15 +144,9 @@ class PCASpreadMonitor:
         pc1_scores = ret_matrix[-n:] @ pc1
 
         # Correlation between candidate and PC1 scores
-<<<<<<< HEAD
         if np.std(np.asarray(cand_tail, dtype=float)) < 1e-12 or np.std(np.asarray(pc1_scores, dtype=float)) < 1e-12:
             return True, None
         loading = abs(float(np.corrcoef(np.asarray(cand_tail, dtype=float), np.asarray(pc1_scores, dtype=float))[0, 1]))
-=======
-        if np.std(cand_tail) < 1e-12 or np.std(pc1_scores) < 1e-12:
-            return True, None
-        loading = abs(float(np.corrcoef(cand_tail, pc1_scores)[0, 1]))
->>>>>>> origin/main
 
         if loading > self.config.max_candidate_loading:
             reason = (
@@ -208,22 +164,14 @@ class PCASpreadMonitor:
 
         return True, None
 
-<<<<<<< HEAD
     def get_concentration_report(self) -> dict[str, Any]:
-=======
-    def get_concentration_report(self) -> Dict[str, Any]:
->>>>>>> origin/main
         """Get the current factor concentration analysis.
 
         Returns a dict with PC1 variance ratio, per-spread loadings,
         and concentration status.
         """
         n_active = len(self._spreads)
-<<<<<<< HEAD
         report: dict[str, Any] = {
-=======
-        report: Dict[str, Any] = {
->>>>>>> origin/main
             "n_active_spreads": n_active,
             "pca_computed": False,
             "pc1_variance_ratio": None,
@@ -271,17 +219,10 @@ class PCASpreadMonitor:
         self._spreads.clear()
         self._last_pca_result = None
 
-<<<<<<< HEAD
     # ÔôÇÔôÇ Internals ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
     def _build_return_matrix(self) -> tuple[np.ndarray | None, list[str]]:
         """Build a (T ├ù N) matrix of spread returns from active spreads.
-=======
-    # ⓀⓀ Internals ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-
-    def _build_return_matrix(self) -> Tuple[Optional[np.ndarray], List[str]]:
-        """Build a (T × N) matrix of spread returns from active spreads.
->>>>>>> origin/main
 
         Returns:
             (return_matrix, spread_keys) or (None, []) if insufficient data.
@@ -312,7 +253,6 @@ class PCASpreadMonitor:
         return df.values, list(df.columns)
 
     @staticmethod
-<<<<<<< HEAD
     def _run_pca(X: np.ndarray) -> tuple[float, np.ndarray]:
         """Run PCA on return matrix X (T ├ù N).
 
@@ -321,16 +261,6 @@ class PCASpreadMonitor:
 
         Returns:
             (pc1_variance_ratio, components)  ÔÇô components is (N_components ├ù N_features).
-=======
-    def _run_pca(X: np.ndarray) -> Tuple[float, np.ndarray]:
-        """Run PCA on return matrix X (T × N).
-
-        Uses numpy's eigendecomposition on the covariance matrix (fast for
-        small N, which is typical – we rarely have >20 active spreads).
-
-        Returns:
-            (pc1_variance_ratio, components)  – components is (N_components × N_features).
->>>>>>> origin/main
         """
         # Center
         X_centered = X - X.mean(axis=0)

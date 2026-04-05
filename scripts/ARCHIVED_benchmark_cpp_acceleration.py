@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python
-=======
-#!/usr/bin/env python
->>>>>>> origin/main
 """
 Benchmark: C++ Cointegration Engine vs Pure Python
 Shows the performance improvement from using C++ acceleration.

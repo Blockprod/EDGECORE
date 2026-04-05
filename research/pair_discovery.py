@@ -3,10 +3,7 @@ Pair discovery and screening module for identifying potential pairs.
 """
 
 import pandas as pd
-<<<<<<< HEAD
-=======
 from models.cointegration import correlation_matrix, engle_granger_test, half_life_mean_reversion
->>>>>>> origin/main
 from structlog import get_logger
 
 from models.cointegration import engle_granger_test, half_life_mean_reversion

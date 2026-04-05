@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Sprint 1.4 ÔÇô Test Bonferroni correction in engle_granger_test_cpp_optimized.
-=======
-"""
-Sprint 1.4 – Test Bonferroni correction in engle_granger_test_cpp_optimized.
->>>>>>> origin/main
 
 Proves C-04 fix:
   - engle_granger_test_cpp_optimized now accepts num_symbols/apply_bonferroni
@@ -15,15 +10,9 @@ Proves C-04 fix:
 Run: pytest tests/test_bonferroni_cython_fix.py -v
 """
 
-<<<<<<< HEAD
 import numpy as np
 import pandas as pd
 import pytest
-=======
-import pytest
-import numpy as np
-import pandas as pd
->>>>>>> origin/main
 
 from models.cointegration import (
     engle_granger_test,
@@ -35,11 +24,7 @@ def _make_cointegrated_pair(n=300, noise_std=0.5, seed=42):
     """Create a strongly cointegrated pair."""
     np.random.seed(seed)
     x = pd.Series(100.0 + np.cumsum(np.random.normal(0, 1, n)))
-<<<<<<< HEAD
     y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.normal(0, noise_std, n))
-=======
-    y = pd.Series(1.5 * x.values + np.random.normal(0, noise_std, n))
->>>>>>> origin/main
     return y, x
 
 
@@ -58,46 +43,26 @@ class TestCppOptimizedAcceptsBonferoniParams:
         """Function must accept num_symbols without TypeError."""
         y, x = _make_cointegrated_pair()
         result = engle_granger_test_cpp_optimized(y, x, num_symbols=10)
-<<<<<<< HEAD
         assert "adf_pvalue" in result
-=======
-        assert 'adf_pvalue' in result
->>>>>>> origin/main
 
     def test_accepts_apply_bonferroni_kwarg(self):
         """Function must accept apply_bonferroni without TypeError."""
         y, x = _make_cointegrated_pair()
-<<<<<<< HEAD
         result = engle_granger_test_cpp_optimized(y, x, apply_bonferroni=False)
         assert "is_cointegrated" in result
-=======
-        result = engle_granger_test_cpp_optimized(
-            y, x, apply_bonferroni=False
-        )
-        assert 'is_cointegrated' in result
->>>>>>> origin/main
 
     def test_accepts_both_kwargs(self):
         """Function must accept both kwargs together."""
         y, x = _make_cointegrated_pair()
-<<<<<<< HEAD
         result = engle_granger_test_cpp_optimized(y, x, num_symbols=50, apply_bonferroni=True)
         assert "alpha_threshold" in result
         assert "num_pairs" in result
-=======
-        result = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=50, apply_bonferroni=True
-        )
-        assert 'alpha_threshold' in result
-        assert 'num_pairs' in result
->>>>>>> origin/main
 
 
 class TestBonferroniAlphaCorrection:
     """Verify Bonferroni correction changes the decision threshold."""
 
     def test_alpha_corrected_50_symbols(self):
-<<<<<<< HEAD
         """50 symbols Ôåô 1225 pairs Ôåô ╬▒ = 0.05/1225 Ôëê 4.08e-5."""
         y, x = _make_cointegrated_pair()
         result = engle_granger_test_cpp_optimized(y, x, num_symbols=50, apply_bonferroni=True)
@@ -128,46 +93,6 @@ class TestBonferroniAlphaCorrection:
         y, x = _make_cointegrated_pair()
         result = engle_granger_test_cpp_optimized(y, x, num_symbols=2, apply_bonferroni=True)
         assert result["alpha_threshold"] == 0.05
-=======
-        """50 symbols ↓ 1225 pairs ↓ α = 0.05/1225 ≈ 4.08e-5."""
-        y, x = _make_cointegrated_pair()
-        result = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=50, apply_bonferroni=True
-        )
-        expected_alpha = 0.05 / (50 * 49 // 2)  # 0.0000408...
-        assert abs(result['alpha_threshold'] - expected_alpha) < 1e-10
-
-    def test_alpha_corrected_10_symbols(self):
-        """10 symbols ↓ 45 pairs ↓ α = 0.05/45 ≈ 0.00111."""
-        y, x = _make_cointegrated_pair()
-        result = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=10, apply_bonferroni=True
-        )
-        expected_alpha = 0.05 / 45
-        assert abs(result['alpha_threshold'] - expected_alpha) < 1e-10
-
-    def test_no_bonferroni_uses_nominal_alpha(self):
-        """apply_bonferroni=False ↓ α = 0.05."""
-        y, x = _make_cointegrated_pair()
-        result = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=50, apply_bonferroni=False
-        )
-        assert result['alpha_threshold'] == 0.05
-
-    def test_no_num_symbols_uses_nominal_alpha(self):
-        """num_symbols=None ↓ α = 0.05 (backward compatible)."""
-        y, x = _make_cointegrated_pair()
-        result = engle_granger_test_cpp_optimized(y, x)
-        assert result['alpha_threshold'] == 0.05
-
-    def test_single_symbol_pair_edge_case(self):
-        """num_symbols=2 ↓ 1 pair ↓ α = 0.05 (no correction needed)."""
-        y, x = _make_cointegrated_pair()
-        result = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=2, apply_bonferroni=True
-        )
-        assert result['alpha_threshold'] == 0.05
->>>>>>> origin/main
 
 
 class TestBonferroniChangesDecision:
@@ -181,7 +106,6 @@ class TestBonferroniChangesDecision:
         found = False
         for seed in range(100):
             np.random.seed(seed)
-<<<<<<< HEAD
             # Weakly cointegrated: high noise Ôåô marginal p-value
             x = pd.Series(100.0 + np.cumsum(np.random.normal(0, 1, 300)))
             y = pd.Series(1.5 * np.asarray(x, dtype=float) + np.random.normal(0, 8, 300))
@@ -190,25 +114,10 @@ class TestBonferroniChangesDecision:
             r_bonf = engle_granger_test_cpp_optimized(y, x, num_symbols=50, apply_bonferroni=True)
 
             pval = r_no_bonf["adf_pvalue"]
-=======
-            # Weakly cointegrated: high noise ↓ marginal p-value
-            x = pd.Series(100.0 + np.cumsum(np.random.normal(0, 1, 300)))
-            y = pd.Series(1.5 * x.values + np.random.normal(0, 8, 300))
-
-            r_no_bonf = engle_granger_test_cpp_optimized(
-                y, x, apply_bonferroni=False
-            )
-            r_bonf = engle_granger_test_cpp_optimized(
-                y, x, num_symbols=50, apply_bonferroni=True
-            )
-
-            pval = r_no_bonf['adf_pvalue']
->>>>>>> origin/main
             alpha_corrected = 0.05 / (50 * 49 // 2)
 
             if alpha_corrected < pval < 0.05:
                 # Found a marginal pair
-<<<<<<< HEAD
                 assert r_no_bonf["is_cointegrated"]
                 assert not r_bonf["is_cointegrated"]
                 found = True
@@ -223,27 +132,6 @@ class TestBonferroniChangesDecision:
         # Strong pair p-value should be << 0.0001
         assert result["adf_pvalue"] < 0.001
         assert result["is_cointegrated"]
-=======
-                assert r_no_bonf['is_cointegrated']
-                assert not r_bonf['is_cointegrated']
-                found = True
-                break
-
-        assert found, (
-            "Could not find a seed producing a marginal p-value "
-            "between 0.05 and Bonferroni-corrected alpha"
-        )
-
-    def test_strong_pair_survives_bonferroni(self):
-        """A strongly cointegrated pair (p ≈ 0) survives Bonferroni."""
-        y, x = _make_cointegrated_pair(noise_std=0.3)
-        result = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=50, apply_bonferroni=True
-        )
-        # Strong pair p-value should be << 0.0001
-        assert result['adf_pvalue'] < 0.001
-        assert result['is_cointegrated']
->>>>>>> origin/main
 
 
 class TestFallbackForwardsBonferroni:
@@ -252,41 +140,20 @@ class TestFallbackForwardsBonferroni:
     def test_pure_python_path_applies_bonferroni(self):
         """engle_granger_test (pure Python) correctly uses num_symbols."""
         y, x = _make_cointegrated_pair()
-<<<<<<< HEAD
         result = engle_granger_test(y, x, num_symbols=50, apply_bonferroni=True)
         expected_alpha = 0.05 / (50 * 49 // 2)
         assert abs(result["alpha_threshold"] - expected_alpha) < 1e-10
-=======
-        result = engle_granger_test(
-            y, x, num_symbols=50, apply_bonferroni=True
-        )
-        expected_alpha = 0.05 / (50 * 49 // 2)
-        assert abs(result['alpha_threshold'] - expected_alpha) < 1e-10
->>>>>>> origin/main
 
     def test_cpp_optimized_fallback_matches_pure_python(self):
         """When Cython is unavailable, cpp_optimized must match pure Python."""
         y, x = _make_cointegrated_pair()
 
-<<<<<<< HEAD
         r_pure = engle_granger_test(y, x, num_symbols=20, apply_bonferroni=True)
         r_opt = engle_granger_test_cpp_optimized(y, x, num_symbols=20, apply_bonferroni=True)
 
         assert r_pure["is_cointegrated"] == r_opt["is_cointegrated"]
         assert abs(r_pure["adf_pvalue"] - r_opt["adf_pvalue"]) < 1e-10
         assert r_pure["alpha_threshold"] == r_opt["alpha_threshold"]
-=======
-        r_pure = engle_granger_test(
-            y, x, num_symbols=20, apply_bonferroni=True
-        )
-        r_opt = engle_granger_test_cpp_optimized(
-            y, x, num_symbols=20, apply_bonferroni=True
-        )
-
-        assert r_pure['is_cointegrated'] == r_opt['is_cointegrated']
-        assert abs(r_pure['adf_pvalue'] - r_opt['adf_pvalue']) < 1e-10
-        assert r_pure['alpha_threshold'] == r_opt['alpha_threshold']
->>>>>>> origin/main
 
 
 class TestFalsePositiveReduction:
@@ -301,7 +168,6 @@ class TestFalsePositiveReduction:
         fp_corrected = 0
         n_tests = 50
 
-<<<<<<< HEAD
         for _i in range(n_tests):
             y = pd.Series(np.random.randn(252).cumsum())
             x = pd.Series(np.random.randn(252).cumsum())
@@ -312,22 +178,6 @@ class TestFalsePositiveReduction:
             if r_uncorr["is_cointegrated"]:
                 fp_uncorrected += 1
             if r_corr["is_cointegrated"]:
-=======
-        for i in range(n_tests):
-            y = pd.Series(np.random.randn(252).cumsum())
-            x = pd.Series(np.random.randn(252).cumsum())
-
-            r_uncorr = engle_granger_test_cpp_optimized(
-                y, x, apply_bonferroni=False
-            )
-            r_corr = engle_granger_test_cpp_optimized(
-                y, x, num_symbols=20, apply_bonferroni=True
-            )
-
-            if r_uncorr['is_cointegrated']:
-                fp_uncorrected += 1
-            if r_corr['is_cointegrated']:
->>>>>>> origin/main
                 fp_corrected += 1
 
         # Bonferroni should never produce MORE false positives

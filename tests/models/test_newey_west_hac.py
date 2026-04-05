@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for Sprint 4.3 ÔÇô Newey-West HAC robust OLS and consensus screening.
 
@@ -21,30 +20,6 @@ from models.cointegration import (
 
 # ---------------------------------------------------------------------------
 # Helpers ÔÇô deterministic synthetic series
-=======
-"""
-Tests for Sprint 4.3 – Newey-West HAC robust OLS and consensus screening.
-
-Covers:
-  1. engle_granger_test_robust() – basic functionality and edge cases
-  2. newey_west_consensus() – agreement / divergence detection
-  3. Integration with pair_trading pipeline (parallel + sequential)
-"""
-
-import numpy as np
-import pandas as pd
-from unittest import mock
-
-from models.cointegration import (
-    engle_granger_test_robust,
-    newey_west_consensus,
-    engle_granger_test,
-)
-
-
-# ---------------------------------------------------------------------------
-# Helpers – deterministic synthetic series
->>>>>>> origin/main
 # ---------------------------------------------------------------------------
 
 def _cointegrated_pair(n: int = 500, beta: float = 1.5, seed: int = 42):
@@ -57,11 +32,7 @@ def _cointegrated_pair(n: int = 500, beta: float = 1.5, seed: int = 42):
 
 
 def _independent_pair(n: int = 500, seed: int = 99):
-<<<<<<< HEAD
     """Two independent random walks ÔÇô NOT cointegrated."""
-=======
-    """Two independent random walks – NOT cointegrated."""
->>>>>>> origin/main
     rng = np.random.RandomState(seed)
     x = np.cumsum(rng.randn(n))
     y = np.cumsum(rng.randn(n))
@@ -69,11 +40,7 @@ def _independent_pair(n: int = 500, seed: int = 99):
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 1. engle_granger_test_robust ÔÇô Core HAC OLS
-=======
-# 1. engle_granger_test_robust – Core HAC OLS
->>>>>>> origin/main
 # ===================================================================
 
 class TestEngleGrangerRobust:
@@ -115,19 +82,11 @@ class TestEngleGrangerRobust:
         assert len(result['residuals']) == 300
 
     def test_bonferroni_raises_threshold(self):
-<<<<<<< HEAD
         """Bonferroni with many symbols should reduce alpha Ôåô harder to pass."""
         y, x = _cointegrated_pair()
         # Without Bonferroni
         r1 = engle_granger_test_robust(y, x, apply_bonferroni=False)
         # With Bonferroni (100 symbols Ôåô 4950 pairs Ôåô ╬▒/4950)
-=======
-        """Bonferroni with many symbols should reduce alpha ↓ harder to pass."""
-        y, x = _cointegrated_pair()
-        # Without Bonferroni
-        r1 = engle_granger_test_robust(y, x, apply_bonferroni=False)
-        # With Bonferroni (100 symbols ↓ 4950 pairs ↓ α/4950)
->>>>>>> origin/main
         r2 = engle_granger_test_robust(y, x, num_symbols=100, apply_bonferroni=True)
         assert r2['alpha_threshold'] < r1.get('alpha_threshold', 0.05)
 
@@ -146,11 +105,7 @@ class TestEngleGrangerRobust:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 2. engle_granger_test_robust ÔÇô Edge cases / validation
-=======
-# 2. engle_granger_test_robust – Edge cases / validation
->>>>>>> origin/main
 # ===================================================================
 
 class TestRobustEdgeCases:
@@ -190,11 +145,7 @@ class TestRobustEdgeCases:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 3. newey_west_consensus ÔÇô OLS vs. HAC agreement
-=======
-# 3. newey_west_consensus – OLS vs. HAC agreement
->>>>>>> origin/main
 # ===================================================================
 
 class TestNeweyWestConsensus:
@@ -262,11 +213,7 @@ class TestNeweyWestConsensus:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 4. Integration ÔÇô pair_trading screening flow
-=======
-# 4. Integration – pair_trading screening flow
->>>>>>> origin/main
 # ===================================================================
 
 class TestPairTradingHACIntegration:
@@ -375,11 +322,7 @@ class TestPairTradingHACIntegration:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 5. HAC vs standard ÔÇô comparative properties
-=======
-# 5. HAC vs standard – comparative properties
->>>>>>> origin/main
 # ===================================================================
 
 class TestHACvsStandard:

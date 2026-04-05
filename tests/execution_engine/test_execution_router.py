@@ -1,16 +1,10 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for ExecutionRouter ÔÇö verifies order routing across modes.
-=======
-"""
-Tests for ExecutionRouter — verifies order routing across modes.
->>>>>>> origin/main
 """
 
 import time
 
 import pytest
-<<<<<<< HEAD
 
 from execution.base import Order, OrderSide
 from execution.rate_limiter import TokenBucketRateLimiter
@@ -19,15 +13,6 @@ from execution_engine.router import (
     ExecutionRouter,
     TradeExecution,
 )
-=======
-from execution_engine.router import (
-    ExecutionRouter,
-    ExecutionMode,
-    TradeOrder,
-    TradeExecution,
-)
-from execution.rate_limiter import TokenBucketRateLimiter
->>>>>>> origin/main
 
 
 @pytest.fixture
@@ -42,17 +27,10 @@ def paper_router():
 
 @pytest.fixture
 def sample_order():
-<<<<<<< HEAD
     return Order(
         order_id="test_AAPL_MSFT",
         symbol="AAPL",
         side=OrderSide.BUY,
-=======
-    return TradeOrder(
-        pair_key="AAPL_MSFT",
-        symbol="AAPL",
-        side="buy",
->>>>>>> origin/main
         quantity=100.0,
         limit_price=150.0,
     )
@@ -77,11 +55,7 @@ class TestBacktestFill:
     def test_backtest_fill_returns_execution(self, backtest_router, sample_order):
         result = backtest_router.submit_order(sample_order)
         assert isinstance(result, TradeExecution)
-<<<<<<< HEAD
         assert result.pair_key == "AAPL"  # Order has no pair_key; router falls back to symbol
-=======
-        assert result.pair_key == "AAPL_MSFT"
->>>>>>> origin/main
         assert result.symbol == "AAPL"
         assert result.side == "buy"
         assert result.filled_qty == 100.0
@@ -93,17 +67,10 @@ class TestBacktestFill:
         assert result.fill_price >= sample_order.limit_price
 
     def test_backtest_sell_slippage_negative(self, backtest_router):
-<<<<<<< HEAD
         sell_order = Order(
             order_id="test_AAPL_MSFT_sell",
             symbol="AAPL",
             side=OrderSide.SELL,
-=======
-        sell_order = TradeOrder(
-            pair_key="AAPL_MSFT",
-            symbol="AAPL",
-            side="sell",
->>>>>>> origin/main
             quantity=50.0,
             limit_price=150.0,
         )
@@ -132,7 +99,6 @@ class TestPaperFill:
         # (may or may not be set depending on implementation)
 
 
-<<<<<<< HEAD
 class TestOrder:
     def test_repr(self, sample_order):
         r = repr(sample_order)
@@ -142,17 +108,6 @@ class TestOrder:
     def test_limit_order_default(self):
         order = Order(order_id="test_limit", symbol="A", side=OrderSide.BUY, quantity=10, limit_price=None)
         assert order.order_type == "LIMIT"  # Order defaults to LIMIT
-=======
-class TestTradeOrder:
-    def test_repr(self, sample_order):
-        r = repr(sample_order)
-        assert "AAPL" in r
-        assert "buy" in r
-
-    def test_market_order_default(self):
-        order = TradeOrder(pair_key="A_B", symbol="A", side="buy", quantity=10)
-        assert order.order_type == "market"
->>>>>>> origin/main
         assert order.limit_price is None
 
 
@@ -174,7 +129,6 @@ class TestTradeExecution:
 
     def test_not_partial_by_default(self):
         ex = TradeExecution(
-<<<<<<< HEAD
             pair_key="A_B",
             symbol="A",
             side="buy",
@@ -183,11 +137,6 @@ class TestTradeExecution:
             fill_price=100.0,
             commission=0.5,
             slippage_bps=1.0,
-=======
-            pair_key="A_B", symbol="A", side="buy",
-            requested_qty=100, filled_qty=100,
-            fill_price=100.0, commission=0.5, slippage_bps=1.0,
->>>>>>> origin/main
         )
         assert not ex.is_partial
 
@@ -198,12 +147,8 @@ class TestMultipleOrders:
             backtest_router.submit_order(sample_order)
         assert len(backtest_router._execution_log) == 5
 
-<<<<<<< HEAD
 
 # ÔöÇÔöÇ Phase 3: rate limiter, paper exclusion, live path ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── Phase 3: rate limiter, paper exclusion, live path ─────────────────
->>>>>>> origin/main
 
 
 class TestRateLimiter:
@@ -225,26 +170,17 @@ class TestRateLimiter:
         t0 = time.monotonic()
         limiter.acquire()
         elapsed = time.monotonic() - t0
-<<<<<<< HEAD
         # Should wait approximately 1/45 Ôëê 22ms
         assert elapsed >= 0.015, f"Expected throttle, got {elapsed * 1000:.1f}ms"
 
     def test_timeout_raises(self):
         """Exhausted bucket + tiny timeout ÔåÆ RuntimeError."""
-=======
-        # Should wait approximately 1/45 ≈ 22ms
-        assert elapsed >= 0.015, f"Expected throttle, got {elapsed*1000:.1f}ms"
-
-    def test_timeout_raises(self):
-        """Exhausted bucket + tiny timeout → RuntimeError."""
->>>>>>> origin/main
         limiter = TokenBucketRateLimiter(rate=1, burst=1)
         limiter.acquire()  # consume the only token
         with pytest.raises(RuntimeError, match="Rate limiter timeout"):
             limiter.acquire(timeout=0.01)
 
     def test_router_has_rate_limiter(self):
-<<<<<<< HEAD
         """Router uses the global IBKR rate-limiter singleton (C-04, rate=40)."""
         from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER
 
@@ -252,12 +188,6 @@ class TestRateLimiter:
         assert isinstance(router._rate_limiter, TokenBucketRateLimiter)
         assert router._rate_limiter is GLOBAL_IBKR_RATE_LIMITER
         assert router._rate_limiter.rate == 40
-=======
-        """Router initializes with a TokenBucketRateLimiter."""
-        router = ExecutionRouter(mode=ExecutionMode.PAPER)
-        assert isinstance(router._rate_limiter, TokenBucketRateLimiter)
-        assert router._rate_limiter.rate == 45
->>>>>>> origin/main
 
 
 class TestPaperExclusion:
@@ -273,7 +203,6 @@ class TestUnknownMode:
     def test_unknown_mode_raises(self, sample_order):
         """Invalid mode raises ValueError on submit."""
         router = ExecutionRouter(mode=ExecutionMode.PAPER)
-<<<<<<< HEAD
         router._mode = "INVALID"  # type: ignore[assignment]
         with pytest.raises(ValueError, match="Unknown mode"):
             router.submit_order(sample_order)
@@ -463,8 +392,3 @@ class TestAntiShortGuard:
         # -1 means "data unavailable", should NOT block
         mock_engine.submit_order.assert_called_once()
         assert result.filled_qty == 100.0
-=======
-        router._mode = "INVALID"
-        with pytest.raises(ValueError, match="Unknown mode"):
-            router.submit_order(sample_order)
->>>>>>> origin/main

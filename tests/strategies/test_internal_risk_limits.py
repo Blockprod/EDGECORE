@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for Sprint 4.4 ÔÇô Self-contained internal risk limits.
 
@@ -7,21 +6,10 @@ Covers:
   2. update_equity() ÔÇô peak tracking and drawdown computation
   3. _maybe_reset_daily_counter() ÔÇô daily rollover
   4. _record_trade() ÔÇô trade counter increment
-=======
-"""
-Tests for Sprint 4.4 – Self-contained internal risk limits.
-
-Covers:
-  1. _check_internal_risk_limits() – max positions, daily trades, drawdown
-  2. update_equity() – peak tracking and drawdown computation
-  3. _maybe_reset_daily_counter() – daily rollover
-  4. _record_trade() – trade counter increment
->>>>>>> origin/main
   5. Integration with generate_signals entry flow
   6. Config integration
 """
 
-<<<<<<< HEAD
 from datetime import datetime, timedelta
 from unittest import mock
 
@@ -38,18 +26,11 @@ def _trade_book(*keys: str) -> StrategyTradeBook:
         book[k] = {}
     return book
 
-=======
-import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta
-from unittest import mock
->>>>>>> origin/main
 
 # ---------------------------------------------------------------------------
 # Helper: build a minimal PairTradingStrategy without full __init__
 # ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 
 def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
     """Create a PairTradingStrategy with controlled internal risk params."""
@@ -59,15 +40,6 @@ def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
         strat = PairTradingStrategy()
     # Minimal attributes needed for risk checks
     strat.active_trades = StrategyTradeBook()
-=======
-def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
-    """Create a PairTradingStrategy with controlled internal risk params."""
-    from strategies.pair_trading import PairTradingStrategy
-    with mock.patch.object(PairTradingStrategy, '__init__', lambda self: None):
-        strat = PairTradingStrategy()
-    # Minimal attributes needed for risk checks
-    strat.active_trades = {}
->>>>>>> origin/main
     strat.max_positions = max_positions
     strat.max_drawdown_pct = max_drawdown_pct
     strat.max_daily_trades = max_daily_trades
@@ -79,84 +51,51 @@ def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 1. _check_internal_risk_limits ÔÇô Max positions
 # ===================================================================
 
 
-=======
-# 1. _check_internal_risk_limits – Max positions
-# ===================================================================
-
->>>>>>> origin/main
 class TestMaxPositions:
     """Internal risk: max concurrent positions guard."""
 
     def test_allows_below_limit(self):
         strat = _make_strategy(max_positions=3)
-<<<<<<< HEAD
         strat.active_trades = _trade_book("A_B", "C_D")
-=======
-        strat.active_trades = {'A_B': {}, 'C_D': {}}
->>>>>>> origin/main
         ok, reason = strat._check_internal_risk_limits()
         assert ok is True
         assert reason == ""
 
     def test_blocks_at_limit(self):
         strat = _make_strategy(max_positions=2)
-<<<<<<< HEAD
         strat.active_trades = _trade_book("A_B", "C_D")
-=======
-        strat.active_trades = {'A_B': {}, 'C_D': {}}
->>>>>>> origin/main
         ok, reason = strat._check_internal_risk_limits()
         assert ok is False
         assert "max positions" in reason.lower()
 
     def test_blocks_above_limit(self):
         strat = _make_strategy(max_positions=2)
-<<<<<<< HEAD
         strat.active_trades = _trade_book("A_B", "C_D", "E_F")
         ok, _reason = strat._check_internal_risk_limits()
-=======
-        strat.active_trades = {'A_B': {}, 'C_D': {}, 'E_F': {}}
-        ok, reason = strat._check_internal_risk_limits()
->>>>>>> origin/main
         assert ok is False
 
     def test_zero_positions_allowed(self):
         strat = _make_strategy(max_positions=8)
-<<<<<<< HEAD
         strat.active_trades = _trade_book()
-=======
-        strat.active_trades = {}
->>>>>>> origin/main
         ok, _ = strat._check_internal_risk_limits()
         assert ok is True
 
     def test_exactly_one_below_limit(self):
         strat = _make_strategy(max_positions=5)
-<<<<<<< HEAD
         strat.active_trades = _trade_book(*[f"P{i}" for i in range(4)])
-=======
-        strat.active_trades = {f"P{i}": {} for i in range(4)}
->>>>>>> origin/main
         ok, _ = strat._check_internal_risk_limits()
         assert ok is True
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 2. _check_internal_risk_limits ÔÇô Daily trade count
 # ===================================================================
 
 
-=======
-# 2. _check_internal_risk_limits – Daily trade count
-# ===================================================================
-
->>>>>>> origin/main
 class TestMaxDailyTrades:
     """Internal risk: daily trade count guard."""
 
@@ -186,16 +125,10 @@ class TestMaxDailyTrades:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 3. _check_internal_risk_limits ÔÇô Drawdown from peak
 # ===================================================================
 
 
-=======
-# 3. _check_internal_risk_limits – Drawdown from peak
-# ===================================================================
-
->>>>>>> origin/main
 class TestDrawdownGuard:
     """Internal risk: drawdown-from-peak guard."""
 
@@ -229,36 +162,22 @@ class TestDrawdownGuard:
         strat.peak_equity = 100_000
         strat.current_equity = 90_000  # exactly 10.0%
         ok, _ = strat._check_internal_risk_limits()
-<<<<<<< HEAD
         # 10% == 10% Ôåô not > 10% Ôåô allowed
-=======
-        # 10% == 10% ↓ not > 10% ↓ allowed
->>>>>>> origin/main
         assert ok is True
 
     def test_drawdown_with_small_equity(self):
         strat = _make_strategy(max_drawdown_pct=0.05)
         strat.peak_equity = 1_000
         strat.current_equity = 940  # 6% > 5%
-<<<<<<< HEAD
         ok, _reason = strat._check_internal_risk_limits()
-=======
-        ok, reason = strat._check_internal_risk_limits()
->>>>>>> origin/main
         assert ok is False
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 4. update_equity ÔÇô Peak tracking
 # ===================================================================
 
 
-=======
-# 4. update_equity – Peak tracking
-# ===================================================================
-
->>>>>>> origin/main
 class TestUpdateEquity:
     """Test equity tracking for drawdown guard."""
 
@@ -294,10 +213,7 @@ class TestUpdateEquity:
 # 5. _record_trade / _maybe_reset_daily_counter
 # ===================================================================
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 class TestDailyTradeCounter:
     """Test daily trade counting and rollover."""
 
@@ -333,37 +249,23 @@ class TestDailyTradeCounter:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 6. Combined limits ÔÇô multiple limits at once
 # ===================================================================
 
 
-=======
-# 6. Combined limits – multiple limits at once
-# ===================================================================
-
->>>>>>> origin/main
 class TestCombinedLimits:
     """Multiple limits can trigger simultaneously."""
 
     def test_position_limit_takes_priority(self):
         strat = _make_strategy(max_positions=1, max_daily_trades=100)
-<<<<<<< HEAD
         strat.active_trades = _trade_book("A_B")
-=======
-        strat.active_trades = {'A_B': {}}
->>>>>>> origin/main
         ok, reason = strat._check_internal_risk_limits()
         assert ok is False
         assert "positions" in reason.lower()
 
     def test_all_limits_pass(self):
         strat = _make_strategy(max_positions=10, max_daily_trades=50, max_drawdown_pct=0.20)
-<<<<<<< HEAD
         strat.active_trades = _trade_book("A_B")
-=======
-        strat.active_trades = {'A_B': {}}
->>>>>>> origin/main
         strat.daily_trade_count = 5
         strat.daily_trade_date = datetime.now().date()
         strat.peak_equity = 100_000
@@ -374,38 +276,24 @@ class TestCombinedLimits:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 7. Integration ÔÇô entry signals blocked by internal risk
 # ===================================================================
 
 
-=======
-# 7. Integration – entry signals blocked by internal risk
-# ===================================================================
-
->>>>>>> origin/main
 class TestSignalEntryBlocking:
     """Test that generate_signals respects internal risk limits."""
 
     def _make_full_strategy(self):
         """Build strategy with enough mocks to call generate_signals."""
         from strategies.pair_trading import PairTradingStrategy
-<<<<<<< HEAD
 
         with mock.patch.object(PairTradingStrategy, "__init__", lambda _self: None):
-=======
-        with mock.patch.object(PairTradingStrategy, '__init__', lambda self: None):
->>>>>>> origin/main
             strat = PairTradingStrategy()
         # Minimal init to avoid AttributeError
         strat.config = mock.MagicMock()
         strat.config.lookback_window = 100
         strat.spread_models = {}
-<<<<<<< HEAD
         strat.active_trades = StrategyTradeBook()
-=======
-        strat.active_trades = {}
->>>>>>> origin/main
         strat.historical_spreads = {}
         strat.hedge_ratio_tracker = mock.MagicMock()
         strat.hedge_ratio_tracker.is_pair_deprecated.return_value = False
@@ -445,7 +333,6 @@ class TestSignalEntryBlocking:
         strat = self._make_full_strategy()
         strat.max_positions = 0  # block all entries
         # Mock _check_internal_risk_limits to verify it's called
-<<<<<<< HEAD
         with mock.patch.object(strat, "_check_internal_risk_limits", return_value=(False, "max positions")):
             # Provide pre-discovered pairs with fake data
             rng = np.random.RandomState(42)
@@ -456,18 +343,6 @@ class TestSignalEntryBlocking:
             signals = strat.generate_signals(market_data, discovered_pairs=[("Y", "X", 0.001, 10)])
             # No entry signals should be generated (only exit signals possible)
             entry_signals = [s for s in signals if s.side in ("long", "short")]
-=======
-        with mock.patch.object(strat, '_check_internal_risk_limits', return_value=(False, "max positions")):
-            # Provide pre-discovered pairs with fake data
-            rng = np.random.RandomState(42)
-            n = 200
-            x = pd.Series(np.cumsum(rng.randn(n)), name='X')
-            y = pd.Series(1.5 * x + rng.randn(n) * 0.3, name='Y')
-            market_data = pd.DataFrame({'Y': y, 'X': x})
-            signals = strat.generate_signals(market_data, discovered_pairs=[('Y', 'X', 0.001, 10)])
-            # No entry signals should be generated (only exit signals possible)
-            entry_signals = [s for s in signals if s.side in ('long', 'short')]
->>>>>>> origin/main
             assert len(entry_signals) == 0
 
 
@@ -475,19 +350,13 @@ class TestSignalEntryBlocking:
 # 8. Config integration
 # ===================================================================
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 class TestConfigInternalRisk:
     """Test config fields for internal risk limits."""
 
     def test_config_defaults(self):
         from config.settings import StrategyConfig
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         cfg = StrategyConfig()
         assert cfg.internal_max_positions == 50
         assert cfg.internal_max_drawdown_pct == 0.20  # 20% as decimal fraction
@@ -495,10 +364,7 @@ class TestConfigInternalRisk:
 
     def test_config_override(self):
         from config.settings import StrategyConfig
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         cfg = StrategyConfig(
             internal_max_positions=5,
             internal_max_drawdown_pct=0.05,
@@ -510,12 +376,8 @@ class TestConfigInternalRisk:
 
     def test_internal_stricter_than_risk_engine(self):
         """Internal limits should be within reasonable bounds."""
-<<<<<<< HEAD
         from config.settings import RiskConfig, StrategyConfig
 
-=======
-        from config.settings import StrategyConfig, RiskConfig
->>>>>>> origin/main
         strat_cfg = StrategyConfig()
         risk_cfg = RiskConfig()
         # Internal max positions can be larger than risk engine's

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿symbol,sector,coint_frequency,avg_pvalue,avg_half_life,hl_stability,n_partners,n_tests,n_cointegrated,composite_score
-=======
-symbol,sector,coint_frequency,avg_pvalue,avg_half_life,hl_stability,n_partners,n_tests,n_cointegrated,composite_score
->>>>>>> origin/main
 CL,Consumer,0.1612,0.020299,8.5,0.2894,5,335,54,0.4412
 COST,Consumer,0.203,0.021789,9.0,0.2128,5,335,68,0.4366
 WMT,Consumer,0.1731,0.024299,8.9,0.3017,5,335,58,0.4324

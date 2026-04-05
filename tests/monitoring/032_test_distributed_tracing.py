@@ -362,11 +362,7 @@ class TestTraceDecorator:
         """Test decorating a function."""
         initialize_global_tracer("test_service")
         get_global_tracer()
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         @trace("decorated_function")
         def my_func(x):
             return x * 2
@@ -446,11 +442,7 @@ class TestTraceIntegration:
     def test_order_execution_trace(self):
         """Test tracing a complete order execution flow."""
         tracer = DistributedTracer("trading_system")
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         with tracer.trace_operation("execute_order", attributes={"symbol": "AAPL"}) as root:
             root.set_attribute("order_id", "ord_123")
             root.set_attribute("size", 1.0)

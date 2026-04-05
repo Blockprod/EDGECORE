@@ -4,17 +4,8 @@ import json
 from unittest.mock import Mock
 
 import pytest
-<<<<<<< HEAD
 
 from monitoring.api import create_app, get_dashboard_app, initialize_dashboard_api
-=======
-from unittest.mock import Mock
-import json
-
-from monitoring.api import (
-    create_app, initialize_dashboard_api, get_dashboard_app
-)
->>>>>>> origin/main
 from monitoring.dashboard import DashboardGenerator
 
 
@@ -447,11 +438,7 @@ class TestResponseTimestamp:
         app = create_app(dashboard=dashboard)
         client = app.test_client()
 
-<<<<<<< HEAD
         client.get("/api/dashboard")
-=======
-        client.get('/api/dashboard')
->>>>>>> origin/main
         # Dashboard endpoint doesn't include timestamp in all responses
         # but individual components may
 

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿# EDGECORE Backtest Usage Guide
-=======
-# EDGECORE Backtest Usage Guide
->>>>>>> origin/main
 
 ## Quick Start (NEW - Simplified!)
 
@@ -11,11 +7,7 @@
 # Just run with NO symbol arguments - uses 46 equities from config/dev.yaml
 python main.py --mode backtest
 ```
-<<<<<<< HEAD
 Ô£ôÔ£ôÔ£ô **BEST - Simple, practical, no long commands needed!**
-=======
-✓✓✓ **BEST - Simple, practical, no long commands needed!**
->>>>>>> origin/main
 
 ## Advanced Usage
 
@@ -24,11 +16,7 @@ python main.py --mode backtest
 # Run with just AAPL/MSFT (small universe test)
 python main.py --mode backtest --symbols AAPL MSFT
 ```
-<<<<<<< HEAD
 ÔØî Too small ÔåÆ Usually 0 trades found
-=======
-❌ Too small → Usually 0 trades found
->>>>>>> origin/main
 
 ### 2. Custom Date Range (uses default 46 symbols)
 ```bash
@@ -92,7 +80,6 @@ The backtest engine (with 46 default symbols):
 ## Results Interpretation
 
 ### 0 trades found
-<<<<<<< HEAD
 - Ô£ô Good: Means market has no valid opportunities (strict risk management)
 - Ô£ô Strategy correctly rejects false signals
 - **Action**: Run with different date range or larger universe
@@ -103,18 +90,6 @@ The backtest engine (with 46 default symbols):
 
 ### 10+ trades found
 - Ô£ô Excellent: Multiple cointegration opportunities found
-=======
-- ✓ Good: Means market has no valid opportunities (strict risk management)
-- ✓ Strategy correctly rejects false signals
-- **Action**: Run with different date range or larger universe
-
-### 1-10 trades found  
-- ✓ Expected: Shows strategy found and executed trading signals
-- Check win rate and metrics for quality
-
-### 10+ trades found
-- ✓ Excellent: Multiple cointegration opportunities found
->>>>>>> origin/main
 - Check metrics (Sharpe ratio, win rate) to ensure quality
 
 ## Examples

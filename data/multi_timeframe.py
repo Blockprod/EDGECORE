@@ -1,17 +1,9 @@
 """
-<<<<<<< HEAD
 Multi-Timeframe Engine ��� Daily + Weekly confirmation for pair trading.
 
 Architecture:
     - Daily prices are loaded from IBKR / cache (existing pipeline)
     - Weekly prices are **resampled locally** from daily data ��� zero
-=======
-Multi-Timeframe Engine — Daily + Weekly confirmation for pair trading.
-
-Architecture:
-    - Daily prices are loaded from IBKR / cache (existing pipeline)
-    - Weekly prices are **resampled locally** from daily data — zero
->>>>>>> origin/main
       additional API calls.  Uses ``data.preprocessing.resample_ohlcv``.
     - Weekly cointegration scoring provides a *confirmation* signal
       that gates daily-level entries.
@@ -40,10 +32,7 @@ Usage::
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Dict, List, Optional, Tuple
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -55,18 +44,11 @@ logger = get_logger(__name__)
 @dataclass
 class MTFConfig:
     """Configuration for multi-timeframe analysis."""
-<<<<<<< HEAD
 
     # Timeframes to use
     timeframes: list[str] | None = None  # e.g. ["D", "W"]
     # Weekly lookback in weekly bars (252 daily ��� 50 weekly)
     weekly_lookback_bars: int = 104  # ~2 years of weekly bars
-=======
-    # Timeframes to use
-    timeframes: List[str] = None              # e.g. ["D", "W"]
-    # Weekly lookback in weekly bars (252 daily ≈ 50 weekly)
-    weekly_lookback_bars: int = 104           # ~2 years of weekly bars
->>>>>>> origin/main
     # Weight for weekly cointegration in composite score
     weekly_coint_weight: float = 0.40
     # Daily weight (computed as 1 - weekly)
@@ -78,11 +60,7 @@ class MTFConfig:
     # Weekly z-score gate: entry blocked if weekly z < this threshold
     weekly_zscore_entry_gate: float = 1.0
     # Minimum weekly bars required for valid analysis
-<<<<<<< HEAD
     min_weekly_bars: int = 52  # ~1 year minimum
-=======
-    min_weekly_bars: int = 52                 # ~1 year minimum
->>>>>>> origin/main
 
     def __post_init__(self):
         if self.timeframes is None:
@@ -95,20 +73,12 @@ class MultiTimeframeEngine:
     Multi-timeframe analysis for pair trading confirmation.
 
     Core workflow:
-<<<<<<< HEAD
         1. Resample daily ��� weekly (``resample_to_weekly``)
-=======
-        1. Resample daily → weekly (``resample_to_weekly``)
->>>>>>> origin/main
         2. Run cointegration on weekly data (same engine)
         3. Compute composite MTF score
         4. Gate daily entries with weekly z-score confirmation
 
-<<<<<<< HEAD
     This module does NOT run its own cointegration tests ��� it provides
-=======
-    This module does NOT run its own cointegration tests — it provides
->>>>>>> origin/main
     the data preparation and scoring logic.  The actual cointegration
     engine (``PairTradingStrategy.find_cointegrated_pairs_parallel``)
     calls this for weekly data preparation and score combination.
@@ -128,11 +98,7 @@ class MultiTimeframeEngine:
         )
 
     # ==================================================================
-<<<<<<< HEAD
     # Data preparation: daily ��� weekly resampling
-=======
-    # Data preparation: daily → weekly resampling
->>>>>>> origin/main
     # ==================================================================
 
     def resample_to_weekly(
@@ -190,10 +156,7 @@ class MultiTimeframeEngine:
             Weekly OHLCV DataFrame.
         """
         from data.preprocessing import resample_ohlcv
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         return resample_ohlcv(daily_ohlcv, "W-FRI")
 
     # ==================================================================
@@ -219,14 +182,7 @@ class MultiTimeframeEngine:
         Returns:
             Composite MTF score in [0, 1].
         """
-<<<<<<< HEAD
         score = self.config.daily_coint_weight * daily_pvalue + self.config.weekly_coint_weight * weekly_pvalue
-=======
-        score = (
-            self.config.daily_coint_weight * daily_pvalue
-            + self.config.weekly_coint_weight * weekly_pvalue
-        )
->>>>>>> origin/main
         return float(min(1.0, max(0.0, score)))
 
     def passes_confirmation(
@@ -239,11 +195,7 @@ class MultiTimeframeEngine:
 
         The pair must:
           1. Be cointegrated on daily (already tested)
-<<<<<<< HEAD
           2. Have weekly_pvalue ��� weekly_max_pvalue
-=======
-          2. Have weekly_pvalue ≤ weekly_max_pvalue
->>>>>>> origin/main
 
         If weekly_confirmation_required is False, always returns True.
 
@@ -256,7 +208,6 @@ class MultiTimeframeEngine:
         """
         if not self.config.weekly_confirmation_required:
             return True
-<<<<<<< HEAD
         passed = weekly_pvalue <= self.config.weekly_max_pvalue
         logger.debug(
             "passes_confirmation",
@@ -266,9 +217,6 @@ class MultiTimeframeEngine:
             passed=passed,
         )
         return passed
-=======
-        return weekly_pvalue <= self.config.weekly_max_pvalue
->>>>>>> origin/main
 
     def weekly_zscore_gate(
         self,
@@ -295,15 +243,9 @@ class MultiTimeframeEngine:
     def test_weekly_cointegration(
         self,
         weekly_prices: pd.DataFrame,
-<<<<<<< HEAD
         pairs: list[tuple[str, str]],
         lookback: int | None = None,
     ) -> dict[tuple[str, str], float]:
-=======
-        pairs: List[Tuple[str, str]],
-        lookback: Optional[int] = None,
-    ) -> Dict[Tuple[str, str], float]:
->>>>>>> origin/main
         """
         Run cointegration tests on weekly data for a list of pairs.
 
@@ -323,11 +265,7 @@ class MultiTimeframeEngine:
 
         lb = lookback or self.config.weekly_lookback_bars
         data = weekly_prices.tail(lb)
-<<<<<<< HEAD
         results: dict[tuple[str, str], float] = {}
-=======
-        results: Dict[Tuple[str, str], float] = {}
->>>>>>> origin/main
 
         for sym1, sym2 in pairs:
             if sym1 not in data.columns or sym2 not in data.columns:
@@ -342,11 +280,7 @@ class MultiTimeframeEngine:
                 continue
 
             try:
-<<<<<<< HEAD
                 result = engle_granger_test(pd.Series(s1), pd.Series(s2))
-=======
-                result = engle_granger_test(s1, s2)
->>>>>>> origin/main
                 results[(sym1, sym2)] = result.get("adf_pvalue", 1.0)
             except Exception:
                 results[(sym1, sym2)] = 1.0
@@ -370,13 +304,8 @@ class MultiTimeframeEngine:
         weekly_prices: pd.DataFrame,
         sym1: str,
         sym2: str,
-<<<<<<< HEAD
         lookback: int | None = None,
     ) -> float | None:
-=======
-        lookback: Optional[int] = None,
-    ) -> Optional[float]:
->>>>>>> origin/main
         """
         Compute the current weekly z-score for a pair.
 
@@ -400,13 +329,8 @@ class MultiTimeframeEngine:
             return None
 
         try:
-<<<<<<< HEAD
             y = np.asarray(data[sym1], dtype=float)
             x = np.asarray(data[sym2], dtype=float)
-=======
-            y = data[sym1].values
-            x = data[sym2].values
->>>>>>> origin/main
             x_with_const = np.column_stack([np.ones(len(x)), x])
             beta = np.linalg.lstsq(x_with_const, y, rcond=None)[0]
             spread = y - x_with_const @ beta
@@ -427,15 +351,9 @@ class MultiTimeframeEngine:
 
     def confirm_pairs(
         self,
-<<<<<<< HEAD
         daily_pairs: list[tuple[str, str, float, float]],
         weekly_prices: pd.DataFrame,
     ) -> list[tuple[str, str, float, float, float]]:
-=======
-        daily_pairs: List[Tuple[str, str, float, float]],
-        weekly_prices: pd.DataFrame,
-    ) -> List[Tuple[str, str, float, float, float]]:
->>>>>>> origin/main
         """
         Confirm daily-discovered pairs with weekly cointegration.
 
@@ -457,11 +375,7 @@ class MultiTimeframeEngine:
         pair_list = [(p[0], p[1]) for p in daily_pairs]
         weekly_pvals = self.test_weekly_cointegration(weekly_prices, pair_list)
 
-<<<<<<< HEAD
         confirmed: list[tuple[str, str, float, float, float]] = []
-=======
-        confirmed: List[Tuple[str, str, float, float, float]] = []
->>>>>>> origin/main
         for s1, s2, daily_pv, hl in daily_pairs:
             weekly_pv = weekly_pvals.get((s1, s2), 1.0)
 

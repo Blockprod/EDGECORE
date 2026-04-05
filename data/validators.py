@@ -9,15 +9,12 @@ Ensures:
 - Sequence continuity (no gaps, monotonic timestamps)
 """
 
-<<<<<<< HEAD
-=======
 from typing import List, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 import pandas as pd
 import numpy as np
->>>>>>> origin/main
 import math
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -213,7 +210,6 @@ class OHLCVValidator:
 
         # Check 11: Data not stale (timestamp age)
         if len(df) > 0:
-<<<<<<< HEAD
             latest_ts = cast(pd.Timestamp, pd.Timestamp(str(df.index[-1])))
             # Ensure timezone-aware comparison
             if latest_ts.tzinfo is None:
@@ -221,21 +217,6 @@ class OHLCVValidator:
 
             age_hours = (datetime.now(UTC) - latest_ts).total_seconds() / 3600
 
-=======
-            latest_timestamp = df.index[-1]
-            # Handle both datetime and pd.Timestamp
-            if hasattr(latest_timestamp, 'to_pydatetime'):
-                latest_dt = latest_timestamp.to_pydatetime()
-            else:
-                latest_dt = latest_timestamp
-            
-            # Ensure timezone-aware comparison
-            if latest_dt.tzinfo is None:
-                latest_dt = latest_dt.replace(tzinfo=timezone.utc)
-            
-            age_hours = (datetime.now(timezone.utc) - latest_dt).total_seconds() / 3600
-            
->>>>>>> origin/main
             if age_hours > max_age_hours:
                 errors.append(f"Latest data is {age_hours:.1f}h old (max allowed: {max_age_hours}h)")
                 checks_failed += 1
@@ -250,19 +231,11 @@ class OHLCVValidator:
                 ts_dt = ts.to_pydatetime()
             else:
                 ts_dt = ts
-<<<<<<< HEAD
 
             if ts_dt.tzinfo is None:
                 ts_dt = ts_dt.replace(tzinfo=UTC)
 
             time_diff = (ts_dt - datetime.now(UTC)).total_seconds()
-=======
-            
-            if ts_dt.tzinfo is None:
-                ts_dt = ts_dt.replace(tzinfo=timezone.utc)
-            
-            time_diff = (ts_dt - datetime.now(timezone.utc)).total_seconds()
->>>>>>> origin/main
             if time_diff > max_future_seconds:
                 future_count += 1
                 if future_count == 1:  # Only warn once
@@ -350,21 +323,11 @@ class PositionValidator:
         warnings = []
         checks_passed = 0
         checks_failed = 0
-<<<<<<< HEAD
 
         # Check 1: Symbol format  - accept equity tickers or BASE/QUOTE pairs
         import re as _re
 
         _sym_ok = bool(symbol) and (_re.match(r"^[A-Za-z]{1,5}$", symbol) is not None or "/" in symbol)
-=======
-        
-        # Check 1: Symbol format  - accept equity tickers or BASE/QUOTE pairs
-        import re as _re
-        _sym_ok = bool(symbol) and (
-            _re.match(r'^[A-Za-z]{1,5}$', symbol) is not None
-            or '/' in symbol
-        )
->>>>>>> origin/main
         if not _sym_ok:
             errors.append(f"Invalid symbol format: {symbol}")
             checks_failed += 1
@@ -402,13 +365,8 @@ class PositionValidator:
         # Check 6: Position age check (if provided)
         if opened_at:
             if opened_at.tzinfo is None:
-<<<<<<< HEAD
                 opened_at = opened_at.replace(tzinfo=UTC)
             age = datetime.now(UTC) - opened_at
-=======
-                opened_at = opened_at.replace(tzinfo=timezone.utc)
-            age = datetime.now(timezone.utc) - opened_at
->>>>>>> origin/main
             if age < timedelta(0):
                 errors.append("Position opened in the future")
                 checks_failed += 1
@@ -479,15 +437,9 @@ class EquityValidator:
         # Check 3: Jump detection
         if check_jump and len(self.equity_history) > 0:
             last_time, last_equity = self.equity_history[-1]
-<<<<<<< HEAD
             if hasattr(last_time, "tzinfo") and last_time.tzinfo is None:
                 last_time = last_time.replace(tzinfo=UTC)
             time_delta = datetime.now(UTC) - last_time
-=======
-            if hasattr(last_time, 'tzinfo') and last_time.tzinfo is None:
-                last_time = last_time.replace(tzinfo=timezone.utc)
-            time_delta = datetime.now(timezone.utc) - last_time
->>>>>>> origin/main
             equity_change_pct = abs((equity - last_equity) / last_equity) * 100
 
             # Only alert for jumps > threshold in short timeframes
@@ -500,11 +452,7 @@ class EquityValidator:
             checks_passed += 1
 
         # Record this equity
-<<<<<<< HEAD
         self.equity_history.append((datetime.now(UTC), equity))
-=======
-        self.equity_history.append((datetime.now(timezone.utc), equity))
->>>>>>> origin/main
         # Keep only last 100 entries
         if len(self.equity_history) > 100:
             self.equity_history = self.equity_history[-100:]

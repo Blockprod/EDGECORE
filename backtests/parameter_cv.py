@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Parameter Cross-Validation ÔÇô Phase 3 (addresses audit ┬º4.2).
-=======
-"""
-Parameter Cross-Validation – Phase 3 (addresses audit §4.2).
->>>>>>> origin/main
 
 Problem
 -------
@@ -25,11 +20,7 @@ Walk-forward **parameter cross-validation** using the existing
 4. Report stability metrics: how much does the optimal parameter set
    vary across folds?
 
-<<<<<<< HEAD
 This does NOT overwrite production parameters automatically ÔÇô it
-=======
-This does NOT overwrite production parameters automatically – it
->>>>>>> origin/main
 generates a **recommendation report** that the human reviews.
 
 Usage::
@@ -41,18 +32,12 @@ Usage::
 
 from __future__ import annotations
 
-<<<<<<< HEAD
 import itertools
 
 # pyright: reportUnusedImport=false, reportUnusedVariable=false
 from dataclasses import dataclass
 from typing import Any, Callable
 
-=======
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Any, Callable
-import itertools
->>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -67,11 +52,7 @@ class ParamSpec:
     name: str
     """Dotted path to the parameter, e.g. 'base_entry_threshold'."""
 
-<<<<<<< HEAD
     values: list[Any]
-=======
-    values: List[Any]
->>>>>>> origin/main
     """Candidate values to try."""
 
 
@@ -79,13 +60,8 @@ class ParamSpec:
 class CVResult:
     """Result of cross-validating one parameter set."""
 
-<<<<<<< HEAD
     params: dict[str, Any]
     fold_scores: list[float]
-=======
-    params: Dict[str, Any]
-    fold_scores: List[float]
->>>>>>> origin/main
     mean_score: float
     std_score: float
     worst_fold: float
@@ -102,11 +78,7 @@ class ParameterCrossValidator:
         prices_df: pd.DataFrame,
         num_folds: int = 5,
         oos_ratio: float = 0.2,
-<<<<<<< HEAD
         scoring_fn: Callable | None = None,
-=======
-        scoring_fn: Optional[Callable] = None,
->>>>>>> origin/main
         max_combinations: int = 200,
     ):
         """
@@ -114,11 +86,7 @@ class ParameterCrossValidator:
             prices_df: Full price DataFrame (symbols as columns).
             num_folds: Number of walk-forward folds.
             oos_ratio: Out-of-sample ratio per fold.
-<<<<<<< HEAD
             scoring_fn: Function(BacktestMetrics) Ôåô float.
-=======
-            scoring_fn: Function(BacktestMetrics) ↓ float.
->>>>>>> origin/main
                 Default: Sharpe ratio (higher is better).
             max_combinations: Maximum parameter combinations.  If the
                 full grid exceeds this, random sampling is used.
@@ -128,22 +96,12 @@ class ParameterCrossValidator:
         self.oos_ratio = oos_ratio
         self.scoring_fn = scoring_fn or (lambda m: m.sharpe_ratio)
         self.max_combinations = max_combinations
-<<<<<<< HEAD
         self.results: list[CVResult] = []
-=======
-        self.results: List[CVResult] = []
->>>>>>> origin/main
 
         # Create splits once
         from backtests.walk_forward import split_walk_forward
 
-<<<<<<< HEAD
         self.splits = split_walk_forward(prices_df, num_periods=num_folds, oos_ratio=oos_ratio)
-=======
-        self.splits = split_walk_forward(
-            prices_df, num_periods=num_folds, oos_ratio=oos_ratio
-        )
->>>>>>> origin/main
 
         logger.info(
             "parameter_cv_initialized",
@@ -152,11 +110,7 @@ class ParameterCrossValidator:
             splits_created=len(self.splits),
         )
 
-<<<<<<< HEAD
     def build_grid(self, param_specs: list[ParamSpec]) -> list[dict[str, Any]]:
-=======
-    def build_grid(self, param_specs: List[ParamSpec]) -> List[Dict[str, Any]]:
->>>>>>> origin/main
         """Build parameter grid from specs, with optional random sampling.
 
         Args:
@@ -167,11 +121,7 @@ class ParameterCrossValidator:
         """
         names = [p.name for p in param_specs]
         value_lists = [p.values for p in param_specs]
-<<<<<<< HEAD
         full_grid = [dict(zip(names, combo, strict=False)) for combo in itertools.product(*value_lists)]
-=======
-        full_grid = [dict(zip(names, combo)) for combo in itertools.product(*value_lists)]
->>>>>>> origin/main
 
         if len(full_grid) > self.max_combinations:
             rng = np.random.RandomState(42)
@@ -189,11 +139,7 @@ class ParameterCrossValidator:
 
     def evaluate_params(
         self,
-<<<<<<< HEAD
         params: dict[str, Any],
-=======
-        params: Dict[str, Any],
->>>>>>> origin/main
     ) -> CVResult:
         """Evaluate a single parameter set across all folds.
 
@@ -208,13 +154,8 @@ class ParameterCrossValidator:
         Returns:
             CVResult with fold-level scores.
         """
-<<<<<<< HEAD
         from backtests.cost_model import CostModel
         from backtests.strategy_simulator import StrategyBacktestSimulator
-=======
-        from backtests.strategy_simulator import StrategyBacktestSimulator
-        from backtests.cost_model import CostModel
->>>>>>> origin/main
         from strategies.pair_trading import PairTradingStrategy
 
         fold_scores = []
@@ -229,13 +170,7 @@ class ParameterCrossValidator:
                 self._apply_params(strategy, params)
 
                 # Discover pairs on training data
-<<<<<<< HEAD
                 pairs = strategy.find_cointegrated_pairs(train_df, use_cache=False, use_parallel=True)
-=======
-                pairs = strategy.find_cointegrated_pairs(
-                    train_df, use_cache=False, use_parallel=True
-                )
->>>>>>> origin/main
 
                 # Create simulator with params
                 sim_kwargs = {}
@@ -279,11 +214,7 @@ class ParameterCrossValidator:
 
         return result
 
-<<<<<<< HEAD
     def run(self, param_specs: list[ParamSpec]) -> list[CVResult]:
-=======
-    def run(self, param_specs: List[ParamSpec]) -> List[CVResult]:
->>>>>>> origin/main
         """Run the full cross-validation grid search.
 
         Args:
@@ -313,21 +244,13 @@ class ParameterCrossValidator:
 
         return self.results
 
-<<<<<<< HEAD
     def best_params(self) -> dict[str, Any] | None:
-=======
-    def best_params(self) -> Optional[Dict[str, Any]]:
->>>>>>> origin/main
         """Return the best parameter set (highest mean OOS score)."""
         if not self.results:
             return None
         return self.results[0].params
 
-<<<<<<< HEAD
     def generate_report(self) -> dict[str, Any]:
-=======
-    def generate_report(self) -> Dict[str, Any]:
->>>>>>> origin/main
         """Generate a human-readable report of the cross-validation."""
         if not self.results:
             return {"error": "No results. Run the CV first."}
@@ -355,11 +278,7 @@ class ParameterCrossValidator:
         }
         return report
 
-<<<<<<< HEAD
     def _stability_analysis(self, top_results: list[CVResult]) -> dict[str, Any]:
-=======
-    def _stability_analysis(self, top_results: List[CVResult]) -> Dict[str, Any]:
->>>>>>> origin/main
         """Check if top parameter sets are stable (similar values)."""
         if len(top_results) < 2:
             return {"stable": True, "detail": "Only one result"}
@@ -386,7 +305,6 @@ class ParameterCrossValidator:
         return {"stable": all_stable, "per_param": stability}
 
     @staticmethod
-<<<<<<< HEAD
     def _apply_params(strategy: Any, params: dict[str, Any]) -> None:
         """Apply parameter dict to a strategy instance.
 
@@ -396,17 +314,6 @@ class ParameterCrossValidator:
         - ``short_hl_adjustment`` / ``long_hl_adjustment`` Ôåô threshold config
         - ``widening_threshold`` Ôåô trailing stop
         - ``max_days_cap`` Ôåô time stop config
-=======
-    def _apply_params(strategy: Any, params: Dict[str, Any]) -> None:
-        """Apply parameter dict to a strategy instance.
-
-        Handles common parameter paths:
-        - ``base_entry_threshold`` ↓ strategy threshold config
-        - ``low_vol_adjustment`` / ``high_vol_adjustment`` ↓ threshold config
-        - ``short_hl_adjustment`` / ``long_hl_adjustment`` ↓ threshold config
-        - ``widening_threshold`` ↓ trailing stop
-        - ``max_days_cap`` ↓ time stop config
->>>>>>> origin/main
         """
         for key, value in params.items():
             # Threshold config
@@ -426,11 +333,7 @@ class ParameterCrossValidator:
                 setattr(strategy, key, value)
 
 
-<<<<<<< HEAD
 # ÔôÇÔôÇ Default parameter grid (conservative) ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
-=======
-# ⓀⓀ Default parameter grid (conservative) ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
 DEFAULT_PARAM_SPECS = [
     ParamSpec("base_entry_threshold", [1.5, 1.8, 2.0, 2.2, 2.5]),

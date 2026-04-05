@@ -9,10 +9,7 @@ import sys
 import json
 from pathlib import Path
 from datetime import datetime
-<<<<<<< HEAD
-=======
 from typing import Dict
->>>>>>> origin/main
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -440,11 +437,7 @@ def main():
     validator.validate_reliability()
     validator.validate_documentation()
     validator.validate_performance()
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     # Generate report
     report = validator.generate_report()
 

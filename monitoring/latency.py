@@ -9,7 +9,6 @@ Tracks latency for operations across components:
 
 import logging
 import statistics
-<<<<<<< HEAD
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -18,11 +17,6 @@ from datetime import datetime
 import numpy as np
 
 from common.types import LatencyBudget, LatencyMetrics
-=======
-import numpy as np
-
-from common.types import LatencyMetrics, LatencyBudget
->>>>>>> origin/main
 
 logger = logging.getLogger(__name__)
 
@@ -142,17 +136,10 @@ class LatencyTracker:
 
         if not latencies:
             return None
-<<<<<<< HEAD
 
         self.measurements if not success_only else [m for m in self.measurements if m.success]
         sum(1 for m in self.measurements if not m.success)
 
-=======
-        
-        self.measurements if not success_only else [m for m in self.measurements if m.success]
-        sum(1 for m in self.measurements if not m.success)
-        
->>>>>>> origin/main
         return {
             "operation": self.operation,
             "total_measurements": len(latencies),

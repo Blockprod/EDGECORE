@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Phase 3.2 ÔÇö Intraday Signal Generators.
 
@@ -6,33 +5,17 @@ Three complementary intraday alpha sources for pair-trading:
 1. IntradayMeanReversionSignal ÔÇö fast z-score on 5-min spread bars.
 2. GapReversionSignal         ÔÇö overnight gap detection + reversion.
 3. VolumeProfileSignal        ÔÇö volume-weighted spread confirmation.
-=======
-"""
-Phase 3.2 — Intraday Signal Generators.
-
-Three complementary intraday alpha sources for pair-trading:
-1. IntradayMeanReversionSignal — fast z-score on 5-min spread bars.
-2. GapReversionSignal         — overnight gap detection + reversion.
-3. VolumeProfileSignal        — volume-weighted spread confirmation.
->>>>>>> origin/main
 
 Each returns a score in [-1, 1] compatible with SignalCombiner.
 
 Target: augment daily signals with intraday timing,
-<<<<<<< HEAD
         increasing trade count to ÔëÑ 200/year.
-=======
-        increasing trade count to ≥ 200/year.
->>>>>>> origin/main
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Optional
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -42,11 +25,7 @@ logger = get_logger(__name__)
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # 3.2.1 ÔÇö Intraday Mean-Reversion Signal (fast z-score)
-=======
-# 3.2.1 — Intraday Mean-Reversion Signal (fast z-score)
->>>>>>> origin/main
 # ---------------------------------------------------------------------------
 
 class IntradayMeanReversionSignal:
@@ -56,11 +35,7 @@ class IntradayMeanReversionSignal:
     short-lived spread dislocations that revert within the session.
 
     Score = -z_score / scale, clamped to [-1, 1].
-<<<<<<< HEAD
     Negative z ÔåÆ positive score (buy spread), and vice-versa.
-=======
-    Negative z → positive score (buy spread), and vice-versa.
->>>>>>> origin/main
     """
 
     def __init__(
@@ -98,11 +73,7 @@ class IntradayMeanReversionSignal:
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # 3.2.2 ÔÇö Gap Reversion Signal
-=======
-# 3.2.2 — Gap Reversion Signal
->>>>>>> origin/main
 # ---------------------------------------------------------------------------
 
 class GapReversionSignal:
@@ -113,13 +84,8 @@ class GapReversionSignal:
     2 hours of trading (15-24 bars at 5-min).
 
     Score:
-<<<<<<< HEAD
       - Large positive gap (spread opens higher) ÔåÆ negative score (sell)
       - Large negative gap (spread opens lower)  ÔåÆ positive score (buy)
-=======
-      - Large positive gap (spread opens higher) → negative score (sell)
-      - Large negative gap (spread opens lower)  → positive score (buy)
->>>>>>> origin/main
     """
 
     def __init__(
@@ -175,11 +141,7 @@ class GapReversionSignal:
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # 3.2.3 ÔÇö Volume Profile Signal
-=======
-# 3.2.3 — Volume Profile Signal
->>>>>>> origin/main
 # ---------------------------------------------------------------------------
 
 class VolumeProfileSignal:
@@ -190,13 +152,8 @@ class VolumeProfileSignal:
     opportunities (institutional flow absorbing dislocation).
 
     Score:
-<<<<<<< HEAD
       - High volume at low spread ÔåÆ positive (buy confirmation)
       - High volume at high spread ÔåÆ negative (sell confirmation)
-=======
-      - High volume at low spread → positive (buy confirmation)
-      - High volume at high spread → negative (sell confirmation)
->>>>>>> origin/main
     """
 
     def __init__(
@@ -253,13 +210,8 @@ class VolumeProfileSignal:
         if vol_ratio < self.volume_threshold:
             return 0.0  # Not enough volume confirmation
 
-<<<<<<< HEAD
         # High vol at extreme spread ÔåÆ confirmation of reversion opportunity
         # Large negative z + high volume ÔåÆ buy; large positive z + high volume ÔåÆ sell
-=======
-        # High vol at extreme spread → confirmation of reversion opportunity
-        # Large negative z + high volume → buy; large positive z + high volume → sell
->>>>>>> origin/main
         score = -z * min(vol_ratio / self.volume_threshold, 2.0) / 3.0
         return float(np.clip(score, -1.0, 1.0))
 
@@ -311,13 +263,8 @@ class IntradaySignalEngine:
         self,
         spread: pd.Series,
         bars_since_open: int = 0,
-<<<<<<< HEAD
         volume_a: pd.Series | None = None,
         volume_b: pd.Series | None = None,
-=======
-        volume_a: Optional[pd.Series] = None,
-        volume_b: Optional[pd.Series] = None,
->>>>>>> origin/main
     ) -> IntradaySignalResult:
         """Compute composite intraday signal.
 

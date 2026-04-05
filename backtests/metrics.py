@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 ﻿from dataclasses import dataclass
-=======
-from dataclasses import dataclass
-from typing import List, Optional
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -17,11 +12,7 @@ TRADING_DAYS_PER_YEAR: int = 252
 
 def set_trading_days(days: int) -> None:
     """Change the annualisation factor at runtime.
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     Args:
         days: Trading days per year (252 for equities).
     """
@@ -41,7 +32,6 @@ class BacktestMetrics:
     win_rate: float
     profit_factor: float
     total_trades: int
-<<<<<<< HEAD
     avg_trade_duration: float | None = None
     calmar_ratio: float | None = None
     sortino_ratio: float | None = None
@@ -56,25 +46,10 @@ class BacktestMetrics:
     per_pair: dict | None = None  # C-04: per-pair trade statistics
     total_slippage: float | None = None  # C-04: cumulative slippage cost (entry + exit legs)
 
-=======
-    avg_trade_duration: Optional[float] = None
-    calmar_ratio: Optional[float] = None
-    sortino_ratio: Optional[float] = None
-    var_95: Optional[float] = None            # Phase 4: Historical 95% Value-at-Risk
-    cvar_95: Optional[float] = None           # Phase 4: Conditional VaR (Expected Shortfall)
-    initial_capital: Optional[float] = None    # Starting capital
-    final_capital: Optional[float] = None      # Ending capital
-    realized_pnl: Optional[float] = None       # Total realised P&L
-    note: Optional[str] = None
-    daily_returns: Optional[pd.Series] = None  # Raw daily returns for aggregation
-    num_symbols: Optional[int] = None  # Number of symbols in universe
-    
->>>>>>> origin/main
     @classmethod
     def from_returns(
         cls,
         returns: pd.Series,
-<<<<<<< HEAD
         trades: list[float],
         start_date: str,
         end_date: str,
@@ -82,15 +57,6 @@ class BacktestMetrics:
         risk_free_annual: float = 0.0,
         num_symbols: int | None = None,
     ) -> "BacktestMetrics":
-=======
-        trades: List[float],
-        start_date: str,
-        end_date: str,
-        note: str = None,
-        risk_free_annual: float = 0.0,
-        num_symbols: Optional[int] = None,
-    ) -> 'BacktestMetrics':
->>>>>>> origin/main
         """
         Calculate metrics from returns and trades.
 
@@ -102,11 +68,7 @@ class BacktestMetrics:
                               Deducted from the mean daily return before computing
                               Sharpe & Sortino so that ratios are true excess-return.
             num_symbols: Number of symbols in the universe (e.g. 100 for 100 stocks).
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         Returns:
             BacktestMetrics with all fields filled
         """
@@ -114,21 +76,13 @@ class BacktestMetrics:
         rf_daily = (1 + risk_free_annual) ** (1 / TRADING_DAYS_PER_YEAR) - 1
 
         # Total return
-<<<<<<< HEAD
         _prod: float = float(np.asarray((1 + returns).prod()).flat[0]) if len(returns) > 0 else 1.0
         total_return: float = _prod - 1.0
-=======
-        total_return = (1 + returns).prod() - 1 if len(returns) > 0 else 0.0
->>>>>>> origin/main
 
         # Initial capital: assume 100000 if not provided elsewhere
         initial_capital = 100000.0
         # Final capital: initial * (1 + total_return)
-<<<<<<< HEAD
         final_capital = float(np.float64(initial_capital) * (1.0 + total_return))
-=======
-        final_capital = initial_capital * (1 + total_return)
->>>>>>> origin/main
         # Realized PnL: sum of trades
         realized_pnl = sum(trades) if trades else 0.0
 
@@ -159,11 +113,7 @@ class BacktestMetrics:
         gross_profit = sum(pnl for pnl in trades if pnl > 0)
         gross_loss = abs(sum(pnl for pnl in trades if pnl < 0))
         profit_factor = gross_profit / gross_loss if gross_loss > 0 else 0.0
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Sortino ratio (only downside volatility, excess return)
         excess_returns = returns - rf_daily
         downside_returns = excess_returns[excess_returns < 0]
@@ -173,30 +123,18 @@ class BacktestMetrics:
             sortino_ratio = 0.0
 
         # Calmar ratio (return / max drawdown)
-<<<<<<< HEAD
         calmar_ratio = (
             float(np.float64(total_return) / abs(float(np.float64(max_drawdown)))) if max_drawdown < 0 else 0.0
         )
 
-=======
-        calmar_ratio = total_return / abs(max_drawdown) if max_drawdown < 0 else 0.0
-        
->>>>>>> origin/main
         # Phase 4: Portfolio-level VaR and CVaR (Expected Shortfall)
         var_95 = None
         cvar_95 = None
         if len(returns) >= 20:
-<<<<<<< HEAD
             var_95 = float(np.percentile(returns, 5))  # 5th percentile = 95% VaR
             tail = returns[returns <= var_95]
             cvar_95 = float(tail.mean()) if len(tail) > 0 else var_95
 
-=======
-            var_95 = float(np.percentile(returns, 5))        # 5th percentile = 95% VaR
-            tail = returns[returns <= var_95]
-            cvar_95 = float(tail.mean()) if len(tail) > 0 else var_95
-        
->>>>>>> origin/main
         return cls(
             start_date=start_date,
             end_date=end_date,
@@ -226,12 +164,8 @@ class BacktestMetrics:
         cap_init = f"{self.initial_capital:>10,.2f} EUR" if self.initial_capital is not None else "N/A"
         cap_final = f"{self.final_capital:>10,.2f} EUR" if self.final_capital is not None else "N/A"
         pnl_str = f"{self.realized_pnl:>+10,.2f} EUR" if self.realized_pnl is not None else "N/A"
-<<<<<<< HEAD
         return (
             f"""
-=======
-        return f"""
->>>>>>> origin/main
 ========================================
          BACKTEST METRICS SUMMARY         
 ========================================
@@ -251,10 +185,6 @@ Win Rate:           {self.win_rate:>7.2%}
 Profit Factor:      {self.profit_factor:>7.2f}
 Total Trades:       {self.total_trades:>7d}
 ========================================
-<<<<<<< HEAD
         """
             ""
         )
-=======
-        """""
->>>>>>> origin/main

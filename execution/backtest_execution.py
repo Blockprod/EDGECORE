@@ -12,10 +12,7 @@ including:
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
-<<<<<<< HEAD
 from typing import Literal, cast
-=======
->>>>>>> origin/main
 
 from common.types import (
     CommissionConfig,

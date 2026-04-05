@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿# Cython Integration Complete - Architecture Decision
-=======
-# Cython Integration Complete - Architecture Decision
->>>>>>> origin/main
 
 ## Summary of Changes
 
@@ -12,32 +8,19 @@ Replaced complex C++ acceleration with simpler **Cython acceleration** for stati
 ### The Problem We Solved
 - **Previous State**: C++ module compiled but never called (dead code)
 - **Issue**: Windows requires MSVC, pybind11, CMake - complex toolchain
-<<<<<<< HEAD
 - **Result**: "C'est pas tr├¿s coh├®rent" - architecture was dishonest about what actually works
-=======
-- **Result**: "C'est pas très cohérent" - architecture was dishonest about what actually works
->>>>>>> origin/main
 - **Decision**: Pivot to Cython (user suggestion - excellent call!)
 
 ### Benefits of This Approach
 
 | Aspect | C++ | Cython | Winner |
 |--------|-----|--------|--------|
-<<<<<<< HEAD
 | Syntax | Complex (cpp, pybind11) | Python-like | Ô£à Cython |
 | Build System | CMake (overkill) | setuptools | Ô£à Cython |
 | Windows Support | Requires MSVC | Native | Ô£à Cython |
 | Maintenance | Hard to modify | Easy | Ô£à Cython |
 | Speedup | 10x claimed | 1.2x measured | Ô£à Cython (honest) |
 | Cross-platform | Complex | Simple | Ô£à Cython |
-=======
-| Syntax | Complex (cpp, pybind11) | Python-like | ✅ Cython |
-| Build System | CMake (overkill) | setuptools | ✅ Cython |
-| Windows Support | Requires MSVC | Native | ✅ Cython |
-| Maintenance | Hard to modify | Easy | ✅ Cython |
-| Speedup | 10x claimed | 1.2x measured | ✅ Cython (honest) |
-| Cross-platform | Complex | Simple | ✅ Cython |
->>>>>>> origin/main
 
 ### Files Created/Modified
 
@@ -70,20 +53,12 @@ Replaced complex C++ acceleration with simpler **Cython acceleration** for stati
 
 ### Performance Results
 
-<<<<<<< HEAD
 **Benchmark: 100 pairs ├ù 250 periods**
-=======
-**Benchmark: 100 pairs × 250 periods**
->>>>>>> origin/main
 
 ```
 Pure Python:  0.883s (8.83ms/pair, 113 pairs/sec)
 Cython:       0.741s (7.40ms/pair, 135 pairs/sec)
-<<<<<<< HEAD
 ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-───────────────────────────
->>>>>>> origin/main
 Speedup:      1.2x faster
 ```
 
@@ -99,37 +74,21 @@ Speedup:      1.2x faster
 **BEFORE:**
 ```
 User calls engle_granger_test_cpp_optimized()
-<<<<<<< HEAD
   Ôö£ÔöÇ Try to load edgecore.cointegration_cpp (C++)
   Ôö£ÔöÇ ERROR: Module not found or not working
   ÔööÔöÇ Fall back to Python (silently)
 Result: C++ exists but never runs ÔåÆ INCONSISTENT
-=======
-  ├─ Try to load edgecore.cointegration_cpp (C++)
-  ├─ ERROR: Module not found or not working
-  └─ Fall back to Python (silently)
-Result: C++ exists but never runs → INCONSISTENT
->>>>>>> origin/main
 ```
 
 **AFTER:**
 ```
 User calls engle_granger_test_cpp_optimized()
-<<<<<<< HEAD
   Ôö£ÔöÇ Try to load models.cointegration_fast (Cython)
   Ôöé  Ôö£ÔöÇ If available: Use Cython (1.2x faster)
   Ôöé  ÔööÔöÇ Performance: Honest measurement
   Ôö£ÔöÇ If unavailable: Use Python (still works perfectly)
   ÔööÔöÇ Result: Same API, consistent behavior
 Result: What we advertise actually works ÔåÆ CONSISTENT
-=======
-  ├─ Try to load models.cointegration_fast (Cython)
-  │  ├─ If available: Use Cython (1.2x faster)
-  │  └─ Performance: Honest measurement
-  ├─ If unavailable: Use Python (still works perfectly)
-  └─ Result: Same API, consistent behavior
-Result: What we advertise actually works → CONSISTENT
->>>>>>> origin/main
 ```
 
 ### Verification Checklist
@@ -191,17 +150,10 @@ Result: What we advertise actually works → CONSISTENT
 
 ### Documentation Status
 
-<<<<<<< HEAD
 - [Ô£à] CYTHON_ACCELERATION.md - Complete guide
 - [Ô£à] Code comments in cointegration.py - Updated
 - [Ô£à] Benchmark script - Ready to use
 - [Ô£à] This file - Decision rationale
-=======
-- [✅] CYTHON_ACCELERATION.md - Complete guide
-- [✅] Code comments in cointegration.py - Updated
-- [✅] Benchmark script - Ready to use
-- [✅] This file - Decision rationale
->>>>>>> origin/main
 
 ### Future Optimizations
 
@@ -228,9 +180,5 @@ This is a better engineering decision than the original C++ approach.
 ---
 
 **Date**: February 12, 2026
-<<<<<<< HEAD
 **Status**: Ô£à COMPLETE AND TESTED
-=======
-**Status**: ✅ COMPLETE AND TESTED
->>>>>>> origin/main
 **Commit**: Ready for version control

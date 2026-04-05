@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""
-=======
-"""
->>>>>>> origin/main
 Phase 2 Risk Module Tests
 =========================
 Tests for the 4 risk modules introduced in Phase 2:
@@ -16,7 +12,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-<<<<<<< HEAD
 from risk.drawdown_manager import (
     DrawdownConfig,
     DrawdownManager,
@@ -28,20 +23,6 @@ from risk.var_monitor import VaRConfig, VaRMonitor
 
 # ÔöÇÔöÇÔöÇ 2.1: FactorModel ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
-=======
-from risk.factor_model import FactorModel, FactorModelConfig
-from risk.sector_exposure import SectorExposureMonitor, SectorExposureConfig
-from risk.var_monitor import VaRMonitor, VaRConfig
-from risk.drawdown_manager import (
-    DrawdownManager,
-    DrawdownConfig,
-    DrawdownAction,
-    DrawdownTier,
-)
-
-
-# ─── 2.1: FactorModel ──────────────────────────────────────────────
->>>>>>> origin/main
 
 class TestFactorModel:
     """Per-pair beta-neutral weight computation."""
@@ -69,11 +50,8 @@ class TestFactorModel:
         beta_a = fm.estimate_beta(prices, "A", bar_idx=100)
         beta_b = fm.estimate_beta(prices, "B", bar_idx=100)
         # Both should be positive (move with market)
-<<<<<<< HEAD
         assert beta_a is not None
         assert beta_b is not None
-=======
->>>>>>> origin/main
         assert beta_a > 0
         assert beta_b > 0
         # A has higher beta than B
@@ -82,20 +60,12 @@ class TestFactorModel:
     def test_beta_neutral_ratio_sane(self, prices):
         fm = FactorModel(FactorModelConfig(lookback=60, min_observations=30))
         ratio = fm.compute_beta_neutral_ratio(prices, "A", "B", bar_idx=100)
-<<<<<<< HEAD
         # ratio = |beta_A| / |beta_B| Ôëê 1.2/0.8 Ôëê 1.5
-=======
-        # ratio = |beta_A| / |beta_B| ≈ 1.2/0.8 ≈ 1.5
->>>>>>> origin/main
         assert 0.5 <= ratio <= 2.0  # clipped range
 
     def test_insufficient_data_returns_unity(self, prices):
         fm = FactorModel(FactorModelConfig(lookback=60, min_observations=30))
-<<<<<<< HEAD
         # bar_idx=10 ÔåÆ only 11 observations < min_observations=30
-=======
-        # bar_idx=10 → only 11 observations < min_observations=30
->>>>>>> origin/main
         ratio = fm.compute_beta_neutral_ratio(prices, "A", "B", bar_idx=10)
         assert ratio == 1.0  # fallback
 
@@ -103,7 +73,6 @@ class TestFactorModel:
         fm = FactorModel(FactorModelConfig(lookback=60, min_observations=30))
         positions = {
             "A_B": {
-<<<<<<< HEAD
                 "sym1": "A",
                 "sym2": "B",
                 "side": "long",
@@ -113,42 +82,20 @@ class TestFactorModel:
             }
         }
         beta, is_neutral = fm.portfolio_beta(positions, prices, bar_idx=100, portfolio_value=100000)
-=======
-                "sym1": "A", "sym2": "B", "side": "long",
-                "notional": 10000, "notional_1": 5000, "notional_2": 5000,
-            }
-        }
-        beta, is_neutral = fm.portfolio_beta(
-            positions, prices, bar_idx=100, portfolio_value=100000
-        )
->>>>>>> origin/main
         assert isinstance(beta, float)
         assert isinstance(is_neutral, bool)
 
     def test_beta_values_shift_with_window(self, prices):
-<<<<<<< HEAD
         fm = FactorModel(FactorModelConfig(lookback=60, min_observations=30, reestimate_interval=5))
         b1 = fm.estimate_beta(prices, "A", bar_idx=80)
         b2 = fm.estimate_beta(prices, "A", bar_idx=110)
         # Different windows ÔåÆ values may differ
-=======
-        fm = FactorModel(FactorModelConfig(
-            lookback=60, min_observations=30, reestimate_interval=5
-        ))
-        b1 = fm.estimate_beta(prices, "A", bar_idx=80)
-        b2 = fm.estimate_beta(prices, "A", bar_idx=110)
-        # Different windows → values may differ
->>>>>>> origin/main
         assert isinstance(b1, float)
         assert isinstance(b2, float)
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇÔöÇ 2.2: SectorExposureMonitor ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
-=======
-# ─── 2.2: SectorExposureMonitor ────────────────────────────────────
->>>>>>> origin/main
 
 class TestSectorExposureMonitor:
     """Sector concentration limit checks."""
@@ -156,7 +103,6 @@ class TestSectorExposureMonitor:
     @pytest.fixture
     def monitor(self):
         sector_map = {
-<<<<<<< HEAD
             "AAPL": "Technology",
             "MSFT": "Technology",
             "GOOGL": "Technology",
@@ -168,13 +114,6 @@ class TestSectorExposureMonitor:
             "CVX": "Energy",
             "KO": "Consumer",
             "PEP": "Consumer",
-=======
-            "AAPL": "Technology", "MSFT": "Technology", "GOOGL": "Technology",
-            "NVDA": "Technology", "AMD": "Technology",
-            "JPM": "Financials", "GS": "Financials",
-            "XOM": "Energy", "CVX": "Energy",
-            "KO": "Consumer", "PEP": "Consumer",
->>>>>>> origin/main
         }
         return SectorExposureMonitor(
             sector_map=sector_map,
@@ -208,13 +147,8 @@ class TestSectorExposureMonitor:
             "GOOGL_KO": {"sym1": "GOOGL", "sym2": "KO", "notional": 2000},
             "NVDA_PEP": {"sym1": "NVDA", "sym2": "PEP", "notional": 2000},
         }
-<<<<<<< HEAD
         # 5th tech position ÔåÆ exceeds max_sector_positions=4
         ok, _reason = monitor.can_enter("AMD_JPM", 2000, 100000, positions)
-=======
-        # 5th tech position → exceeds max_sector_positions=4
-        ok, reason = monitor.can_enter("AMD_JPM", 2000, 100000, positions)
->>>>>>> origin/main
         assert ok is False
 
     def test_allow_different_sector(self, monitor):
@@ -233,25 +167,16 @@ class TestSectorExposureMonitor:
         assert "Financials" in report
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇÔöÇ 2.3: VaRMonitor ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
-=======
-# ─── 2.3: VaRMonitor ──────────────────────────────────────────────
->>>>>>> origin/main
 
 class TestVaRMonitor:
     """Rolling historical VaR/CVaR monitoring."""
 
     def test_insufficient_data_ok(self):
         vm = VaRMonitor(VaRConfig(min_observations=20))
-<<<<<<< HEAD
         ok, _breach = vm.check_limit(100000)
         assert ok is True  # not enough data ÔåÆ pass
-=======
-        ok, breach = vm.check_limit(100000)
-        assert ok is True  # not enough data → pass
->>>>>>> origin/main
 
     def test_var_after_feeding(self):
         np.random.seed(0)
@@ -269,11 +194,8 @@ class TestVaRMonitor:
             vm.update(np.random.randn() * 0.01)
         var = vm.current_var()
         cvar = vm.current_cvar()
-<<<<<<< HEAD
         assert var is not None
         assert cvar is not None
-=======
->>>>>>> origin/main
         assert cvar >= var  # CVaR >= VaR (deeper into the tail, higher positive loss)
 
     def test_check_limit_blocks_on_breach(self):
@@ -293,12 +215,8 @@ class TestVaRMonitor:
         assert ok is True
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇÔöÇ 2.4: DrawdownManager ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 
-=======
-# ─── 2.4: DrawdownManager ─────────────────────────────────────────
->>>>>>> origin/main
 
 class TestDrawdownManager:
     """Multi-tier drawdown response."""
@@ -330,23 +248,13 @@ class TestDrawdownManager:
         dm = DrawdownManager(DrawdownConfig(tier_2_pct=0.05))
         a1 = dm.evaluate(94000, 100000)
         assert a1.close_fraction == 0.5
-<<<<<<< HEAD
         # Second eval in same tier ÔåÆ no more closes
-=======
-        # Second eval in same tier → no more closes
->>>>>>> origin/main
         a2 = dm.evaluate(94000, 100000)
         assert a2.close_fraction == 0.0
         assert a2.tier == DrawdownTier.TIER_2
 
     def test_tier3_halt_and_cooldown(self):
-<<<<<<< HEAD
         dm = DrawdownManager(DrawdownConfig(tier_3_pct=0.08, tier_3_cooldown_bars=3))
-=======
-        dm = DrawdownManager(DrawdownConfig(
-            tier_3_pct=0.08, tier_3_cooldown_bars=3
-        ))
->>>>>>> origin/main
         action = dm.evaluate(91000, 100000)  # 9% DD
         assert action.tier == DrawdownTier.TIER_3
         assert action.is_halted is True
@@ -357,15 +265,9 @@ class TestDrawdownManager:
             a = dm.evaluate(91000, 100000)
             assert a.is_halted is True
 
-<<<<<<< HEAD
         # Last cooldown bar ÔåÆ still halted
         a = dm.evaluate(91000, 100000)
         # After cooldown expires ÔåÆ normal again
-=======
-        # Last cooldown bar → still halted
-        a = dm.evaluate(91000, 100000)
-        # After cooldown expires → normal again
->>>>>>> origin/main
         a = dm.evaluate(91000, 91000)
         assert a.tier == DrawdownTier.NORMAL
 

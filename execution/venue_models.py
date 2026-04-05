@@ -9,16 +9,9 @@ Provides market models tailored to different trading venues:
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import Literal
 
 from common.types import Symbol, VenueCharacteristics, VenueType
-=======
-from typing import Optional, Literal
-import logging
-
-from common.types import Symbol, VenueType, VenueCharacteristics
->>>>>>> origin/main
 
 logger = logging.getLogger(__name__)
 
@@ -144,13 +137,8 @@ class VenueModelBase(ABC):
 
 class IBKRSmartVenueModel(VenueModelBase):
     """Model for IBKR Smart Routing (default venue)."""
-<<<<<<< HEAD
 
     def __init__(self, characteristics: VenueCharacteristics | None = None):
-=======
-    
-    def __init__(self, characteristics: Optional[VenueCharacteristics] = None):
->>>>>>> origin/main
         """Initialize IBKR Smart Routing model."""
         if characteristics is None:
             characteristics = {
@@ -162,7 +150,6 @@ class IBKRSmartVenueModel(VenueModelBase):
                 "typical_volume": 5e9,
                 "fee_bps": 0.35,  # IBKR fixed rate ~$0.005/share
                 "taker_fee_bps": 0.35,
-<<<<<<< HEAD
                 "maker_fee_bps": 0.0,  # IBKR rebates for adding liquidity
                 "opening_hours": "09:30-16:00 EST",
                 "is_24_7": False,
@@ -170,15 +157,6 @@ class IBKRSmartVenueModel(VenueModelBase):
 
         super().__init__(VenueType.IBKR_SMART, characteristics)
 
-=======
-                "maker_fee_bps": 0.0,   # IBKR rebates for adding liquidity
-                "opening_hours": "09:30-16:00 EST",
-                "is_24_7": False,
-            }
-        
-        super().__init__(VenueType.IBKR_SMART, characteristics)
-    
->>>>>>> origin/main
     def calculate_market_impact(
         self,
         order_size_usd: float,
@@ -187,7 +165,6 @@ class IBKRSmartVenueModel(VenueModelBase):
         bid_ask_spread_bps: float,
     ) -> float:
         """IBKR smart-routed equity impact using participation rate."""
-<<<<<<< HEAD
         shares_ordered = order_size_usd / max(market_price, 1.0)
         shares_volume = market_volume_24h / max(market_price, 1.0)
         participation_rate = shares_ordered / max(shares_volume, shares_ordered)
@@ -200,18 +177,6 @@ class IBKRSmartVenueModel(VenueModelBase):
 
         return float(min(impact_bps, 30.0))
 
-=======
-        participation_rate = order_size_usd / max(market_volume_24h, order_size_usd)
-        
-        # Equity impact: moderate, benefits from smart routing
-        impact_bps = 1.0 * (participation_rate ** 1.3)
-        
-        # Add spread adjustment
-        impact_bps += bid_ask_spread_bps * 0.3
-        
-        return min(impact_bps, 30.0)
-    
->>>>>>> origin/main
     def estimate_fill_time(
         self,
         order_size_usd: float,
@@ -226,11 +191,7 @@ class IBKRSmartVenueModel(VenueModelBase):
         else:
             participation = order_size_usd / max(market_volume_24h, 1e6)
             return 15.0 + 200.0 * participation
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def is_market_open(self) -> bool:
         """Check if US equity markets are open (9:30-16:00 EST)."""
         return True
@@ -293,11 +254,7 @@ class CMEVenueModel(VenueModelBase):
 
     def is_market_open(self) -> bool:
         """Check if market open (17:00-16:00 CST)."""
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Simplified: assume open (would check actual time in production)
         return True
 
@@ -420,7 +377,6 @@ class NYSEVenueModel(VenueModelBase):
         return True
 
 
-<<<<<<< HEAD
 class CEXVenueModel(VenueModelBase):
     """Model for centralized crypto exchanges (CEX)."""
 
@@ -522,8 +478,6 @@ class SpotCryptoVenueModel(CEXVenueModel):
         self.venue = VenueType.CRYPTO_SPOT
 
 
-=======
->>>>>>> origin/main
 def get_venue_model(venue: VenueType) -> VenueModelBase:
     """
     Factory function to get appropriate venue model.
@@ -539,16 +493,11 @@ def get_venue_model(venue: VenueType) -> VenueModelBase:
         VenueType.NASDAQ_EQUITIES: NasdaqVenueModel,
         VenueType.NYSE_EQUITIES: NYSEVenueModel,
         VenueType.IBKR_SMART: IBKRSmartVenueModel,
-<<<<<<< HEAD
         VenueType.CENTRALIZED_EXCHANGE: CEXVenueModel,
         VenueType.DECENTRALIZED_EXCHANGE: DEXVenueModel,
         VenueType.CRYPTO_SPOT: SpotCryptoVenueModel,
     }
 
-=======
-    }
-    
->>>>>>> origin/main
     model_class = models.get(venue, IBKRSmartVenueModel)
     logger.info(f"Using {model_class.__name__} for venue {venue}")
     return model_class()  # type: ignore[abstract]

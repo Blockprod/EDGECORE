@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""
-=======
-"""
->>>>>>> origin/main
 EDGECORE Hybrid Python/Cython Implementation
 Cython acceleration modules for trading system.
 """

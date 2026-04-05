@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Adaptive Threshold Engine ÔÇö Regime-aware entry/exit thresholds.
-=======
-"""
-Adaptive Threshold Engine — Regime-aware entry/exit thresholds.
->>>>>>> origin/main
 
 Wraps the proven ``models.adaptive_thresholds.AdaptiveThresholdCalculator``
 and ``models.regime_detector.RegimeDetector`` into a unified interface.
@@ -17,10 +12,7 @@ pair characteristics.
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Dict, Optional
->>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
@@ -37,18 +29,11 @@ logger = get_logger(__name__)
 @dataclass
 class ThresholdResult:
     """Adaptive threshold recommendation for a single pair."""
-<<<<<<< HEAD
 
     entry_threshold: float
     exit_threshold: float
     regime: VolatilityRegime
     adjustments: dict[str, float]
-=======
-    entry_threshold: float
-    exit_threshold: float
-    regime: VolatilityRegime
-    adjustments: Dict[str, float]
->>>>>>> origin/main
 
 
 class AdaptiveThresholdEngine:
@@ -68,13 +53,8 @@ class AdaptiveThresholdEngine:
             half_life=25.0,
             regime=VolatilityRegime.NORMAL,
         )
-<<<<<<< HEAD
         # result.entry_threshold ÔåÆ 2.0 (adjusted)
         # result.exit_threshold  ÔåÆ 0.0 (adjusted)
-=======
-        # result.entry_threshold → 2.0 (adjusted)
-        # result.exit_threshold  → 0.0 (adjusted)
->>>>>>> origin/main
     """
 
     def __init__(
@@ -83,11 +63,7 @@ class AdaptiveThresholdEngine:
         base_exit: float = 0.5,
         min_entry: float = 1.0,
         max_entry: float = 3.5,
-<<<<<<< HEAD
         config: ThresholdConfig | None = None,
-=======
-        config: Optional[ThresholdConfig] = None,
->>>>>>> origin/main
     ):
         self._config = config or ThresholdConfig(
             base_entry_threshold=base_entry,
@@ -100,13 +76,8 @@ class AdaptiveThresholdEngine:
     def get_thresholds(
         self,
         spread: pd.Series,
-<<<<<<< HEAD
         half_life: float | None = None,
         regime: VolatilityRegime | None = None,
-=======
-        half_life: Optional[float] = None,
-        regime: Optional[VolatilityRegime] = None,
->>>>>>> origin/main
     ) -> ThresholdResult:
         """
         Calculate adaptive entry/exit thresholds.
@@ -149,22 +120,15 @@ class AdaptiveThresholdEngine:
         """
         Regime-based threshold shift.
 
-<<<<<<< HEAD
         LOW vol  ÔåÆ lower entry (spreads revert fast)  ÔåÆ -0.3
         NORMAL   ÔåÆ no adjustment                      ÔåÆ  0.0
         HIGH vol ÔåÆ higher entry (wider excursions)     ÔåÆ +0.5
-=======
-        LOW vol  → lower entry (spreads revert fast)  → -0.3
-        NORMAL   → no adjustment                      →  0.0
-        HIGH vol → higher entry (wider excursions)     → +0.5
->>>>>>> origin/main
         """
         if regime == VolatilityRegime.LOW:
             return -0.3
         elif regime == VolatilityRegime.HIGH:
             return 0.5
         return 0.0
-<<<<<<< HEAD
 
     def apply_dispersion_adjustment(
         self,
@@ -220,5 +184,3 @@ class AdaptiveThresholdEngine:
             regime=result.regime,
             adjustments=new_adjustments,
         )
-=======
->>>>>>> origin/main

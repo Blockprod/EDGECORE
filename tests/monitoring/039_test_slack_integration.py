@@ -2,11 +2,7 @@
 
 import time
 from unittest.mock import patch
-<<<<<<< HEAD
 
-=======
-from monitoring.slack_alerter import SlackAlerter
->>>>>>> origin/main
 import requests
 
 from monitoring.slack_alerter import SlackAlerter
@@ -64,11 +60,7 @@ class TestSlackAlerterBasic:
         mock_post.return_value.status_code = 200
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
-<<<<<<< HEAD
         data = {"symbol": "AAPL", "price": 45000.50, "quantity": 0.5}
-=======
-        data = {'symbol': 'AAPL', 'price': 45000.50, 'quantity': 0.5}
->>>>>>> origin/main
 
         success, _reason = alerter.send_alert(
             level="INFO", title="Trade Alert", message="Buy order executed", data=data
@@ -278,17 +270,7 @@ class TestSlackAlerterHelpers:
         mock_post.return_value.status_code = 200
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
-<<<<<<< HEAD
         success = alerter.send_trade_alert(symbol="AAPL", side="buy", quantity=0.5, price=45000.50, order_id="12345")
-=======
-        success = alerter.send_trade_alert(
-            symbol='AAPL',
-            side='buy',
-            quantity=0.5,
-            price=45000.50,
-            order_id='12345'
-        )
->>>>>>> origin/main
 
         assert success is True
         assert mock_post.called
@@ -327,17 +309,7 @@ class TestSlackAlerterHelpers:
         mock_post.return_value.status_code = 200
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
-<<<<<<< HEAD
         alerter.send_trade_alert(symbol="AAPL", side="sell", quantity=0.25, price=44000, order_id="order_123")
-=======
-        alerter.send_trade_alert(
-            symbol='AAPL',
-            side='sell',
-            quantity=0.25,
-            price=44000,
-            order_id='order_123'
-        )
->>>>>>> origin/main
 
         call_args = mock_post.call_args
         payload = call_args[1]["json"]
@@ -409,17 +381,10 @@ class TestSlackAlerterIntegration:
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
 
         # Various alerts
-<<<<<<< HEAD
         alerter.send_alert("CRITICAL", "Kill Switch", "Activated")
         alerter.send_alert("ERROR", "Order Failed", "Insufficient funds")
         alerter.send_alert("WARNING", "High Drawdown", "At 45% threshold")
         alerter.send_alert("INFO", "Trade Executed", "AAPL buy")
-=======
-        alerter.send_alert('CRITICAL', 'Kill Switch', 'Activated')
-        alerter.send_alert('ERROR', 'Order Failed', 'Insufficient funds')
-        alerter.send_alert('WARNING', 'High Drawdown', 'At 45% threshold')
-        alerter.send_alert('INFO', 'Trade Executed', 'AAPL buy')
->>>>>>> origin/main
 
         # All should be sent
         assert mock_post.call_count == 4
@@ -431,14 +396,7 @@ class TestSlackAlerterIntegration:
 
         alerter = SlackAlerter(webhook_url="https://hooks.slack.com/test")
         alerter.send_alert(
-<<<<<<< HEAD
             level="ERROR", title="Test Error", message="Detailed error message", data={"symbol": "AAPL", "amount": 100}
-=======
-            level='ERROR',
-            title='Test Error',
-            message='Detailed error message',
-            data={'symbol': 'AAPL', 'amount': 100}
->>>>>>> origin/main
         )
 
         call_args = mock_post.call_args

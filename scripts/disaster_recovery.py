@@ -8,11 +8,7 @@ Provides:
 - Data integrity checks
 """
 
-<<<<<<< HEAD
 from datetime import UTC, datetime
-=======
-from datetime import datetime
->>>>>>> origin/main
 from pathlib import Path
 from structlog import get_logger
 from persistence.audit_trail import AuditTrail

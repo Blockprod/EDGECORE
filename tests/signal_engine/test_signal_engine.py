@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for signal_engine ÔÇö generator.py, zscore.py, adaptive.py.
-=======
-"""
-Tests for signal_engine — generator.py, zscore.py, adaptive.py.
->>>>>>> origin/main
 
 Covers:
     - ZScoreCalculator: rolling z-score, EWMA, clipping, edge cases
@@ -13,7 +8,6 @@ Covers:
       constant series, missing columns
 """
 
-<<<<<<< HEAD
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -23,18 +17,6 @@ from models.regime_detector import VolatilityRegime
 from signal_engine.adaptive import AdaptiveThresholdEngine, ThresholdResult
 from signal_engine.generator import Signal, SignalGenerator
 from signal_engine.zscore import ZScoreCalculator
-=======
-import numpy as np
-import pandas as pd
-import pytest
-from unittest.mock import patch, MagicMock
-
-from signal_engine.zscore import ZScoreCalculator
-from signal_engine.adaptive import AdaptiveThresholdEngine, ThresholdResult
-from signal_engine.generator import SignalGenerator, Signal
-from models.regime_detector import VolatilityRegime
-
->>>>>>> origin/main
 
 # ======================================================================
 # ZScoreCalculator
@@ -52,11 +34,7 @@ class TestZScoreCalculator:
         assert z.iloc[-1] > 0, "Rising spread should have positive z"
 
     def test_constant_series_returns_zero(self):
-<<<<<<< HEAD
         """Constant spread yields z=0 everywhere (std=0 ÔåÆ filled 0)."""
-=======
-        """Constant spread yields z=0 everywhere (std=0 → filled 0)."""
->>>>>>> origin/main
         calc = ZScoreCalculator(default_lookback=10)
         spread = pd.Series(np.full(50, 100.0))
         z = calc.compute(spread)
@@ -90,11 +68,7 @@ class TestZScoreCalculator:
         assert not z_sma.equals(z_ewma)
 
     def test_half_life_adapts_window(self):
-<<<<<<< HEAD
         """Short half-life ÔåÆ small window, long half-life ÔåÆ larger window."""
-=======
-        """Short half-life → small window, long half-life → larger window."""
->>>>>>> origin/main
         calc = ZScoreCalculator()
         w_short = calc._resolve_lookback(half_life=5.0, explicit=None)
         w_long = calc._resolve_lookback(half_life=50.0, explicit=None)
@@ -117,11 +91,7 @@ class TestZScoreCalculator:
         calc = ZScoreCalculator(default_lookback=100)
         spread = pd.Series([1.0, 2.0, 3.0])
         z = calc.compute(spread)
-<<<<<<< HEAD
         # With min_periods = lookback//2 = 50, first values should be 0/NaNÔåÆ0
-=======
-        # With min_periods = lookback//2 = 50, first values should be 0/NaN→0
->>>>>>> origin/main
         assert len(z) == 3
 
 
@@ -216,11 +186,7 @@ class TestSignalGenerator:
             assert s.side in ("long", "short", "exit")
 
     def test_exit_when_in_position_and_mean_reverted(self):
-<<<<<<< HEAD
         """If already in position and z-score ~ 0 ÔåÆ exit signal."""
-=======
-        """If already in position and z-score ~ 0 → exit signal."""
->>>>>>> origin/main
         gen = SignalGenerator()
         # Build a mean-reverting spread: stationary around 0
         np.random.seed(123)
@@ -276,17 +242,10 @@ class TestSignalGenerator:
         spread = gen.get_spread("SYM1_SYM2")
         assert spread is not None
         assert isinstance(spread, pd.Series)
-<<<<<<< HEAD
     # ÔöÇÔöÇ Phase 3: NaN strict, non-cointegrated, look-ahead, regime ÔöÇÔöÇÔöÇÔöÇÔöÇ
 
     def test_nan_prices_emit_no_entry_signal(self):
         """All-NaN price column ÔåÆ no entry signal produced."""
-=======
-    # ── Phase 3: NaN strict, non-cointegrated, look-ahead, regime ─────
-
-    def test_nan_prices_emit_no_entry_signal(self):
-        """All-NaN price column → no entry signal produced."""
->>>>>>> origin/main
         gen = SignalGenerator()
         prices = self._make_prices()
         prices["SYM1"] = np.nan  # entire column NaN
@@ -296,11 +255,7 @@ class TestSignalGenerator:
         assert entry_sigs == [], "NaN data should produce zero entry signals"
 
     def test_nonstationary_pair_yields_no_entry(self):
-<<<<<<< HEAD
         """Non-cointegrated (non-stationary) pair ÔåÆ no entry despite extreme z."""
-=======
-        """Non-cointegrated (non-stationary) pair → no entry despite extreme z."""
->>>>>>> origin/main
         gen = SignalGenerator()
         # Create two independent random walks (not cointegrated)
         np.random.seed(100)
@@ -309,11 +264,7 @@ class TestSignalGenerator:
             "A": np.random.randn(n).cumsum() + 200,
             "B": np.random.randn(n).cumsum() + 100,
         }, index=pd.date_range("2024-01-01", periods=n))
-<<<<<<< HEAD
         pairs = [("A", "B", 0.50, 25.0)]  # high p-value ÔåÆ not cointegrated
-=======
-        pairs = [("A", "B", 0.50, 25.0)]  # high p-value → not cointegrated
->>>>>>> origin/main
         signals = gen.generate(prices, pairs)
         entry_sigs = [s for s in signals if s.side in ("long", "short")]
         assert entry_sigs == [], (
@@ -347,11 +298,7 @@ class TestSignalGenerator:
         )
 
     def test_high_regime_suppresses_marginal_signal(self):
-<<<<<<< HEAD
         """HIGH regime raises entry threshold ÔåÆ marginal z is filtered out."""
-=======
-        """HIGH regime raises entry threshold → marginal z is filtered out."""
->>>>>>> origin/main
         # Mock regime detector to return HIGH
         mock_regime = MagicMock()
         mock_regime.update.return_value = MagicMock(regime=VolatilityRegime.HIGH)
@@ -381,8 +328,4 @@ class TestSignalGenerator:
         # HIGH regime should produce fewer (or equal) entry signals than NORMAL
         entries_norm = [s for s in sigs_norm if s.side in ("long", "short")]
         entries_high = [s for s in sigs_high if s.side in ("long", "short")]
-<<<<<<< HEAD
         assert len(entries_high) <= len(entries_norm)
-=======
-        assert len(entries_high) <= len(entries_norm)
->>>>>>> origin/main

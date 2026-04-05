@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿# ============================================================================
 # EDGECORE — Reference Configuration (FICHIER DE RÉFÉRENCE UNIQUEMENT)
 # ============================================================================
@@ -10,17 +9,6 @@
 # Ce fichier sert de référence documentaire listant tous les paramètres
 # disponibles avec leurs valeurs par défaut.
 # Pour modifier la config runtime, éditer le fichier {env}.yaml approprié.
-=======
-# ============================================================================
-# EDGECORE — Unified Configuration
-# ============================================================================
-# Master configuration for the EDGECORE statistical arbitrage system.
-# Market: US Equities via Interactive Brokers
-# Annualisation: 252 trading days
-#
-# Environment-specific overrides can be placed in dev.yaml / prod.yaml / test.yaml
-# and will be merged on top of this base config.
->>>>>>> origin/main
 # ============================================================================
 
 # --------------------------------------------------------------------------
@@ -273,11 +261,7 @@ risk:
   max_drawdown_pct: 0.10            # 10% portfolio drawdown hard stop
   volatility_percentile_threshold: 1.5
   position_sizing_method: "volatility"  # "volatility" | "kelly" | "equal"
-<<<<<<< HEAD
   spread_correlation_max: 0.40       # Max |¤ü| between spreads (R-6: was 0.70)
-=======
-  spread_correlation_max: 0.40       # Max |ρ| between spreads (R-6: was 0.70)
->>>>>>> origin/main
 
   # Kill-switch thresholds
   kill_switch:
@@ -292,15 +276,9 @@ risk:
     sigma_multiplier: 1.0           # Trailing stop at 1-sigma
     min_profit_to_activate: 0.005   # 0.5% profit before trailing starts
 
-<<<<<<< HEAD
   # Time stop (post-v27 ├ëtape 5: multiplier 3.0 ÔåÆ 2.0)
   time_stop:
     half_life_multiplier: 2.0       # Close at 2├ù half-life (was 3.0)
-=======
-  # Time stop (post-v27 Étape 5: multiplier 3.0 → 2.0)
-  time_stop:
-    half_life_multiplier: 2.0       # Close at 2× half-life (was 3.0)
->>>>>>> origin/main
     max_holding_days: 60            # Close after 60 days regardless
 
 # --------------------------------------------------------------------------
@@ -343,11 +321,7 @@ execution:
   use_sandbox: true                 # IBKR paper trading gateway
   initial_capital: 100000.0
   paper_slippage_model: "fixed_bps" # "fixed_bps" | "adaptive" | "volume_based"
-<<<<<<< HEAD
   paper_commission_pct: 0.005       # 0.005% Ôëê $0.005/share IBKR
-=======
-  paper_commission_pct: 0.005       # 0.005% ≈ $0.005/share IBKR
->>>>>>> origin/main
   paper_trading_loop_interval_seconds: 10
 
 # --------------------------------------------------------------------------
@@ -366,11 +340,7 @@ backtest:
 # --------------------------------------------------------------------------
 validation:
   oos_acceptance_threshold: 0.70    # 70% of pairs must validate OOS
-<<<<<<< HEAD
   half_life_drift_tolerance: 0.50   # Max ┬▒50% HL drift
-=======
-  half_life_drift_tolerance: 0.50   # Max ±50% HL drift
->>>>>>> origin/main
   oos_window_days: 21               # Forward test window
 
 # --------------------------------------------------------------------------

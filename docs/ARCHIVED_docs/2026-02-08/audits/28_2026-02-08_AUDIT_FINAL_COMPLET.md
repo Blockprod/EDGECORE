@@ -1,14 +1,7 @@
-<<<<<<< HEAD
 ﻿# AUDIT TECHNIQUE FINAL ÔÇö EDGECORE
 
 **Date:** 8 f├®vrier 2026  
 **Scope:** Analyse compl├¿te du code source, tous dossiers parcourus  
-=======
-# AUDIT TECHNIQUE FINAL — EDGECORE
-
-**Date:** 8 février 2026  
-**Scope:** Analyse complète du code source, tous dossiers parcourus  
->>>>>>> origin/main
 **Verdict:** FACTUEL, SANS APPROXIMATION
 
 ---
@@ -17,7 +10,6 @@
 
 L'audit V3 contenait des **erreurs factuelles graves:**
 
-<<<<<<< HEAD
 ­ƒö┤ **Erreur #1:** "No broker reconciliation" ÔåÆ FAUX. `execution/reconciler.py` (390L) existe avec `BrokerReconciler.reconcile_equity()` et `reconcile_positions()`
 
 ­ƒö┤ **Erreur #2:** "Pas de v├®rification des positions au startup" ÔåÆ FAUX. Des m├®thodes existent, mais **ne sont pas int├®gr├®es dans main.py**
@@ -79,69 +71,6 @@ ACCEPTABILIT├ë: 7/10 (architecture sound, mais int├®gration incompl├¿te
 Beaucoup de composants **existent en code** mais **NE SONT PAS INT├ëGR├ëS dans main.py:**
 
 Ô£à **Int├®gr├®s activement:**
-=======
-🔴 **Erreur #1:** "No broker reconciliation" → FAUX. `execution/reconciler.py` (390L) existe avec `BrokerReconciler.reconcile_equity()` et `reconcile_positions()`
-
-🔴 **Erreur #2:** "Pas de vérification des positions au startup" → FAUX. Des méthodes existent, mais **ne sont pas intégrées dans main.py**
-
-🔴 **Erreur #3:** Top 5 action #1 "Add reconciliation" → INUTILE. La classe existe. Le vrai problème = **elle n'est pas APPELÉE**
-
----
-
-## AUDIT TECHNIQUE FINAL — EDGECORE
-
-### 1. Vue d'ensemble
-
-**Scope traité:** 
-- Tous les dossiers explorés
-- 40+ fichiers Python critiques lus en détail
-- 40+ fichiers tests validés pour existence/contenu
-- Documentation review (docs/2026-02-xx/)
-
-**Projet:** Statistcal arbitrage pair-trading (cointegration) sur actions US (equities) (IBKR API)  
-**Type:** Trading quantitatif temps réel avec 3 modes (backtest/paper/live)
-
----
-
-### 2. Architecture générale
-
-```
-ACCEPTABILITÉ: 7/10 (architecture sound, mais intégration incomplète)
-```
-
-#### 2.1 Composants présents et état réel
-
-| Composant | Fichier | État | Évaluation |
-|-----------|---------|------|-----------|
-| **Risk Engine** | risk/engine.py (381L) | ✅ COMPLET | Solide, validations présentes |
-| **Cockpit Reconciliation** | execution/reconciler.py (390L) | ✅ CODE + ⚠️ NON INTÉGRÉ | Code existe, main.py ne l'appelle pas |
-| **Backtest Metrics** | backtests/metrics.py | ✅ COMPLET | Sharpe, Sortino, Calmar, drawdown |
-| **Realistic Backtest Execution** | execution/backtest_execution.py (361L) | ✅ COMPLET | Slippage (fixed/adaptive/volume), partial fills |
-| **Pair Discovery** | strategies/pair_trading.py + models/ | ✅ COMPLET | Cointegration (Engle-Granger), O(n²) non optimisé |
-| **Monitoring Alerting** | monitoring/alerter.py (559L) | ✅ COMPLET | AlertManager + categories + severity routing |
-| **Slack Integration** | monitoring/slack_alerter.py (188L) | ✅ COMPLET | Webhook-based, throttling, colors |
-| **Email Alerting** | monitoring/email_alerter.py (254L) | ✅ COMPLET | SMTP, only ERROR/CRITICAL sent |
-| **API + Dashboard** | monitoring/api.py + dashboard.py (331L) | ✅ COMPLET | Flask REST API, system metrics, cache |
-| **Rate Limiting + Auth** | monitoring/api_security.py (291L) | ✅ COMPLET | In-memory rate limiter, token auth |
-| **Data Validation** | data/validators.py (414L) | ✅ COMPLET | OHLCV checks (NaN, ranges, continuity) |
-| **Audit Trail** | persistence/audit_trail.py (314L) | ✅ COMPLET | CSV append-only ledger, crash recovery |
-| **Order Lifecycle** | execution/order_lifecycle.py (476L) | ✅ COMPLET | Timeout protection, force cancel |
-| **Shutdown Manager** | execution/shutdown_manager.py (183L) | ✅ COMPLET | Signal handlers + file-based trigger |
-| **Circuit Breaker** | common/circuit_breaker.py (362L) | ✅ COMPLET | State machine (CLOSED→OPEN→HALF_OPEN) |
-| **Error Handling** | common/error_handler.py (205L) | ✅ COMPLET | Category-based (TRANSIENT/RETRYABLE/NON_RETRYABLE/FATAL) |
-| **Secrets Management** | common/secrets.py (503L) | ✅ COMPLET | Masked logging, rotation tracking |
-| **Configuration** | config/settings.py (112L) | ✅ COMPLET | YAML loaders, dev/prod configs |
-| **IBKR Engine** | execution/ibkr_engine.py | 🔴 STUB | NotImplementedError ("use IBKR API for now") |
-| **Walk-Forward Backtest** | backtests/walk_forward.py | 🟡 STUB | Skeleton only (TODO comment left) |
-
-#### 2.2 Intégration réelle vs. existence du code
-
-**CRITICAL FINDING:**
-
-Beaucoup de composants **existent en code** mais **NE SONT PAS INTÉGRÉS dans main.py:**
-
-✅ **Intégrés activement:**
->>>>>>> origin/main
 - RiskEngine (gatekeeping trades)
 - DataLoader + validation
 - Strategy (pair discovery)
@@ -151,21 +80,12 @@ Beaucoup de composants **existent en code** mais **NE SONT PAS INTÉGRÉS dans m
 - AuditTrail
 - Monitoring alerting (AlertManager)
 
-<<<<<<< HEAD
 ÔÜá´©Å **Code pr├®sent mais NON APPEL├ë from main.py:**
 - BrokerReconciler (reconciler.py exists, never called)
 - EmailAlerter (classe compl├¿te, pas utilis├®e)
 - Realistic backtest execution (SlippageCalculator en backtest execution, peut pas ├¬tre appel├® via modes.py)
 
 ­ƒö┤ **Cod├® mais d├®sactiv├®:**
-=======
-⚠️ **Code présent mais NON APPELÉ from main.py:**
-- BrokerReconciler (reconciler.py exists, never called)
-- EmailAlerter (classe complète, pas utilisée)
-- Realistic backtest execution (SlippageCalculator en backtest execution, peut pas être appelé via modes.py)
-
-🔴 **Codé mais désactivé:**
->>>>>>> origin/main
 - IBKR engine (raises NotImplementedError)
 - Walk-forward backtest (stub)
 
@@ -175,11 +95,7 @@ Beaucoup de composants **existent en code** mais **NE SONT PAS INTÉGRÉS dans m
 
 #### 3.1 Robustesse
 
-<<<<<<< HEAD
 **FORCE:** Gestion d'erreurs organis├®e
-=======
-**FORCE:** Gestion d'erreurs organisée
->>>>>>> origin/main
 
 ```python
 # common/errors.py
@@ -191,15 +107,9 @@ ErrorCategory = {
 }
 ```
 
-<<<<<<< HEAD
 Tous les modules d'ex├®cution respectent cette taxonomie.
 
 **FAIBLESSE:** R├®conciliation non int├®gr├®e
-=======
-Tous les modules d'exécution respectent cette taxonomie.
-
-**FAIBLESSE:** Réconciliation non intégrée
->>>>>>> origin/main
 
 ```python
 # execution/reconciler.py EXISTS
@@ -235,21 +145,12 @@ def validate_equity(equity: float) -> None:
         raise EquityError("Suspiciously high (> $1B)")
 ```
 
-<<<<<<< HEAD
 **MYPY config:** `disallow_untyped_defs = false` ÔåÆ pas d'obligation strict, mais appels sont typ├®s.
 
 #### 3.3 Lisibilit├®
 
 **GOOD:**
 - Docstrings pr├®sentes (strategy, risk, execution)
-=======
-**MYPY config:** `disallow_untyped_defs = false` → pas d'obligation strict, mais appels sont typés.
-
-#### 3.3 Lisibilité
-
-**GOOD:**
-- Docstrings présentes (strategy, risk, execution)
->>>>>>> origin/main
 - JSON logging structured (structlog everywhere)
 - Clear separation of concerns (per-module)
 
@@ -259,11 +160,7 @@ def validate_equity(equity: float) -> None:
 
 #### 3.4 Performance
 
-<<<<<<< HEAD
 **Pair discovery O(n┬▓):**
-=======
-**Pair discovery O(n²):**
->>>>>>> origin/main
 ```python
 # strategies/pair_trading.py
 with Pool(cpu_count()) as pool:
@@ -272,11 +169,7 @@ with Pool(cpu_count()) as pool:
 
 - 100 pairs: ~2-3s (acceptable)
 - 500+ pairs: 30+ seconds (acceptable but noticeable)
-<<<<<<< HEAD
 - No timeout on pool.map() ÔåÆ can hang indefinitely if broker API hangs
-=======
-- No timeout on pool.map() → can hang indefinitely if broker API hangs
->>>>>>> origin/main
 
 **Other performance:**
 - Order submission: 100-500ms (network dependent)
@@ -313,11 +206,7 @@ All trades pass through ths gate. Rules can't be bypassed.
 
 1. **No leverage cap:** Can go 10x positions = high leverage undetected
    - Config has `max_concurrent_positions: 5` (prod) but no `max_leverage: 3.0x`
-<<<<<<< HEAD
    - Position 5 ├ù 2 contracts each = 10x leverage possible
-=======
-   - Position 5 × 2 contracts each = 10x leverage possible
->>>>>>> origin/main
 
 2. **Equity init unclear:**
    ```python
@@ -332,11 +221,7 @@ All trades pass through ths gate. Rules can't be bypassed.
    ```
    
    **Question:** Where does initial_equity come from? Not visible in call.
-<<<<<<< HEAD
    ÔåÆ Likely a default parameter is missing or there's a hidden state.
-=======
-   → Likely a default parameter is missing or there's a hidden state.
->>>>>>> origin/main
 
 3. **No reconciliation call:**
    ```python
@@ -359,11 +244,7 @@ All trades pass through ths gate. Rules can't be bypassed.
 **Scenario B: Partial fill not updated**
 1. Order placed for 1.0 AAPL @ $45k
 2. 0.5 AAPL fills, 0.5 pending
-<<<<<<< HEAD
 3. OrderLifecycle timeout ÔåÆ force cancel
-=======
-3. OrderLifecycle timeout → force cancel
->>>>>>> origin/main
 4. Risk engine thinks entry was 1.0 AAPL
 5. Actual position: 0.5 AAPL
 6. Exit math is wrong
@@ -415,19 +296,11 @@ order_mgr = OrderLifecycleIntegration(
 
 | Component | Lines | Status |
 |-----------|-------|--------|
-<<<<<<< HEAD
 | AlertManager | 559 | Ô£à Complete routing (severity + category) |
 | SlackAlerter | 188 | Ô£à Webhook-based, throttled |
 | EmailAlerter | 254 | Ô£à SMTP, ERROR/CRITICAL only |
 | Dashboard API | 331 | Ô£à Flask REST + caching |
 | API Security | 291 | Ô£à Rate limiting + token auth |
-=======
-| AlertManager | 559 | ✅ Complete routing (severity + category) |
-| SlackAlerter | 188 | ✅ Webhook-based, throttled |
-| EmailAlerter | 254 | ✅ SMTP, ERROR/CRITICAL only |
-| Dashboard API | 331 | ✅ Flask REST + caching |
-| API Security | 291 | ✅ Rate limiting + token auth |
->>>>>>> origin/main
 
 **GAP:** Slack integration NOT auto-configured
 
@@ -452,7 +325,6 @@ So: (1) Slack alerter exists, (2) but SLACK_WEBHOOK_URL not in .env template, (3
 
 | Module | Test File | Status |
 |--------|-----------|--------|
-<<<<<<< HEAD
 | risk/engine.py | test_risk_engine.py | Ô£à ~15 tests, 90%+ coverage |
 | execution/ | test_execution.py | Ô£à ~20 tests |
 | strategies/ | test_strategy.py | ÔÜá´©Å ~10 tests, pair discovery not fully covered |
@@ -463,18 +335,6 @@ So: (1) Slack alerter exists, (2) but SLACK_WEBHOOK_URL not in .env template, (3
 | main.py paper_trading() | NONE | ÔÜá´©Å Main loop never directly tested |
 | reconciler.py | NONE | ­ƒö┤ Reconciliation code exists but untested |
 | PaperÔåÆLive mode transition | NONE | ­ƒö┤ No integration test for paperÔåÆlive switch |
-=======
-| risk/engine.py | test_risk_engine.py | ✅ ~15 tests, 90%+ coverage |
-| execution/ | test_execution.py | ✅ ~20 tests |
-| strategies/ | test_strategy.py | ⚠️ ~10 tests, pair discovery not fully covered |
-| data/ | test_data.py + validators | ✅ ~30 tests |
-| monitoring/ | test_alerter.py, test_api.py, test_slack_integration.py | ✅ ~20 tests |
-| backtest/ | test_e2e_comprehensive.py, test_backtest_realism.py | ✅ ~15 tests |
-| **CRITICAL GAPS:** | | |
-| main.py paper_trading() | NONE | ⚠️ Main loop never directly tested |
-| reconciler.py | NONE | 🔴 Reconciliation code exists but untested |
-| Paper→Live mode transition | NONE | 🔴 No integration test for paper→live switch |
->>>>>>> origin/main
 
 #### 7.2 Main loop testability
 
@@ -551,11 +411,7 @@ def _load_keys(self) -> set:
     return set(keys.split(','))
 ```
 
-<<<<<<< HEAD
 If `API_KEYS` env var not set ÔåÆ NO authentication required = **dashboard exposed without password**
-=======
-If `API_KEYS` env var not set → NO authentication required = **dashboard exposed without password**
->>>>>>> origin/main
 
 ---
 
@@ -578,19 +434,11 @@ class OHLCVValidator:
 ```
 
 **Coverage:**
-<<<<<<< HEAD
 - Ô£à No NaN
 - Ô£à No infinite
 - Ô£à Price ranges
 - ÔÜá´©Å NO check for data staleness (could load 6-month-old candle)
 - ÔÜá´©Å NO check for future timestamps
-=======
-- ✅ No NaN
-- ✅ No infinite
-- ✅ Price ranges
-- ⚠️ NO check for data staleness (could load 6-month-old candle)
-- ⚠️ NO check for future timestamps
->>>>>>> origin/main
 
 #### 9.2 Data freshness
 
@@ -625,17 +473,10 @@ class SlippageCalculator:
 ```
 
 Models:
-<<<<<<< HEAD
 - Ô£à Fixed 5bps
 - Ô£à Adaptive (increases with distance from market)
 - Ô£à Volume-based (increases with size)
 - ÔÜá´©Å NO market impact for large orders
-=======
-- ✅ Fixed 5bps
-- ✅ Adaptive (increases with distance from market)
-- ✅ Volume-based (increases with size)
-- ⚠️ NO market impact for large orders
->>>>>>> origin/main
 
 **Partial fill handling:**
 
@@ -677,19 +518,11 @@ def from_returns(cls, returns: pd.Series, trades: List[float], ...):
 ```
 
 **Calculations correct?**
-<<<<<<< HEAD
 - Ô£à Sharpe: (mean return / std) ├ù sqrt(252)
 - Ô£à Sortino: uses downside volatility only
 - Ô£à Calmar: return / |max drawdown|
 - Ô£à Profit factor: gross_profit / gross_loss
 - Ô£à Max drawdown: min(running_max drawdown)
-=======
-- ✅ Sharpe: (mean return / std) × sqrt(252)
-- ✅ Sortino: uses downside volatility only
-- ✅ Calmar: return / |max drawdown|
-- ✅ Profit factor: gross_profit / gross_loss
-- ✅ Max drawdown: min(running_max drawdown)
->>>>>>> origin/main
 
 **GAP:** walk_forward.py is STUB
 
@@ -745,7 +578,6 @@ No constraint for:
 
 | Component | Code | Used in main.py |
 |-----------|------|-----------------|
-<<<<<<< HEAD
 | BrokerReconciler | Ô£à 390L | ÔØî NO (never instantiated) |
 | EmailAlerter | Ô£à 254L | ÔØî NO (not called) |
 | SlippageCalculator | Ô£à 361L | ÔØî NO (only in backtest_execution, not modes.py) |
@@ -753,15 +585,6 @@ No constraint for:
 | OrderLifecycleIntegration | Ô£à 224L | Ô£à YES |
 | AuditTrail | Ô£à 314L | Ô£à YES |
 | RiskEngine | Ô£à 381L | Ô£à YES (critical gate) |
-=======
-| BrokerReconciler | ✅ 390L | ❌ NO (never instantiated) |
-| EmailAlerter | ✅ 254L | ❌ NO (not called) |
-| SlippageCalculator | ✅ 361L | ❌ NO (only in backtest_execution, not modes.py) |
-| DashboardCache | ✅ (implied) | ✅ YES |
-| OrderLifecycleIntegration | ✅ 224L | ✅ YES |
-| AuditTrail | ✅ 314L | ✅ YES |
-| RiskEngine | ✅ 381L | ✅ YES (critical gate) |
->>>>>>> origin/main
 
 **CONSEQUENCE:** Code exists but is dead code for 3 major components
 
@@ -769,30 +592,18 @@ No constraint for:
 
 ### 14. Critical Issues (Final)
 
-<<<<<<< HEAD
 #### ­ƒö┤ **ISSUE #1: Reconciliation not called**
-=======
-#### 🔴 **ISSUE #1: Reconciliation not called**
->>>>>>> origin/main
 
 **Found in:** execution/reconciler.py exists but main.py never calls it
 
 **Risk:** 
-<<<<<<< HEAD
 - broker closes position ÔåÆ algo doesn't know ÔåÆ wrong risk model
-=======
-- broker closes position → algo doesn't know → wrong risk model
->>>>>>> origin/main
 - Over-leverage possible
 - P&L calculation wrong
 
 **Fix effort:** 5-10 minutes (add call to reconciler.reconcile_positions at startup)
 
-<<<<<<< HEAD
 #### ­ƒö┤ **ISSUE #2: Walk-forward backtest unimplemented**
-=======
-#### 🔴 **ISSUE #2: Walk-forward backtest unimplemented**
->>>>>>> origin/main
 
 **Found in:** backtests/walk_forward.py has TODO comment, not implemented
 
@@ -803,11 +614,7 @@ No constraint for:
 
 **Fix effort:** 4-6 hours
 
-<<<<<<< HEAD
 #### ­ƒö┤ **ISSUE #3: RiskEngine initialization hidden**
-=======
-#### 🔴 **ISSUE #3: RiskEngine initialization hidden**
->>>>>>> origin/main
 
 **Found in:** main.py line 245
 
@@ -815,21 +622,13 @@ No constraint for:
 risk_engine = RiskEngine()  # What values used???
 ```
 
-<<<<<<< HEAD
 But `__init__` signature requires `initial_equity` ÔåÆ yet no args passed
-=======
-But `__init__` signature requires `initial_equity` → yet no args passed
->>>>>>> origin/main
 
 **Risk:** Silent misconfig or default parameter issue
 
 **Fix effort:** 15 minutes (trace where init params come from)
 
-<<<<<<< HEAD
 #### ­ƒƒá **ISSUE #4: Slack webhook not in .env template**
-=======
-#### 🟠 **ISSUE #4: Slack webhook not in .env template**
->>>>>>> origin/main
 
 **Found in:** .env.example missing SLACK_WEBHOOK_URL
 
@@ -837,11 +636,7 @@ But `__init__` signature requires `initial_equity` → yet no args passed
 
 **Fix effort:** 2 minutes
 
-<<<<<<< HEAD
 #### ­ƒƒá **ISSUE #5: No staleness check on data**
-=======
-#### 🟠 **ISSUE #5: No staleness check on data**
->>>>>>> origin/main
 
 **Found in:** data/validators.py doesn't check timestamp age
 
@@ -849,11 +644,7 @@ But `__init__` signature requires `initial_equity` → yet no args passed
 
 **Fix effort:** 1-2 hours
 
-<<<<<<< HEAD
 #### ­ƒƒá **ISSUE #6: Paper mode lacks slippage/commission**
-=======
-#### 🟠 **ISSUE #6: Paper mode lacks slippage/commission**
->>>>>>> origin/main
 
 **Found in:** modes.py uses live prices without SlippageCalculator
 
@@ -885,11 +676,7 @@ But `__init__` signature requires `initial_equity` → yet no args passed
 | **Risk Management** | 6/10 | Risk engine strong; leverage uncapped; reconciliation not integrated |
 | **Robustness** | 6/10 | Good error handling; partial fill gaps; no staleness checks |
 | **Testing** | 6/10 | 500+ tests; but main loop, reconciliation, walk-forward untested |
-<<<<<<< HEAD
 | **Performance** | 7/10 | OK for <1000 pairs; O(n┬▓) pair discovery acceptable but not optimized |
-=======
-| **Performance** | 7/10 | OK for <1000 pairs; O(n²) pair discovery acceptable but not optimized |
->>>>>>> origin/main
 | **Security** | 6/10 | Secrets managed; API auth weak (defaults to open); key rotation not enforced |
 | **Observability** | 7/10 | Good logging; alerting framework solid; Slack not configured |
 | **Backtest Realism** | 6/10 | Metrics correct; but walk-forward stub, paper mode unrealistic |
@@ -901,11 +688,7 @@ But `__init__` signature requires `initial_equity` → yet no args passed
 
 #### Can trade real money today?
 
-<<<<<<< HEAD
 ­ƒö┤ **NO** ÔÇö Not ready for live trading with capital at risk
-=======
-🔴 **NO** — Not ready for live trading with capital at risk
->>>>>>> origin/main
 
 **Blocking issues (24-48 hours to fix):**
 1. RiskEngine init params unclear (trace/fix: 30 min)
@@ -928,20 +711,12 @@ Week 1:
   - Test reconciliation integration (3 hours)
 
 Week 2:
-<<<<<<< HEAD
   - Paper ÔåÆ live ramp on $5k minimum (monitoring closely)
-=======
-  - Paper → live ramp on $5k minimum (monitoring closely)
->>>>>>> origin/main
   - Kill-switch testing (signal handlers, file-based shutdown)
 
 Month 2:
   - Implement walk-forward backtest (6 hours)
-<<<<<<< HEAD
   - Optimize pair discovery O(n┬▓) if reaching 500+ pairs
-=======
-  - Optimize pair discovery O(n²) if reaching 500+ pairs
->>>>>>> origin/main
   - Email alerting integration + testing
 
 Month 3+:
@@ -964,11 +739,7 @@ Month 3+:
 2. Paper trade 2 weeks minimum
 3. Then consider small live deployment ($1-5k test account)
 
-<<<<<<< HEAD
 **Risk if deployed as-is:** 60% chance of discovering edge case within 2 weeks that requires manual intervention ÔåÆ 5-15% capital loss before fixing
-=======
-**Risk if deployed as-is:** 60% chance of discovering edge case within 2 weeks that requires manual intervention → 5-15% capital loss before fixing
->>>>>>> origin/main
 
 ---
 

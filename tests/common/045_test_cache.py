@@ -12,20 +12,10 @@ Tests:
 """
 
 import time
-<<<<<<< HEAD
 
 import pytest
 
 from monitoring.cache import CachedFunction, CacheEntry, CacheManager, DashboardCache, get_dashboard_cache
-=======
-from monitoring.cache import (
-    CacheEntry,
-    CacheManager,
-    CachedFunction,
-    DashboardCache,
-    get_dashboard_cache
-)
->>>>>>> origin/main
 
 
 class TestCacheEntry:
@@ -461,24 +451,9 @@ class TestCacheIntegration:
         cache = DashboardCache()
 
         dashboard = {
-<<<<<<< HEAD
             "system": {"uptime": 3600, "mode": "paper"},
             "risk": {"equity": 50000, "drawdown": 0.05},
             "positions": [{"pair": "AAPL", "side": "long", "qty": 1.5}, {"pair": "MSFT", "side": "short", "qty": 10}],
-=======
-            'system': {
-                'uptime': 3600,
-                'mode': 'paper'
-            },
-            'risk': {
-                'equity': 50000,
-                'drawdown': 0.05
-            },
-            'positions': [
-                {'pair': 'AAPL', 'side': 'long', 'qty': 1.5},
-                {'pair': 'MSFT', 'side': 'short', 'qty': 10}
-            ]
->>>>>>> origin/main
         }
 
         cache.cache_dashboard(dashboard)
@@ -491,13 +466,8 @@ class TestCacheIntegration:
     def test_cache_invalidation_on_trade(self):
         """Should invalidate cache on trade event."""
         cache = DashboardCache()
-<<<<<<< HEAD
 
         dashboard = {"positions": [{"pair": "AAPL", "qty": 1}]}
-=======
-        
-        dashboard = {'positions': [{'pair': 'AAPL', 'qty': 1}]}
->>>>>>> origin/main
         cache.cache_dashboard(dashboard)
 
         # Verify cached

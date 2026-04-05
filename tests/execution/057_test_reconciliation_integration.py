@@ -100,17 +100,10 @@ class TestRiskEngineEquityTracking:
         """RiskEngine updates equity after trade."""
         initial_equity = 100000.0
         risk_engine = RiskEngine(initial_equity=initial_equity)
-<<<<<<< HEAD
 
         # Simulate trade: lost $1000 (value discarded intentionally)
         _ = initial_equity - 1000.0
 
-=======
-        
-        # Simulate trade: lost $1000
-        initial_equity - 1000.0
-        
->>>>>>> origin/main
         # In production, this would be updated by order execution
         # Here we verify the structure exists
         assert risk_engine.initial_equity == initial_equity

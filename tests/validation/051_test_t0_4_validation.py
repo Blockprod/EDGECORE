@@ -13,11 +13,7 @@ def test_t0_4():
     # Step 1: Load settings and check max_leverage config
     settings = get_settings()
     print("[TEST] Loading max_leverage from settings...")
-<<<<<<< HEAD
     assert hasattr(settings.risk, "max_leverage")
-=======
-    assert hasattr(settings.risk, 'max_leverage')
->>>>>>> origin/main
     assert settings.risk.max_leverage == 2.0  # Equity default (reduced from 3.0 for safety)
     print(f"[OK] max_leverage loaded: {settings.risk.max_leverage}x")
 
@@ -29,11 +25,7 @@ def test_t0_4():
 
     # Step 3: Test get_total_exposure() method exists
     print("\n[TEST] Testing get_total_exposure() method...")
-<<<<<<< HEAD
     assert hasattr(risk_engine, "get_total_exposure")
-=======
-    assert hasattr(risk_engine, 'get_total_exposure')
->>>>>>> origin/main
     total_exposure = risk_engine.get_total_exposure()
     assert total_exposure == 0.0  # No positions yet
     print(f"[OK] get_total_exposure() works (current: ${total_exposure})")
@@ -42,22 +34,14 @@ def test_t0_4():
     print("\n[TEST] Adding test position to calculate exposure...")
     pos = Position(
         symbol_pair="AAPL",
-<<<<<<< HEAD
         entry_time=datetime.now(UTC),
-=======
-        entry_time=datetime.utcnow(),
->>>>>>> origin/main
         entry_price=45000.0,
         quantity=1.0,
         side="long",
         marked_price=45000.0,
     )
     risk_engine.positions["AAPL"] = pos
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     total_exposure = risk_engine.get_total_exposure()
     expected_exposure = abs(1.0 * 45000.0)
     assert total_exposure == expected_exposure
@@ -65,7 +49,6 @@ def test_t0_4():
 
     # Step 5: Test leverage check in can_enter_trade()
     print("\n[TEST] Testing leverage constraint in can_enter_trade()...")
-<<<<<<< HEAD
 
     # Try to enter a small trade (should pass)
     can_enter, reason = risk_engine.can_enter_trade(
@@ -74,19 +57,6 @@ def test_t0_4():
     assert can_enter
     print("[OK] Small trade allowed (leverage OK)")
 
-=======
-    
-    # Try to enter a small trade (should pass)
-    can_enter, reason = risk_engine.can_enter_trade(
-        symbol_pair="MSFT",
-        position_size=10.0,
-        current_equity=100000.0,
-        volatility=0.02
-    )
-    assert can_enter
-    print("[OK] Small trade allowed (leverage OK)")
-    
->>>>>>> origin/main
     # Try to enter a very large trade (should fail due to leverage)
     # First clear the existing position to test clean scenario
     risk_engine.positions.clear()
@@ -112,14 +82,9 @@ def test_t0_4():
         current_equity=100000.0,
         volatility=0.001,  # Very low to bypass risk check
     )
-<<<<<<< HEAD
 
     assert not can_enter
     assert reason is not None
-=======
-    
-    assert not can_enter
->>>>>>> origin/main
     assert "leverage" in reason.lower()
     print(f"[OK] Trade correctly rejected for leverage: {reason}")
 
@@ -128,21 +93,12 @@ def test_t0_4():
     from pathlib import Path
 
     prod_yaml_path = Path("config/prod.yaml")
-<<<<<<< HEAD
     with open(prod_yaml_path, encoding="utf-8") as f:
         prod_content = f.read()
 
     assert "max_leverage: 1.5" in prod_content
     print("[OK] prod.yaml has max_leverage: 1.5 (conservative for production)")
 
-=======
-    with open(prod_yaml_path, 'r', encoding='utf-8') as f:
-        prod_content = f.read()
-    
-    assert "max_leverage: 1.5" in prod_content
-    print("[OK] prod.yaml has max_leverage: 1.5 (conservative for production)")
-    
->>>>>>> origin/main
     print("\n[PASS] T0.4 Validation Successful\n")
 
 

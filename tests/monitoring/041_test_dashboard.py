@@ -4,12 +4,7 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 import pytest
-<<<<<<< HEAD
 
-=======
-from unittest.mock import Mock, patch
-from datetime import datetime, timedelta
->>>>>>> origin/main
 from monitoring.dashboard import DashboardGenerator
 from risk.engine import Position
 

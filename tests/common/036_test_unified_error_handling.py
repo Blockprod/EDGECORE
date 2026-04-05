@@ -8,10 +8,7 @@ Tests:
 - Integration with main.py data loading
 """
 
-<<<<<<< HEAD
-=======
 import pytest
->>>>>>> origin/main
 from unittest.mock import Mock, patch
 
 import pytest
@@ -22,11 +19,7 @@ from common.errors import (
     ConfigError,
     DataError,
     DataValidationError,
-<<<<<<< HEAD
     ErrorCategory,
-=======
-    BrokerConnectionError,
->>>>>>> origin/main
     InsufficientBalanceError,
     StrategyError,
     TradingError,
@@ -81,47 +74,27 @@ class TestExceptionClassifier:
     """Tests for classify_exception helper."""
 
     def test_classify_timeout_as_transient(self):
-<<<<<<< HEAD
         """Ô£ô TimeoutError Ôåô TRANSIENT."""
-=======
-        """✓ TimeoutError ↓ TRANSIENT."""
->>>>>>> origin/main
         category = classify_exception(TimeoutError("timeout"))
         assert category == ErrorCategory.TRANSIENT
 
     def test_classify_connection_error_as_transient(self):
-<<<<<<< HEAD
         """Ô£ô ConnectionError Ôåô TRANSIENT."""
-=======
-        """✓ ConnectionError ↓ TRANSIENT."""
->>>>>>> origin/main
         category = classify_exception(ConnectionError("no connection"))
         assert category == ErrorCategory.TRANSIENT
 
     def test_classify_key_error_as_fatal(self):
-<<<<<<< HEAD
         """Ô£ô KeyError (missing field) Ôåô FATAL (logic error)."""
-=======
-        """✓ KeyError (missing field) ↓ FATAL (logic error)."""
->>>>>>> origin/main
         category = classify_exception(KeyError("missing_field"))
         assert category == ErrorCategory.FATAL
 
     def test_classify_value_error_as_fatal(self):
-<<<<<<< HEAD
         """Ô£ô ValueError (invalid value) Ôåô FATAL (logic error)."""
-=======
-        """✓ ValueError (invalid value) ↓ FATAL (logic error)."""
->>>>>>> origin/main
         category = classify_exception(ValueError("invalid value"))
         assert category == ErrorCategory.FATAL
 
     def test_classify_generic_as_retryable(self):
-<<<<<<< HEAD
         """Ô£ô Unknown exception Ôåô RETRYABLE (default safe)."""
-=======
-        """✓ Unknown exception ↓ RETRYABLE (default safe)."""
->>>>>>> origin/main
         category = classify_exception(Exception("unknown"))
         assert category == ErrorCategory.RETRYABLE
 
@@ -170,11 +143,7 @@ class TestErrorHandler:
         """Ô£ô Error context is logged."""
         error = DataError("Bad data")
         handle_error(error, context="load_AAPL")
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Verify context was logged
         mock_logger.warning.assert_called()
         call_kwargs = mock_logger.warning.call_args[1]
@@ -297,7 +266,6 @@ class TestDataLoadingErrorHandling:
 
         mock_loader = Mock()
         mock_loader.load_ibkr_data.return_value = None  # No data
-<<<<<<< HEAD
 
         mock_settings = Mock()
         mock_settings.trading.data_max_age_hours = 99999.0
@@ -305,33 +273,19 @@ class TestDataLoadingErrorHandling:
         with pytest.raises(DataError) as exc_info:
             _load_market_data_for_symbols(["AAPL"], mock_loader, mock_settings)
 
-=======
-        
-        mock_settings = Mock()
-        mock_settings.trading.data_max_age_hours = 99999.0
-        
-        with pytest.raises(DataError) as exc_info:
-            _load_market_data_for_symbols(["AAPL"], mock_loader, mock_settings)
-        
->>>>>>> origin/main
         # DataError should be TRANSIENT (can retry) or RETRYABLE
         assert exc_info.value.category in [ErrorCategory.TRANSIENT, ErrorCategory.RETRYABLE]
 
     def test_data_load_with_partial_failure(self):
         """Ô£ô Partial data load logs warning but succeeds."""
         import pandas as pd
-<<<<<<< HEAD
 
         from main import _load_market_data_for_symbols
 
-=======
-        
->>>>>>> origin/main
         mock_loader = Mock()
 
         # First symbol succeeds, second fails
         # Create DataFrame with proper timestamps as index
-<<<<<<< HEAD
         timestamps = pd.date_range(start="2024-01-01", periods=2, freq="h")
         aapl_df = pd.DataFrame(
             {
@@ -345,23 +299,10 @@ class TestDataLoadingErrorHandling:
         )
 
         def load_side_effect(symbol, *_args, **_kwargs):  # mirrors load_ibkr_data signature
-=======
-        timestamps = pd.date_range(start='2024-01-01', periods=2, freq='h')
-        aapl_df = pd.DataFrame({
-            'open': [45000.0, 45100.0],
-            'high': [45200.0, 45300.0],
-            'low': [44900.0, 44950.0],
-            'close': [45000.0, 45100.0],
-            'volume': [100.0, 200.0]
-        }, index=timestamps)
-        
-        def load_side_effect(symbol, *args, **kwargs):
->>>>>>> origin/main
             if symbol == "AAPL":
                 return aapl_df
             else:
                 raise Exception("Network error")
-<<<<<<< HEAD
 
         mock_loader.load_ibkr_data.side_effect = load_side_effect
 
@@ -371,21 +312,6 @@ class TestDataLoadingErrorHandling:
         # Should succeed with partial data
         prices = _load_market_data_for_symbols(["AAPL", "MSFT"], mock_loader, mock_settings)
 
-=======
-        
-        mock_loader.load_ibkr_data.side_effect = load_side_effect
-        
-        mock_settings = Mock()
-        mock_settings.trading.data_max_age_hours = 99999.0
-        
-        # Should succeed with partial data
-        prices = _load_market_data_for_symbols(
-            ["AAPL", "MSFT"],
-            mock_loader,
-            mock_settings
-        )
-        
->>>>>>> origin/main
         assert "AAPL" in prices
         assert len(prices) == 1  # Only AAPL loaded
 
@@ -394,11 +320,7 @@ class TestRealWorldScenarios:
     """Integration tests for realistic error scenarios."""
 
     def test_transient_network_error_retries(self):
-<<<<<<< HEAD
         """Scenario: Network timeout Ôåô retry Ôåô success."""
-=======
-        """Scenario: Network timeout ↓ retry ↓ success."""
->>>>>>> origin/main
         attempt = 0
 
         @with_error_handling(category=ErrorCategory.TRANSIENT, max_retries=3, backoff_base=0.01)
@@ -408,21 +330,13 @@ class TestRealWorldScenarios:
             if attempt < 3:
                 raise TimeoutError("network timeout")
             return {"AAPL": 175.0}
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         result = load_with_network_retry()
         assert result == {"AAPL": 175.0}
         assert attempt == 3
 
     def test_insufficient_balance_fails_fast(self):
-<<<<<<< HEAD
         """Scenario: Insufficient balance Ôåô fail fast (no retry)."""
-=======
-        """Scenario: Insufficient balance ↓ fail fast (no retry)."""
->>>>>>> origin/main
         attempt = 0
 
         @with_error_handling(max_retries=3)

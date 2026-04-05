@@ -9,14 +9,11 @@ Provides:
 - Integration hooks for external services (Slack, email, etc)
 """
 
-<<<<<<< HEAD
-=======
 from typing import Dict, List, Optional, Any, Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from structlog import get_logger
 from enum import Enum
->>>>>>> origin/main
 import json
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -56,19 +53,11 @@ class Alert:
     category: AlertCategory
     title: str
     message: str
-<<<<<<< HEAD
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     data: dict[str, Any] = field(default_factory=dict)
     acknowledged_at: datetime | None = None
     acknowledged_by: str | None = None
     resolved_at: datetime | None = None
-=======
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    data: Dict[str, Any] = field(default_factory=dict)
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[str] = None
-    resolved_at: Optional[datetime] = None
->>>>>>> origin/main
     
     def __post_init__(self):
         if self.timestamp.tzinfo is None:
@@ -76,20 +65,12 @@ class Alert:
 
     def acknowledge(self, username: str = "system") -> None:
         """Mark alert as acknowledged."""
-<<<<<<< HEAD
         self.acknowledged_at = datetime.now(UTC)
-=======
-        self.acknowledged_at = datetime.now(timezone.utc)
->>>>>>> origin/main
         self.acknowledged_by = username
     
     def resolve(self) -> None:
         """Mark alert as resolved."""
-<<<<<<< HEAD
         self.resolved_at = datetime.now(UTC)
-=======
-        self.resolved_at = datetime.now(timezone.utc)
->>>>>>> origin/main
     
     def is_acknowledged(self) -> bool:
         """Check if alert has been acknowledged."""
@@ -101,11 +82,7 @@ class Alert:
     
     def age_seconds(self) -> float:
         """Get alert age in seconds."""
-<<<<<<< HEAD
         return (datetime.now(UTC) - self.timestamp).total_seconds()
-=======
-        return (datetime.now(timezone.utc) - self.timestamp).total_seconds()
->>>>>>> origin/main
     
     def to_dict(self) -> dict[str, Any]:
         """Convert alert to dictionary."""
@@ -190,11 +167,7 @@ class AlertManager:
             raise ValueError(f"Message must be 1-2000 chars, got: {message}")
         
         self.alert_counter += 1
-<<<<<<< HEAD
         alert_id = f"alert_{datetime.now(UTC).timestamp()}_{self.alert_counter}"
-=======
-        alert_id = f"alert_{datetime.now(timezone.utc).timestamp()}_{self.alert_counter}"
->>>>>>> origin/main
         
         alert = Alert(
             alert_id=alert_id,
@@ -434,20 +407,12 @@ class AlertManager:
             overall_status = "OK"
         
         # Recent alerts (last 24 hours)
-<<<<<<< HEAD
         cutoff = datetime.now(UTC) - timedelta(hours=24)
-=======
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
->>>>>>> origin/main
         recent = [a for a in active if a.timestamp > cutoff]
         
         return {
             "overall_status": overall_status,
-<<<<<<< HEAD
             "timestamp": datetime.now(UTC).isoformat(),
-=======
-            "timestamp": datetime.now(timezone.utc).isoformat(),
->>>>>>> origin/main
             "active_alert_count": len(active),
             "critical_count": len(critical),
             "unacknowledged_count": len(self.get_unacknowledged_alerts()),

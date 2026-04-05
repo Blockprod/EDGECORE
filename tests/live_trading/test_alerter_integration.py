@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""
-=======
-"""
->>>>>>> origin/main
 Tests for alerter integration into the trading pipeline.
 
 Verifies that EmailAlerter and SlackAlerter are properly called
@@ -15,19 +11,12 @@ at every critical point in the trading loop:
   - Fatal crash in run_paper_tick
 """
 
-<<<<<<< HEAD
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from live_trading.paper_runner import PaperTradingRunner
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
-=======
-import pytest
-from unittest.mock import MagicMock, patch, ANY
-from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
-from live_trading.paper_runner import PaperTradingRunner
->>>>>>> origin/main
 
 
 def _make_runner(email=None, slack=None, **kw):
@@ -63,11 +52,7 @@ class TestSendAlertHelper:
         email.send_alert.side_effect = RuntimeError("SMTP down")
         runner = _make_runner(email=email)
 
-<<<<<<< HEAD
         # Must NOT raise ÔÇö fire-and-forget
-=======
-        # Must NOT raise — fire-and-forget
->>>>>>> origin/main
         runner._send_alert("ERROR", "Title", "Message")
 
 
@@ -77,13 +62,8 @@ class TestKillSwitchAlert:
     def test_kill_switch_triggers_alert(self):
         slack = MagicMock()
         runner = _make_runner(slack=slack)
-<<<<<<< HEAD
         runner._risk_facade = MagicMock()
         runner._risk_facade.is_halted = True
-=======
-        runner._kill_switch = MagicMock()
-        runner._kill_switch.is_active = True
->>>>>>> origin/main
         runner._reconciler = None
 
         runner._tick()
@@ -131,16 +111,10 @@ class TestOrderProcessingAlert:
             with patch.object(runner, "_fetch_market_data", return_value=MagicMock(empty=False)):
                 with patch.object(runner, "_signal_gen") as mock_gen:
                     mock_gen.generate.return_value = [mock_signal]
-<<<<<<< HEAD
                     # risk facade raises during can_enter_trade (signal processing error)
                     runner._risk_facade = MagicMock()
                     runner._risk_facade.is_halted = False
                     runner._risk_facade.can_enter_trade.side_effect = RuntimeError("risk facade crash")
-=======
-                    # position_risk.check will throw
-                    runner._position_risk = MagicMock()
-                    runner._position_risk.check.side_effect = RuntimeError("risk engine crash")
->>>>>>> origin/main
                     runner._tick()
 
         slack.send_alert.assert_called_once()
@@ -206,11 +180,7 @@ class TestErrorHandlerAlerter:
 
     def test_handle_error_sends_alert_non_retryable(self):
         from common.error_handler import handle_error
-<<<<<<< HEAD
         from common.errors import ErrorCategory, TradingError
-=======
-        from common.errors import TradingError, ErrorCategory
->>>>>>> origin/main
 
         alerter = MagicMock()
         error = TradingError("disk full", ErrorCategory.NON_RETRYABLE)
@@ -224,11 +194,7 @@ class TestErrorHandlerAlerter:
 
     def test_handle_error_no_alert_on_transient(self):
         from common.error_handler import handle_error
-<<<<<<< HEAD
         from common.errors import ErrorCategory, TradingError
-=======
-        from common.errors import TradingError, ErrorCategory
->>>>>>> origin/main
 
         alerter = MagicMock()
         error = TradingError("timeout", ErrorCategory.TRANSIENT)
@@ -257,10 +223,5 @@ class TestErrorHandlerAlerter:
 
         # Should have alerted on max retries exceeded
         assert alerter.send_alert.call_count >= 1
-<<<<<<< HEAD
         titles = [c[1].get("title", "") if len(c) > 1 else c[0][1] for c in alerter.send_alert.call_args_list]
-=======
-        titles = [c[1].get("title", "") if len(c) > 1 else c[0][1] 
-                  for c in alerter.send_alert.call_args_list]
->>>>>>> origin/main
         assert any("max retries" in t.lower() or "Max retries" in t for t in titles)

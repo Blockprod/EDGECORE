@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
 """
 Scheduler ÔÇö Orchestrates daily scan + live monitoring lifecycle.
-=======
-#!/usr/bin/env python3
-"""
-Scheduler — Orchestrates daily scan + live monitoring lifecycle.
->>>>>>> origin/main
 
 This is the top-level production entry point that coordinates:
   1. Pre-market daily scan (08:00 EST)
@@ -42,10 +36,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Any
-=======
->>>>>>> origin/main
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -66,7 +57,6 @@ PRE_MARKET_SCAN_MINUTE = 0
 def parse_args():
     parser = argparse.ArgumentParser(description="EDGECORE Scheduler")
     parser.add_argument(
-<<<<<<< HEAD
         "--mode",
         choices=["standalone", "cron"],
         default="cron",
@@ -98,29 +88,6 @@ def parse_args():
         "--python",
         type=str,
         default=sys.executable,
-=======
-        "--mode", choices=["standalone", "cron"], default="cron",
-        help="Scheduling mode",
-    )
-    parser.add_argument(
-        "--action", choices=["scan", "monitor", "full"], default="full",
-        help="Action to execute (cron mode only)",
-    )
-    parser.add_argument(
-        "--sec-only", action="store_true",
-        help="SEC-only scan (no IBKR validation)",
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true",
-        help="Dry run mode (no IBKR connection for monitoring)",
-    )
-    parser.add_argument(
-        "--monitor-interval", type=int, default=30,
-        help="Monitoring poll interval in seconds",
-    )
-    parser.add_argument(
-        "--python", type=str, default=sys.executable,
->>>>>>> origin/main
         help="Python interpreter path",
     )
     return parser.parse_args()
@@ -140,17 +107,8 @@ def is_market_day() -> bool:
 def is_market_hours() -> bool:
     """Check if current time is within US market hours."""
     now = datetime.now()
-<<<<<<< HEAD
     market_open = now.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0)
     market_close = now.replace(hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE, second=0)
-=======
-    market_open = now.replace(
-        hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MINUTE, second=0
-    )
-    market_close = now.replace(
-        hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE, second=0
-    )
->>>>>>> origin/main
     return market_open <= now <= market_close
 
 
@@ -165,14 +123,10 @@ def run_daily_scan(python: str, sec_only: bool = False) -> bool:
 
     try:
         result = subprocess.run(
-<<<<<<< HEAD
             cmd,
             capture_output=True,
             text=True,
             timeout=3600,
-=======
-            cmd, capture_output=True, text=True, timeout=3600,
->>>>>>> origin/main
         )
         if result.returncode == 0:
             logger.info("daily_scan_completed_successfully")
@@ -198,13 +152,9 @@ def run_daily_scan(python: str, sec_only: bool = False) -> bool:
 
 
 def run_live_monitor(
-<<<<<<< HEAD
     python: str,
     interval: int,
     dry_run: bool = False,
-=======
-    python: str, interval: int, dry_run: bool = False,
->>>>>>> origin/main
 ) -> None:
     """Execute live_monitor.py as a subprocess (blocks until market close)."""
     script = str(Path(__file__).parent / "live_monitor.py")
@@ -266,13 +216,9 @@ def run_standalone(args):
                 if days_until_monday == 0:
                     days_until_monday = 7
                 next_monday = now.replace(
-<<<<<<< HEAD
                     hour=PRE_MARKET_SCAN_HOUR,
                     minute=0,
                     second=0,
-=======
-                    hour=PRE_MARKET_SCAN_HOUR, minute=0, second=0,
->>>>>>> origin/main
                 ) + timedelta(days=days_until_monday)
                 sleep_sec = (next_monday - now).total_seconds()
                 time.sleep(max(60, sleep_sec))
@@ -280,19 +226,12 @@ def run_standalone(args):
 
             now = datetime.now()
             pre_market = now.replace(
-<<<<<<< HEAD
                 hour=PRE_MARKET_SCAN_HOUR,
                 minute=PRE_MARKET_SCAN_MINUTE,
             )
             market_close = now.replace(
                 hour=MARKET_CLOSE_HOUR,
                 minute=MARKET_CLOSE_MINUTE,
-=======
-                hour=PRE_MARKET_SCAN_HOUR, minute=PRE_MARKET_SCAN_MINUTE,
-            )
-            market_close = now.replace(
-                hour=MARKET_CLOSE_HOUR, minute=MARKET_CLOSE_MINUTE,
->>>>>>> origin/main
             )
 
             # Pre-market scan
@@ -302,7 +241,6 @@ def run_standalone(args):
                 time.sleep(max(60, sleep_sec))
                 continue
 
-<<<<<<< HEAD
             _rs: Any = run_standalone
             if not hasattr(_rs, "_scanned_today"):
                 _rs._scanned_today = None
@@ -311,15 +249,6 @@ def run_standalone(args):
                 logger.info("running_pre_market_scan")
                 run_daily_scan(args.python, args.sec_only)
                 _rs._scanned_today = now.date()
-=======
-            if not hasattr(run_standalone, '_scanned_today'):
-                run_standalone._scanned_today = None
-
-            if run_standalone._scanned_today != now.date():
-                logger.info("running_pre_market_scan")
-                run_daily_scan(args.python, args.sec_only)
-                run_standalone._scanned_today = now.date()
->>>>>>> origin/main
 
             # Market hours monitoring
             if is_market_hours():

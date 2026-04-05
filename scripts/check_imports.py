@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
-=======
-#!/usr/bin/env python3
->>>>>>> origin/main
 """Check for broken imports in test files."""
 
 import re
@@ -23,11 +19,7 @@ def extract_imports(filepath):
     """Extract import statements from a file."""
     imports = []
     try:
-<<<<<<< HEAD
         with open(filepath, encoding='utf-8', errors='ignore') as f:
-=======
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
->>>>>>> origin/main
             content = f.read()
             # Match: import X, from X import Y
             patterns = [
@@ -95,11 +87,7 @@ for test_file in sorted(test_dir.rglob("test_*.py")) + sorted(test_dir.rglob("[0
         
         if broken_for_file:
             rel_path = test_file.relative_to(test_dir)
-<<<<<<< HEAD
             print(f"\nÔÜá´©Å  {rel_path}")
-=======
-            print(f"\n⚠️  {rel_path}")
->>>>>>> origin/main
             for imp in broken_for_file:
                 print(f"   BROKEN: from {imp} import ...")
             broken_files.append((test_file, broken_for_file))
@@ -108,16 +96,9 @@ for test_file in sorted(test_dir.rglob("test_*.py")) + sorted(test_dir.rglob("[0
             all_imports[str(test_file)] = project_imports
 
 if not broken_files:
-<<<<<<< HEAD
     print("\nÔ£à No broken imports found!")
     print(f"   Analyzed {len(all_imports)} files with valid imports")
 else:
     print(f"\nÔÜá´©Å  Found {len(broken_files)} files with potential broken imports")
-=======
-    print("\n✅ No broken imports found!")
-    print(f"   Analyzed {len(all_imports)} files with valid imports")
-else:
-    print(f"\n⚠️  Found {len(broken_files)} files with potential broken imports")
->>>>>>> origin/main
 
 print("\n" + "="*80)

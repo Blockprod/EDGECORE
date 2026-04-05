@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Correlation Pre-Filter ÔÇö Vectorized O(N┬▓) correlation screening.
 
@@ -13,22 +12,6 @@ near-zero probability of economic cointegration.
 Typical reduction:
     - 200 symbols ÔåÆ 19 900 pairs ÔåÆ ~3 000 surviving (85% reduction)
     - 300 symbols ÔåÆ 44 850 pairs ÔåÆ ~5 000 surviving (89% reduction)
-=======
-"""
-Correlation Pre-Filter — Vectorized O(N²) correlation screening.
-
-When the universe has 200+ symbols, brute-force pairwise cointegration
-testing is O(N²) with expensive statsmodels ADF calls per pair.
-
-This module computes the **full correlation matrix** in one vectorized
-numpy operation (< 1 second for 500 symbols), then applies a minimum
-|ρ| threshold to immediately eliminate low-correlation pairs that have
-near-zero probability of economic cointegration.
-
-Typical reduction:
-    - 200 symbols → 19 900 pairs → ~3 000 surviving (85% reduction)
-    - 300 symbols → 44 850 pairs → ~5 000 surviving (89% reduction)
->>>>>>> origin/main
 
 This runs *before* the ThreadPoolExecutor cointegration engine, saving
 thousands of expensive ADF test calls.
@@ -41,11 +24,8 @@ Usage::
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-=======
 from typing import Dict, List, Optional, Tuple
 
->>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -89,11 +69,7 @@ class CorrelationPreFilter:
         """
         Compute the full NxN Pearson correlation matrix.
 
-<<<<<<< HEAD
         Uses pandas vectorized correlation ÔÇö handles NaN alignment
-=======
-        Uses pandas vectorized correlation — handles NaN alignment
->>>>>>> origin/main
         automatically and is ~100x faster than pairwise loops.
 
         Args:
@@ -118,23 +94,14 @@ class CorrelationPreFilter:
     def filter_pairs(
         self,
         price_data: pd.DataFrame,
-<<<<<<< HEAD
         sector_map: dict[str, str] | None = None,
     ) -> list[tuple[str, str]]:
-=======
-        sector_map: Optional[Dict[str, str]] = None,
-    ) -> List[Tuple[str, str]]:
->>>>>>> origin/main
         """
         Generate candidate pairs using vectorized correlation + sector.
 
         Pipeline:
           1. Compute NxN correlation matrix (vectorized)
-<<<<<<< HEAD
           2. Extract upper-triangle pairs where |¤ü| ÔëÑ min_correlation
-=======
-          2. Extract upper-triangle pairs where |ρ| ≥ min_correlation
->>>>>>> origin/main
           3. Apply sector restriction if sector_map provided
           4. Cap per-sector pairs to prevent compute explosion
 
@@ -173,17 +140,10 @@ class CorrelationPreFilter:
 
         # Build pairs with sector filtering
         use_sector = self.require_same_sector and sector_map is not None
-<<<<<<< HEAD
         candidates: list[tuple[str, str]] = []
         sector_counts: dict[str, int] = {}
 
         # Sort by correlation descending ÔÇö keep strongest pairs first
-=======
-        candidates: List[Tuple[str, str]] = []
-        sector_counts: Dict[str, int] = {}
-
-        # Sort by correlation descending — keep strongest pairs first
->>>>>>> origin/main
         sort_idx = np.argsort(-passing_corrs)
 
         for idx in sort_idx:
@@ -192,11 +152,8 @@ class CorrelationPreFilter:
 
             # Sector restriction
             if use_sector:
-<<<<<<< HEAD
                 if sector_map is None:
                     continue
-=======
->>>>>>> origin/main
                 sec1 = sector_map.get(sym1)
                 sec2 = sector_map.get(sym2)
                 if sec1 != sec2 or sec1 is None:
@@ -235,22 +192,13 @@ class CorrelationPreFilter:
     def filter_pairs_with_scores(
         self,
         price_data: pd.DataFrame,
-<<<<<<< HEAD
         sector_map: dict[str, str] | None = None,
     ) -> list[tuple[str, str, float]]:
-=======
-        sector_map: Optional[Dict[str, str]] = None,
-    ) -> List[Tuple[str, str, float]]:
->>>>>>> origin/main
         """
         Like filter_pairs() but also returns the correlation score.
 
         Returns:
-<<<<<<< HEAD
             List of (sym1, sym2, correlation) triples, sorted by |¤ü| desc.
-=======
-            List of (sym1, sym2, correlation) triples, sorted by |ρ| desc.
->>>>>>> origin/main
         """
         corr_matrix = self.compute_correlation_matrix(price_data)
         symbols = list(corr_matrix.columns)
@@ -272,13 +220,8 @@ class CorrelationPreFilter:
         passing_corrs = corr_upper[mask]
 
         use_sector = self.require_same_sector and sector_map is not None
-<<<<<<< HEAD
         results: list[tuple[str, str, float]] = []
         sector_counts: dict[str, int] = {}
-=======
-        results: List[Tuple[str, str, float]] = []
-        sector_counts: Dict[str, int] = {}
->>>>>>> origin/main
 
         sort_idx = np.argsort(-np.abs(passing_corrs))
 
@@ -288,11 +231,8 @@ class CorrelationPreFilter:
             corr_val = float(passing_corrs[idx])
 
             if use_sector:
-<<<<<<< HEAD
                 if sector_map is None:
                     continue
-=======
->>>>>>> origin/main
                 sec1 = sector_map.get(sym1)
                 sec2 = sector_map.get(sym2)
                 if sec1 != sec2 or sec1 is None:
@@ -308,34 +248,17 @@ class CorrelationPreFilter:
 
     @staticmethod
     def sector_pair_counts(
-<<<<<<< HEAD
         sector_map: dict[str, str],
         symbols: list[str],
     ) -> dict[str, int]:
-=======
-        sector_map: Dict[str, str],
-        symbols: List[str],
-    ) -> Dict[str, int]:
->>>>>>> origin/main
         """
         Count maximum possible intra-sector pairs per sector.
 
         Useful for capacity planning and logging.
         """
-<<<<<<< HEAD
         groups: dict[str, int] = {}
-=======
-        groups: Dict[str, int] = {}
->>>>>>> origin/main
         for sym in symbols:
             sec = sector_map.get(sym, "unknown")
             groups[sec] = groups.get(sec, 0) + 1
 
-<<<<<<< HEAD
         return {sec: n * (n - 1) // 2 for sec, n in groups.items()}
-=======
-        return {
-            sec: n * (n - 1) // 2
-            for sec, n in groups.items()
-        }
->>>>>>> origin/main

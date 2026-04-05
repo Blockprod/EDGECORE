@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿timestamp,event_type,symbol_pair,side,quantity,entry_price,exit_price,pnl,equity_at_event,event_id
-=======
-timestamp,event_type,symbol_pair,side,quantity,entry_price,exit_price,pnl,equity_at_event,event_id
->>>>>>> origin/main
 2026-02-12T13:27:55.461529,TRADE_ENTRY,PAIR_0,long,10.0,100.0,,,100000.0,2026-02-12T13:27:55.461529_PAIR_0
 2026-02-12T13:27:55.468894,TRADE_ENTRY,PAIR_1,long,10.0,100.0,,,100000.0,2026-02-12T13:27:55.468894_PAIR_1
 2026-02-12T13:27:55.473796,TRADE_ENTRY,PAIR_2,long,10.0,100.0,,,100000.0,2026-02-12T13:27:55.473796_PAIR_2

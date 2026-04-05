@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Kill Switch ÔÇö Emergency trading halt mechanism.
-=======
-"""
-Kill Switch — Emergency trading halt mechanism.
->>>>>>> origin/main
 
 The kill switch is the **last line of defense** for a production trading
 system.  It monitors multiple risk dimensions and **immediately halts
@@ -26,29 +21,18 @@ Once triggered:
     - **Manual reset** is required before trading resumes
 
 This module is intentionally simple and has NO dependencies on
-<<<<<<< HEAD
 strategy logic ÔÇö it only reads portfolio-level metrics.
-=======
-strategy logic — it only reads portfolio-level metrics.
->>>>>>> origin/main
 """
 
 from __future__ import annotations
 
 import json
-<<<<<<< HEAD
 import threading
-=======
->>>>>>> origin/main
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Callable
-=======
-from typing import Callable, Dict, List, Optional
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -57,10 +41,7 @@ logger = get_logger(__name__)
 
 class KillReason(Enum):
     """Reason codes for kill switch activation."""
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     DRAWDOWN = "drawdown_breach"
     DAILY_LOSS = "daily_loss_breach"
     CONSECUTIVE_LOSSES = "consecutive_loss_streak"
@@ -74,40 +55,27 @@ class KillReason(Enum):
 @dataclass
 class KillSwitchConfig:
     """Kill switch thresholds — intentionally conservative."""
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     max_drawdown_pct: float = 0.15
     max_daily_loss_pct: float = 0.03
     max_consecutive_losses: int = 5
     max_data_stale_seconds: int = 300
     extreme_vol_multiplier: float = 3.0
     alert_on_activation: bool = True
-<<<<<<< HEAD
     cooldown_seconds: int = 0
     """Minimum seconds between activation and reset (C-15).
     Default 0 disables the cooldown (backwards-compatible).
     Set to 300 in production to enforce a 5-minute review period."""
-=======
->>>>>>> origin/main
 
 
 @dataclass
 class KillSwitchState:
     """Snapshot of kill switch status."""
-<<<<<<< HEAD
 
     is_active: bool
     reason: KillReason
     message: str
     activated_at: datetime | None
-=======
-    is_active: bool
-    reason: KillReason
-    message: str
-    activated_at: Optional[datetime]
->>>>>>> origin/main
     checks_passed: int
     checks_failed: int
 
@@ -120,11 +88,7 @@ class KillSwitch:
 
         ks = KillSwitch()
 
-<<<<<<< HEAD
         # Each bar ÔÇö run health checks:
-=======
-        # Each bar — run health checks:
->>>>>>> origin/main
         ks.check(
             drawdown_pct=0.12,
             daily_loss_pct=0.01,
@@ -136,11 +100,7 @@ class KillSwitch:
 
         # Before any order:
         if ks.is_active:
-<<<<<<< HEAD
             # HALT ÔÇö do not trade
-=======
-            # HALT — do not trade
->>>>>>> origin/main
             ...
 
         # Manual activation:
@@ -152,15 +112,9 @@ class KillSwitch:
 
     def __init__(
         self,
-<<<<<<< HEAD
         config: KillSwitchConfig | None = None,
         on_activate: Callable[[KillReason, str], None] | None = None,
         state_file: str | None = None,
-=======
-        config: Optional[KillSwitchConfig] = None,
-        on_activate: Optional[Callable[[KillReason, str], None]] = None,
-        state_file: Optional[str] = None,
->>>>>>> origin/main
     ):
         """
         Args:
@@ -179,18 +133,11 @@ class KillSwitch:
         self._is_active: bool = False
         self._reason: KillReason = KillReason.UNKNOWN
         self._message: str = ""
-<<<<<<< HEAD
         self._activated_at: datetime | None = None
         self._check_count: int = 0
         self._fail_count: int = 0
         self._activation_history: list[dict] = []
         self._activation_lock = threading.Lock()  # A-16: makes check-then-set atomic
-=======
-        self._activated_at: Optional[datetime] = None
-        self._check_count: int = 0
-        self._fail_count: int = 0
-        self._activation_history: List[Dict] = []
->>>>>>> origin/main
 
         # Restore state from disk (crash recovery)
         self._load_state()
@@ -219,11 +166,7 @@ class KillSwitch:
         Run all kill switch checks.
 
         Args:
-<<<<<<< HEAD
             drawdown_pct: Current portfolio drawdown (0.0 ÔÇô 1.0).
-=======
-            drawdown_pct: Current portfolio drawdown (0.0 – 1.0).
->>>>>>> origin/main
             daily_loss_pct: Today's cumulative loss as fraction of equity.
             consecutive_losses: Current consecutive loss streak count.
             seconds_since_last_data: Seconds since last fresh market data.
@@ -266,30 +209,15 @@ class KillSwitch:
         if seconds_since_last_data > self.config.max_data_stale_seconds:
             self.activate(
                 KillReason.DATA_STALE,
-<<<<<<< HEAD
                 f"No fresh data for {seconds_since_last_data:.0f}s (limit: {self.config.max_data_stale_seconds}s)",
-=======
-                f"No fresh data for {seconds_since_last_data:.0f}s "
-                f"(limit: {self.config.max_data_stale_seconds}s)",
->>>>>>> origin/main
             )
             return True
 
         # Check 5: Extreme volatility
-<<<<<<< HEAD
         if historical_vol_mean > 0 and current_vol > historical_vol_mean * self.config.extreme_vol_multiplier:
             self.activate(
                 KillReason.VOLATILITY_EXTREME,
                 f"Vol {current_vol:.4f} > {self.config.extreme_vol_multiplier}├ù "
-=======
-        if (
-            historical_vol_mean > 0
-            and current_vol > historical_vol_mean * self.config.extreme_vol_multiplier
-        ):
-            self.activate(
-                KillReason.VOLATILITY_EXTREME,
-                f"Vol {current_vol:.4f} > {self.config.extreme_vol_multiplier}× "
->>>>>>> origin/main
                 f"historical mean {historical_vol_mean:.4f}",
             )
             return True
@@ -302,7 +230,6 @@ class KillSwitch:
 
     def activate(self, reason: KillReason, message: str) -> None:
         """Activate the kill switch (halt all trading)."""
-<<<<<<< HEAD
         # A-16: check-then-set is atomic under the lock
         with self._activation_lock:
             if self._is_active:
@@ -319,22 +246,6 @@ class KillSwitch:
                     "timestamp": self._activated_at.isoformat(),
                 }
             )
-=======
-        if self._is_active:
-            return  # already active
-
-        self._is_active = True
-        self._reason = reason
-        self._message = message
-        self._activated_at = datetime.now()
-        self._fail_count += 1
-
-        self._activation_history.append({
-            "reason": reason.value,
-            "message": message,
-            "timestamp": self._activated_at.isoformat(),
-        })
->>>>>>> origin/main
 
         logger.critical(
             "KILL_SWITCH_ACTIVATED",
@@ -357,7 +268,6 @@ class KillSwitch:
         This should ONLY be called after the operator has reviewed
         the situation and confirmed it is safe to resume trading.
         """
-<<<<<<< HEAD
         # A-16: reset under lock so it never races with activate()
         with self._activation_lock:
             if not self._is_active:
@@ -389,27 +299,6 @@ class KillSwitch:
             duration_seconds=((datetime.now() - prev_activated_at).total_seconds() if prev_activated_at else 0),
         )
 
-=======
-        if not self._is_active:
-            return
-
-        logger.warning(
-            "KILL_SWITCH_RESET",
-            was_reason=self._reason.value,
-            was_message=self._message,
-            duration_seconds=(
-                (datetime.now() - self._activated_at).total_seconds()
-                if self._activated_at
-                else 0
-            ),
-        )
-
-        self._is_active = False
-        self._reason = KillReason.UNKNOWN
-        self._message = ""
-        self._activated_at = None
-
->>>>>>> origin/main
         self._save_state()
 
     # ------------------------------------------------------------------
@@ -430,7 +319,6 @@ class KillSwitch:
             "activated_at": self._activated_at.isoformat() if self._activated_at else None,
         }
         try:
-<<<<<<< HEAD
             # Atomic write: .tmp ÔåÆ rename
             tmp_path = self._state_path.with_suffix(".tmp")
             tmp_path.write_text(json.dumps(state, indent=2))
@@ -439,11 +327,6 @@ class KillSwitch:
                 import shutil
 
                 shutil.copy2(self._state_path, self._state_path.with_suffix(".bak"))
-=======
-            # Atomic write: .tmp → rename
-            tmp_path = self._state_path.with_suffix('.tmp')
-            tmp_path.write_text(json.dumps(state, indent=2))
->>>>>>> origin/main
             tmp_path.replace(self._state_path)
         except Exception as exc:
             logger.critical(
@@ -459,11 +342,7 @@ class KillSwitch:
         """Restore activation state from disk (if file exists).
 
         RISK-4: If the state file is corrupted the kill-switch
-<<<<<<< HEAD
         activates in fail-safe mode ÔÇö refusing to trade until
-=======
-        activates in fail-safe mode — refusing to trade until
->>>>>>> origin/main
         an operator manually clears the state.
         """
         if not self._state_path.exists():
@@ -497,13 +376,9 @@ class KillSwitch:
     @property
     def is_active(self) -> bool:
         """True if trading is halted."""
-<<<<<<< HEAD
         # A-16: read under lock for happens-before guarantee
         with self._activation_lock:
             return self._is_active
-=======
-        return self._is_active
->>>>>>> origin/main
 
     @property
     def reason(self) -> KillReason:
@@ -521,10 +396,6 @@ class KillSwitch:
         )
 
     @property
-<<<<<<< HEAD
     def activation_history(self) -> list[dict]:
-=======
-    def activation_history(self) -> List[Dict]:
->>>>>>> origin/main
         """Return full activation history (for audit)."""
         return list(self._activation_history)

@@ -1,10 +1,4 @@
-<<<<<<< HEAD
 ﻿from abc import ABC, abstractmethod
-=======
-from abc import ABC, abstractmethod
-from typing import List
-import pandas as pd
->>>>>>> origin/main
 from dataclasses import dataclass
 
 import pandas as pd

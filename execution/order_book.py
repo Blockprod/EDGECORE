@@ -16,10 +16,7 @@ from datetime import UTC, datetime
 from typing import Literal, cast
 
 from common.types import (
-<<<<<<< HEAD
     BookSimulationConfig,
-=======
->>>>>>> origin/main
     LiquidityMetrics,
     OrderBook,
     OrderBookLevel,

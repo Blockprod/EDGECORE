@@ -59,11 +59,7 @@ def diagnose_backtest():
             failed.append((symbol, str(e)))
 
     if failed:
-<<<<<<< HEAD
         print(f"\n    ÔÜá {len(failed)} symbol(s) failed to load")
-=======
-        print(f"\n    ⚠ {len(failed)} symbol(s) failed to load")
->>>>>>> origin/main
         print("    This is expected if IBKR TWS/Gateway is not running")
         print("    Continuing with synthetic test data...")
 

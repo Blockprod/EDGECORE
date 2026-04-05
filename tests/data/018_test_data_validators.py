@@ -9,14 +9,7 @@ Covers:
 - Dataframe validation with various error types
 """
 
-<<<<<<< HEAD
 from datetime import UTC, datetime, timedelta
-=======
-import pytest
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -62,11 +55,7 @@ class TestOHLCVValidatorBasic:
         """Test OHLCVValidator creation."""
         validator = OHLCVValidator(symbol="AAPL")
         assert validator.symbol == "AAPL"
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def test_empty_dataframe(self):
         """Test validation of empty dataframe."""
         validator = OHLCVValidator()
@@ -80,11 +69,7 @@ class TestOHLCVValidatorBasic:
     def test_valid_ohlcv_data(self):
         """Test validation of valid OHLCV data."""
         validator = OHLCVValidator(symbol="AAPL")
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Create valid data
         dates = pd.date_range("2024-01-01", periods=10, freq="1h")
         df = pd.DataFrame(
@@ -442,15 +427,7 @@ class TestPositionValidator:
     def test_valid_position(self):
         """Test validation of valid position."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=50000.0, current_price=51000.0, side="long"
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=50000.0,
-            current_price=51000.0,
-            side="long"
->>>>>>> origin/main
         )
 
         assert result.is_valid
@@ -468,14 +445,7 @@ class TestPositionValidator:
     def test_zero_quantity(self):
         """Test detection of zero quantity."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=0.0, entry_price=50000.0, current_price=51000.0
-=======
-            symbol="AAPL",
-            quantity=0.0,
-            entry_price=50000.0,
-            current_price=51000.0
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -484,14 +454,7 @@ class TestPositionValidator:
     def test_negative_quantity(self):
         """Test detection of negative quantity."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=-1.0, entry_price=50000.0, current_price=51000.0
-=======
-            symbol="AAPL",
-            quantity=-1.0,
-            entry_price=50000.0,
-            current_price=51000.0
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -500,14 +463,7 @@ class TestPositionValidator:
     def test_nan_quantity(self):
         """Test detection of NaN quantity."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=np.nan, entry_price=50000.0, current_price=51000.0
-=======
-            symbol="AAPL",
-            quantity=np.nan,
-            entry_price=50000.0,
-            current_price=51000.0
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -516,15 +472,7 @@ class TestPositionValidator:
     def test_invalid_side(self):
         """Test detection of invalid side."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=50000.0, current_price=51000.0, side="invalid"
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=50000.0,
-            current_price=51000.0,
-            side="invalid"
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -533,14 +481,7 @@ class TestPositionValidator:
     def test_zero_entry_price(self):
         """Test detection of zero entry price."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=0.0, current_price=51000.0
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=0.0,
-            current_price=51000.0
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -549,14 +490,7 @@ class TestPositionValidator:
     def test_zero_current_price(self):
         """Test detection of zero current price."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=50000.0, current_price=0.0
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=50000.0,
-            current_price=0.0
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -565,14 +499,7 @@ class TestPositionValidator:
     def test_infinite_entry_price(self):
         """Test detection of infinite entry price."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=np.inf, current_price=51000.0
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=np.inf,
-            current_price=51000.0
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -582,15 +509,7 @@ class TestPositionValidator:
         """Test warning for position opened in future."""
         future_time = datetime.now(UTC) + timedelta(hours=1)
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=50000.0, current_price=51000.0, opened_at=future_time
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=50000.0,
-            current_price=51000.0,
-            opened_at=future_time
->>>>>>> origin/main
         )
 
         assert not result.is_valid
@@ -600,15 +519,7 @@ class TestPositionValidator:
         """Test warning for very old position."""
         old_time = datetime.now(UTC) - timedelta(days=400)
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=50000.0, current_price=51000.0, opened_at=old_time
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=50000.0,
-            current_price=51000.0,
-            opened_at=old_time
->>>>>>> origin/main
         )
 
         assert result.is_valid  # Valid but with warning
@@ -617,15 +528,7 @@ class TestPositionValidator:
     def test_short_position(self):
         """Test validation of short position."""
         result = PositionValidator.validate_position(
-<<<<<<< HEAD
             symbol="AAPL", quantity=1.5, entry_price=50000.0, current_price=49000.0, side="short"
-=======
-            symbol="AAPL",
-            quantity=1.5,
-            entry_price=50000.0,
-            current_price=49000.0,
-            side="short"
->>>>>>> origin/main
         )
 
         assert result.is_valid

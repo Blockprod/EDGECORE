@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Paper Trading Runner ÔÇö Simulated live trading for dry-run validation.
-=======
-"""
-Paper Trading Runner — Simulated live trading for dry-run validation.
->>>>>>> origin/main
 
 Extends :class:`LiveTradingRunner` with paper-specific defaults:
     - ExecutionMode.PAPER (no real money)
@@ -16,11 +11,7 @@ Use this to validate the live pipeline before deploying real capital.
 
 from __future__ import annotations
 
-<<<<<<< HEAD
 from typing import Any
-=======
-from typing import Any, Optional
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -50,15 +41,9 @@ class PaperTradingRunner(LiveTradingRunner):
 
     def __init__(
         self,
-<<<<<<< HEAD
         config: TradingLoopConfig | None = None,
         email_alerter: Any | None = None,
         slack_alerter: Any | None = None,
-=======
-        config: Optional[TradingLoopConfig] = None,
-        email_alerter: Optional[Any] = None,
-        slack_alerter: Optional[Any] = None,
->>>>>>> origin/main
     ):
         cfg = config or TradingLoopConfig()
         cfg.mode = "paper"  # force paper mode
@@ -76,11 +61,7 @@ class PaperTradingRunner(LiveTradingRunner):
 
     def _tick(self) -> None:
         """
-<<<<<<< HEAD
         Paper trading tick ÔÇö identical to live but with simulated fills.
-=======
-        Paper trading tick — identical to live but with simulated fills.
->>>>>>> origin/main
 
         All signals, risk checks, and portfolio logic run identically
         to live mode. Only the execution engine differs (paper fills

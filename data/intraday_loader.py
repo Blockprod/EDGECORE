@@ -1,9 +1,5 @@
 """
-<<<<<<< HEAD
 Phase 3.1 ��� Intraday Data Loader.
-=======
-Phase 3.1 — Intraday Data Loader.
->>>>>>> origin/main
 
 Loads 5-minute bars from IBKR and caches them in Parquet format
 partitioned by symbol and date.  Provides a clean interface for
@@ -20,16 +16,9 @@ Architecture
 
 from __future__ import annotations
 
-<<<<<<< HEAD
 import time
 from pathlib import Path
 from typing import Any, cast
-=======
-import os
-import time
-from pathlib import Path
-from typing import Dict, List, Optional
->>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
@@ -37,11 +26,7 @@ from structlog import get_logger
 logger = get_logger(__name__)
 
 # IBKR 5-min bars: max ~1 year history.  We request in 30-day chunks to
-<<<<<<< HEAD
 # respect IBKR pacing rules (���60 requests / 10 min).
-=======
-# respect IBKR pacing rules (≤60 requests / 10 min).
->>>>>>> origin/main
 _CHUNK_DAYS = 30
 _SLEEP_BETWEEN_SYMBOLS = 0.6  # seconds
 _SLEEP_BETWEEN_CHUNKS = 1.0
@@ -71,11 +56,7 @@ class IntradayLoader:
 
     def load(
         self,
-<<<<<<< HEAD
         symbols: list[str],
-=======
-        symbols: List[str],
->>>>>>> origin/main
         start_date: str,
         end_date: str,
         bar_size: str = "5 mins",
@@ -86,26 +67,14 @@ class IntradayLoader:
         column per symbol (close prices).  Missing bars are forward-filled
         to align all symbols.
         """
-<<<<<<< HEAD
         frames: dict[str, pd.Series] = {}
-=======
-        frames: Dict[str, pd.Series] = {}
->>>>>>> origin/main
         for sym in symbols:
             try:
                 df = self._load_symbol(sym, start_date, end_date, bar_size)
                 if df is not None and not df.empty:
-<<<<<<< HEAD
                     frames[sym] = pd.Series(df["close"])
             except Exception as exc:
                 logger.warning("intraday_load_failed", symbol=sym, error=str(exc)[:200])
-=======
-                    frames[sym] = df["close"]
-            except Exception as exc:
-                logger.warning(
-                    "intraday_load_failed", symbol=sym, error=str(exc)[:200]
-                )
->>>>>>> origin/main
 
         if not frames:
             logger.error("intraday_load_no_data", symbols=symbols)
@@ -132,11 +101,7 @@ class IntradayLoader:
         start_date: str,
         end_date: str,
         bar_size: str,
-<<<<<<< HEAD
     ) -> pd.DataFrame | None:
-=======
-    ) -> Optional[pd.DataFrame]:
->>>>>>> origin/main
         """Load from cache or fetch from IBKR."""
         cache_path = self.cache_dir / f"{symbol}.parquet"
 
@@ -152,13 +117,7 @@ class IntradayLoader:
             self._write_cache(cache_path, df)
         return df
 
-<<<<<<< HEAD
     def _read_cache(self, path: Path, start_date: str, end_date: str) -> pd.DataFrame | None:
-=======
-    def _read_cache(
-        self, path: Path, start_date: str, end_date: str
-    ) -> Optional[pd.DataFrame]:
->>>>>>> origin/main
         """Read cached Parquet and slice to requested range."""
         if not path.exists():
             return None
@@ -166,19 +125,10 @@ class IntradayLoader:
             df = pd.read_parquet(path)
             if not isinstance(df.index, pd.DatetimeIndex):
                 df.index = pd.to_datetime(df.index)
-<<<<<<< HEAD
             mask = (df.index >= pd.Timestamp(start_date)) & (df.index <= pd.Timestamp(end_date) + pd.Timedelta(days=1))
             sliced = df.loc[mask]
             if len(sliced) < 10:
                 return None  # insufficient ��� re-fetch
-=======
-            mask = (df.index >= pd.Timestamp(start_date)) & (
-                df.index <= pd.Timestamp(end_date) + pd.Timedelta(days=1)
-            )
-            sliced = df.loc[mask]
-            if len(sliced) < 10:
-                return None  # insufficient — re-fetch
->>>>>>> origin/main
             return sliced
         except Exception:
             return None
@@ -190,13 +140,8 @@ class IntradayLoader:
                 existing = pd.read_parquet(path)
                 if not isinstance(existing.index, pd.DatetimeIndex):
                     existing.index = pd.to_datetime(existing.index)
-<<<<<<< HEAD
                 df = cast(pd.DataFrame, pd.concat([existing, df]))
                 df = cast(pd.DataFrame, df[~df.index.duplicated(keep="last")].sort_index())
-=======
-                df = pd.concat([existing, df])
-                df = df[~df.index.duplicated(keep="last")].sort_index()
->>>>>>> origin/main
             except Exception:
                 pass  # overwrite on error
         df.to_parquet(path, engine="pyarrow")
@@ -207,11 +152,7 @@ class IntradayLoader:
         start_date: str,
         end_date: str,
         bar_size: str,
-<<<<<<< HEAD
     ) -> pd.DataFrame | None:
-=======
-    ) -> Optional[pd.DataFrame]:
->>>>>>> origin/main
         """Fetch 5-min bars from IBKR in chunks."""
         try:
             from execution.ibkr_engine import IBGatewaySync
@@ -221,25 +162,14 @@ class IntradayLoader:
 
         from data.loader import _next_client_id
 
-<<<<<<< HEAD
         engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=60)
-=======
-        engine = IBGatewaySync(
-            host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=60
-        )
->>>>>>> origin/main
         engine.connect()
 
         all_bars: list = []
         try:
             # IBKR pacing: 5-min bars come in max 30-day chunks
-<<<<<<< HEAD
             chunk_start: pd.Timestamp = cast(pd.Timestamp, pd.Timestamp(start_date))
             chunk_end: pd.Timestamp = cast(pd.Timestamp, pd.Timestamp(end_date))
-=======
-            chunk_start = pd.Timestamp(start_date)
-            chunk_end = pd.Timestamp(end_date)
->>>>>>> origin/main
 
             while chunk_start < chunk_end:
                 req_end = min(chunk_start + pd.Timedelta(days=_CHUNK_DAYS), chunk_end)
@@ -250,10 +180,7 @@ class IntradayLoader:
                         duration=duration,
                         bar_size=bar_size,
                         what_to_show="ADJUSTED_LAST",
-<<<<<<< HEAD
-=======
                         end_date=req_end.strftime("%Y%m%d %H:%M:%S"),
->>>>>>> origin/main
                     )
                     if bars:
                         all_bars.extend(bars)
@@ -264,11 +191,7 @@ class IntradayLoader:
                         chunk_start=str(chunk_start)[:10],
                         error=str(chunk_exc)[:120],
                     )
-<<<<<<< HEAD
                 chunk_start = cast(pd.Timestamp, req_end)
-=======
-                chunk_start = req_end
->>>>>>> origin/main
                 time.sleep(_SLEEP_BETWEEN_CHUNKS)
         finally:
             engine.disconnect()
@@ -325,33 +248,21 @@ class IntradayLoader:
         import numpy as np
 
         # ---- Cython fast path -------------------------------------------
-<<<<<<< HEAD
         # Import direct intentionnel — façade (models.cointegration) ne réexpose pas brownian_bridge_batch_fast
         _bb_fast: Any = None  # pre-init; overwritten if Cython module is available
         try:
             from models.cointegration_fast import brownian_bridge_batch_fast as _bb_fast
 
-=======
-        try:
-            from models.cointegration_fast import brownian_bridge_batch_fast as _bb_fast
->>>>>>> origin/main
             _cython_bb = True
         except ImportError:
             _cython_bb = False
 
         if _cython_bb:
-<<<<<<< HEAD
             all_cols: list[str] = [str(c) for c in daily_prices.columns]
             syms: list[str] = [c for c in all_cols if daily_prices[c].count() >= 2]
             if not syms:
                 return pd.DataFrame()
             mat = daily_prices[syms].ffill().dropna(how="all")
-=======
-            syms = [s for s in daily_prices.columns if daily_prices[s].count() >= 2]
-            if not syms:
-                return pd.DataFrame()
-            mat = daily_prices[syms].ffill().dropna(how='all')
->>>>>>> origin/main
             if len(mat) < 2:
                 return pd.DataFrame()
 
@@ -361,42 +272,25 @@ class IntradayLoader:
                 np.random.normal(0, 1, (n_days - 1, bars_per_day, n_sym)),
                 dtype=np.float64,
             )
-<<<<<<< HEAD
             # out shape: (n_days-1)*bars_per_day +� n_sym
-=======
-            # out shape: (n_days-1)*bars_per_day × n_sym
->>>>>>> origin/main
             out = _bb_fast(mat_vals, noise, bars_per_day)
 
             # Build timestamp index once (same for all symbols)
             timestamps: list = []
-<<<<<<< HEAD
             for day in pd.DatetimeIndex(mat.index[1:]):
                 day_ts = cast(pd.Timestamp, day)
                 market_open = day_ts.replace(hour=9, minute=30, second=0)
-=======
-            for day in mat.index[1:]:
-                market_open = pd.Timestamp(day).replace(hour=9, minute=30, second=0)
->>>>>>> origin/main
                 for j in range(bars_per_day):
                     timestamps.append(market_open + pd.Timedelta(minutes=5 * j))
 
             return pd.DataFrame(
                 out,
                 index=pd.DatetimeIndex(timestamps),
-<<<<<<< HEAD
                 columns=pd.Index(syms),
             ).sort_index()
 
         # ---- Python fallback (original, per-symbol loop) ----------------
         result_frames: dict[str, pd.Series] = {}
-=======
-                columns=syms,
-            ).sort_index()
-
-        # ---- Python fallback (original, per-symbol loop) ----------------
-        result_frames: Dict[str, pd.Series] = {}
->>>>>>> origin/main
 
         for sym in daily_prices.columns:
             closes = daily_prices[sym].dropna()
@@ -419,7 +313,6 @@ class IntradayLoader:
                 vol = max(abs(daily_ret) * 0.5, 0.002)
                 path = prev_close * (1 + daily_ret * t + vol * bridge)
 
-<<<<<<< HEAD
                 market_open = cast(pd.Timestamp, pd.Timestamp(str(closes.index[i]))).replace(
                     hour=9, minute=30, second=0
                 )
@@ -428,19 +321,6 @@ class IntradayLoader:
                 all_prices.extend(path.tolist())
 
             result_frames[sym] = pd.Series(all_prices, index=pd.DatetimeIndex(all_times), name=sym)
-=======
-                market_open = pd.Timestamp(day).replace(hour=9, minute=30, second=0)
-                timestamps = [
-                    market_open + pd.Timedelta(minutes=5 * j)
-                    for j in range(bars_per_day)
-                ]
-                all_times.extend(timestamps)
-                all_prices.extend(path.tolist())
-
-            result_frames[sym] = pd.Series(
-                all_prices, index=pd.DatetimeIndex(all_times), name=sym
-            )
->>>>>>> origin/main
 
         if not result_frames:
             return pd.DataFrame()

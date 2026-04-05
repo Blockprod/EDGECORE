@@ -1,20 +1,11 @@
-<<<<<<< HEAD
 ﻿"""
 Position Risk Manager ÔÇö Per-position risk controls.
-=======
-"""
-Position Risk Manager — Per-position risk controls.
->>>>>>> origin/main
 
 Consolidates all position-level risk checks into a single manager:
     1. Trailing stop (spread widening from entry)
     2. Time stop (max holding period based on half-life)
     3. P&L stop (max loss per position)
-<<<<<<< HEAD
     4. Hedge ratio stability (╬▓ drift detection)
-=======
-    4. Hedge ratio stability (β drift detection)
->>>>>>> origin/main
 
 Each check returns a (should_exit, reason) tuple.  The manager runs
 all checks and returns the first triggered exit, if any.
@@ -23,21 +14,13 @@ all checks and returns the first triggered exit, if any.
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Dict, Optional, Tuple
->>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
 
-<<<<<<< HEAD
 from execution.time_stop import TimeStopManager
 from execution.trailing_stop import TrailingStopManager
-=======
-from execution.trailing_stop import TrailingStopManager
-from execution.time_stop import TimeStopManager
->>>>>>> origin/main
 from models.hedge_ratio_tracker import HedgeRatioTracker
 from models.stationarity_monitor import StationarityMonitor
 
@@ -47,10 +30,7 @@ logger = get_logger(__name__)
 @dataclass
 class PositionRiskConfig:
     """Configuration for position-level risk controls."""
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     trailing_stop_sigma: float = 1.0
     time_stop_hl_multiplier: float = 3.0
     time_stop_max_bars: int = 60
@@ -62,20 +42,13 @@ class PositionRiskConfig:
 @dataclass
 class PositionRiskState:
     """Tracked state for a single open position."""
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     pair_key: str
     side: str
     entry_z: float
     entry_price: float
     entry_bar: int
-<<<<<<< HEAD
     half_life: float | None
-=======
-    half_life: Optional[float]
->>>>>>> origin/main
     notional: float
 
 
@@ -98,11 +71,7 @@ class PositionRiskManager:
         should_exit, reason = prm.check("AAPL_MSFT", current_z, current_bar, pnl_pct)
     """
 
-<<<<<<< HEAD
     def __init__(self, config: PositionRiskConfig | None = None):
-=======
-    def __init__(self, config: Optional[PositionRiskConfig] = None):
->>>>>>> origin/main
         self.config = config or PositionRiskConfig()
 
         self.trailing_stop = TrailingStopManager(
@@ -115,11 +84,7 @@ class PositionRiskManager:
         self.stationarity = StationarityMonitor()
 
         # Active position states
-<<<<<<< HEAD
         self._positions: dict[str, PositionRiskState] = {}
-=======
-        self._positions: Dict[str, PositionRiskState] = {}
->>>>>>> origin/main
 
         logger.info(
             "position_risk_manager_initialized",
@@ -139,11 +104,7 @@ class PositionRiskManager:
         entry_z: float,
         entry_price: float,
         entry_bar: int,
-<<<<<<< HEAD
         half_life: float | None,
-=======
-        half_life: Optional[float],
->>>>>>> origin/main
         notional: float,
         entry_spread: float = 0.0,
     ) -> None:
@@ -186,13 +147,8 @@ class PositionRiskManager:
         current_z: float,
         current_bar: int,
         pnl_pct: float,
-<<<<<<< HEAD
         spread: pd.Series | None = None,
     ) -> tuple[bool, str]:
-=======
-        spread: Optional[pd.Series] = None,
-    ) -> Tuple[bool, str]:
->>>>>>> origin/main
         """
         Run all position-level risk checks.
 
@@ -204,11 +160,7 @@ class PositionRiskManager:
             spread: Current spread series (for stationarity check).
 
         Returns:
-<<<<<<< HEAD
             (should_exit, reason) ÔÇö first triggered check, or (False, "").
-=======
-            (should_exit, reason) — first triggered check, or (False, "").
->>>>>>> origin/main
         """
         state = self._positions.get(pair_key)
         if state is None:
@@ -221,13 +173,7 @@ class PositionRiskManager:
         )
         if should_exit:
             logger.warning("risk_trailing_stop", pair=pair_key, reason=reason)
-<<<<<<< HEAD
             return True, reason or ""
-=======
-            return True, reason
-
-        # 2. Time stop
->>>>>>> origin/main
         holding_bars = current_bar - state.entry_bar
         should_exit_t, reason_t = self.time_stop.should_exit(
             holding_bars=holding_bars,
@@ -259,11 +205,7 @@ class PositionRiskManager:
     # ------------------------------------------------------------------
 
     @property
-<<<<<<< HEAD
     def active_positions(self) -> dict[str, PositionRiskState]:
-=======
-    def active_positions(self) -> Dict[str, PositionRiskState]:
->>>>>>> origin/main
         return dict(self._positions)
 
     @property

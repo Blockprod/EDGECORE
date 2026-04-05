@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python3
 """
 Live Monitor ÔÇö Intraday monitoring of active pair trading positions.
-=======
-#!/usr/bin/env python3
-"""
-Live Monitor — Intraday monitoring of active pair trading positions.
->>>>>>> origin/main
 
 Responsibilities:
   - Poll IBKR for current positions and P&L
@@ -16,11 +10,7 @@ Responsibilities:
   - Log portfolio state for audit trail
 
 This runs as a lightweight background loop during market hours.
-<<<<<<< HEAD
 It does NOT execute trades ÔÇö it monitors and alerts.
-=======
-It does NOT execute trades — it monitors and alerts.
->>>>>>> origin/main
 
 Usage::
 
@@ -43,10 +33,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-<<<<<<< HEAD
-=======
 from typing import Dict, List, Optional
->>>>>>> origin/main
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -61,11 +48,7 @@ _shutdown = False
 def _signal_handler(signum, frame):
     global _shutdown
     _shutdown = True
-<<<<<<< HEAD
     logger.info("shutdown_signal_received", signal=signum, frame=str(frame))
-=======
-    logger.info("shutdown_signal_received", signal=signum)
->>>>>>> origin/main
 
 
 signal.signal(signal.SIGINT, _signal_handler)
@@ -75,7 +58,6 @@ signal.signal(signal.SIGTERM, _signal_handler)
 def parse_args():
     parser = argparse.ArgumentParser(description="EDGECORE Live Monitor")
     parser.add_argument(
-<<<<<<< HEAD
         "--interval",
         type=int,
         default=30,
@@ -108,29 +90,6 @@ def parse_args():
         "--log-dir",
         type=str,
         default="logs/monitor",
-=======
-        "--interval", type=int, default=30,
-        help="Monitoring interval in seconds (default: 30)",
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true",
-        help="Dry run mode — no IBKR connection",
-    )
-    parser.add_argument(
-        "--pairs-file", type=str, default="cache/daily_scan_result.json",
-        help="Path to daily scan results JSON",
-    )
-    parser.add_argument(
-        "--max-drawdown-pct", type=float, default=15.0,
-        help="Portfolio drawdown alert threshold (%%)",
-    )
-    parser.add_argument(
-        "--z-score-alert", type=float, default=3.0,
-        help="Z-score threshold for position alerts",
-    )
-    parser.add_argument(
-        "--log-dir", type=str, default="logs/monitor",
->>>>>>> origin/main
         help="Directory for monitoring logs",
     )
     return parser.parse_args()
@@ -146,11 +105,7 @@ class LiveMonitor:
       - Circuit breaker conditions
       - Position stop levels
 
-<<<<<<< HEAD
     This is observation-only ÔÇö no order execution.
-=======
-    This is observation-only — no order execution.
->>>>>>> origin/main
     """
 
     def __init__(
@@ -165,15 +120,9 @@ class LiveMonitor:
         self.z_score_alert = z_score_alert
         self.dry_run = dry_run
         self._peak_equity = 0.0
-<<<<<<< HEAD
         self._alerts: list[dict] = []
 
     def load_active_pairs(self, pairs_file: str) -> list[dict]:
-=======
-        self._alerts: List[Dict] = []
-
-    def load_active_pairs(self, pairs_file: str) -> List[Dict]:
->>>>>>> origin/main
         """Load discovered pairs from daily scan output."""
         path = Path(pairs_file)
         if not path.exists():
@@ -183,11 +132,7 @@ class LiveMonitor:
             data = json.load(f)
         return data.get("pairs", [])
 
-<<<<<<< HEAD
     def check_portfolio(self) -> dict:
-=======
-    def check_portfolio(self) -> Dict:
->>>>>>> origin/main
         """Check portfolio state from IBKR."""
         if self.dry_run:
             return {
@@ -199,27 +144,17 @@ class LiveMonitor:
 
         try:
             from execution.ibkr_engine import IBKRExecutionEngine
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
             engine = IBKRExecutionEngine()
             engine.connect()
             try:
                 balance = engine.get_account_balance()
                 positions = engine.get_positions()
                 return {
-<<<<<<< HEAD
                     "equity": balance,
                     "positions": len(positions) if positions else 0,
                     "unrealized_pnl": 0.0,
                     "realized_pnl": 0.0,
-=======
-                    "equity": balance.get("NetLiquidation", 0.0),
-                    "positions": len(positions) if positions else 0,
-                    "unrealized_pnl": balance.get("UnrealizedPnL", 0.0),
-                    "realized_pnl": balance.get("RealizedPnL", 0.0),
->>>>>>> origin/main
                 }
             finally:
                 engine.disconnect()
@@ -227,11 +162,7 @@ class LiveMonitor:
             logger.error("portfolio_check_failed", error=str(exc)[:100])
             return {"equity": 0, "positions": 0, "unrealized_pnl": 0, "realized_pnl": 0}
 
-<<<<<<< HEAD
     def check_drawdown(self, equity: float) -> dict | None:
-=======
-    def check_drawdown(self, equity: float) -> Optional[Dict]:
->>>>>>> origin/main
         """Check portfolio drawdown against limit."""
         if equity > self._peak_equity:
             self._peak_equity = equity
@@ -260,11 +191,7 @@ class LiveMonitor:
             return alert
         return None
 
-<<<<<<< HEAD
     def run_monitoring_cycle(self, pairs: list[dict]) -> dict:
-=======
-    def run_monitoring_cycle(self, pairs: List[Dict]) -> Dict:
->>>>>>> origin/main
         """Run one monitoring cycle."""
         portfolio = self.check_portfolio()
         dd_alert = self.check_drawdown(portfolio["equity"])

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""
-=======
-"""
->>>>>>> origin/main
 Tests for Sprint 2.6 - Remove synthetic fallback (M-06).
 
 Ensures:
@@ -15,7 +11,6 @@ Ensures:
 """
 
 import warnings
-<<<<<<< HEAD
 
 import numpy as np
 import pandas as pd
@@ -23,15 +18,6 @@ import pytest
 
 from backtests.metrics import BacktestMetrics
 from backtests.runner import BacktestRunner, _generate_cointegrated_pair
-=======
-import numpy as np
-import pandas as pd
-from unittest.mock import patch
-
-from backtests.runner import BacktestRunner, _generate_cointegrated_pair
-from backtests.metrics import BacktestMetrics
-
->>>>>>> origin/main
 
 # --------------------------------------------------
 # Helpers
@@ -68,7 +54,6 @@ class TestNoSyntheticFallback:
         assert "SYNTHB" not in source
         assert "fallback_synthetic" not in source
 
-<<<<<<< HEAD
     def test_legacy_run_raises_not_implemented(self):
         """
         C-02: BacktestRunner.run() must raise NotImplementedError after emitting
@@ -92,30 +77,12 @@ class TestNoSyntheticFallback:
             warnings.simplefilter("ignore", DeprecationWarning)
             with pytest.raises(NotImplementedError):
                 runner.run(
-=======
-    def test_legacy_run_no_pairs_returns_empty_metrics(self):
-        """
-        DoD: backtest with non-cointegrated symbols ? total_return=0, note=NO_PAIRS_FOUND.
-        
-        We mock _find_cointegrated_pairs_in_data to return [] to guarantee
-        the 0-pair path, and use use_synthetic=True to avoid real API calls.
-        """
-        runner = BacktestRunner()
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with patch.object(
-                runner, "_find_cointegrated_pairs_in_data", return_value=[]
-            ):
-                result = runner.run(
->>>>>>> origin/main
                     symbols=["FAKE1"],
                     start_date="2023-01-01",
                     end_date="2024-01-01",
                     use_synthetic=True,
                 )
 
-<<<<<<< HEAD
     def test_legacy_run_no_pairs_zero_trades(self):
         """C-02: run() raises NotImplementedError — no trades by definition."""
         runner = BacktestRunner()
@@ -124,34 +91,14 @@ class TestNoSyntheticFallback:
             warnings.simplefilter("ignore", DeprecationWarning)
             with pytest.raises(NotImplementedError):
                 runner.run(
-=======
-        assert isinstance(result, BacktestMetrics)
-        assert result.total_return == 0.0
-        assert result.note is not None
-        assert "NO_PAIRS_FOUND" in result.note
-
-    def test_legacy_run_no_pairs_zero_trades(self):
-        """No synthetic trades should be generated."""
-        runner = BacktestRunner()
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            with patch.object(
-                runner, "_find_cointegrated_pairs_in_data", return_value=[]
-            ):
-                result = runner.run(
->>>>>>> origin/main
                     symbols=["FAKE1"],
                     start_date="2023-01-01",
                     end_date="2024-01-01",
                     use_synthetic=True,
                 )
 
-<<<<<<< HEAD
-=======
         assert result.total_trades == 0
 
->>>>>>> origin/main
     def test_no_synthetic_columns_added(self):
         """
         When 0 pairs found, no SYNTHA/SYNTHB columns should be added to prices_df.
@@ -162,13 +109,8 @@ class TestNoSyntheticFallback:
         # After Sprint 2.6, there should be no SYNTHA/SYNTHB injection
         assert "SYNTHA" not in source
         assert "SYNTHB" not in source
-<<<<<<< HEAD
         # C-02: method now raises immediately
         assert "NotImplementedError" in source
-=======
-        # And the 0-pair path should return immediately with note
-        assert "NO_PAIRS_FOUND" in source
->>>>>>> origin/main
 
 
 # --------------------------------------------------
@@ -189,7 +131,6 @@ class TestSyntheticDataLoading:
         assert len(df) > 100
 
     def test_use_synthetic_true_returns_metrics(self):
-<<<<<<< HEAD
         """C-02: run() is removed. Verifying NotImplementedError is raised."""
         runner = BacktestRunner()
         with warnings.catch_warnings():
@@ -201,24 +142,6 @@ class TestSyntheticDataLoading:
                     end_date="2024-01-01",
                     use_synthetic=True,
                 )
-=======
-        """Legacy run with use_synthetic=True should still return valid BacktestMetrics.
-        
-        Note: The synthetic pair may or may not find cointegrated pairs depending
-        on half-life filtering. Either outcome is acceptable - the key is that
-        it returns BacktestMetrics (not crashes or synthetic injection).
-        """
-        runner = BacktestRunner()
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            result = runner.run(
-                symbols=["FAKE"],
-                start_date="2023-01-01",
-                end_date="2024-01-01",
-                use_synthetic=True,
-            )
-        assert isinstance(result, BacktestMetrics)
->>>>>>> origin/main
 
 
 # --------------------------------------------------
@@ -262,13 +185,8 @@ class TestRunUnifiedNoPairs:
         run_unified with uncorrelated data should not generate any synthetic pairs.
         The simulator simply produces no trades.
         """
-<<<<<<< HEAD
         from backtests.cost_model import CostModel
         from backtests.strategy_simulator import StrategyBacktestSimulator
-=======
-        from backtests.strategy_simulator import StrategyBacktestSimulator
-        from backtests.cost_model import CostModel
->>>>>>> origin/main
 
         prices_df = _make_uncorrelated_prices(n=200)
         simulator = StrategyBacktestSimulator(

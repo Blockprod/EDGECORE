@@ -1,9 +1,5 @@
 """
-<<<<<<< HEAD
 Stress Testing Framework -- Phase 3 (addresses audit S6.6).
-=======
-Stress Testing Framework – Phase 3 (addresses audit §6.6).
->>>>>>> origin/main
 
 Problem
 -------
@@ -16,7 +12,6 @@ Solution
 --------
 Synthetic scenario injection into historical price data:
 
-<<<<<<< HEAD
 1. **Flash crash** -- Injects a sudden drop (user-defined magnitude) over
    a short window, then partial recovery.
 2. **Prolonged drawdown** -- Applies a gradual negative trend over N bars.
@@ -25,16 +20,6 @@ Synthetic scenario injection into historical price data:
 4. **Volatility spike** -- Multiplies returns by a factor for N bars to
    simulate a vol regime change.
 5. **Liquidity drought** -- Widens effective slippage and reduces volume.
-=======
-1. **Flash crash** – Injects a sudden drop (user-defined magnitude) over
-   a short window, then partial recovery.
-2. **Prolonged drawdown** – Applies a gradual negative trend over N bars.
-3. **Correlation breakdown** – Decorrelates pair legs by adding independent
-   noise to one leg, breaking the cointegration relationship.
-4. **Volatility spike** – Multiplies returns by a factor for N bars to
-   simulate a vol regime change.
-5. **Liquidity drought** – Widens effective slippage and reduces volume.
->>>>>>> origin/main
 
 Each scenario returns modified price data that can be fed to the standard
 ``StrategyBacktestSimulator`` for evaluation.
@@ -49,12 +34,8 @@ Usage::
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-<<<<<<< HEAD
 from typing import Any, Callable
 
-=======
-from typing import Dict, List, Optional, Any, Tuple
->>>>>>> origin/main
 import numpy as np
 import pandas as pd
 from structlog import get_logger
@@ -88,11 +69,7 @@ class StressTestResult:
     win_rate: float
     survived: bool
     """Whether the strategy survived (equity > 0 and DD < 100%)."""
-<<<<<<< HEAD
     details: dict[str, Any] = field(default_factory=dict)
-=======
-    details: Dict[str, Any] = field(default_factory=dict)
->>>>>>> origin/main
 
 
 class StressScenarioGenerator:
@@ -104,11 +81,7 @@ class StressScenarioGenerator:
     @staticmethod
     def flash_crash(
         prices: pd.DataFrame,
-<<<<<<< HEAD
         crash_bar: int | None = None,
-=======
-        crash_bar: Optional[int] = None,
->>>>>>> origin/main
         crash_pct: float = 0.30,
         recovery_pct: float = 0.50,
         crash_duration: int = 1,
@@ -163,11 +136,7 @@ class StressScenarioGenerator:
     @staticmethod
     def prolonged_drawdown(
         prices: pd.DataFrame,
-<<<<<<< HEAD
         start_bar: int | None = None,
-=======
-        start_bar: Optional[int] = None,
->>>>>>> origin/main
         duration: int = 60,
         total_drop_pct: float = 0.20,
     ) -> pd.DataFrame:
@@ -197,11 +166,7 @@ class StressScenarioGenerator:
             # Shift remaining bars
             end_idx = start_bar + duration
             if end_idx < n:
-<<<<<<< HEAD
                 final_factor = daily_factor**duration
-=======
-                final_factor = daily_factor ** duration
->>>>>>> origin/main
                 series[end_idx:] *= final_factor
 
             df[col] = series
@@ -211,17 +176,10 @@ class StressScenarioGenerator:
     @staticmethod
     def correlation_breakdown(
         prices: pd.DataFrame,
-<<<<<<< HEAD
         start_bar: int | None = None,
         duration: int = 30,
         noise_scale: float = 0.05,
         affected_columns: list[str] | None = None,
-=======
-        start_bar: Optional[int] = None,
-        duration: int = 30,
-        noise_scale: float = 0.05,
-        affected_columns: Optional[List[str]] = None,
->>>>>>> origin/main
     ) -> pd.DataFrame:
         """Break cointegration by adding independent noise to selected columns.
 
@@ -238,7 +196,6 @@ class StressScenarioGenerator:
             start_bar = n // 2
 
         if affected_columns is None:
-<<<<<<< HEAD
             actual_affected = [str(df.columns[i]) for i in range(1, len(df.columns), 2)]
         else:
             actual_affected = affected_columns
@@ -246,13 +203,6 @@ class StressScenarioGenerator:
         rng = np.random.RandomState(42)
 
         for col in actual_affected:
-=======
-            affected_columns = [df.columns[i] for i in range(1, len(df.columns), 2)]
-
-        rng = np.random.RandomState(42)
-
-        for col in affected_columns:
->>>>>>> origin/main
             if col not in df.columns:
                 continue
             series = df[col].values.astype(float)
@@ -268,11 +218,7 @@ class StressScenarioGenerator:
     @staticmethod
     def volatility_spike(
         prices: pd.DataFrame,
-<<<<<<< HEAD
         start_bar: int | None = None,
-=======
-        start_bar: Optional[int] = None,
->>>>>>> origin/main
         duration: int = 20,
         vol_multiplier: float = 3.0,
     ) -> pd.DataFrame:
@@ -322,7 +268,6 @@ class StressTestRunner:
                 default factory that imports and creates one with standard config.
         """
         self._simulator_factory = simulator_factory or self._default_factory
-<<<<<<< HEAD
         self.results: list[StressTestResult] = []
 
     @staticmethod
@@ -333,17 +278,6 @@ class StressTestRunner:
         return StrategyBacktestSimulator(cost_model=CostModel())
 
     def get_default_scenarios(self) -> list[tuple[StressScenario, Callable, dict]]:
-=======
-        self.results: List[StressTestResult] = []
-
-    @staticmethod
-    def _default_factory():
-        from backtests.strategy_simulator import StrategyBacktestSimulator
-        from backtests.cost_model import CostModel
-        return StrategyBacktestSimulator(cost_model=CostModel())
-
-    def get_default_scenarios(self) -> List[Tuple[StressScenario, callable, dict]]:
->>>>>>> origin/main
         """Return the default suite of stress scenarios.
 
         Returns:
@@ -398,15 +332,9 @@ class StressTestRunner:
         self,
         prices_df: pd.DataFrame,
         scenario: StressScenario,
-<<<<<<< HEAD
         generator_func: Callable,
         gen_kwargs: dict,
         fixed_pairs: list | None = None,
-=======
-        generator_func: callable,
-        gen_kwargs: dict,
-        fixed_pairs: Optional[list] = None,
->>>>>>> origin/main
     ) -> StressTestResult:
         """Run a single stress scenario.
 
@@ -470,15 +398,9 @@ class StressTestRunner:
     def run_all_scenarios(
         self,
         prices_df: pd.DataFrame,
-<<<<<<< HEAD
         fixed_pairs: list | None = None,
         scenarios: list[tuple] | None = None,
     ) -> list[StressTestResult]:
-=======
-        fixed_pairs: Optional[list] = None,
-        scenarios: Optional[List[Tuple]] = None,
-    ) -> List[StressTestResult]:
->>>>>>> origin/main
         """Run all default (or custom) scenarios.
 
         Returns:
@@ -494,11 +416,7 @@ class StressTestRunner:
 
         return self.results
 
-<<<<<<< HEAD
     def generate_report(self, results: list[StressTestResult] | None = None) -> dict[str, Any]:
-=======
-    def generate_report(self, results: Optional[List[StressTestResult]] = None) -> Dict[str, Any]:
->>>>>>> origin/main
         """Generate a summary report from stress test results.
 
         Returns:
@@ -516,7 +434,6 @@ class StressTestRunner:
 
         per_scenario = []
         for r in results:
-<<<<<<< HEAD
             per_scenario.append(
                 {
                     "name": r.scenario.name,
@@ -529,18 +446,6 @@ class StressTestRunner:
                     "win_rate": round(r.win_rate, 4),
                 }
             )
-=======
-            per_scenario.append({
-                "name": r.scenario.name,
-                "severity": r.scenario.severity,
-                "survived": r.survived,
-                "total_return": round(r.total_return, 4),
-                "max_drawdown": round(r.max_drawdown, 4),
-                "sharpe_ratio": round(r.sharpe_ratio, 4),
-                "num_trades": r.num_trades,
-                "win_rate": round(r.win_rate, 4),
-            })
->>>>>>> origin/main
 
         report = {
             "total_scenarios": total,

@@ -1,12 +1,7 @@
-<<<<<<< HEAD
 ﻿import os
 
 import pytest
 
-=======
-import pytest
-import os
->>>>>>> origin/main
 from execution.ibkr_engine import IBGatewaySync
 
 
@@ -23,11 +18,7 @@ def test_ibkr_engine_default_params():
     engine = IBGatewaySync()
     # Reads from IBKR_HOST / IBKR_PORT / IBKR_CLIENT_ID env vars (or fallback defaults)
     assert engine.host == os.getenv("IBKR_HOST", "127.0.0.1")
-<<<<<<< HEAD
     assert engine.port == int(os.getenv("IBKR_PORT", "4002"))
-=======
-    assert engine.port == int(os.getenv("IBKR_PORT", "7497"))
->>>>>>> origin/main
     assert engine.client_id == int(os.getenv("IBKR_CLIENT_ID", "1"))
     assert engine.timeout == 30
 

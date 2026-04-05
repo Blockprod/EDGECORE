@@ -1,21 +1,11 @@
-<<<<<<< HEAD
 ﻿"""
 Signal Generator ÔÇö Unified signal generation pipeline.
-=======
-"""
-Signal Generator — Unified signal generation pipeline.
->>>>>>> origin/main
 
 **This is the single entry point for all signal generation.**
 
 Pipeline:
-<<<<<<< HEAD
     Market Data ÔåÆ Spread Model ÔåÆ Z-Score ÔåÆ Adaptive Threshold
     ÔåÆ Regime Filter ÔåÆ Stationarity Check ÔåÆ Signal
-=======
-    Market Data → Spread Model → Z-Score → Adaptive Threshold
-    → Regime Filter → Stationarity Check → Signal
->>>>>>> origin/main
 
 Both backtesting and live trading call ``SignalGenerator.generate()``
 to ensure zero divergence between back-tested and live behavior.
@@ -25,15 +15,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-<<<<<<< HEAD
-=======
 from typing import Dict, List, Optional, Tuple
->>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
 
-<<<<<<< HEAD
 from models.markov_regime import MarkovRegimeDetector
 from models.regime_detector import RegimeDetector, VolatilityRegime
 from models.spread import SpreadModel
@@ -42,14 +28,6 @@ from models.structural_break import StructuralBreakDetector
 from signal_engine.adaptive import AdaptiveThresholdEngine
 from signal_engine.momentum import MomentumOverlay
 from signal_engine.zscore import ZScoreCalculator
-=======
-from models.spread import SpreadModel
-from models.stationarity_monitor import StationarityMonitor
-from models.regime_detector import RegimeDetector, VolatilityRegime
-from signal_engine.zscore import ZScoreCalculator
-from signal_engine.adaptive import AdaptiveThresholdEngine
-from signal_engine.momentum import MomentumOverlay
->>>>>>> origin/main
 
 logger = get_logger(__name__)
 
@@ -58,10 +36,7 @@ logger = get_logger(__name__)
 # Signal data class
 # ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 @dataclass
 class Signal:
     """
@@ -70,11 +45,7 @@ class Signal:
     Attributes:
         pair_key: Pair identifier (e.g. ``AAPL_MSFT``).
         side: ``"long"`` | ``"short"`` | ``"exit"``.
-<<<<<<< HEAD
         strength: Signal confidence 0.0ÔÇô1.0.
-=======
-        strength: Signal confidence 0.0–1.0.
->>>>>>> origin/main
         z_score: Current z-score that triggered the signal.
         entry_threshold: Threshold used for entry decision.
         exit_threshold: Threshold used for exit decision.
@@ -82,10 +53,7 @@ class Signal:
         reason: Human-readable reason string.
         timestamp: Signal generation time.
     """
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     pair_key: str
     side: str
     strength: float
@@ -101,10 +69,7 @@ class Signal:
 # Generator
 # ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 class SignalGenerator:
     """
     Unified signal generation pipeline.
@@ -128,7 +93,6 @@ class SignalGenerator:
 
     def __init__(
         self,
-<<<<<<< HEAD
         zscore_calc: ZScoreCalculator | None = None,
         threshold_engine: AdaptiveThresholdEngine | None = None,
         regime_detector: RegimeDetector | MarkovRegimeDetector | None = None,
@@ -146,30 +110,14 @@ class SignalGenerator:
                 self.regime_detector = MarkovRegimeDetector()
             else:
                 self.regime_detector = RegimeDetector()
-=======
-        zscore_calc: Optional[ZScoreCalculator] = None,
-        threshold_engine: Optional[AdaptiveThresholdEngine] = None,
-        regime_detector: Optional[RegimeDetector] = None,
-        stationarity_monitor: Optional[StationarityMonitor] = None,
-        momentum_overlay: Optional[MomentumOverlay] = None,
-    ):
-        self.zscore_calc = zscore_calc or ZScoreCalculator()
-        self.threshold_engine = threshold_engine or AdaptiveThresholdEngine()
-        self.regime_detector = regime_detector or RegimeDetector()
->>>>>>> origin/main
         self.stationarity_monitor = stationarity_monitor or StationarityMonitor()
         self.momentum_overlay = momentum_overlay  # None = disabled
 
         # Internal state
-<<<<<<< HEAD
         self._spread_models: dict[str, SpreadModel] = {}
         self._spreads: dict[str, pd.Series] = {}
         self._break_detectors: dict[str, StructuralBreakDetector] = {}
         self._current_disp_idx: float | None = None  # C-09: latest dispersion index
-=======
-        self._spread_models: Dict[str, SpreadModel] = {}
-        self._spreads: Dict[str, pd.Series] = {}
->>>>>>> origin/main
 
     # ------------------------------------------------------------------
     # Public API
@@ -178,15 +126,9 @@ class SignalGenerator:
     def generate(
         self,
         market_data: pd.DataFrame,
-<<<<<<< HEAD
         active_pairs: list[tuple[str, str, float, float]],
         active_positions: dict[str, dict] | None = None,
     ) -> list[Signal]:
-=======
-        active_pairs: List[Tuple[str, str, float, float]],
-        active_positions: Optional[Dict[str, dict]] = None,
-    ) -> List[Signal]:
->>>>>>> origin/main
         """
         Generate trading signals for all active pairs.
 
@@ -202,7 +144,6 @@ class SignalGenerator:
         if active_positions is None:
             active_positions = {}
 
-<<<<<<< HEAD
         # C-09: Evict spread models for pairs no longer active.
         # Prevents unbounded memory growth on long-running bots with pair rotation.
         active_keys = {f"{s1}_{s2}" for s1, s2, *_ in active_pairs}
@@ -243,16 +184,12 @@ class SignalGenerator:
                         )
         except Exception:
             pass  # Never break signal generation for the dispersion filter
-=======
-        signals: List[Signal] = []
->>>>>>> origin/main
 
         for sym1, sym2, _pval, hl in active_pairs:
             pair_key = f"{sym1}_{sym2}"
 
             try:
                 sig = self._process_pair(
-<<<<<<< HEAD
                     pair_key,
                     sym1,
                     sym2,
@@ -263,12 +200,6 @@ class SignalGenerator:
                 if sig is not None:
                     if _block_entries and sig.side in ("long", "short"):
                         continue  # C-02: dispersion filter blocked entry
-=======
-                    pair_key, sym1, sym2, hl,
-                    market_data, active_positions,
-                )
-                if sig is not None:
->>>>>>> origin/main
                     signals.append(sig)
             except Exception as exc:
                 logger.error(
@@ -291,19 +222,11 @@ class SignalGenerator:
         sym2: str,
         half_life: float,
         market_data: pd.DataFrame,
-<<<<<<< HEAD
         active_positions: dict[str, dict],
     ) -> Signal | None:
         """Run the full signal pipeline for a single pair."""
         y = pd.Series(market_data[sym1])
         x = pd.Series(market_data[sym2])
-=======
-        active_positions: Dict[str, dict],
-    ) -> Optional[Signal]:
-        """Run the full signal pipeline for a single pair."""
-        y = market_data[sym1]
-        x = market_data[sym2]
->>>>>>> origin/main
 
         # 1. Re-use existing spread model to preserve Kalman state;
         #    only create a new one if the pair is seen for the first time.
@@ -319,15 +242,9 @@ class SignalGenerator:
         self._spreads[pair_key] = spread
 
         # 3. Stationarity check
-<<<<<<< HEAD
         is_stationary, adf_pval = self.stationarity_monitor.check(spread, pair_key=pair_key)
         if not is_stationary:
             # If holding a position in a non-stationary spread ÔåÆ exit
-=======
-        is_stationary, adf_pval = self.stationarity_monitor.check(spread)
-        if not is_stationary:
-            # If holding a position in a non-stationary spread → exit
->>>>>>> origin/main
             if pair_key in active_positions:
                 return Signal(
                     pair_key=pair_key,
@@ -336,7 +253,6 @@ class SignalGenerator:
                     reason=f"Stationarity lost (ADF p={adf_pval:.3f})",
                 )
             return None
-<<<<<<< HEAD
         # 3b. Structural break check (CUSUM + recursive β stability)
         if pair_key not in self._break_detectors:
             self._break_detectors[pair_key] = StructuralBreakDetector()
@@ -354,9 +270,6 @@ class SignalGenerator:
                     ),
                 )
             return None
-=======
-
->>>>>>> origin/main
         # 4. Z-score
         z_series = self.zscore_calc.compute(spread, half_life=half_life)
         current_z = float(z_series.iloc[-1])
@@ -374,7 +287,6 @@ class SignalGenerator:
             regime=regime,
         )
 
-<<<<<<< HEAD
         # 6b. C-09: Dispersion-adaptive threshold ramp
         try:
             if self._current_disp_idx is not None:
@@ -390,9 +302,6 @@ class SignalGenerator:
                 )
         except Exception:
             pass  # Never break signal generation for dispersion threshold adj
-=======
-        # 7. Signal logic
->>>>>>> origin/main
         in_position = pair_key in active_positions
 
         # EXIT signal (mean reversion reached)
@@ -470,19 +379,11 @@ class SignalGenerator:
     # Accessors
     # ------------------------------------------------------------------
 
-<<<<<<< HEAD
     def get_spread(self, pair_key: str) -> pd.Series | None:
         """Return the latest spread series for a pair."""
         return self._spreads.get(pair_key)
 
     def get_spread_model(self, pair_key: str) -> SpreadModel | None:
-=======
-    def get_spread(self, pair_key: str) -> Optional[pd.Series]:
-        """Return the latest spread series for a pair."""
-        return self._spreads.get(pair_key)
-
-    def get_spread_model(self, pair_key: str) -> Optional[SpreadModel]:
->>>>>>> origin/main
         """Return the spread model for a pair."""
         return self._spread_models.get(pair_key)
 

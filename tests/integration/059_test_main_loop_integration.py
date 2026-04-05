@@ -1,24 +1,12 @@
 ﻿#!/usr/bin/env python
 """Integration tests for main.py trading loop."""
 
-<<<<<<< HEAD
 from datetime import datetime
 from unittest.mock import Mock, patch
 
 import numpy as np
 import pandas as pd
 
-=======
-import pandas as pd
-import numpy as np
-from datetime import datetime
-from unittest.mock import Mock, patch
-from main import _load_market_data_for_symbols, _close_all_positions
-from risk.engine import RiskEngine, Position
-from execution.ibkr_engine import IBGatewaySync
-from execution.base import Order, OrderSide, BaseExecutionEngine
-from data.loader import DataLoader
->>>>>>> origin/main
 from config.settings import get_settings
 from data.loader import DataLoader
 from execution.base import BaseExecutionEngine, Order, OrderSide
@@ -36,7 +24,6 @@ class TestLoadMarketData:
 
         # Build a realistic OHLCV DataFrame the loader would return
         n = 100
-<<<<<<< HEAD
         dates = pd.date_range("2024-01-01", periods=n, freq="1h")
         close = np.linspace(175.0, 180.0, n)
         mock_df = pd.DataFrame(
@@ -52,44 +39,18 @@ class TestLoadMarketData:
 
         with patch.object(loader, "load_ibkr_data", return_value=mock_df):
             prices = _load_market_data_for_symbols(symbols=["AAPL"], loader=loader, settings=settings)
-=======
-        dates = pd.date_range('2024-01-01', periods=n, freq='1h')
-        close = np.linspace(175.0, 180.0, n)
-        mock_df = pd.DataFrame({
-            'open': close * 0.999,
-            'high': close * 1.002,
-            'low': close * 0.998,
-            'close': close,
-            'volume': np.full(n, 500_000.0),
-        }, index=dates)
-
-        with patch.object(loader, 'load_ibkr_data', return_value=mock_df):
-            prices = _load_market_data_for_symbols(
-                symbols=['AAPL'],
-                loader=loader,
-                settings=settings
-            )
->>>>>>> origin/main
 
             assert isinstance(prices, dict), "Should return dict"
             assert len(prices) == 1, "Should have one symbol loaded"
             for symbol, price_series in prices.items():
                 assert isinstance(symbol, str), "Keys should be symbols"
                 assert isinstance(price_series, pd.Series), "Values should be Series"
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def test_load_market_data_validates_staleness(self):
         """_load_market_data_for_symbols validates data staleness."""
         get_settings()
         DataLoader()
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # The function should call OHLCVValidator with max_age_hours
         # We verify this by checking the code structure
         import inspect
@@ -108,11 +69,7 @@ class TestCloseAllPositions:
         """Closing no positions succeeds silently."""
         risk_engine = RiskEngine(initial_equity=100000.0)
         execution_engine = Mock(spec=BaseExecutionEngine)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Should not raise
         _close_all_positions(risk_engine, execution_engine, {})
 
@@ -132,19 +89,11 @@ class TestCloseAllPositions:
             entry_price=175.0,
             quantity=100.0,
             side="long",
-<<<<<<< HEAD
             marked_price=180.0,
         )
 
         positions = {"AAPL": position}
 
-=======
-            marked_price=180.0
-        )
-        
-        positions = {"AAPL": position}
-        
->>>>>>> origin/main
         _close_all_positions(risk_engine, execution_engine, positions)
 
         # Should submit exactly 1 order
@@ -153,19 +102,11 @@ class TestCloseAllPositions:
         # Check order details
         call_args = execution_engine.submit_order.call_args
         order = call_args[0][0]  # First positional argument
-<<<<<<< HEAD
 
         assert order.symbol == "AAPL"
         assert order.side == OrderSide.SELL, "Closing long should SELL"
         assert order.quantity == 100.0
 
-=======
-        
-        assert order.symbol == "AAPL"
-        assert order.side == OrderSide.SELL, "Closing long should SELL"
-        assert order.quantity == 100.0
-    
->>>>>>> origin/main
     def test_close_all_positions_short(self):
         """Short position closes with BUY order."""
         risk_engine = RiskEngine(initial_equity=100000.0)
@@ -179,19 +120,11 @@ class TestCloseAllPositions:
             entry_price=420.0,
             quantity=50.0,
             side="short",
-<<<<<<< HEAD
             marked_price=415.0,
         )
 
         positions = {"MSFT": position}
 
-=======
-            marked_price=415.0
-        )
-        
-        positions = {"MSFT": position}
-        
->>>>>>> origin/main
         _close_all_positions(risk_engine, execution_engine, positions)
 
         # Should submit exactly 1 order
@@ -200,19 +133,11 @@ class TestCloseAllPositions:
         # Check order details
         call_args = execution_engine.submit_order.call_args
         order = call_args[0][0]
-<<<<<<< HEAD
 
         assert order.symbol == "MSFT"
         assert order.side == OrderSide.BUY, "Closing short should BUY"
         assert order.quantity == 50.0
 
-=======
-        
-        assert order.symbol == "MSFT"
-        assert order.side == OrderSide.BUY, "Closing short should BUY"
-        assert order.quantity == 50.0
-    
->>>>>>> origin/main
     def test_close_all_positions_multiple(self):
         """Multiple positions all close."""
         risk_engine = RiskEngine(initial_equity=100000.0)
@@ -227,11 +152,7 @@ class TestCloseAllPositions:
                 entry_price=175.0,
                 quantity=100.0,
                 side="long",
-<<<<<<< HEAD
                 marked_price=180.0,
-=======
-                marked_price=180.0
->>>>>>> origin/main
             ),
             "MSFT": Position(
                 symbol_pair="MSFT",
@@ -239,11 +160,7 @@ class TestCloseAllPositions:
                 entry_price=420.0,
                 quantity=50.0,
                 side="short",
-<<<<<<< HEAD
                 marked_price=415.0,
-=======
-                marked_price=415.0
->>>>>>> origin/main
             ),
             "JPM": Position(
                 symbol_pair="JPM",
@@ -251,13 +168,8 @@ class TestCloseAllPositions:
                 entry_price=200.0,
                 quantity=200.0,
                 side="long",
-<<<<<<< HEAD
                 marked_price=205.0,
             ),
-=======
-                marked_price=205.0
-            )
->>>>>>> origin/main
         }
 
         _close_all_positions(risk_engine, execution_engine, positions)
@@ -267,13 +179,8 @@ class TestCloseAllPositions:
 
 
 class TestSignalToExecutionPath:
-<<<<<<< HEAD
     """Test signal Ôåô risk check Ôåô order submission pipeline."""
 
-=======
-    """Test signal ↓ risk check ↓ order submission pipeline."""
-    
->>>>>>> origin/main
     def test_risk_check_rejects_overleveraged_trade(self):
         """Risk engine rejects over-leveraged trades."""
         risk_engine = RiskEngine(initial_equity=100000.0)
@@ -299,14 +206,7 @@ class TestSignalToExecutionPath:
 
         # Reasonable position size
         can_enter, reason = risk_engine.can_enter_trade(
-<<<<<<< HEAD
             symbol_pair="AAPL", position_size=1.0, current_equity=100000.0, volatility=0.02
-=======
-            symbol_pair="AAPL",
-            position_size=1.0,
-            current_equity=100000.0,
-            volatility=0.02
->>>>>>> origin/main
         )
 
         assert can_enter is True, f"Should accept reasonable trade: {reason}"
@@ -314,19 +214,8 @@ class TestSignalToExecutionPath:
     def test_order_submission_creates_order(self):
         """Order submission creates Order object correctly."""
         # Create order
-<<<<<<< HEAD
         order = Order(order_id="test_order_123", symbol="AAPL", side=OrderSide.BUY, quantity=100.0, limit_price=175.0)
 
-=======
-        order = Order(
-            order_id="test_order_123",
-            symbol="AAPL",
-            side=OrderSide.BUY,
-            quantity=100.0,
-            limit_price=175.0
-        )
-        
->>>>>>> origin/main
         # Verify order structure
         assert order.order_id == "test_order_123"
         assert order.symbol == "AAPL"

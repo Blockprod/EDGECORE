@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿from unittest.mock import patch
 
 import numpy as np
@@ -10,25 +9,12 @@ from config.settings import get_settings
 from data.loader import DataLoader
 from risk.engine import RiskEngine
 from strategies.pair_trading import PairTradingStrategy
-=======
-import pytest
-import pandas as pd
-import numpy as np
-from unittest.mock import patch
-
-from data.loader import DataLoader
-from strategies.pair_trading import PairTradingStrategy
-from risk.engine import RiskEngine
-from backtests.runner import BacktestRunner
-from config.settings import get_settings
->>>>>>> origin/main
 
 
 def _make_ohlcv_df(n, base_price=175.0, symbol="AAPL"):
     """Helper: create a realistic OHLCV DataFrame for IBKR-style data."""
     dates = pd.date_range("2021-01-01", periods=n, freq="D")
     prices = np.linspace(base_price, base_price * 1.1, n) + np.random.randn(n) * 0.5
-<<<<<<< HEAD
     df = pd.DataFrame(
         {
             "Open": prices * 0.99,
@@ -41,15 +27,6 @@ def _make_ohlcv_df(n, base_price=175.0, symbol="AAPL"):
     )
     df.attrs["symbol"] = symbol
     return df
-=======
-    return pd.DataFrame({
-        "Open": prices * 0.99,
-        "High": prices * 1.01,
-        "Low": prices * 0.98,
-        "Close": prices,
-        "Volume": np.full(n, 1_000_000),
-    }, index=dates)
->>>>>>> origin/main
 
 
 class TestEndToEndPipeline:
@@ -69,11 +46,7 @@ class TestEndToEndPipeline:
             assert len(df) == n
             assert "Close" in df.columns or "close" in df.columns
             close_col = "Close" if "Close" in df.columns else "close"
-<<<<<<< HEAD
             assert not pd.Series(df[close_col]).isna().to_numpy().all()
-=======
-            assert not df[close_col].isna().all()
->>>>>>> origin/main
 
     def test_strategy_signal_generation_pipeline(self):
         """Test data loading  signal generation."""
@@ -84,19 +57,12 @@ class TestEndToEndPipeline:
         t = np.linspace(0, 10, n)
         trend = 100 + 0.5 * t
 
-<<<<<<< HEAD
         prices = pd.DataFrame(
             {
                 "AAPL": trend + np.sin(0.1 * t) * 5 + np.random.randn(n),
                 "MSFT": trend * 1.5 + np.sin(0.1 * t) * 7 + np.random.randn(n),
             }
         )
-=======
-        prices = pd.DataFrame({
-            "AAPL": trend + np.sin(0.1 * t) * 5 + np.random.randn(n),
-            "MSFT": trend * 1.5 + np.sin(0.1 * t) * 7 + np.random.randn(n),
-        })
->>>>>>> origin/main
 
         signals = strategy.generate_signals(prices)
         assert isinstance(signals, list)
@@ -108,34 +74,19 @@ class TestEndToEndPipeline:
 
         np.random.seed(42)
         n = 100
-<<<<<<< HEAD
         prices = pd.DataFrame(
             {
                 "AAPL": np.linspace(170, 185, n) + np.random.randn(n) * 2,
                 "MSFT": np.linspace(410, 430, n) + np.random.randn(n) * 3,
             }
         )
-=======
-        prices = pd.DataFrame({
-            "AAPL": np.linspace(170, 185, n) + np.random.randn(n) * 2,
-            "MSFT": np.linspace(410, 430, n) + np.random.randn(n) * 3,
-        })
->>>>>>> origin/main
 
         signals = strategy.generate_signals(prices)
 
         equity = 100000
         for signal in signals[:5]:
-<<<<<<< HEAD
             can_enter, _reason = risk_engine.can_enter_trade(
                 symbol_pair=signal.symbol_pair, position_size=10.0, current_equity=equity, volatility=0.02
-=======
-            can_enter, reason = risk_engine.can_enter_trade(
-                symbol=signal.symbol_pair,
-                position_size=10.0,
-                current_equity=equity,
-                volatility=0.02
->>>>>>> origin/main
             )
             assert isinstance(can_enter, bool)
 
@@ -151,15 +102,7 @@ class TestEndToEndPipeline:
             msft = np.linspace(410, 430, n) + np.random.randn(n) * 3
             mock_load.return_value = pd.DataFrame({"AAPL": aapl, "MSFT": msft}, index=dates)
 
-<<<<<<< HEAD
             metrics = runner.run_unified(symbols=["AAPL", "MSFT"], start_date="2021-01-01", end_date="2021-04-10")
-=======
-            metrics = runner.run_unified(
-                symbols=["AAPL", "MSFT"],
-                start_date="2021-01-01",
-                end_date="2021-04-10"
-            )
->>>>>>> origin/main
             if metrics is not None:
                 assert hasattr(metrics, "total_return") or isinstance(metrics, dict)
 
@@ -188,7 +131,6 @@ class TestEndToEndPipeline:
         np.random.seed(42)
         n = 150
 
-<<<<<<< HEAD
         prices = pd.DataFrame(
             {
                 "AAPL": np.linspace(170, 185, n) + np.random.randn(n) * 1,
@@ -196,13 +138,6 @@ class TestEndToEndPipeline:
                 "JPM": np.linspace(195, 210, n) + np.random.randn(n) * 0.5,
             }
         )
-=======
-        prices = pd.DataFrame({
-            "AAPL": np.linspace(170, 185, n) + np.random.randn(n) * 1,
-            "MSFT": np.linspace(410, 430, n) + np.random.randn(n) * 2,
-            "JPM":  np.linspace(195, 210, n) + np.random.randn(n) * 0.5,
-        })
->>>>>>> origin/main
 
         strategy = PairTradingStrategy()
 
@@ -226,15 +161,7 @@ class TestEndToEndPipeline:
         runner = BacktestRunner()
 
         with pytest.raises(Exception):
-<<<<<<< HEAD
             runner.run_unified(symbols=["INVALID_SYMBOL"], start_date="2023-01-01", end_date="2023-01-02")
-=======
-            runner.run_unified(
-                symbols=["INVALID_SYMBOL"],
-                start_date="2023-01-01",
-                end_date="2023-01-02"
-            )
->>>>>>> origin/main
 
     def test_pipeline_performance_metrics(self):
         """Test that pipeline produces meaningful performance metrics."""
@@ -250,15 +177,7 @@ class TestEndToEndPipeline:
             dates = pd.date_range("2021-01-01", periods=n, freq="D")
             mock_load.return_value = pd.DataFrame({"AAPL": prices_a, "MSFT": prices_b}, index=dates)
 
-<<<<<<< HEAD
             metrics = runner.run_unified(symbols=["AAPL", "MSFT"], start_date="2021-01-01", end_date="2021-04-10")
-=======
-            metrics = runner.run_unified(
-                symbols=["AAPL", "MSFT"],
-                start_date="2021-01-01",
-                end_date="2021-04-10"
-            )
->>>>>>> origin/main
             if metrics is not None:
                 assert isinstance(metrics.total_return, float)
                 assert isinstance(metrics.sharpe_ratio, float)
@@ -281,17 +200,8 @@ class TestIntegrationWithMockData:
 
             assert len(df) == n
             close_col = "Close" if "Close" in df.columns else "close"
-<<<<<<< HEAD
             assert not pd.Series(df[close_col]).isna().to_numpy().all()
 
             strategy = PairTradingStrategy()
             signals = strategy.generate_signals(pd.DataFrame({"AAPL": df[close_col].values}))
-=======
-            assert not df[close_col].isna().all()
-
-            strategy = PairTradingStrategy()
-            signals = strategy.generate_signals(
-                pd.DataFrame({"AAPL": df[close_col].values})
-            )
->>>>>>> origin/main
             assert isinstance(signals, list)

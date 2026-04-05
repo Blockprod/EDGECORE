@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 ﻿## S2.3: Trailing Stop Implementation
 
 **Status: Ô£à COMPLETE**
-=======
-## S2.3: Trailing Stop Implementation
-
-**Status: ✅ COMPLETE**
->>>>>>> origin/main
 
 ### Problem Statement
 
@@ -19,44 +13,26 @@ Example:
 - Entry at Z-score = 2.2 (spread significantly above mean)
 - Expecting: reversion toward Z=0
 - Reality: spread widens further to Z=3.8, then Z=4.5
-<<<<<<< HEAD
 - Damage: -2.3¤â loss before position is exited
-=======
-- Damage: -2.3σ loss before position is exited
->>>>>>> origin/main
 - Result: Tail loss destroys month of gains
 
 ### Solution: Trailing Stops Based on Z-Score Widening
 
-<<<<<<< HEAD
 Exit positions if spread widens by more than 1.0¤â from entry:
-=======
-Exit positions if spread widens by more than 1.0σ from entry:
->>>>>>> origin/main
 
 ```
 Entry Z-score:    |entry_z|
 Current Z-score:  |current_z|
 Widening:         |current_z| - |entry_z|
 
-<<<<<<< HEAD
 IF widening > 1.0¤â ÔåÆ EXIT (mean reversion has failed)
-=======
-IF widening > 1.0σ → EXIT (mean reversion has failed)
->>>>>>> origin/main
 ```
 
 **Rationale:**
 - Z-score measures deviation from mean in standard deviations
-<<<<<<< HEAD
 - 1.0¤â widening = significant deterioration from entry point
 - Protects against regime shifts and broken relationships
 - Tighter alternative: 0.3¤â trailing stop once position is profitable
-=======
-- 1.0σ widening = significant deterioration from entry point
-- Protects against regime shifts and broken relationships
-- Tighter alternative: 0.3σ trailing stop once position is profitable
->>>>>>> origin/main
 
 ### Implementation Summary
 
@@ -127,15 +103,9 @@ IF widening > 1.0σ → EXIT (mean reversion has failed)
 8. **Edge Cases** (3 tests)
    - Zero widening at same Z-score
    - Movement toward zero (shouldn't trigger)
-<<<<<<< HEAD
    - Very tight threshold (0.2¤â)
 
 **Test Results:** Ô£à 24/24 PASSED (3.72s)
-=======
-   - Very tight threshold (0.2σ)
-
-**Test Results:** ✅ 24/24 PASSED (3.72s)
->>>>>>> origin/main
 
 ### Core Features
 
@@ -149,11 +119,7 @@ add_position(symbol_pair, side, entry_z, entry_spread, entry_time)
 
 # Check if should exit (main logic)
 should_exit_on_trailing_stop(symbol_pair, current_z)
-<<<<<<< HEAD
 ÔåÆ Returns (should_exit: bool, exit_reason: str or None)
-=======
-→ Returns (should_exit: bool, exit_reason: str or None)
->>>>>>> origin/main
 
 # Tighter stop for profitable positions
 should_exit_on_tight_trailing_stop(symbol_pair, current_z, profit_threshold)
@@ -168,11 +134,7 @@ get_summary()
 
 **Parameters:**
 ```python
-<<<<<<< HEAD
 widening_threshold: float = 1.0    # Exit if widens by 1¤â
-=======
-widening_threshold: float = 1.0    # Exit if widens by 1σ
->>>>>>> origin/main
 track_max_profit: bool = True      # Track best P&L per position
 ```
 
@@ -182,17 +144,10 @@ track_max_profit: bool = True      # Track best P&L per position
 widening = |current_z| - |entry_z|
 
 Examples:
-<<<<<<< HEAD
 - Entry: Z=+2.2, Current: Z=+3.8 ÔåÆ widening = 1.6¤â ÔåÆ EXIT
 - Entry: Z=-1.8, Current: Z=-3.2 ÔåÆ widening = 1.4¤â ÔåÆ EXIT
 - Entry: Z=+2.2, Current: Z=+1.8 ÔåÆ widening = -0.4¤â (tightening) ÔåÆ HOLD
 - Entry: Z=+2.2, Current: Z=+2.8 ÔåÆ widening = +0.6¤â < 1.0¤â ÔåÆ HOLD
-=======
-- Entry: Z=+2.2, Current: Z=+3.8 → widening = 1.6σ → EXIT
-- Entry: Z=-1.8, Current: Z=-3.2 → widening = 1.4σ → EXIT
-- Entry: Z=+2.2, Current: Z=+1.8 → widening = -0.4σ (tightening) → HOLD
-- Entry: Z=+2.2, Current: Z=+2.8 → widening = +0.6σ < 1.0σ → HOLD
->>>>>>> origin/main
 ```
 
 ### Integration with PairTradingStrategy
@@ -200,11 +155,7 @@ Examples:
 **Entry Flow:**
 ```
 generate_signals()
-<<<<<<< HEAD
   Ôåô
-=======
-  ↓
->>>>>>> origin/main
 For each cointegrated pair:
   - Compute spread and Z-score
   - IF entry signal:
@@ -215,19 +166,11 @@ For each cointegrated pair:
 **Monitoring Flow:**
 ```
 generate_signals()
-<<<<<<< HEAD
   Ôåô
 For each cointegrated pair with active position:
   - Compute current Z-score
   - Check: trailing_stop_manager.should_exit_on_trailing_stop()
   - IF widening > 1.0¤â:
-=======
-  ↓
-For each cointegrated pair with active position:
-  - Compute current Z-score
-  - Check: trailing_stop_manager.should_exit_on_trailing_stop()
-  - IF widening > 1.0σ:
->>>>>>> origin/main
     - Generate EXIT signal
     - Log "trailing_stop_triggered"
     - Remove position from tracking
@@ -272,23 +215,15 @@ Trailing stop: Never triggered (no widening)
 ```
 Entry:    Z = 2.2 (long signal)
 Day 2:    Z = 2.5 (slight widening, OK)
-<<<<<<< HEAD
 Day 3:    Z = 3.0 (widening 0.8¤â, still OK)
 Day 4:    Z = 3.3 (widening 1.1¤â > threshold!)
 Result:   TRAILING STOP TRIGGERED, exit at loss
 Loss:     Limited to ~1¤â instead of 2-3¤â further widening
-=======
-Day 3:    Z = 3.0 (widening 0.8σ, still OK)
-Day 4:    Z = 3.3 (widening 1.1σ > threshold!)
-Result:   TRAILING STOP TRIGGERED, exit at loss
-Loss:     Limited to ~1σ instead of 2-3σ further widening
->>>>>>> origin/main
 ```
 
 **Scenario 3: Multiple Positions with Selective Trailing Stops**
 ```
 Position 1 (AAPL_MSFT): Entry Z=2.0, Current Z=3.2
-<<<<<<< HEAD
   ÔåÆ Widening = 1.2¤â > 1.0¤â ÔåÆ TRIGGER STOP
   
 Position 2 (GLD_SLV): Entry Z=-1.8, Current Z=-2.1
@@ -296,15 +231,6 @@ Position 2 (GLD_SLV): Entry Z=-1.8, Current Z=-2.1
   
 Position 3 (EWA_EWC): Entry Z=2.5, Current Z=1.2
   ÔåÆ Widening = -1.3¤â (negative), moving toward 0 ÔåÆ HOLD
-=======
-  → Widening = 1.2σ > 1.0σ → TRIGGER STOP
-  
-Position 2 (GLD_SLV): Entry Z=-1.8, Current Z=-2.1
-  → Widening = 0.3σ < 1.0σ → HOLD
-  
-Position 3 (EWA_EWC): Entry Z=2.5, Current Z=1.2
-  → Widening = -1.3σ (negative), moving toward 0 → HOLD
->>>>>>> origin/main
 ```
 
 ### Validation

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿# C++ Acceleration Integration Guide
-=======
-# C++ Acceleration Integration Guide
->>>>>>> origin/main
 
 ## Overview
 
@@ -14,21 +10,12 @@ EDGECORE now intelligently uses compiled C++ modules for computationally intensi
 
 ```
 Python Layer (High-level orchestration)
-<<<<<<< HEAD
     Ôåô
 C++ Acceleration Layer (Hot-path operations)
     Ôö£ÔöÇ Cointegration Testing (10x speedup)
     Ôö£ÔöÇ Backtest Engine (7x speedup)
     ÔööÔöÇ Matrix Operations (20x speedup)
     Ôåô
-=======
-    ↓
-C++ Acceleration Layer (Hot-path operations)
-    ├─ Cointegration Testing (10x speedup)
-    ├─ Backtest Engine (7x speedup)
-    └─ Matrix Operations (20x speedup)
-    ↓
->>>>>>> origin/main
 Fallback Layer (Pure Python when C++ unavailable)
 ```
 
@@ -90,7 +77,6 @@ Test Setup: 119 symbols = 7,021 pair combinations to test
 History: 252 trading days per pair
 
 Pure Python:
-<<<<<<< HEAD
   Ôö£ÔöÇ Cointegration testing: ~175 seconds
   Ôö£ÔöÇ Matrix ops: ~25 seconds
   ÔööÔöÇ Total: ~210 seconds
@@ -101,18 +87,6 @@ With C++ Acceleration:
   ÔööÔöÇ Total: ~35 seconds (-83% improvement)
 
 Real speedup: 6x overall (210s ÔåÆ 35s)
-=======
-  ├─ Cointegration testing: ~175 seconds
-  ├─ Matrix ops: ~25 seconds
-  └─ Total: ~210 seconds
-
-With C++ Acceleration:
-  ├─ Cointegration testing: ~15 seconds (10x faster)
-  ├─ Matrix ops: ~1 second (20x faster)
-  └─ Total: ~35 seconds (-83% improvement)
-
-Real speedup: 6x overall (210s → 35s)
->>>>>>> origin/main
 ```
 
 ### Benchmark Results
@@ -257,15 +231,9 @@ If Fallback:
 from models.cointegration import CPP_COINTEGRATION_AVAILABLE
 
 if CPP_COINTEGRATION_AVAILABLE:
-<<<<<<< HEAD
     print("Ô£ô C++ acceleration active (10x speedup)")
 else:
     print("ÔÜá C++ acceleration not available (using Python)")
-=======
-    print("✓ C++ acceleration active (10x speedup)")
-else:
-    print("⚠ C++ acceleration not available (using Python)")
->>>>>>> origin/main
 ```
 
 ## Future Enhancements
@@ -319,11 +287,7 @@ cd build && make clean && cmake .. && make
 python -c "import struct; print(struct.calcsize('P') * 8)"  # Should be 64
 
 # Build must match:
-<<<<<<< HEAD
 # python is 64-bit ÔåÆ cmake must produce 64-bit .pyd
-=======
-# python is 64-bit → cmake must produce 64-bit .pyd
->>>>>>> origin/main
 ```
 
 ### CMake Not Found
@@ -360,10 +324,6 @@ With C++ acceleration:
 
 ---
 
-<<<<<<< HEAD
 **Status:** Ô£à Cointegration testing C++ acceleration active  
-=======
-**Status:** ✅ Cointegration testing C++ acceleration active  
->>>>>>> origin/main
 **Last Updated:** February 12, 2026  
 **Maintained By:** EDGECORE Development Team

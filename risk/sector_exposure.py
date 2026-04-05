@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Phase 2.2 ÔÇö Sector Exposure Monitor.
-=======
-"""
-Phase 2.2 — Sector Exposure Monitor.
->>>>>>> origin/main
 
 Tracks aggregate notional exposure per sector and enforces hard limits.
 Prevents the portfolio from becoming implicitly concentrated in a single
@@ -15,10 +10,7 @@ correlation. This module handles the *aggregate* sector dimension.
 """
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Dict, Optional, Tuple
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -58,13 +50,8 @@ class SectorExposureMonitor:
 
     def __init__(
         self,
-<<<<<<< HEAD
         sector_map: dict[str, str] | None = None,
         config: SectorExposureConfig | None = None,
-=======
-        sector_map: Optional[Dict[str, str]] = None,
-        config: Optional[SectorExposureConfig] = None,
->>>>>>> origin/main
     ):
         self.config = config or SectorExposureConfig()
         self._sector_map = sector_map or {}
@@ -74,11 +61,7 @@ class SectorExposureMonitor:
             max_positions=self.config.max_sector_positions,
         )
 
-<<<<<<< HEAD
     def set_sector_map(self, sector_map: dict[str, str]) -> None:
-=======
-    def set_sector_map(self, sector_map: Dict[str, str]) -> None:
->>>>>>> origin/main
         """Update the symbol-to-sector mapping."""
         self._sector_map = sector_map
 
@@ -87,13 +70,8 @@ class SectorExposureMonitor:
         pair_key: str,
         new_notional: float,
         portfolio_value: float,
-<<<<<<< HEAD
         positions: dict[str, dict],
     ) -> tuple[bool, str | None]:
-=======
-        positions: Dict[str, dict],
-    ) -> Tuple[bool, Optional[str]]:
->>>>>>> origin/main
         """Check if adding this pair would breach sector limits.
 
         A pair trade has two legs (one per symbol). Each leg contributes
@@ -124,11 +102,7 @@ class SectorExposureMonitor:
         per_leg = new_notional / 2.0
 
         # Accumulate added notional per sector
-<<<<<<< HEAD
         added_per_sector: dict[str, float] = {}
-=======
-        added_per_sector: Dict[str, float] = {}
->>>>>>> origin/main
         for sym, sec in sym_sectors.items():
             added_per_sector[sec] = added_per_sector.get(sec, 0.0) + per_leg
 
@@ -157,14 +131,7 @@ class SectorExposureMonitor:
             # Position count check
             cur_count = sector_count.get(sector, 0)
             if cur_count >= self.config.max_sector_positions:
-<<<<<<< HEAD
                 reason = f"SECTOR_LIMIT: {sector} has {cur_count} positions (max {self.config.max_sector_positions})"
-=======
-                reason = (
-                    f"SECTOR_LIMIT: {sector} has {cur_count} positions "
-                    f"(max {self.config.max_sector_positions})"
-                )
->>>>>>> origin/main
                 logger.info(
                     "entry_rejected_sector_position_count",
                     pair=pair_key,
@@ -178,15 +145,9 @@ class SectorExposureMonitor:
 
     def get_exposure_report(
         self,
-<<<<<<< HEAD
         positions: dict[str, dict],
         portfolio_value: float,
     ) -> dict[str, dict[str, float]]:
-=======
-        positions: Dict[str, dict],
-        portfolio_value: float,
-    ) -> Dict[str, Dict[str, float]]:
->>>>>>> origin/main
         """Return per-sector exposure summary.
 
         Returns:
@@ -203,23 +164,12 @@ class SectorExposureMonitor:
             }
         return report
 
-<<<<<<< HEAD
     def _compute_sector_stats(self, positions: dict[str, dict]) -> tuple[dict[str, float], dict[str, int]]:
         """Aggregate notional and position count per sector."""
         sector_notional: dict[str, float] = {}
         sector_count: dict[str, int] = {}
 
         for _pair_key, pos in positions.items():
-=======
-    def _compute_sector_stats(
-        self, positions: Dict[str, dict]
-    ) -> Tuple[Dict[str, float], Dict[str, int]]:
-        """Aggregate notional and position count per sector."""
-        sector_notional: Dict[str, float] = {}
-        sector_count: Dict[str, int] = {}
-
-        for pair_key, pos in positions.items():
->>>>>>> origin/main
             sym1, sym2 = pos.get("sym1", ""), pos.get("sym2", "")
             notional = pos.get("notional", 0.0)
 

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Phase 0.4 ��� Short Borrow Availability Check.
-=======
-"""
-Phase 0.4 – Short Borrow Availability Check.
->>>>>>> origin/main
 
 Backtest mode:
     Uses a known HTB (hard-to-borrow) symbol list with typical borrow-fee
@@ -20,12 +15,7 @@ Both modes enforce:
     - Maximum acceptable borrow fee (default 3% annualised)
 """
 
-<<<<<<< HEAD
 from dataclasses import dataclass
-=======
-from dataclasses import dataclass, field
-from typing import Dict, Optional, Set
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -35,25 +25,17 @@ logger = get_logger(__name__)
 @dataclass
 class BorrowCheckerConfig:
     """Configuration for short-borrow availability checking."""
-<<<<<<< HEAD
 
     max_borrow_fee_pct: float = 3.0  # reject if annual fee > 3%
     min_shortable_shares: int = 1_000  # minimum shares available
     htb_borrow_fee_pct: float = 5.0  # assumed fee for known HTB symbols
     default_borrow_fee_pct: float = 0.5  # general collateral (ETB) rate
-=======
-    max_borrow_fee_pct: float = 3.0        # reject if annual fee > 3%
-    min_shortable_shares: int = 1_000      # minimum shares available
-    htb_borrow_fee_pct: float = 5.0        # assumed fee for known HTB symbols
-    default_borrow_fee_pct: float = 0.5    # general collateral (ETB) rate
->>>>>>> origin/main
     enabled: bool = True
 
 
 # Symbols historically known to be Hard-To-Borrow or frequently on
 # the SHO threshold list.  This is a conservative static list for
 # backtesting only; live trading should use real-time IBKR data.
-<<<<<<< HEAD
 _KNOWN_HTB_SYMBOLS: set[str] = {
     "GME",
     "AMC",
@@ -72,12 +54,6 @@ _KNOWN_HTB_SYMBOLS: set[str] = {
     "SNDL",
     "TLRY",
     "BYND",
-=======
-_KNOWN_HTB_SYMBOLS: Set[str] = {
-    "GME", "AMC", "BBBY", "KOSS", "EXPR", "BB", "NOK",
-    "CLOV", "WISH", "WKHS", "RIDE", "GOEV", "SPCE",
-    "MVIS", "SNDL", "TLRY", "BYND",
->>>>>>> origin/main
 }
 
 
@@ -95,17 +71,10 @@ class BorrowChecker:
         ok, fee = checker.check_shortable("AAPL", side="short")
     """
 
-<<<<<<< HEAD
     def __init__(self, config: BorrowCheckerConfig | None = None):
         self.config = config or BorrowCheckerConfig()
         # Live data cache: symbol ��� {shortable_shares, borrow_fee_pct}
         self._live_data: dict[str, dict] = {}
-=======
-    def __init__(self, config: Optional[BorrowCheckerConfig] = None):
-        self.config = config or BorrowCheckerConfig()
-        # Live data cache: symbol → {shortable_shares, borrow_fee_pct}
-        self._live_data: Dict[str, dict] = {}
->>>>>>> origin/main
 
     def check_shortable(
         self,
@@ -167,11 +136,7 @@ class BorrowChecker:
                 return False, fee
             return True, fee
 
-<<<<<<< HEAD
         # General collateral ��� easy to borrow
-=======
-        # General collateral — easy to borrow
->>>>>>> origin/main
         return True, self.config.default_borrow_fee_pct
 
     def get_pair_borrow_fee(
@@ -183,24 +148,15 @@ class BorrowChecker:
         """Return the annualised borrow fee for the short leg of a pair.
 
         In a pair trade, one leg is always short:
-<<<<<<< HEAD
         - side="long"  ��� short sym2
         - side="short" ��� short sym1
-=======
-        - side="long"  → short sym2
-        - side="short" → short sym1
->>>>>>> origin/main
         """
         if not self.config.enabled:
             return self.config.default_borrow_fee_pct
 
         short_sym = sym2 if side == "long" else sym1
         _, fee = self.check_shortable(short_sym, side="short")
-<<<<<<< HEAD
         return float(fee)
-=======
-        return fee
->>>>>>> origin/main
 
     def update_live_data(
         self,

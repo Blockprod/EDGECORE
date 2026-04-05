@@ -13,18 +13,9 @@ Tests for:
 from datetime import UTC, datetime, timedelta
 
 import pytest
-<<<<<<< HEAD
 
 from common.types import PositionStopConfig, StopType
 from execution.position_stops import PositionStop, PositionStopManager, get_stop_manager, reset_stop_manager
-=======
-from datetime import datetime, timedelta
-from execution.position_stops import (
-    PositionStop, PositionStopManager, 
-    get_stop_manager, reset_stop_manager
-)
-from common.types import PositionStopConfig, StopType
->>>>>>> origin/main
 
 
 class TestPositionStopBasics:
@@ -32,18 +23,8 @@ class TestPositionStopBasics:
 
     def test_position_stop_initialization(self):
         """Verify position stop initializes correctly."""
-<<<<<<< HEAD
         stop = PositionStop(position_id="pos_001", symbol="AAPL", entry_price=50000.0, side="long")
 
-=======
-        stop = PositionStop(
-            position_id="pos_001",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long"
-        )
-        
->>>>>>> origin/main
         assert stop.position_id == "pos_001"
         assert stop.symbol == "AAPL"
         assert stop.entry_price == 50000.0
@@ -53,18 +34,8 @@ class TestPositionStopBasics:
 
     def test_position_stop_short_side(self):
         """Verify short position initialization."""
-<<<<<<< HEAD
         stop = PositionStop(position_id="pos_002", symbol="MSFT", entry_price=3000.0, side="short")
 
-=======
-        stop = PositionStop(
-            position_id="pos_002",
-            symbol="MSFT",
-            entry_price=3000.0,
-            side="short"
-        )
-        
->>>>>>> origin/main
         assert stop.side == "short"
         assert stop.entry_price == 3000.0
         assert stop.stop_loss_price is None
@@ -72,24 +43,11 @@ class TestPositionStopBasics:
     def test_position_stop_invalid_side(self):
         """Verify invalid side raises error."""
         with pytest.raises(ValueError):
-<<<<<<< HEAD
             PositionStop(position_id="pos_003", symbol="AAPL", entry_price=50000.0, side="invalid")
 
     def test_position_stop_with_config(self):
         """Verify position stop with configuration."""
 
-=======
-            PositionStop(
-                position_id="pos_003",
-                symbol="AAPL",
-                entry_price=50000.0,
-                side="invalid"
-            )
-    
-    def test_position_stop_with_config(self):
-        """Verify position stop with configuration."""
-        
->>>>>>> origin/main
         stop = PositionStop(
             position_id="pos_004",
             symbol="AAPL",
@@ -109,15 +67,7 @@ class TestStopLossTrigger:
     def test_stop_loss_long_position(self):
         """Verify stop loss triggers on long position."""
         stop = PositionStop(
-<<<<<<< HEAD
             position_id="pos_101", symbol="AAPL", entry_price=50000.0, side="long", stop_loss_price=45000.0
-=======
-            position_id="pos_101",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long",
-            stop_loss_price=45000.0
->>>>>>> origin/main
         )
 
         # Price above stop - no trigger
@@ -135,15 +85,7 @@ class TestStopLossTrigger:
     def test_stop_loss_short_position(self):
         """Verify stop loss triggers on short position."""
         stop = PositionStop(
-<<<<<<< HEAD
             position_id="pos_102", symbol="MSFT", entry_price=3000.0, side="short", stop_loss_price=3500.0
-=======
-            position_id="pos_102",
-            symbol="MSFT",
-            entry_price=3000.0,
-            side="short",
-            stop_loss_price=3500.0
->>>>>>> origin/main
         )
 
         # Price below stop - no trigger
@@ -160,18 +102,8 @@ class TestStopLossTrigger:
 
     def test_stop_loss_no_limit(self):
         """Verify position without stop loss never triggers."""
-<<<<<<< HEAD
         stop = PositionStop(position_id="pos_103", symbol="AAPL", entry_price=50000.0, side="long")
 
-=======
-        stop = PositionStop(
-            position_id="pos_103",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long"
-        )
-        
->>>>>>> origin/main
         # Update with various prices
         for price in [45000.0, 40000.0, 30000.0]:
             result = stop.update(price)
@@ -184,15 +116,7 @@ class TestTakeProfitTrigger:
     def test_take_profit_long_position(self):
         """Verify take profit triggers on long position."""
         stop = PositionStop(
-<<<<<<< HEAD
             position_id="pos_201", symbol="AAPL", entry_price=50000.0, side="long", take_profit_price=60000.0
-=======
-            position_id="pos_201",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long",
-            take_profit_price=60000.0
->>>>>>> origin/main
         )
 
         # Price below target - no trigger
@@ -210,15 +134,7 @@ class TestTakeProfitTrigger:
     def test_take_profit_short_position(self):
         """Verify take profit triggers on short position."""
         stop = PositionStop(
-<<<<<<< HEAD
             position_id="pos_202", symbol="MSFT", entry_price=3000.0, side="short", take_profit_price=2500.0
-=======
-            position_id="pos_202",
-            symbol="MSFT",
-            entry_price=3000.0,
-            side="short",
-            take_profit_price=2500.0
->>>>>>> origin/main
         )
 
         # Price above target - no trigger
@@ -293,15 +209,7 @@ class TestTrailingStops:
     def test_trailing_stop_percent_short(self):
         """Verify trailing stop percent on short position."""
         stop = PositionStop(
-<<<<<<< HEAD
             position_id="pos_302", symbol="MSFT", entry_price=3000.0, side="short", trailing_stop_percent=5.0
-=======
-            position_id="pos_302",
-            symbol="MSFT",
-            entry_price=3000.0,
-            side="short",
-            trailing_stop_percent=5.0
->>>>>>> origin/main
         )
 
         # Price down to 2850 - SL moves to 2992.5 (2850 * 1.05)
@@ -341,15 +249,7 @@ class TestTrailingStops:
     def test_trailing_stop_execution(self):
         """Verify trailing stop can execute."""
         stop = PositionStop(
-<<<<<<< HEAD
             position_id="pos_304", symbol="AAPL", entry_price=50000.0, side="long", trailing_stop_percent=5.0
-=======
-            position_id="pos_304",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long",
-            trailing_stop_percent=5.0
->>>>>>> origin/main
         )
 
         # Price goes up
@@ -409,21 +309,9 @@ class TestHardExitTime:
 
     def test_no_hard_exit_without_limit(self):
         """Verify position without hard exit limit never triggers."""
-<<<<<<< HEAD
         old_time = datetime.now(UTC) - timedelta(days=100)
         stop = PositionStop(position_id="pos_404", symbol="AAPL", entry_price=50000.0, side="long", entry_time=old_time)
 
-=======
-        old_time = datetime.utcnow() - timedelta(days=100)
-        stop = PositionStop(
-            position_id="pos_404",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long",
-            entry_time=old_time
-        )
-        
->>>>>>> origin/main
         assert stop.check_hard_exit() is False
 
 
@@ -489,18 +377,8 @@ class TestPositionStopStatus:
 
     def test_status_with_no_stops(self):
         """Verify status for position with no stops."""
-<<<<<<< HEAD
         stop = PositionStop(position_id="pos_601", symbol="AAPL", entry_price=50000.0, side="long")
 
-=======
-        stop = PositionStop(
-            position_id="pos_601",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long"
-        )
-        
->>>>>>> origin/main
         status = stop.get_status()
         assert status["position_id"] == "pos_601"
         assert status["symbol"] == "AAPL"
@@ -553,20 +431,9 @@ class TestPositionStopManager:
     def test_add_position(self):
         """Verify adding position to manager."""
         manager = PositionStopManager()
-<<<<<<< HEAD
 
         pos_stop = manager.add_position(position_id="pos_501", symbol="AAPL", entry_price=50000.0, side="long")
 
-=======
-        
-        pos_stop = manager.add_position(
-            position_id="pos_501",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long"
-        )
-        
->>>>>>> origin/main
         assert "pos_501" in manager.positions
         assert pos_stop.position_id == "pos_501"
 
@@ -577,15 +444,7 @@ class TestPositionStopManager:
         config: PositionStopConfig = {"stop_loss_price": 45000.0, "take_profit_price": 60000.0}
 
         pos_stop = manager.add_position(
-<<<<<<< HEAD
             position_id="pos_502", symbol="AAPL", entry_price=50000.0, side="long", stop_config=config
-=======
-            position_id="pos_502",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long",
-            stop_config=config
->>>>>>> origin/main
         )
 
         assert pos_stop.stop_loss_price == 45000.0
@@ -640,20 +499,9 @@ class TestPositionStopManager:
     def test_remove_position(self):
         """Verify removing position from manager."""
         manager = PositionStopManager()
-<<<<<<< HEAD
 
         manager.add_position(position_id="pos_506", symbol="AAPL", entry_price=50000.0, side="long")
 
-=======
-        
-        manager.add_position(
-            position_id="pos_506",
-            symbol="AAPL",
-            entry_price=50000.0,
-            side="long"
-        )
-        
->>>>>>> origin/main
         assert manager.remove_position("pos_506") is True
         assert "pos_506" not in manager.positions
         assert manager.remove_position("pos_506") is False
@@ -679,18 +527,8 @@ class TestPositionStopManager:
         manager = PositionStopManager()
 
         for i in range(3):
-<<<<<<< HEAD
             manager.add_position(position_id=f"pos_{i}", symbol="AAPL", entry_price=50000.0, side="long")
 
-=======
-            manager.add_position(
-                position_id=f"pos_{i}",
-                symbol="AAPL",
-                entry_price=50000.0,
-                side="long"
-            )
-        
->>>>>>> origin/main
         statuses = manager.get_all_statuses()
         assert len(statuses) == 3
 
@@ -718,11 +556,7 @@ class TestPositionStopManager:
         # Update first position - shouldn't affect second
         should_exit_1, _ = manager.check_exits("pos_101", 44000.0)
         should_exit_2, _ = manager.check_exits("pos_102", 2900.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         assert should_exit_1 is True  # AAPL stop triggered
         assert should_exit_2 is False  # MSFT stops not triggered
 

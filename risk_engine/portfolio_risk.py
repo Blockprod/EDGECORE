@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Portfolio Risk Manager ÔÇö Portfolio-level risk controls.
-=======
-"""
-Portfolio Risk Manager — Portfolio-level risk controls.
->>>>>>> origin/main
 
 Monitors aggregate portfolio health:
     1. Portfolio drawdown (peak-to-trough)
@@ -13,11 +8,7 @@ Monitors aggregate portfolio health:
     4. Maximum concurrent positions
     5. Portfolio heat (aggregate risk budget)
 
-<<<<<<< HEAD
 All checks are independent of the strategy ÔÇö the risk manager only
-=======
-All checks are independent of the strategy — the risk manager only
->>>>>>> origin/main
 sees portfolio-level metrics and enforces hard limits.
 """
 
@@ -25,7 +16,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-<<<<<<< HEAD
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
@@ -33,42 +23,26 @@ from structlog import get_logger
 if TYPE_CHECKING:
     from monitoring.correlation_monitor import CorrelationMonitor
 
-=======
-from typing import List, Optional, Tuple
-
-from structlog import get_logger
-
->>>>>>> origin/main
 logger = get_logger(__name__)
 
 
 @dataclass
 class PortfolioRiskConfig:
     """Portfolio-level risk limits."""
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     max_drawdown_pct: float = 0.15
     max_daily_loss_pct: float = 0.03
     max_consecutive_losses: int = 5
     max_concurrent_positions: int = 10
     max_portfolio_heat: float = 0.95
     circuit_breaker_cooldown_bars: int = 10
-<<<<<<< HEAD
     max_avg_pair_correlation: float = 0.85  # C-05: halt entries if avg inter-pair corr exceeds this
-=======
->>>>>>> origin/main
 
 
 @dataclass
 class PortfolioRiskState:
-<<<<<<< HEAD
     """Current portfolio risk state ÔÇö snapshot."""
 
-=======
-    """Current portfolio risk state — snapshot."""
->>>>>>> origin/main
     current_equity: float
     peak_equity: float
     drawdown_pct: float
@@ -105,7 +79,6 @@ class PortfolioRiskManager:
     def __init__(
         self,
         initial_equity: float = 100_000.0,
-<<<<<<< HEAD
         config: PortfolioRiskConfig | None = None,
         correlation_monitor: CorrelationMonitor | None = None,
     ):
@@ -115,15 +88,6 @@ class PortfolioRiskManager:
         self._current_equity = initial_equity
         self._peak_equity = initial_equity
         self._equity_history: list[float] = [initial_equity]
-=======
-        config: Optional[PortfolioRiskConfig] = None,
-    ):
-        self.config = config or PortfolioRiskConfig()
-        self._initial_equity = initial_equity
-        self._current_equity = initial_equity
-        self._peak_equity = initial_equity
-        self._equity_history: List[float] = [initial_equity]
->>>>>>> origin/main
 
         # Daily tracking
         self._daily_loss: float = 0.0
@@ -201,11 +165,7 @@ class PortfolioRiskManager:
     def can_open_position(
         self,
         position_risk_pct: float = 0.0,
-<<<<<<< HEAD
     ) -> tuple[bool, str]:
-=======
-    ) -> Tuple[bool, str]:
->>>>>>> origin/main
         """
         Check whether a new position can be opened.
 
@@ -215,11 +175,7 @@ class PortfolioRiskManager:
         Returns:
             (allowed, reason).
         """
-<<<<<<< HEAD
         # Cooldown handling ÔÇö log remaining time but do NOT auto-reset.
-=======
-        # Cooldown handling — log remaining time but do NOT auto-reset.
->>>>>>> origin/main
         # A halt MUST be cleared by an explicit manual_reset() call.
         if self._cooldown_remaining > 0:
             self._cooldown_remaining -= 1
@@ -252,7 +208,6 @@ class PortfolioRiskManager:
         if current_heat >= self.config.max_portfolio_heat:
             return False, f"Portfolio heat {current_heat:.2%} >= {self.config.max_portfolio_heat:.0%}"
 
-<<<<<<< HEAD
         # C-05: Inter-pair correlation guard
         if self._correlation_monitor is not None:
             try:
@@ -267,8 +222,6 @@ class PortfolioRiskManager:
             except Exception as exc:
                 logger.debug("portfolio_risk_correlation_check_failed", error=str(exc)[:80])
 
-=======
->>>>>>> origin/main
         return True, ""
 
     # ------------------------------------------------------------------
@@ -284,15 +237,7 @@ class PortfolioRiskManager:
     def get_state(self) -> PortfolioRiskState:
         """Return current portfolio risk snapshot."""
         self._maybe_reset_daily()
-<<<<<<< HEAD
         daily_pct = self._daily_loss / self._current_equity if self._current_equity > 0 else 0.0
-=======
-        daily_pct = (
-            self._daily_loss / self._current_equity
-            if self._current_equity > 0
-            else 0.0
-        )
->>>>>>> origin/main
         return PortfolioRiskState(
             current_equity=self._current_equity,
             peak_equity=self._peak_equity,

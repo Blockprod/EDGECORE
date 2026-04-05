@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Sprint 3.1 ÔÇô Annualisation tests.
-=======
-"""
-Sprint 3.1 – Annualisation tests.
->>>>>>> origin/main
 
 Tests that all Sharpe, Sortino, and volatility calculations use the
 configured TRADING_DAYS_PER_YEAR (default 252 for US equities).
@@ -18,10 +13,7 @@ import pytest
 # ---------------------------------------------------------------------------
 # Constant definition & export
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
 from backtests.metrics import (
     TRADING_DAYS_PER_YEAR,
     BacktestMetrics,
@@ -48,17 +40,13 @@ class TestTradingDaysConstant:
         try:
             set_trading_days(260)
             from backtests import metrics
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
             assert metrics.TRADING_DAYS_PER_YEAR == 260
         finally:
             set_trading_days(original)
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # BacktestMetrics ÔÇô Sharpe
 # ---------------------------------------------------------------------------
 
@@ -69,26 +57,11 @@ class TestSharpeRatioAnnualisation:
     @pytest.fixture
     def deterministic_returns(self):
         """Returns 0.1% daily for 100 days ÔÇô deterministic Sharpe."""
-=======
-# BacktestMetrics – Sharpe
-# ---------------------------------------------------------------------------
-
-class TestSharpeRatioAnnualisation:
-    """Sharpe ratio must use √(TRADING_DAYS_PER_YEAR) for annualisation."""
-
-    @pytest.fixture
-    def deterministic_returns(self):
-        """Returns 0.1% daily for 100 days – deterministic Sharpe."""
->>>>>>> origin/main
         np.random.seed(42)
         return pd.Series(np.random.normal(0.001, 0.02, 100))
 
     def test_sharpe_uses_configured_days(self, deterministic_returns):
-<<<<<<< HEAD
         """Sharpe must equal mean/std * ÔêÜ(TRADING_DAYS_PER_YEAR)."""
-=======
-        """Sharpe must equal mean/std * √(TRADING_DAYS_PER_YEAR)."""
->>>>>>> origin/main
         r = deterministic_returns
         expected = (r.mean() / r.std()) * np.sqrt(TRADING_DAYS_PER_YEAR)
         metrics = BacktestMetrics.from_returns(
@@ -115,7 +88,6 @@ class TestSharpeRatioAnnualisation:
             set_trading_days(original)
 
     def test_sharpe_positive_for_positive_mean(self):
-<<<<<<< HEAD
         """Constant positive returns Ôåô positive Sharpe."""
         r = pd.Series([0.01] * 50)
         metrics = BacktestMetrics.from_returns(r, [0.01] * 5, "2024-01-01", "2024-02-19")
@@ -124,36 +96,18 @@ class TestSharpeRatioAnnualisation:
 
     def test_sharpe_zero_std_guard(self):
         """std == 0 Ôåô Sharpe == 0.0 (no NaN/inf)."""
-=======
-        """Constant positive returns ↓ positive Sharpe."""
-        r = pd.Series([0.01] * 50)
-        metrics = BacktestMetrics.from_returns(r, [0.01] * 5, "2024-01-01", "2024-02-19")
-        # std == 0 ↓ should return 0.0 (division guard)
-        assert metrics.sharpe_ratio == 0.0
-
-    def test_sharpe_zero_std_guard(self):
-        """std == 0 ↓ Sharpe == 0.0 (no NaN/inf)."""
->>>>>>> origin/main
         r = pd.Series([0.005] * 200)
         metrics = BacktestMetrics.from_returns(r, [0.01], "2024-01-01", "2024-07-19")
         assert np.isfinite(metrics.sharpe_ratio)
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # BacktestMetrics ÔÇô Sortino
 # ---------------------------------------------------------------------------
 
 
 class TestSortinoRatioAnnualisation:
     """Sortino ratio must use ÔêÜ(TRADING_DAYS_PER_YEAR) for annualisation."""
-=======
-# BacktestMetrics – Sortino
-# ---------------------------------------------------------------------------
-
-class TestSortinoRatioAnnualisation:
-    """Sortino ratio must use √(TRADING_DAYS_PER_YEAR) for annualisation."""
->>>>>>> origin/main
 
     @pytest.fixture
     def mixed_returns(self):
@@ -174,16 +128,11 @@ class TestSortinoRatioAnnualisation:
         try:
             set_trading_days(260)
             m260 = BacktestMetrics.from_returns(r, [0.01, -0.005], "2024-01-01", "2024-07-19")
-<<<<<<< HEAD
             assert abs(m260.sortino_ratio or 0.0) > abs(m252.sortino_ratio or 0.0)
-=======
-            assert abs(m260.sortino_ratio) > abs(m252.sortino_ratio)
->>>>>>> origin/main
         finally:
             set_trading_days(original)
 
     def test_sortino_no_downside_returns(self):
-<<<<<<< HEAD
         """All positive returns Ôåô sortino == 0.0 (no NaN)."""
         r = pd.Series([0.01, 0.02, 0.005, 0.003])
         metrics = BacktestMetrics.from_returns(r, [0.01], "2024-01-01", "2024-01-05")
@@ -198,32 +147,13 @@ class TestSortinoRatioAnnualisation:
 
 class TestRatioSqrt260vs252:
     """Numerical sanity: ÔêÜ260/ÔêÜ252 Ôëê 1.0157."""
-=======
-        """All positive returns ↓ sortino == 0.0 (no NaN)."""
-        r = pd.Series([0.01, 0.02, 0.005, 0.003])
-        metrics = BacktestMetrics.from_returns(r, [0.01], "2024-01-01", "2024-01-05")
-        assert metrics.sortino_ratio == 0.0
-        assert np.isfinite(metrics.sortino_ratio)
-
-
-# ---------------------------------------------------------------------------
-# BacktestMetrics – ratio between √260 and √252
-# ---------------------------------------------------------------------------
-
-class TestRatioSqrt260vs252:
-    """Numerical sanity: √260/√252 ≈ 1.0157."""
->>>>>>> origin/main
 
     def test_ratio_sqrt(self):
         ratio = np.sqrt(260) / np.sqrt(252)
         assert ratio == pytest.approx(1.0157, rel=1e-3)
 
     def test_sharpe_260_higher_than_252_for_positive_mean(self):
-<<<<<<< HEAD
         """ÔêÜ260 > ÔêÜ252 Ôåô Sharpe_260 > Sharpe_252 for positive mean."""
-=======
-        """√260 > √252 ↓ Sharpe_260 > Sharpe_252 for positive mean."""
->>>>>>> origin/main
         np.random.seed(7)
         r = pd.Series(np.random.normal(0.002, 0.01, 300))
         sharpe_260 = (r.mean() / r.std()) * np.sqrt(260)
@@ -232,7 +162,6 @@ class TestRatioSqrt260vs252:
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # Monte Carlo ÔÇô realized vol annualisation
 # ---------------------------------------------------------------------------
 
@@ -242,16 +171,6 @@ class TestMonteCarloAnnualisation:
 
     def test_realized_vol_uses_sqrt_252(self):
         """PricePath.get_volatility_realized() must use ÔêÜ252."""
-=======
-# Monte Carlo – realized vol annualisation
-# ---------------------------------------------------------------------------
-
-class TestMonteCarloAnnualisation:
-    """execution/monte_carlo.py must use √252 for equities."""
-
-    def test_realized_vol_uses_sqrt_252(self):
-        """PricePath.get_volatility_realized() must use √252."""
->>>>>>> origin/main
         from execution.monte_carlo import PricePath
 
         np.random.seed(42)
@@ -271,42 +190,28 @@ class TestMonteCarloAnnualisation:
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # Monte Carlo ÔÇô GBM dt
 # ---------------------------------------------------------------------------
 
 
-=======
-# Monte Carlo – GBM dt
-# ---------------------------------------------------------------------------
-
->>>>>>> origin/main
 class TestGBMTimeStep:
     """GBM simulation must use dt = 1/252 for equities."""
 
     def test_dt_value_in_source(self):
         """Verify dt = 1/252 by reading the source."""
         import inspect
-<<<<<<< HEAD
 
         from execution.monte_carlo import MonteCarloOrderBookSimulator
 
-=======
-        from execution.monte_carlo import MonteCarloOrderBookSimulator
->>>>>>> origin/main
         source = inspect.getsource(MonteCarloOrderBookSimulator._generate_gbm_path)
         assert "1.0 / 252.0" in source or "1/252" in source
 
     def test_dt_not_365(self):
         """Source must NOT contain 365 for dt."""
         import inspect
-<<<<<<< HEAD
 
         from execution.monte_carlo import MonteCarloOrderBookSimulator
 
-=======
-        from execution.monte_carlo import MonteCarloOrderBookSimulator
->>>>>>> origin/main
         source = inspect.getsource(MonteCarloOrderBookSimulator._generate_gbm_path)
         assert "365" not in source
 
@@ -315,25 +220,16 @@ class TestGBMTimeStep:
 # Dashboard Sharpe
 # ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 
 class TestDashboardSharpeAnnualisation:
     """monitoring/dashboard.py must use ÔêÜ252 for equities."""
-=======
-class TestDashboardSharpeAnnualisation:
-    """monitoring/dashboard.py must use √252 for equities."""
->>>>>>> origin/main
 
     def test_dashboard_source_uses_252(self):
         """Verify dashboard Sharpe source contains sqrt(252)."""
         import inspect
-<<<<<<< HEAD
 
         from monitoring import dashboard
 
-=======
-        from monitoring import dashboard
->>>>>>> origin/main
         source = inspect.getsource(dashboard)
         # Must contain 252, must NOT contain 365 in sharpe context
         assert "sqrt(252)" in source
@@ -344,45 +240,28 @@ class TestDashboardSharpeAnnualisation:
 # ML Threshold Optimizer Sharpe
 # ---------------------------------------------------------------------------
 
-<<<<<<< HEAD
 
 class TestMLOptimizerSharpeAnnualisation:
     """models/ml_threshold_optimizer.py must use ÔêÜ252 for equities."""
-=======
-class TestMLOptimizerSharpeAnnualisation:
-    """models/ml_threshold_optimizer.py must use √252 for equities."""
->>>>>>> origin/main
 
     def test_optimizer_source_uses_252(self):
         """Verify ML optimizer Sharpe source contains sqrt(252)."""
         import inspect
-<<<<<<< HEAD
 
         from models import ml_threshold_optimizer
 
-=======
-        from models import ml_threshold_optimizer
->>>>>>> origin/main
         source = inspect.getsource(ml_threshold_optimizer)
         assert "sqrt(252)" in source
         assert "sqrt(365)" not in source
 
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
 # Global sweep: no residual ÔêÜ365 in production code
 # ---------------------------------------------------------------------------
 
 
 class TestNoResidualSqrt365:
     """Ensure no production file uses ÔêÜ365 (non-equity convention)."""
-=======
-# Global sweep: no residual √365 in production code
-# ---------------------------------------------------------------------------
-
-class TestNoResidualSqrt365:
-    """Ensure no production file uses √365 (non-equity convention)."""
->>>>>>> origin/main
 
     PRODUCTION_FILES = [
         "backtests/metrics.py",
@@ -393,10 +272,6 @@ class TestNoResidualSqrt365:
 
     @pytest.mark.parametrize("filepath", PRODUCTION_FILES)
     def test_no_sqrt_365_in_file(self, filepath):
-<<<<<<< HEAD
         with open(filepath, encoding="utf-8") as f:
-=======
-        with open(filepath, "r", encoding="utf-8") as f:
->>>>>>> origin/main
             content = f.read()
         assert "sqrt(365)" not in content, f"{filepath} still contains sqrt(365)"

@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿from datetime import datetime
-=======
-from datetime import datetime
->>>>>>> origin/main
 
 import pytest
 
@@ -18,10 +14,7 @@ class DummyConfig:
     max_daily_loss_pct = 0.10  # Ajout pour tests
     max_leverage = 2.0  # Ajout pour tests
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 # Patch get_settings to return dummy config only for these tests
 
 
@@ -32,11 +25,7 @@ def _patch_settings(monkeypatch):
     monkeypatch.setattr(
         settings_mod,
         "get_settings",
-<<<<<<< HEAD
         lambda: type("S", (), {"risk": DummyConfig()})(),
-=======
-        lambda: type('S', (), {'risk': DummyConfig()})(),
->>>>>>> origin/main
     )
     yield
 
@@ -57,14 +46,7 @@ def test_init_invalid_equity():
 def test_can_enter_trade_valid():
     engine = RiskEngine(initial_equity=100000)
     allowed, reason = engine.can_enter_trade(
-<<<<<<< HEAD
         symbol_pair="AAPL_MSFT", position_size=1000, current_equity=100000, volatility=0.01
-=======
-        symbol_pair="AAPL_MSFT",
-        position_size=1000,
-        current_equity=100000,
-        volatility=0.01
->>>>>>> origin/main
     )
     assert allowed is True
     assert reason is None
@@ -75,19 +57,10 @@ def test_can_enter_trade_max_positions():
     engine.positions = {"AAPL_MSFT": Position("AAPL_MSFT", datetime.now(), 100, 10, "long")}
     engine.positions["GOOGL_META"] = Position("GOOGL_META", datetime.now(), 100, 10, "short")
     allowed, reason = engine.can_enter_trade(
-<<<<<<< HEAD
         symbol_pair="TSLA_NVDA", position_size=1000, current_equity=100000, volatility=0.01
     )
     assert allowed is False
     assert reason is not None
-=======
-        symbol_pair="TSLA_NVDA",
-        position_size=1000,
-        current_equity=100000,
-        volatility=0.01
-    )
-    assert allowed is False
->>>>>>> origin/main
     assert "Max concurrent positions" in reason
 
 
@@ -109,10 +82,7 @@ def test_can_enter_trade_risk_pct():
     # Exceeds max_risk_per_trade
     allowed, reason = engine.can_enter_trade("AAPL_MSFT", 100000, 100000, 0.1)
     assert allowed is False
-<<<<<<< HEAD
     assert reason is not None
-=======
->>>>>>> origin/main
     assert "Risk per trade" in reason
 
 
@@ -121,8 +91,5 @@ def test_can_enter_trade_loss_streak():
     engine.loss_streak = 2
     allowed, reason = engine.can_enter_trade("AAPL_MSFT", 1000, 100000, 0.01)
     assert allowed is False
-<<<<<<< HEAD
     assert reason is not None
-=======
->>>>>>> origin/main
     assert "Consecutive loss limit" in reason

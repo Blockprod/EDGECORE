@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
@@ -10,21 +9,11 @@ from structlog import get_logger
 from common.errors import DataUnavailableError
 from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 from data.validators import DataValidationError, OHLCVValidator
-=======
-import pandas as pd
-from typing import Dict, List, Optional
-from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from structlog import get_logger
-from data.validators import OHLCVValidator, DataValidationError
-import threading
->>>>>>> origin/main
 
 logger = get_logger(__name__)
 
 
 def load_price_data(
-<<<<<<< HEAD
     symbols: list[str],
     timeframe: str = "1d",
     limit: int = 252,
@@ -41,25 +30,11 @@ def load_price_data(
     Rate limiting is handled by GLOBAL_IBKR_RATE_LIMITER (40 req/s).
     """
     from execution.ibkr_engine import IBGatewaySync
-=======
-    symbols: List[str],
-    timeframe: str = "1d",
-    limit: int = 252,
-) -> pd.DataFrame:
-    """Convenience function for live/paper trading: load latest prices.
-
-    Returns a DataFrame with columns = symbols, values = close prices.
-    Uses IBGatewaySync (port 4002) with a single sequential connection.
-    """
-    from execution.ibkr_engine import IBGatewaySync
-    import time as _time
->>>>>>> origin/main
 
     bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours"}
     bar_size = bar_size_map.get(timeframe, "1 day")
     duration = f"{max(1, limit // 252)} Y" if timeframe == "1d" else f"{limit} D"
 
-<<<<<<< HEAD
     _staleness_map = {"1d": timedelta(days=3), "4h": timedelta(hours=8), "1h": timedelta(hours=2)}
     max_stale = _staleness_map.get(timeframe, timedelta(hours=max_staleness_multiplier))
 
@@ -162,46 +137,6 @@ _ibkr_client_id_index = 0
 _ibkr_client_id_lock = threading.Lock()
 
 
-=======
-    engine = IBGatewaySync(
-        host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30
-    )
-    engine.connect()
-
-    frames: Dict[str, pd.Series] = {}
-    try:
-        for sym in symbols:
-            try:
-                bars = engine.get_historical_data(
-                    symbol=sym, duration=duration,
-                    bar_size=bar_size, what_to_show="ADJUSTED_LAST",
-                )
-                if bars:
-                    s = pd.Series(
-                        [b.close for b in bars],
-                        index=pd.DatetimeIndex([b.date for b in bars]),
-                        name=sym,
-                    )
-                    frames[sym] = s
-                    logger.debug("load_price_data_ok", symbol=sym, bars=len(bars))
-                else:
-                    logger.warning("load_price_data_empty", symbol=sym)
-                _time.sleep(0.5)  # IBKR rate limiting
-            except Exception as exc:
-                logger.error("load_price_data_failed", symbol=sym, error=str(exc)[:120])
-    finally:
-        engine.disconnect()
-
-    if not frames:
-        return pd.DataFrame()
-    return pd.DataFrame(frames).dropna(how="all")
-
-# Fixed pool of IBKR client IDs for data workers (cycles, never grows unbounded)
-_IBKR_CLIENT_ID_POOL = list(range(2001, 2009))  # 2001–2008
-_ibkr_client_id_index = 0
-_ibkr_client_id_lock = threading.Lock()
-
->>>>>>> origin/main
 def _next_client_id() -> int:
     global _ibkr_client_id_index
     with _ibkr_client_id_lock:
@@ -209,10 +144,7 @@ def _next_client_id() -> int:
         _ibkr_client_id_index += 1
         return client_id
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 class DataLoader:
     """Load and cache OHLCV data from multiple sources with validation."""
 
@@ -221,20 +153,9 @@ class DataLoader:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         # PHASE 2 FEATURE 3: Inject validator (default to OHLCVValidator if not provided)
         self.validator = validator or OHLCVValidator()
-<<<<<<< HEAD
 
     def load_ibkr_data(
         self, symbol: str, timeframe: str = "1d", since: str | None = None, limit: int = 252, validate: bool = True
-=======
-    
-    def load_ibkr_data(
-        self,
-        symbol: str,
-        timeframe: str = "1d",
-        since: str = None,
-        limit: int = 252,
-        validate: bool = True
->>>>>>> origin/main
     ) -> pd.DataFrame:
         """
         Load OHLCV data for a US equity symbol via Interactive Brokers.
@@ -267,7 +188,6 @@ class DataLoader:
             bar_size_map = {"1d": "1 day", "1h": "1 hour", "4h": "4 hours", "1m": "1 min"}
             bar_size = bar_size_map.get(timeframe, "1 day")
 
-<<<<<<< HEAD
             # Calculate IB duration string: prefer since-date if provided, else derive from limit
             _use_limit = True
             duration: str = ""  # sentinel; always overwritten below
@@ -295,40 +215,18 @@ class DataLoader:
                     duration = f"{days} D"
                 else:
                     duration = f"{max(1, limit * 60)} S"
-=======
-            # Calculate IB duration string from limit
-            if timeframe in ("1d",):
-                years = max(1, limit // 252)
-                duration = f"{years} Y" if years >= 1 else f"{limit} D"
-            elif timeframe in ("4h",):
-                days = max(1, (limit * 4) // 24 + 10)
-                duration = f"{days} D"
-            elif timeframe in ("1h",):
-                days = max(1, (limit) // 7 + 5)
-                duration = f"{days} D"
-            else:
-                duration = f"{max(1, limit * 60)} S"
->>>>>>> origin/main
 
             engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id())
             engine.connect()
             try:
                 bars = engine.get_historical_data(
-<<<<<<< HEAD
                     symbol=symbol, duration=duration, bar_size=bar_size, what_to_show="ADJUSTED_LAST"
-=======
-                    symbol=symbol,
-                    duration=duration,
-                    bar_size=bar_size,
-                    what_to_show="ADJUSTED_LAST"
->>>>>>> origin/main
                 )
                 if not bars:
                     df = pd.DataFrame()
                 else:
                     df = pd.DataFrame(
                         {
-<<<<<<< HEAD
                             "Open": [b.open for b in bars],
                             "High": [b.high for b in bars],
                             "Low": [b.low for b in bars],
@@ -338,35 +236,16 @@ class DataLoader:
                         index=pd.DatetimeIndex([b.date for b in bars]),
                     )
                     df.index.name = "date"
-=======
-                            'Open': [b.open for b in bars],
-                            'High': [b.high for b in bars],
-                            'Low': [b.low for b in bars],
-                            'Close': [b.close for b in bars],
-                            'Volume': [b.volume for b in bars],
-                        },
-                        index=pd.DatetimeIndex([b.date for b in bars]),
-                    )
-                    df.index.name = 'date'
->>>>>>> origin/main
             finally:
                 engine.disconnect()
 
             if df is None or df.empty:
                 raise RuntimeError(f"No data returned from IBKR for {symbol}")
 
-<<<<<<< HEAD
             col_map = {"Open": "open", "High": "high", "Low": "low", "Close": "close", "Volume": "volume"}
             df.rename(columns=col_map, inplace=True)
             expected_cols = ["open", "high", "low", "close", "volume"]
             df = pd.DataFrame(df[[c for c in expected_cols if c in df.columns]]).dropna()
-=======
-            col_map = {"Open": "open", "High": "high", "Low": "low",
-                        "Close": "close", "Volume": "volume"}
-            df.rename(columns=col_map, inplace=True)
-            expected_cols = ["open", "high", "low", "close", "volume"]
-            df = df[[c for c in expected_cols if c in df.columns]].dropna()
->>>>>>> origin/main
 
             if validate and len(df) > 0:
                 validation_result = self.validator.validate(df, raise_on_error=True)
@@ -519,21 +398,13 @@ class DataLoader:
 
     def bulk_load(
         self,
-<<<<<<< HEAD
         symbols: list[str],
-=======
-        symbols: List[str],
->>>>>>> origin/main
         timeframe: str = "1d",
         limit: int = 252 * 6,
         max_workers: int = 3,
         use_cache: bool = True,
         rate_limiter=None,
-<<<<<<< HEAD
     ) -> dict[str, pd.DataFrame]:
-=======
-    ) -> Dict[str, pd.DataFrame]:
->>>>>>> origin/main
         """
         Load OHLCV data for multiple symbols with caching and rate limiting.
 
@@ -549,17 +420,10 @@ class DataLoader:
             rate_limiter: Optional IBKRRateLimiter instance.
 
         Returns:
-<<<<<<< HEAD
             Dict mapping symbol ��� OHLCV DataFrame.
         """
         results: dict[str, pd.DataFrame] = {}
         to_fetch: list[str] = []
-=======
-            Dict mapping symbol → OHLCV DataFrame.
-        """
-        results: Dict[str, pd.DataFrame] = {}
-        to_fetch: List[str] = []
->>>>>>> origin/main
 
         # Phase 1: Load from cache
         if use_cache:
@@ -585,19 +449,7 @@ class DataLoader:
             )
             return results
 
-<<<<<<< HEAD
         logger.debug("bulk_load_to_fetch_snapshot", count=len(to_fetch), first_five=[str(s) for s in to_fetch[:5]])
-=======
-        # Debug snapshot: write the to_fetch list types/reprs to disk for troubleshooting
-        try:
-            with open("debug_bulk_to_fetch_snapshot.txt", "w", encoding="utf-8") as df:
-                df.write("idx\ttype\trepr\tsymbol\n")
-                for i, sym in enumerate(to_fetch[:500]):
-                    df.write(f"{i}\t{type(sym).__name__}\t{repr(sym)}\t{str(sym)}\n")
-        except Exception:
-            pass
-
->>>>>>> origin/main
         logger.info(
             "bulk_load_starting",
             cached=len(results),
@@ -609,29 +461,19 @@ class DataLoader:
         # Phase 2: Fetch missing from IBKR with rate limiting
         # Persistent IBKR engine per worker
         from execution.ibkr_engine import IBKRExecutionEngine
-<<<<<<< HEAD
 
         def _worker(symbols: list[str], idx: int) -> dict[str, pd.DataFrame | None]:
-=======
-        def _worker(symbols: List[str], idx: int) -> Dict[str, Optional[pd.DataFrame]]:
->>>>>>> origin/main
             results = {}
             client_id = 1000 + idx
             logger.info("ibkr_worker_start", worker_idx=idx, client_id=client_id, symbol_count=len(symbols))
             engine = IBKRExecutionEngine(client_id=client_id)
             logger.info("ibkr_worker_engine_actual_client_id", worker_idx=idx, client_id=engine.client_id)
-<<<<<<< HEAD
             assert engine.client_id == client_id, (
                 f"Worker {idx}: IBKRExecutionEngine client_id mismatch! Got {engine.client_id}, expected {client_id}"
             )
             logger.debug("ibkr_worker_client_id_assigned", worker_idx=idx, assigned=client_id, actual=engine.client_id)
             engine.connect()
 
-=======
-            assert engine.client_id == client_id, f"Worker {idx}: IBKRExecutionEngine client_id mismatch! Got {engine.client_id}, expected {client_id}"
-            print(f"[DEBUG] Worker {idx} assigned client_id={client_id}, engine.client_id={engine.client_id}")
-            engine.connect()
->>>>>>> origin/main
             def _normalize_symbol(s):
                 # Flatten lists/tuples and coerce to a deterministic string
                 if isinstance(s, (list, tuple)):
@@ -653,11 +495,7 @@ class DataLoader:
                         rate_limiter.acquire("historical")
                     df = engine.get_historical_data(
                         symbol=norm_sym,
-<<<<<<< HEAD
                         duration="11 Y",
-=======
-                        duration=None,
->>>>>>> origin/main
                         bar_size="1 day",
                         what_to_show="ADJUSTED_LAST",
                     )
@@ -666,10 +504,7 @@ class DataLoader:
                     results[norm_sym] = df
                 except TypeError as tex:
                     import traceback as _tb
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
                     tb = _tb.format_exc()
                     logger.error(
                         "bulk_load_type_error",
@@ -682,10 +517,7 @@ class DataLoader:
                     results[norm_sym] = None
                 except Exception as exc:
                     import traceback as _tb
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
                     tb = _tb.format_exc()
                     logger.warning(
                         "bulk_load_symbol_failed",
@@ -698,33 +530,10 @@ class DataLoader:
             return results
 
         # Split symbols among workers
-<<<<<<< HEAD
         symbol_chunks = [to_fetch[i::max_workers] for i in range(max_workers)]
         completed = 0
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)}
-=======
-        symbol_chunks = [
-            to_fetch[i::max_workers] for i in range(max_workers)
-        ]
-        completed = 0
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)
-            }
-            for future in as_completed(futures):
-                worker_results = future.result()
-                for sym, df in worker_results.items():
-                    completed += 1
-                    # ...existing code...
-
-        completed = 0
-        # Use only chunked worker logic (each worker gets a unique client_id)
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(_worker, chunk, idx): idx for idx, chunk in enumerate(symbol_chunks)
-            }
->>>>>>> origin/main
             for future in as_completed(futures):
                 worker_results = future.result()
                 for sym, df in worker_results.items():

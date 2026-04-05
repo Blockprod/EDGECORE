@@ -1,15 +1,9 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for risk_engine ÔÇö KillSwitch, PositionRiskManager, PortfolioRiskManager.
-=======
-"""
-Tests for risk_engine — KillSwitch, PositionRiskManager, PortfolioRiskManager.
->>>>>>> origin/main
 """
 
 import json
 import os
-<<<<<<< HEAD
 from unittest.mock import patch
 
 import pytest
@@ -17,14 +11,6 @@ import pytest
 from risk_engine.kill_switch import KillReason, KillSwitch, KillSwitchConfig
 from risk_engine.portfolio_risk import PortfolioRiskConfig, PortfolioRiskManager
 from risk_engine.position_risk import PositionRiskConfig, PositionRiskManager
-=======
-import pytest
-from unittest.mock import patch, MagicMock
-
-from risk_engine.kill_switch import KillSwitch, KillSwitchConfig, KillReason
-from risk_engine.position_risk import PositionRiskManager, PositionRiskConfig
-from risk_engine.portfolio_risk import PortfolioRiskManager, PortfolioRiskConfig
->>>>>>> origin/main
 
 
 @pytest.fixture(autouse=True)
@@ -38,11 +24,7 @@ def _clean_kill_switch_state():
         os.remove(state_path)
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ KillSwitch tests ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── KillSwitch tests ─────────────────────────────────────────────────────
->>>>>>> origin/main
 
 
 class TestKillSwitch:
@@ -92,7 +74,6 @@ class TestKillSwitch:
         called = {}
 
         def cb(reason, msg):
-<<<<<<< HEAD
             called["reason"] = reason
             called["msg"] = msg
 
@@ -100,14 +81,6 @@ class TestKillSwitch:
         ks.activate(KillReason.MANUAL, "test")
         assert "reason" in called
         assert called["reason"] == KillReason.MANUAL
-=======
-            called['reason'] = reason
-
-        ks = KillSwitch(on_activate=cb)
-        ks.activate(KillReason.MANUAL, "test")
-        assert 'reason' in called
-        assert called['reason'] == KillReason.MANUAL
->>>>>>> origin/main
 
     def test_get_state_when_inactive(self):
         ks = KillSwitch()
@@ -132,11 +105,7 @@ class TestKillSwitch:
         ks.activate(KillReason.DRAWDOWN, "third")
         assert len(ks.activation_history) == 2
 
-<<<<<<< HEAD
     # ÔöÇÔöÇ Phase 3: persistence fail-safe ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-    # ── Phase 3: persistence fail-safe ────────────────────────────────
->>>>>>> origin/main
 
     def test_save_state_failure_activates_fail_safe(self, tmp_path):
         """If _save_state() raises (disk error), kill switch stays active."""
@@ -144,11 +113,7 @@ class TestKillSwitch:
         ks = KillSwitch(state_file=state_file)
 
         # Mock write to raise IOError
-<<<<<<< HEAD
         with patch.object(type(ks._state_path), "with_suffix", side_effect=OSError("disk full")):
-=======
-        with patch.object(type(ks._state_path), "with_suffix", side_effect=IOError("disk full")):
->>>>>>> origin/main
             with pytest.raises(IOError):
                 ks.activate(KillReason.MANUAL, "test")
         # Fail-safe: must remain active despite exception
@@ -156,7 +121,6 @@ class TestKillSwitch:
         assert "FAIL-SAFE" in ks._message
 
     def test_load_halted_state_blocks_trading(self, tmp_path):
-<<<<<<< HEAD
         """Restart with persisted halted state ÔåÆ is_active=True immediately."""
         state_file = str(tmp_path / "ks_state.json")
         # Write a halted state file
@@ -170,28 +134,13 @@ class TestKillSwitch:
                 }
             )
         )
-=======
-        """Restart with persisted halted state → is_active=True immediately."""
-        state_file = str(tmp_path / "ks_state.json")
-        # Write a halted state file
-        (tmp_path / "ks_state.json").write_text(json.dumps({
-            "is_active": True,
-            "reason": "drawdown_breach",
-            "message": "Drawdown 16.00%",
-            "activated_at": "2026-03-03T10:00:00",
-        }))
->>>>>>> origin/main
         # New KillSwitch restores halted state
         ks = KillSwitch(state_file=state_file)
         assert ks.is_active is True
         assert ks.reason == KillReason.DRAWDOWN
 
     def test_corrupt_state_file_activates_fail_safe(self, tmp_path):
-<<<<<<< HEAD
         """Corrupt JSON on disk ÔåÆ fail-safe activation."""
-=======
-        """Corrupt JSON on disk → fail-safe activation."""
->>>>>>> origin/main
         state_file = str(tmp_path / "ks_state.json")
         (tmp_path / "ks_state.json").write_text("{{{{NOT JSON")
         ks = KillSwitch(state_file=state_file)
@@ -215,28 +164,16 @@ class TestKillSwitch:
         assert ks.reason == KillReason.VOLATILITY_EXTREME
 
     def test_simultaneous_drawdown_and_daily_loss(self):
-<<<<<<< HEAD
         """Both drawdown and daily loss exceed thresholds ÔåÆ first hit wins."""
-=======
-        """Both drawdown and daily loss exceed thresholds → first hit wins."""
->>>>>>> origin/main
         cfg = KillSwitchConfig(max_drawdown_pct=0.05, max_daily_loss_pct=0.02)
         ks = KillSwitch(config=cfg)
         is_active = ks.check(drawdown_pct=0.10, daily_loss_pct=0.05)
         assert is_active is True
-<<<<<<< HEAD
         # Drawdown is checked first in source ÔåÆ should be the reason
         assert ks.reason == KillReason.DRAWDOWN
 
 
 # ÔöÇÔöÇ PositionRiskManager tests ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-        # Drawdown is checked first in source → should be the reason
-        assert ks.reason == KillReason.DRAWDOWN
-
-
-# ── PositionRiskManager tests ────────────────────────────────────────────
->>>>>>> origin/main
 
 
 class TestPositionRiskManager:
@@ -247,18 +184,12 @@ class TestPositionRiskManager:
     def test_register_and_count(self):
         mgr = PositionRiskManager()
         mgr.register_position(
-<<<<<<< HEAD
             pair_key="AAPL_MSFT",
             side="long",
             entry_z=2.0,
             entry_price=150.0,
             entry_bar=0,
             half_life=10.0,
-=======
-            pair_key="AAPL_MSFT", side="long",
-            entry_z=2.0, entry_price=150.0,
-            entry_bar=0, half_life=10.0,
->>>>>>> origin/main
             notional=10000.0,
         )
         assert mgr.position_count == 1
@@ -267,18 +198,12 @@ class TestPositionRiskManager:
     def test_remove_position(self):
         mgr = PositionRiskManager()
         mgr.register_position(
-<<<<<<< HEAD
             pair_key="A_B",
             side="long",
             entry_z=2.0,
             entry_price=100.0,
             entry_bar=0,
             half_life=10.0,
-=======
-            pair_key="A_B", side="long",
-            entry_z=2.0, entry_price=100.0,
-            entry_bar=0, half_life=10.0,
->>>>>>> origin/main
             notional=5000.0,
         )
         mgr.remove_position("A_B")
@@ -288,18 +213,12 @@ class TestPositionRiskManager:
         """check() returns (should_exit: bool, reason: str)."""
         mgr = PositionRiskManager()
         mgr.register_position(
-<<<<<<< HEAD
             pair_key="A_B",
             side="long",
             entry_z=2.0,
             entry_price=100.0,
             entry_bar=0,
             half_life=20.0,
-=======
-            pair_key="A_B", side="long",
-            entry_z=2.0, entry_price=100.0,
-            entry_bar=0, half_life=20.0,
->>>>>>> origin/main
             notional=5000.0,
         )
         result = mgr.check(
@@ -316,18 +235,12 @@ class TestPositionRiskManager:
         cfg = PositionRiskConfig(max_position_loss_pct=0.05)
         mgr = PositionRiskManager(config=cfg)
         mgr.register_position(
-<<<<<<< HEAD
             pair_key="A_B",
             side="long",
             entry_z=2.0,
             entry_price=100.0,
             entry_bar=0,
             half_life=20.0,
-=======
-            pair_key="A_B", side="long",
-            entry_z=2.0, entry_price=100.0,
-            entry_bar=0, half_life=20.0,
->>>>>>> origin/main
             notional=5000.0,
         )
         should_exit, reason = mgr.check(
@@ -351,11 +264,7 @@ class TestPositionRiskManager:
         assert reason == ""
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ PortfolioRiskManager tests ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── PortfolioRiskManager tests ───────────────────────────────────────────
->>>>>>> origin/main
 
 
 class TestPortfolioRiskManager:
@@ -370,22 +279,14 @@ class TestPortfolioRiskManager:
 
     def test_can_open_position_when_healthy(self):
         mgr = PortfolioRiskManager(initial_equity=100_000.0)
-<<<<<<< HEAD
         ok, _reason = mgr.can_open_position()
-=======
-        ok, reason = mgr.can_open_position()
->>>>>>> origin/main
         assert ok is True
 
     def test_cannot_open_when_max_positions(self):
         cfg = PortfolioRiskConfig(max_concurrent_positions=2)
         mgr = PortfolioRiskManager(initial_equity=100_000.0, config=cfg)
         mgr.set_open_positions(3)
-<<<<<<< HEAD
         ok, _reason = mgr.can_open_position()
-=======
-        ok, reason = mgr.can_open_position()
->>>>>>> origin/main
         assert ok is False
 
     def test_consecutive_losses_tracked(self):
@@ -410,10 +311,5 @@ class TestPortfolioRiskManager:
     def test_get_state_returns_state(self):
         mgr = PortfolioRiskManager()
         state = mgr.get_state()
-<<<<<<< HEAD
         assert hasattr(state, "current_equity")
         assert hasattr(state, "is_halted")
-=======
-        assert hasattr(state, 'current_equity')
-        assert hasattr(state, 'is_halted')
->>>>>>> origin/main

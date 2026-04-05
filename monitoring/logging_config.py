@@ -18,13 +18,7 @@ import threading
 import time
 import uuid
 from contextlib import contextmanager
-<<<<<<< HEAD
 from datetime import UTC, datetime
-=======
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional
->>>>>>> origin/main
 from functools import wraps
 from pathlib import Path
 

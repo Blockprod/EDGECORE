@@ -8,14 +8,11 @@ Provides:
 - Per-endpoint circuit breakers
 """
 
-<<<<<<< HEAD
-=======
 from typing import Callable, TypeVar, Any, Optional, Dict
 from enum import Enum
 from datetime import datetime, timezone
 from structlog import get_logger
 from dataclasses import dataclass, field
->>>>>>> origin/main
 import threading
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -69,15 +66,9 @@ class CircuitBreakerMetrics:
     failure_count: int = 0
     success_count: int = 0
     total_calls: int = 0
-<<<<<<< HEAD
     last_failure_time: datetime | None = None
     last_success_time: datetime | None = None
     state_change_time: datetime = field(default_factory=lambda: datetime.now(UTC))
-=======
-    last_failure_time: Optional[datetime] = None
-    last_success_time: Optional[datetime] = None
-    state_change_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
->>>>>>> origin/main
     consecutive_failures: int = 0
     consecutive_successes: int = 0
 
@@ -144,11 +135,7 @@ class CircuitBreaker:
         with self.lock:
             # Check if circuit should close due to timeout
             if self.metrics.state == CircuitBreakerState.OPEN:
-<<<<<<< HEAD
                 time_since_open = datetime.now(UTC) - self.metrics.state_change_time
-=======
-                time_since_open = datetime.now(timezone.utc) - self.metrics.state_change_time
->>>>>>> origin/main
                 if time_since_open.total_seconds() > self.config.timeout_seconds:
                     self._transition_to_half_open()
                     # Validate recovery with probe before accepting calls
@@ -177,11 +164,7 @@ class CircuitBreaker:
             result = func(*args, **kwargs)
             self._on_success()
             return result
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         except Exception:
             self._on_failure()
             raise
@@ -191,11 +174,7 @@ class CircuitBreaker:
         with self.lock:
             self.metrics.success_count += 1
             self.metrics.total_calls += 1
-<<<<<<< HEAD
             self.metrics.last_success_time = datetime.now(UTC)
-=======
-            self.metrics.last_success_time = datetime.now(timezone.utc)
->>>>>>> origin/main
             self.metrics.consecutive_successes += 1
             self.metrics.consecutive_failures = 0
 
@@ -216,17 +195,10 @@ class CircuitBreaker:
         with self.lock:
             self.metrics.failure_count += 1
             self.metrics.total_calls += 1
-<<<<<<< HEAD
             self.metrics.last_failure_time = datetime.now(UTC)
             self.metrics.consecutive_failures += 1
             self.metrics.consecutive_successes = 0
 
-=======
-            self.metrics.last_failure_time = datetime.now(timezone.utc)
-            self.metrics.consecutive_failures += 1
-            self.metrics.consecutive_successes = 0
-            
->>>>>>> origin/main
             # In HALF_OPEN: any failure immediately re-opens the circuit
             if self.metrics.state == CircuitBreakerState.HALF_OPEN:
                 self._transition_to_open()
@@ -246,11 +218,7 @@ class CircuitBreaker:
     def _transition_to_open(self) -> None:
         """Transition circuit to OPEN state."""
         self.metrics.state = CircuitBreakerState.OPEN
-<<<<<<< HEAD
         self.metrics.state_change_time = datetime.now(UTC)
-=======
-        self.metrics.state_change_time = datetime.now(timezone.utc)
->>>>>>> origin/main
         self.metrics.consecutive_successes = 0
 
         logger.error("circuit_breaker_opened", name=self.name, consecutive_failures=self.metrics.consecutive_failures)
@@ -258,34 +226,20 @@ class CircuitBreaker:
     def _transition_to_half_open(self) -> None:
         """Transition circuit to HALF_OPEN state."""
         self.metrics.state = CircuitBreakerState.HALF_OPEN
-<<<<<<< HEAD
         self.metrics.state_change_time = datetime.now(UTC)
-=======
-        self.metrics.state_change_time = datetime.now(timezone.utc)
->>>>>>> origin/main
         self.metrics.consecutive_successes = 0
         self.metrics.consecutive_failures = 0
 
         logger.info(
             "circuit_breaker_half_open",
             name=self.name,
-<<<<<<< HEAD
             timeout_elapsed_seconds=(datetime.now(UTC) - self.metrics.state_change_time).total_seconds(),
-=======
-            timeout_elapsed_seconds=(
-                datetime.now(timezone.utc) - self.metrics.state_change_time
-            ).total_seconds()
->>>>>>> origin/main
         )
 
     def _transition_to_closed(self) -> None:
         """Transition circuit to CLOSED state."""
         self.metrics.state = CircuitBreakerState.CLOSED
-<<<<<<< HEAD
         self.metrics.state_change_time = datetime.now(UTC)
-=======
-        self.metrics.state_change_time = datetime.now(timezone.utc)
->>>>>>> origin/main
         self.metrics.failure_count = 0
         self.metrics.consecutive_failures = 0
         self.metrics.consecutive_successes = 0

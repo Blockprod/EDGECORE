@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 IBKR Universe Scanner ÔÇö Dynamic discovery of the full tradeable universe.
 
@@ -6,15 +5,6 @@ Two-phase approach:
   1. **Bootstrap** ÔÇö Download full US equity list from SEC EDGAR
      (public JSON endpoint, ~10 000 tickers in < 2 seconds)
   2. **Validate & Enrich** ÔÇö Resolve contracts via IBKR
-=======
-"""
-IBKR Universe Scanner — Dynamic discovery of the full tradeable universe.
-
-Two-phase approach:
-  1. **Bootstrap** — Download full US equity list from SEC EDGAR
-     (public JSON endpoint, ~10 000 tickers in < 2 seconds)
-  2. **Validate & Enrich** — Resolve contracts via IBKR
->>>>>>> origin/main
      ``reqContractDetails`` to get industry/category classification,
      then filter by fundamental criteria (market cap, volume).
 
@@ -37,11 +27,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-<<<<<<< HEAD
 from typing import Any
-=======
-from typing import Any, Dict, List, Optional, Set
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -49,7 +35,6 @@ from universe.rate_limiter import IBKRRateLimiter
 
 logger = get_logger(__name__)
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ SEC EDGAR endpoint (public, no API key) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 SEC_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 
@@ -58,16 +43,6 @@ SEC_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 # "Semiconductors", "Regional Banks", etc.  We map these to our
 # standardized sector strings.
 IBKR_INDUSTRY_TO_SECTOR: dict[str, str] = {
-=======
-# ── SEC EDGAR endpoint (public, no API key) ──────────────────────────
-SEC_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
-
-# ── IBKR industry → normalized sector mapping ────────────────────────
-# IBKR contractDetails.industry returns strings like "Computers",
-# "Semiconductors", "Regional Banks", etc.  We map these to our
-# standardized sector strings.
-IBKR_INDUSTRY_TO_SECTOR: Dict[str, str] = {
->>>>>>> origin/main
     # Technology
     "Computers": "technology", "Semiconductors": "technology",
     "Software": "technology", "Internet": "technology",
@@ -153,11 +128,7 @@ IBKR_INDUSTRY_TO_SECTOR: Dict[str, str] = {
 }
 
 # US exchanges to keep from SEC EDGAR listing
-<<<<<<< HEAD
 _VALID_EXCHANGES: set[str] = {"NYSE", "NASDAQ", "Nasdaq", "Nyse", "AMEX", "Arca", "BATS"}
-=======
-_VALID_EXCHANGES: Set[str] = {"NYSE", "NASDAQ", "Nasdaq", "Nyse", "AMEX", "Arca", "BATS"}
->>>>>>> origin/main
 
 
 @dataclass
@@ -175,11 +146,7 @@ class ScannedSymbol:
     ibkr_validated: bool = False
     last_updated: str = ""
 
-<<<<<<< HEAD
     def to_dict(self) -> dict[str, Any]:
-=======
-    def to_dict(self) -> Dict[str, Any]:
->>>>>>> origin/main
         return {
             "ticker": self.ticker,
             "company_name": self.company_name,
@@ -195,11 +162,7 @@ class ScannedSymbol:
         }
 
     @staticmethod
-<<<<<<< HEAD
     def from_dict(d: dict[str, Any]) -> ScannedSymbol:
-=======
-    def from_dict(d: Dict[str, Any]) -> "ScannedSymbol":
->>>>>>> origin/main
         return ScannedSymbol(**{k: v for k, v in d.items() if k in ScannedSymbol.__dataclass_fields__})
 
 
@@ -209,17 +172,10 @@ class ScannerConfig:
     min_market_cap_usd: float = 500_000_000    # $500M minimum
     min_avg_volume_usd: float = 5_000_000      # $5M daily volume
     min_price: float = 5.0                      # exclude penny stocks
-<<<<<<< HEAD
     exchanges: list[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
     currency: str = "USD"
     country: str = "US"
     sec_types: list[str] = field(default_factory=lambda: ["STK"])
-=======
-    exchanges: List[str] = field(default_factory=lambda: ["NYSE", "NASDAQ", "AMEX"])
-    currency: str = "USD"
-    country: str = "US"
-    sec_types: List[str] = field(default_factory=lambda: ["STK"])
->>>>>>> origin/main
     cache_file: str = "cache/universe/ibkr_universe.json"
     cache_ttl_hours: int = 24
     ibkr_validation_workers: int = 5
@@ -230,17 +186,10 @@ class IBKRUniverseScanner:
     """
     Dynamic universe scanner combining SEC EDGAR + IBKR validation.
 
-<<<<<<< HEAD
     Phase 1 (bootstrap_from_sec): Fast ÔÇö downloads the SEC full ticker
     list (~10k companies, < 2 sec), filters by exchange.
 
     Phase 2 (validate_via_ibkr): Slower ÔÇö resolves each ticker via IBKR
-=======
-    Phase 1 (bootstrap_from_sec): Fast — downloads the SEC full ticker
-    list (~10k companies, < 2 sec), filters by exchange.
-
-    Phase 2 (validate_via_ibkr): Slower — resolves each ticker via IBKR
->>>>>>> origin/main
     reqContractDetails to get industry classification and validates
     tradability.  Uses rate limiter to stay within IBKR API limits.
 
@@ -250,15 +199,9 @@ class IBKRUniverseScanner:
     Usage::
 
         scanner = IBKRUniverseScanner()
-<<<<<<< HEAD
         # Quick ÔÇö SEC-only (no IBKR connection needed)
         symbols = scanner.bootstrap_from_sec()
         # Full ÔÇö SEC + IBKR validation
-=======
-        # Quick — SEC-only (no IBKR connection needed)
-        symbols = scanner.bootstrap_from_sec()
-        # Full — SEC + IBKR validation
->>>>>>> origin/main
         symbols = scanner.scan()
     """
 
@@ -283,22 +226,14 @@ class IBKRUniverseScanner:
     # Phase 1: SEC EDGAR bootstrap
     # ==================================================================
 
-<<<<<<< HEAD
     def bootstrap_from_sec(self) -> list[ScannedSymbol]:
-=======
-    def bootstrap_from_sec(self) -> List[ScannedSymbol]:
->>>>>>> origin/main
         """
         Download the full US equity ticker list from SEC EDGAR.
 
         self.batch_size = self.config.ibkr_batch_size
         self.async_mode = False
         Endpoint: https://www.sec.gov/files/company_tickers.json
-<<<<<<< HEAD
         This is a public, free endpoint ÔÇö no API key required.
-=======
-        This is a public, free endpoint — no API key required.
->>>>>>> origin/main
         Returns ~10 000 tickers with CIK, ticker, and company name.
 
         We filter to keep only NYSE/NASDAQ/AMEX tickers and exclude
@@ -335,11 +270,7 @@ class IBKRUniverseScanner:
                 # Fallback: essayer de charger un fichier local
                 local_path = "cache/company_tickers.json"
                 try:
-<<<<<<< HEAD
                     with open(local_path, encoding="utf-8") as f:
-=======
-                    with open(local_path, "r", encoding="utf-8") as f:
->>>>>>> origin/main
                         raw = json.load(f)
                     logger.info("sec_bootstrap_local_fallback", path=local_path)
                 except Exception as exc2:
@@ -349,13 +280,8 @@ class IBKRUniverseScanner:
             logger.error("sec_bootstrap_failed", error=str(exc)[:200])
             raise RuntimeError(f"SEC EDGAR download failed: {exc}") from exc
 
-<<<<<<< HEAD
         symbols: list[ScannedSymbol] = []
         seen: set[str] = set()
-=======
-        symbols: List[ScannedSymbol] = []
-        seen: Set[str] = set()
->>>>>>> origin/main
 
         for _key, entry in raw.items():
             ticker = str(entry.get("ticker", "")).upper().strip()
@@ -393,15 +319,9 @@ class IBKRUniverseScanner:
 
     def validate_via_ibkr(
         self,
-<<<<<<< HEAD
         symbols: list[ScannedSymbol],
         ib: Any = None,
     ) -> list[ScannedSymbol]:
-=======
-        symbols: List[ScannedSymbol],
-        ib: Any = None,
-    ) -> List[ScannedSymbol]:
->>>>>>> origin/main
         """
         Validate symbols via IBKR reqContractDetails and enrich with
         industry/sector classification.
@@ -419,11 +339,7 @@ class IBKRUniverseScanner:
             engine.connect()
             ib = engine._ib
 
-<<<<<<< HEAD
         validated: list[ScannedSymbol] = []
-=======
-        validated: List[ScannedSymbol] = []
->>>>>>> origin/main
         total = len(symbols)
         batch_size = self.config.ibkr_batch_size
 
@@ -457,21 +373,12 @@ class IBKRUniverseScanner:
         return validated
 
     def _validate_batch(
-<<<<<<< HEAD
         self, batch: list[ScannedSymbol], ib: Any
     ) -> list[ScannedSymbol]:
         """Validate a batch of symbols via IBKR."""
         from ib_insync import Stock
 
         results: list[ScannedSymbol] = []
-=======
-        self, batch: List[ScannedSymbol], ib: Any
-    ) -> List[ScannedSymbol]:
-        """Validate a batch of symbols via IBKR."""
-        from ib_insync import Stock
-
-        results: List[ScannedSymbol] = []
->>>>>>> origin/main
 
         for sym in batch:
             try:
@@ -503,11 +410,7 @@ class IBKRUniverseScanner:
 
                 # Get market cap if available via fundamental data
                 # (reqFundamentalData requires market data subscription)
-<<<<<<< HEAD
                 # We skip this for now ÔÇö filter by volume in Phase 3.
-=======
-                # We skip this for now — filter by volume in Phase 3.
->>>>>>> origin/main
 
                 results.append(sym)
 
@@ -559,13 +462,8 @@ class IBKRUniverseScanner:
 
     def apply_fundamental_filters(
         self,
-<<<<<<< HEAD
         symbols: list[ScannedSymbol],
     ) -> list[ScannedSymbol]:
-=======
-        symbols: List[ScannedSymbol],
-    ) -> List[ScannedSymbol]:
->>>>>>> origin/main
         """
         Filter symbols by fundamental criteria.
 
@@ -586,13 +484,8 @@ class IBKRUniverseScanner:
         Returns:
             Filtered list.
         """
-<<<<<<< HEAD
         passed: list[ScannedSymbol] = []
         reasons: dict[str, int] = {}
-=======
-        passed: List[ScannedSymbol] = []
-        reasons: Dict[str, int] = {}
->>>>>>> origin/main
 
         for sym in symbols:
             # Currency filter
@@ -625,15 +518,9 @@ class IBKRUniverseScanner:
     # Full scan pipeline
     # ==================================================================
 
-<<<<<<< HEAD
     def scan(self, ib: Any = None, use_cache: bool = True) -> list[ScannedSymbol]:
         """
         Full scan pipeline: SEC bootstrap ÔåÆ IBKR validation ÔåÆ filters.
-=======
-    def scan(self, ib: Any = None, use_cache: bool = True) -> List[ScannedSymbol]:
-        """
-        Full scan pipeline: SEC bootstrap → IBKR validation → filters.
->>>>>>> origin/main
 
         Args:
             ib: Optional connected ib_insync.IB instance.
@@ -669,15 +556,9 @@ class IBKRUniverseScanner:
         )
         return filtered
 
-<<<<<<< HEAD
     def scan_sec_only(self) -> list[ScannedSymbol]:
         """
         SEC-only scan ÔÇö no IBKR connection required.
-=======
-    def scan_sec_only(self) -> List[ScannedSymbol]:
-        """
-        SEC-only scan — no IBKR connection required.
->>>>>>> origin/main
 
         Returns symbols with ticker and company name, but WITHOUT
         industry/sector classification.  Useful for:
@@ -695,11 +576,7 @@ class IBKRUniverseScanner:
     # Cache management
     # ==================================================================
 
-<<<<<<< HEAD
     def save_cache(self, symbols: list[ScannedSymbol]) -> None:
-=======
-    def save_cache(self, symbols: List[ScannedSymbol]) -> None:
->>>>>>> origin/main
         """Save scanned universe to JSON cache."""
         data = {
             "timestamp": datetime.now().isoformat(),
@@ -711,11 +588,7 @@ class IBKRUniverseScanner:
             json.dump(data, f, indent=2)
         logger.info("universe_cache_saved", path=str(self._cache_path), count=len(symbols))
 
-<<<<<<< HEAD
     def load_cache(self) -> list[ScannedSymbol] | None:
-=======
-    def load_cache(self) -> Optional[List[ScannedSymbol]]:
->>>>>>> origin/main
         """Load cached universe, returning None if stale or missing."""
         if not self._cache_path.exists():
             return None
@@ -747,33 +620,19 @@ class IBKRUniverseScanner:
     # ==================================================================
 
     @staticmethod
-<<<<<<< HEAD
     def to_symbol_list(symbols: list[ScannedSymbol]) -> list[str]:
-=======
-    def to_symbol_list(symbols: List[ScannedSymbol]) -> List[str]:
->>>>>>> origin/main
         """Extract ticker list from scanned symbols."""
         return [s.ticker for s in symbols]
 
     @staticmethod
-<<<<<<< HEAD
     def to_sector_map(symbols: list[ScannedSymbol]) -> dict[str, str]:
-=======
-    def to_sector_map(symbols: List[ScannedSymbol]) -> Dict[str, str]:
->>>>>>> origin/main
         """Extract sector map {ticker: sector_name} from scanned symbols."""
         return {s.ticker: s.sector for s in symbols}
 
     @staticmethod
-<<<<<<< HEAD
     def symbols_by_sector(symbols: list[ScannedSymbol]) -> dict[str, list[str]]:
         """Group symbols by sector."""
         groups: dict[str, list[str]] = {}
-=======
-    def symbols_by_sector(symbols: List[ScannedSymbol]) -> Dict[str, List[str]]:
-        """Group symbols by sector."""
-        groups: Dict[str, List[str]] = {}
->>>>>>> origin/main
         for s in symbols:
             groups.setdefault(s.sector, []).append(s.ticker)
         return groups

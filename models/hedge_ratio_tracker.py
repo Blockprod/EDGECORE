@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Dynamic hedge ratio reestimation tracking.
 
@@ -16,32 +15,12 @@ from datetime import datetime
 
 import numpy as np
 from structlog import get_logger
-=======
-"""
-Dynamic hedge ratio reestimation tracking.
-
-Monitors β (hedge ratio) stability over time and flags pairs when β drifts
-significantly, indicating the cointegration relationship has degraded.
-
-Key Concept:
-- Initial β estimated once during pair discovery
-- Monthly reestimation checks if β has stayed stable
-- If β drifts > 10%, pair is flagged as unstable/deprecated
-- This prevents trading pairs with broken relationships
-"""
-
-import numpy as np
-from datetime import datetime
-from structlog import get_logger
-from typing import Dict, Tuple, Optional, List
->>>>>>> origin/main
 
 logger = get_logger(__name__)
 
 
 class HedgeRatioTracker:
     """
-<<<<<<< HEAD
     Track hedge ratio (╬▓) stability over time for each pair.
 
     Purpose:
@@ -56,33 +35,12 @@ class HedgeRatioTracker:
         """
         Initialize hedge ratio tracker.
 
-=======
-    Track hedge ratio (β) stability over time for each pair.
-    
-    Purpose:
-    - Monitor β changes at configurable frequency (default 7 days)
-    - Emergency reestimation when spread volatility exceeds 3σ
-    - Flag pairs when β drifts > 10% (indicating relationship breakdown)
-    - Prevent trading degraded pairs
-    - Log all changes for monitoring
-    """
-    
-    def __init__(
-        self,
-        reestimation_frequency_days: int = 7,
-        emergency_vol_sigma: float = 3.0
-    ):
-        """
-        Initialize hedge ratio tracker.
-        
->>>>>>> origin/main
         Args:
             reestimation_frequency_days: Check for reestimation every N days (default 7)
             emergency_vol_sigma: Trigger emergency reestimation if spread vol > N sigma (default 3.0)
         """
         self.reestimation_frequency_days = reestimation_frequency_days
         self.emergency_vol_sigma = emergency_vol_sigma
-<<<<<<< HEAD
 
         # Track ╬▓ estimates: {pair_key: [(timestamp, beta, is_stable)]}
         self.pair_betas: dict[str, list[tuple]] = {}
@@ -105,30 +63,6 @@ class HedgeRatioTracker:
         has a recorded ╬▓ history, this is a no-op so that per-bar model
         reconstruction does not pollute the tracker.
 
-=======
-        
-        # Track β estimates: {pair_key: [(timestamp, beta, is_stable)]}
-        self.pair_betas: Dict[str, List[Tuple]] = {}
-        
-        # Track deprecations: {pair_key: reason}
-        self.deprecated_pairs: Dict[str, str] = {}
-        
-        # Emergency reestimation counters
-        self.emergency_reestimation_count: int = 0
-        
-        logger.info(
-            "hedge_ratio_tracker_initialized",
-            reestimation_frequency_days=reestimation_frequency_days,
-            emergency_vol_sigma=emergency_vol_sigma
-        )
-    
-    def record_initial_beta(self, pair_key: str, beta: float, bar_time: Optional[datetime] = None) -> None:
-        """
-        Record initial β estimate for a pair.  Idempotent: if pair already
-        has a recorded β history, this is a no-op so that per-bar model
-        reconstruction does not pollute the tracker.
-        
->>>>>>> origin/main
         Args:
             pair_key: Pair identifier (e.g., "AAPL_MSFT")
             beta: Initial hedge ratio
@@ -136,7 +70,6 @@ class HedgeRatioTracker:
         """
         if pair_key not in self.pair_betas:
             self.pair_betas[pair_key] = []
-<<<<<<< HEAD
 
         # Only record if this pair has no history yet (idempotent guard).
         # DynamicSpreadModel is reconstructed every bar ÔÇô without this guard
@@ -171,75 +104,20 @@ class HedgeRatioTracker:
         Returns:
             Tuple of (beta_to_use, is_stable)
             - beta_to_use: The ╬▓ to use for spread calculation
-=======
-        
-        # Only record if this pair has no history yet (idempotent guard).
-        # DynamicSpreadModel is reconstructed every bar – without this guard
-        # the tracker would see every bar as a fresh "initialisation".
-        if len(self.pair_betas[pair_key]) > 0:
-            return
-        
-        ts = bar_time if bar_time is not None else datetime.now()
-        self.pair_betas[pair_key].append((
-            ts,
-            beta,
-            True,  # Initial estimate is assumed stable
-            None   # No drift for initial
-        ))
-        
-        logger.info(
-            "hedge_ratio_recorded_initial",
-            pair=pair_key,
-            beta=round(beta, 4)
-        )
-    
-    def reestimate_if_needed(
-        self,
-        pair_key: str,
-        new_beta: float,
-        drift_tolerance_pct: float = 10.0,
-        bar_time: Optional[datetime] = None
-    ) -> Tuple[float, bool]:
-        """
-        Check if β needs reestimation and handle if it does.
-        
-        Args:
-            pair_key: Pair identifier
-            new_beta: Newly computed β from recent data
-            drift_tolerance_pct: Maximum allowed drift before flagging (default: 10%)
-            bar_time: Timestamp of the current bar (uses datetime.now() if None, for live trading)
-        
-        Returns:
-            Tuple of (beta_to_use, is_stable)
-            - beta_to_use: The β to use for spread calculation
->>>>>>> origin/main
             - is_stable: Whether the relationship is still stable
         """
         # If pair is deprecated, don't reestimate
         if pair_key in self.deprecated_pairs:
             reason = self.deprecated_pairs[pair_key]
-<<<<<<< HEAD
             logger.debug("pair_skipped_deprecated", pair=pair_key, reason=reason)
             return None, False
 
         ts = bar_time if bar_time is not None else datetime.now()
 
-=======
-            logger.debug(
-                "pair_skipped_deprecated",
-                pair=pair_key,
-                reason=reason
-            )
-            return None, False
-        
-        ts = bar_time if bar_time is not None else datetime.now()
-        
->>>>>>> origin/main
         # If pair not yet tracked, initialize it
         if pair_key not in self.pair_betas:
             self.record_initial_beta(pair_key, new_beta, bar_time=ts)
             return new_beta, True
-<<<<<<< HEAD
 
         # Get last recorded ╬▓
         last_record = self.pair_betas[pair_key][-1]
@@ -262,35 +140,6 @@ class HedgeRatioTracker:
         # Record new estimate
         self.pair_betas[pair_key].append((ts, new_beta, is_stable, drift_pct))
 
-=======
-        
-        # Get last recorded β
-        last_record = self.pair_betas[pair_key][-1]
-        last_datetime, last_beta, last_is_stable, last_drift = last_record
-        
-        # Check if enough time has passed for reestimation
-        # Uses bar_time (not wall-clock) so backtest respects simulated dates
-        days_elapsed = (ts - last_datetime).days
-        
-        if days_elapsed < self.reestimation_frequency_days:
-            # Too soon to reestimate
-            return last_beta, last_is_stable
-        
-        # Calculate drift
-        drift_pct = abs(new_beta - last_beta) / abs(last_beta) * 100
-        
-        # Determine stability
-        is_stable = drift_pct <= drift_tolerance_pct
-        
-        # Record new estimate
-        self.pair_betas[pair_key].append((
-            ts,
-            new_beta,
-            is_stable,
-            drift_pct
-        ))
-        
->>>>>>> origin/main
         # Log the reestimation
         logger.info(
             "hedge_ratio_reestimated",
@@ -299,7 +148,6 @@ class HedgeRatioTracker:
             new_beta=round(new_beta, 4),
             drift_pct=round(drift_pct, 2),
             days_since_last=days_elapsed,
-<<<<<<< HEAD
             is_stable=is_stable,
         )
 
@@ -308,38 +156,17 @@ class HedgeRatioTracker:
             deprecation_reason = f"Hedge ratio drift {drift_pct:.1f}% exceeds tolerance ({drift_tolerance_pct}%)"
             self.deprecated_pairs[pair_key] = deprecation_reason
 
-=======
-            is_stable=is_stable
-        )
-        
-        # If drift exceeds tolerance, deprecate the pair
-        if not is_stable:
-            deprecation_reason = (
-                f"Hedge ratio drift {drift_pct:.1f}% exceeds tolerance "
-                f"({drift_tolerance_pct}%)"
-            )
-            self.deprecated_pairs[pair_key] = deprecation_reason
-            
->>>>>>> origin/main
             logger.warning(
                 "hedge_ratio_unstable_pair_deprecated",
                 pair=pair_key,
                 drift_pct=round(drift_pct, 2),
                 tolerance_pct=drift_tolerance_pct,
                 reason=deprecation_reason,
-<<<<<<< HEAD
                 action="STOP_TRADING",
             )
 
         return new_beta, is_stable
 
-=======
-                action="STOP_TRADING"
-            )
-        
-        return new_beta, is_stable
-    
->>>>>>> origin/main
     def emergency_reestimate(
         self,
         pair_key: str,
@@ -348,7 +175,6 @@ class HedgeRatioTracker:
         spread_vol_mean: float,
         spread_vol_std: float,
         drift_tolerance_pct: float = 10.0,
-<<<<<<< HEAD
         bar_time: datetime | None = None,
     ) -> tuple[float | None, bool, bool]:
         """
@@ -360,36 +186,18 @@ class HedgeRatioTracker:
         Args:
             pair_key: Pair identifier
             new_beta: Newly computed ╬▓ from recent data
-=======
-        bar_time: Optional[datetime] = None
-    ) -> Tuple[float, bool, bool]:
-        """
-        Emergency reestimation if spread volatility exceeds threshold (3σ).
-        
-        Bypasses the time-based check and immediately reestimates β when
-        spread volatility spikes above emergency_vol_sigma × σ.
-        
-        Args:
-            pair_key: Pair identifier
-            new_beta: Newly computed β from recent data
->>>>>>> origin/main
             spread_vol: Current spread volatility
             spread_vol_mean: Mean of historical spread volatility
             spread_vol_std: Std of historical spread volatility
             drift_tolerance_pct: Maximum allowed drift before flagging (default 10%)
             bar_time: Timestamp of the current bar (uses datetime.now() if None, for live trading)
-<<<<<<< HEAD
 
-=======
-            
->>>>>>> origin/main
         Returns:
             Tuple of (beta_to_use, is_stable, emergency_triggered)
         """
         # Check if emergency threshold is breached
         if spread_vol_std < 1e-10:
             return None, True, False
-<<<<<<< HEAD
 
         vol_z = (spread_vol - spread_vol_mean) / spread_vol_std
 
@@ -402,20 +210,6 @@ class HedgeRatioTracker:
 
         ts = bar_time if bar_time is not None else datetime.now()
 
-=======
-            
-        vol_z = (spread_vol - spread_vol_mean) / spread_vol_std
-        
-        if vol_z <= self.emergency_vol_sigma:
-            # No emergency – use normal path
-            return None, True, False
-        
-        # Emergency triggered – force reestimation regardless of time
-        self.emergency_reestimation_count += 1
-        
-        ts = bar_time if bar_time is not None else datetime.now()
-        
->>>>>>> origin/main
         # If pair not yet tracked, initialize
         if pair_key not in self.pair_betas or not self.pair_betas[pair_key]:
             self.record_initial_beta(pair_key, new_beta, bar_time=ts)
@@ -424,7 +218,6 @@ class HedgeRatioTracker:
                 pair=pair_key,
                 vol_z=round(vol_z, 2),
                 threshold=self.emergency_vol_sigma,
-<<<<<<< HEAD
                 count=self.emergency_reestimation_count,
             )
             return new_beta, True, True
@@ -440,28 +233,6 @@ class HedgeRatioTracker:
         # Record emergency reestimation
         self.pair_betas[pair_key].append((ts, new_beta, is_stable, drift_pct))
 
-=======
-                count=self.emergency_reestimation_count
-            )
-            return new_beta, True, True
-        
-        # Get last β
-        last_record = self.pair_betas[pair_key][-1]
-        _, last_beta, _, _ = last_record
-        
-        # Calculate drift
-        drift_pct = abs(new_beta - last_beta) / abs(last_beta) * 100 if abs(last_beta) > 1e-10 else 0.0
-        is_stable = drift_pct <= drift_tolerance_pct
-        
-        # Record emergency reestimation
-        self.pair_betas[pair_key].append((
-            ts,
-            new_beta,
-            is_stable,
-            drift_pct
-        ))
-        
->>>>>>> origin/main
         logger.warning(
             "emergency_reestimate_triggered",
             pair=pair_key,
@@ -471,20 +242,13 @@ class HedgeRatioTracker:
             new_beta=round(new_beta, 4),
             drift_pct=round(drift_pct, 2),
             is_stable=is_stable,
-<<<<<<< HEAD
             count=self.emergency_reestimation_count,
         )
 
-=======
-            count=self.emergency_reestimation_count
-        )
-        
->>>>>>> origin/main
         # Deprecate if unstable
         if not is_stable:
             deprecation_reason = (
                 f"Emergency reestimate: drift {drift_pct:.1f}% exceeds tolerance "
-<<<<<<< HEAD
                 f"({drift_tolerance_pct}%) after vol spike ({vol_z:.1f}¤â)"
             )
             self.deprecated_pairs[pair_key] = deprecation_reason
@@ -507,39 +271,11 @@ class HedgeRatioTracker:
         """
         Get full ╬▓ history for a pair.
 
-=======
-                f"({drift_tolerance_pct}%) after vol spike ({vol_z:.1f}σ)"
-            )
-            self.deprecated_pairs[pair_key] = deprecation_reason
-            
-            logger.warning(
-                "emergency_reestimate_pair_deprecated",
-                pair=pair_key,
-                reason=deprecation_reason,
-                action="STOP_TRADING"
-            )
-        
-        return new_beta, is_stable, True
-    
-    def is_pair_deprecated(self, pair_key: str) -> bool:
-        """Check if a pair has been deprecated due to β instability."""
-        return pair_key in self.deprecated_pairs
-    
-    def get_deprecation_reason(self, pair_key: str) -> Optional[str]:
-        """Get reason why a pair was deprecated, if applicable."""
-        return self.deprecated_pairs.get(pair_key)
-    
-    def get_pair_history(self, pair_key: str) -> List[Dict]:
-        """
-        Get full β history for a pair.
-        
->>>>>>> origin/main
         Returns:
             List of dicts with timestamp, beta, is_stable, drift_pct
         """
         if pair_key not in self.pair_betas:
             return []
-<<<<<<< HEAD
 
         return [
             {"timestamp": record[0], "beta": record[1], "is_stable": record[2], "drift_pct": record[3]}
@@ -547,29 +283,11 @@ class HedgeRatioTracker:
         ]
 
     def get_summary(self) -> dict:
-=======
-        
-        return [
-            {
-                'timestamp': record[0],
-                'beta': record[1],
-                'is_stable': record[2],
-                'drift_pct': record[3]
-            }
-            for record in self.pair_betas[pair_key]
-        ]
-    
-    def get_summary(self) -> Dict:
->>>>>>> origin/main
         """Get summary statistics of tracked pairs."""
         total_pairs = len(self.pair_betas)
         deprecated_count = len(self.deprecated_pairs)
         active_count = total_pairs - deprecated_count
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Calculate average drift for active pairs
         active_drifts = []
         for pair_key, records in self.pair_betas.items():
@@ -577,7 +295,6 @@ class HedgeRatioTracker:
                 drifts = [r[3] for r in records if r[3] is not None]
                 if drifts:
                     active_drifts.extend(drifts)
-<<<<<<< HEAD
 
         avg_drift = np.mean(active_drifts) if active_drifts else 0.0
         max_drift = np.max(active_drifts) if active_drifts else 0.0
@@ -595,49 +312,20 @@ class HedgeRatioTracker:
         """
         Reset a pair's history (use with caution).
 
-=======
-        
-        avg_drift = np.mean(active_drifts) if active_drifts else 0.0
-        max_drift = np.max(active_drifts) if active_drifts else 0.0
-        
-        return {
-            'total_pairs_tracked': total_pairs,
-            'active_pairs': active_count,
-            'deprecated_pairs': deprecated_count,
-            'average_drift_active_pct': round(avg_drift, 2),
-            'max_drift_active_pct': round(max_drift, 2),
-            'deprecated_pair_keys': list(self.deprecated_pairs.keys())
-        }
-    
-    def reset_pair(self, pair_key: str) -> None:
-        """
-        Reset a pair's history (use with caution).
-        
->>>>>>> origin/main
         Args:
             pair_key: Pair to reset
         """
         if pair_key in self.deprecated_pairs:
             del self.deprecated_pairs[pair_key]
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         if pair_key in self.pair_betas:
             # Keep only the initial estimate
             if self.pair_betas[pair_key]:
                 initial = self.pair_betas[pair_key][0]
                 self.pair_betas[pair_key] = [initial]
-<<<<<<< HEAD
 
         logger.info("hedge_ratio_pair_reset", pair=pair_key)
 
-=======
-        
-        logger.info("hedge_ratio_pair_reset", pair=pair_key)
-    
->>>>>>> origin/main
     def reset_all(self) -> None:
         """Reset all tracking (start fresh)."""
         self.pair_betas.clear()

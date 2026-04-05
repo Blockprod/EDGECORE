@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python
-=======
-#!/usr/bin/env python
->>>>>>> origin/main
 """Quick test to verify backtest execution."""
 import subprocess
 import sys

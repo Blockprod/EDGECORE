@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for Sprint 4.5 ÔÇô Event-driven backtester with order book simulation.
 
@@ -7,16 +6,6 @@ Covers:
   2. simulate_fill ÔÇô bid/ask spread, partial fills, market impact, gap slippage
   3. Participation rate calculation
   4. Full run ÔÇô produces BacktestMetrics
-=======
-"""
-Tests for Sprint 4.5 – Event-driven backtester with order book simulation.
-
-Covers:
-  1. Order / MarketState / Fill data classes
-  2. simulate_fill – bid/ask spread, partial fills, market impact, gap slippage
-  3. Participation rate calculation
-  4. Full run – produces BacktestMetrics
->>>>>>> origin/main
   5. Comparison: event-driven should be more pessimistic than simple fill
   6. Edge cases
 """
@@ -24,7 +13,6 @@ Covers:
 import numpy as np
 import pandas as pd
 
-<<<<<<< HEAD
 from backtests.cost_model import CostModel
 from backtests.event_driven import (
     EventDrivenBacktester,
@@ -32,16 +20,6 @@ from backtests.event_driven import (
     MarketState,
     Order,
 )
-=======
-from backtests.event_driven import (
-    EventDrivenBacktester,
-    Order,
-    MarketState,
-    Fill,
-)
-from backtests.cost_model import CostModel
-
->>>>>>> origin/main
 
 # ===================================================================
 # Helpers
@@ -89,11 +67,7 @@ class TestDataClasses:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 2. simulate_fill ÔÇô Bid/Ask spread
-=======
-# 2. simulate_fill – Bid/Ask spread
->>>>>>> origin/main
 # ===================================================================
 
 class TestBidAskSpread:
@@ -131,21 +105,13 @@ class TestBidAskSpread:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 3. simulate_fill ÔÇô Partial fills
-=======
-# 3. simulate_fill – Partial fills
->>>>>>> origin/main
 # ===================================================================
 
 class TestPartialFills:
 
     def test_small_order_fully_filled(self):
-<<<<<<< HEAD
         """Order smaller than 5% of volume Ôåô full fill."""
-=======
-        """Order smaller than 5% of volume ↓ full fill."""
->>>>>>> origin/main
         bt = _default_bt(max_participation_rate=0.05)
         order = _simple_order(notional=100, price=100.0)
         ms = _simple_market(volume=1e9)  # 100/(1e9) << 5%
@@ -154,15 +120,9 @@ class TestPartialFills:
         assert fill.filled_notional == 100
 
     def test_large_order_partially_filled(self):
-<<<<<<< HEAD
         """Order exceeding 5% volume Ôåô partial fill, capped to 5%."""
         bt = _default_bt(max_participation_rate=0.05)
         # volume = 10,000 USD-equiv Ôåô 5% = 500 Ôåô order 1000 Ôåô partial
-=======
-        """Order exceeding 5% volume ↓ partial fill, capped to 5%."""
-        bt = _default_bt(max_participation_rate=0.05)
-        # volume = 10,000 USD-equiv ↓ 5% = 500 ↓ order 1000 ↓ partial
->>>>>>> origin/main
         order = _simple_order(notional=1000, price=100.0)
         ms = _simple_market(close=100.0, volume=10_000)
         fill = bt.simulate_fill(order, ms)
@@ -171,15 +131,9 @@ class TestPartialFills:
         assert fill.fill_ratio <= 0.05 / (1000 / 10_000) + 0.01  # rough check
 
     def test_participation_at_boundary(self):
-<<<<<<< HEAD
         """Order exactly at 5% Ôåô full fill."""
         bt = _default_bt(max_participation_rate=0.05)
         # volume = 20,000 Ôåô 5% = 1000 Ôåô order 1000 Ôåô exactly at boundary
-=======
-        """Order exactly at 5% ↓ full fill."""
-        bt = _default_bt(max_participation_rate=0.05)
-        # volume = 20,000 ↓ 5% = 1000 ↓ order 1000 ↓ exactly at boundary
->>>>>>> origin/main
         order = _simple_order(notional=1000, price=100.0)
         ms = _simple_market(close=100.0, volume=20_000)
         fill = bt.simulate_fill(order, ms)
@@ -187,11 +141,7 @@ class TestPartialFills:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 4. simulate_fill ÔÇô Market impact
-=======
-# 4. simulate_fill – Market impact
->>>>>>> origin/main
 # ===================================================================
 
 class TestMarketImpact:
@@ -219,11 +169,7 @@ class TestMarketImpact:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 5. simulate_fill ÔÇô Gap slippage
-=======
-# 5. simulate_fill – Gap slippage
->>>>>>> origin/main
 # ===================================================================
 
 class TestGapSlippage:
@@ -238,11 +184,7 @@ class TestGapSlippage:
     def test_large_gap_adds_slippage(self):
         bt = _default_bt(book_depth_pct=0.0, market_impact_coeff=0.0, gap_slippage_multiplier=2.0)
         order = _simple_order(side="buy", price=100.0, notional=100)
-<<<<<<< HEAD
         # 5% gap Ôåô extra slippage
-=======
-        # 5% gap ↓ extra slippage
->>>>>>> origin/main
         ms = _simple_market(close=100.0, prev_close=95.0, volume=1e12)
         fill = bt.simulate_fill(order, ms)
         assert fill.slippage_bps > 50  # significant extra slippage
@@ -258,11 +200,7 @@ class TestGapSlippage:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 6. simulate_fill ÔÇô Execution cost
-=======
-# 6. simulate_fill – Execution cost
->>>>>>> origin/main
 # ===================================================================
 
 class TestExecutionCost:
@@ -308,11 +246,7 @@ class TestParticipationRate:
 
 
 # ===================================================================
-<<<<<<< HEAD
 # 8. Full run ÔÇô basic
-=======
-# 8. Full run – basic
->>>>>>> origin/main
 # ===================================================================
 
 class TestFullRun:

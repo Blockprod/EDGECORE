@@ -7,7 +7,6 @@ before the function returns.
 """
 
 import csv
-<<<<<<< HEAD
 import hashlib
 import hmac as _hmac_module
 import io
@@ -16,14 +15,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-=======
-import io
-import os
-import tempfile
-from pathlib import Path
-from datetime import datetime
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
->>>>>>> origin/main
 from structlog import get_logger
 
 from common.validators import EquityError
@@ -199,7 +190,6 @@ class AuditTrail:
         event_id = event_id or f"{datetime.now(UTC).isoformat()}_{event.symbol_pair}"
 
         try:
-<<<<<<< HEAD
             self._atomic_append(
                 self.trail_file,
                 [
@@ -224,20 +214,6 @@ class AuditTrail:
                 _AUDIT_HMAC_KEY,
                 force_fsync=self._fsync_always,
             )
-=======
-            self._atomic_append(self.trail_file, [
-                event.timestamp.isoformat(),
-                event.event_type.value,
-                event.symbol_pair,
-                event.reason if event.event_type == EventType.TRADE_ENTRY else None,
-                event.position_size,
-                event.entry_price or '',
-                event.exit_price or '',
-                event.pnl or '',
-                current_equity,
-                event_id
-            ])
->>>>>>> origin/main
             logger.info(
                 "trade_event_logged",
                 event_type=event.event_type.value,
@@ -266,41 +242,22 @@ class AuditTrail:
             raise EquityError(f"Cannot snapshot invalid equity: {current_equity}")
 
         try:
-<<<<<<< HEAD
             self._atomic_append(
                 self.equity_snapshot_file,
                 [datetime.now(UTC).isoformat(), current_equity, positions_count, positions_list or ""],
                 _AUDIT_HMAC_KEY,
                 force_fsync=self._fsync_always,
-=======
-            self._atomic_append(self.equity_snapshot_file, [
-                datetime.now().isoformat(),
-                current_equity,
-                positions_count,
-                positions_list or ''
-            ])
-            logger.info(
-                "equity_snapshot_logged",
-                equity=current_equity,
-                positions_count=positions_count
->>>>>>> origin/main
             )
             logger.info("equity_snapshot_logged", equity=current_equity, positions_count=positions_count)
         except OSError as e:
             logger.error("snapshot_write_failed", error=str(e), file=str(self.equity_snapshot_file))
-<<<<<<< HEAD
             raise EquityError(f"Failed to persist equity snapshot: {e}") from e
 
-=======
-            raise EquityError(f"Failed to persist equity snapshot: {e}")
-    
->>>>>>> origin/main
     # ------------------------------------------------------------------
     # Atomic I/O helpers
     # ------------------------------------------------------------------
 
     @staticmethod
-<<<<<<< HEAD
     def _atomic_append(filepath: Path, row: list, hmac_key: bytes = b"", force_fsync: bool = True) -> None:
         """Append a single CSV row with configurable fsync durability (C-12).
 
@@ -332,30 +289,6 @@ class AuditTrail:
             os.close(fd)
 
     def recover_state(self) -> tuple[dict[str, "_PositionRecord"], list[float]]:
-=======
-    def _atomic_append(filepath: Path, row: list) -> None:
-        """Append a single CSV row with ``os.fsync()`` durability.
-
-        Writes the row to a temporary file first, then appends its
-        content to *filepath* and calls ``os.fsync()`` on the file
-        descriptor.  If the process is killed between the write and
-        the fsync, the worst case is the row is missing — the file
-        itself is never corrupted because we only ever append a
-        complete, pre-serialised line.
-        """
-        buf = io.StringIO()
-        csv.writer(buf).writerow(row)
-        line = buf.getvalue()
-
-        fd = os.open(str(filepath), os.O_WRONLY | os.O_APPEND | os.O_CREAT)
-        try:
-            os.write(fd, line.encode('utf-8'))
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-    
-    def recover_state(self) -> Tuple[Dict[str, '_PositionRecord'], List[float]]:
->>>>>>> origin/main
         """
         Reconstruct positions and equity history from audit trail.
 

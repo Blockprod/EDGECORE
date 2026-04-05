@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿# ROADMAP: Score 4/10 ÔåÆ 10/10
 
 **Objectif**: Transformer EDGECORE en syst├¿me production-grade pour trading r├®el avec capital.
@@ -24,50 +23,15 @@
 **Probl├¿me**: Pas de validation d'entr├®e ÔåÆ crashes, garbage values
 
 **Solution**: Cr├®er un validateur centralis├® r├®utilisable
-=======
-# ROADMAP: Score 4/10 → 10/10
-
-**Objectif**: Transformer EDGECORE en système production-grade pour trading réel avec capital.
-
-**Stratégie**: 
-- **Phase 1 (CRITICAL FIX)**: Éliminer tous les blocages 🔴 → Score 5→6
-- **Phase 2 (ROBUSTNESS)**: Sécurité + fiabilité → Score 6→7
-- **Phase 3 (QUALITY)**: Tests + monitoring → Score 7→8
-- **Phase 4 (EXCELLENCE)**: Perf + documentation → Score 8→10
-
-**Durée estimée**: 80-100 heures = 2-3 semaines (full-time)
-
-**Budget de risque**: Aucune modification ne peut réduire le score (toutes les PRs testées en isolation)
-
----
-
-## PHASE 1: CRITICAL FIX (4→6/10) — 24 heures
-
-**Objectif**: Éliminer les 5 blocages 🔴 qui créent 75% des risques.
-
-### 1.1 Input Validation Framework (4h)
-
-**Problème**: Pas de validation d'entrée → crashes, garbage values
-
-**Solution**: Créer un validateur centralisé réutilisable
->>>>>>> origin/main
 
 ```
 FICHIER: common/validators.py
 CONTENU:
-<<<<<<< HEAD
   - validate_symbol(symbol: str) ÔåÆ raises ValueError
   - validate_position_size(size: float) ÔåÆ raises ValueError
   - validate_equity(equity: float) ÔåÆ raises ValueError
   - validate_volatility(vol: float) ÔåÆ raises ValueError
   - validate_config(config: dict) ÔåÆ raises ConfigError
-=======
-  - validate_symbol(symbol: str) → raises ValueError
-  - validate_position_size(size: float) → raises ValueError
-  - validate_equity(equity: float) → raises ValueError
-  - validate_volatility(vol: float) → raises ValueError
-  - validate_config(config: dict) → raises ConfigError
->>>>>>> origin/main
   - SanityCheckContext (context manager)
 
 TESTS: common/test_validators.py (20 tests)
@@ -77,35 +41,21 @@ TESTS: common/test_validators.py (20 tests)
 ```
 
 **Effort**: 4h  
-<<<<<<< HEAD
 **Impact**: ­ƒö┤ÔåÆ­ƒƒá (kills silent failures)  
-=======
-**Impact**: 🔴→🟠 (kills silent failures)  
->>>>>>> origin/main
 **Check**: `pytest common/test_validators.py -v --cov`
 
 ---
 
 ### 1.2 Inject Equity Config (1h)
 
-<<<<<<< HEAD
 **Probl├¿me**: `RiskEngine.initial_equity = 100000` hardcod├®
 
 **Solution**: Passer equity en param├¿tre constructeur + settings
-=======
-**Problème**: `RiskEngine.initial_equity = 100000` hardcodé
-
-**Solution**: Passer equity en paramètre constructeur + settings
->>>>>>> origin/main
 
 ```
 FICHIER: risk/engine.py
 CHANGE:
-<<<<<<< HEAD
   - __init__(self) ÔåÆ __init__(self, initial_equity: float, initial_cash: float)
-=======
-  - __init__(self) → __init__(self, initial_equity: float, initial_cash: float)
->>>>>>> origin/main
   - Add assertions: 100 <= initial_equity <= 1_000_000_000
   - Add assertions: 0 < initial_cash <= initial_equity
 
@@ -124,22 +74,14 @@ ADD:
 ```
 
 **Effort**: 1h  
-<<<<<<< HEAD
 **Impact**: ­ƒö┤ÔåÆ­ƒƒá (fixes state initialization)  
-=======
-**Impact**: 🔴→🟠 (fixes state initialization)  
->>>>>>> origin/main
 **Check**: `pytest tests/test_risk_engine.py::test_risk_engine_invalid_equity -v`
 
 ---
 
 ### 1.3 Broker Reconciliation at Startup (6h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Local positions Ôëá broker positions ÔåÆ state divergence
-=======
-**Problème**: Local positions ≠ broker positions → state divergence
->>>>>>> origin/main
 
 **Solution**: Implement reconciliation loop at startup
 
@@ -147,29 +89,20 @@ ADD:
 FICHIER: risk/reconciler.py (NEW)
 CONTAINS:
   class BrokerReconciler:
-<<<<<<< HEAD
     def reconcile(broker) ÔåÆ None
-=======
-    def reconcile(broker) → None
->>>>>>> origin/main
     - Fetch broker positions
     - Fetch broker orders
     - Compare with local state
     - Raise ERROR if mismatch
     - Log full reconciliation report
     
-<<<<<<< HEAD
     def diagnose_mismatch() ÔåÆ str
-=======
-    def diagnose_mismatch() → str
->>>>>>> origin/main
     - What's on broker but not in cache
     - What's in cache but not on broker
     - Quantified risk from mismatch
 
 FICHIER: execution/base.py
 ADD:
-<<<<<<< HEAD
   - get_open_orders() ÔåÆ List[Order]
   - get_account_summary() ÔåÆ Dict (equity, cash, risk level)
 
@@ -177,15 +110,6 @@ FICHIER: execution/IBKR API_engine.py
 IMPLEMENT:
   - get_open_orders() ÔåÆ fetch all active orders from IBKR
   - get_account_summary() ÔåÆ fetch account balance + positions
-=======
-  - get_open_orders() → List[Order]
-  - get_account_summary() → Dict (equity, cash, risk level)
-
-FICHIER: execution/IBKR API_engine.py
-IMPLEMENT:
-  - get_open_orders() → fetch all active orders from IBKR
-  - get_account_summary() → fetch account balance + positions
->>>>>>> origin/main
 
 FICHIER: main.py
 CHANGE:
@@ -197,7 +121,6 @@ CHANGE:
 
 FICHIER: tests/test_reconciliation.py (NEW)
 TESTS:
-<<<<<<< HEAD
   - test_reconcile_matching_state() Ô£ô
   - test_reconcile_missing_broker_position() Ô£ô (raises)
   - test_reconcile_unknown_broker_position() Ô£ô (raises)
@@ -206,27 +129,13 @@ TESTS:
 
 **Effort**: 6h  
 **Impact**: ­ƒö┤ÔåÆ­ƒƒá (prevents state divergence)  
-=======
-  - test_reconcile_matching_state() ✓
-  - test_reconcile_missing_broker_position() ✓ (raises)
-  - test_reconcile_unknown_broker_position() ✓ (raises)
-  - test_reconcile_partial_fills() ✓
-```
-
-**Effort**: 6h  
-**Impact**: 🔴→🟠 (prevents state divergence)  
->>>>>>> origin/main
 **Check**: `pytest tests/test_reconciliation.py -v`
 
 ---
 
 ### 1.4 Order Timeout + Force Close Logic (5h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Ordres peuvent rester ouvertes ind├®finiment ("stuck orders")
-=======
-**Problème**: Ordres peuvent rester ouvertes indéfiniment ("stuck orders")
->>>>>>> origin/main
 
 **Solution**: Track order age, force cancel/liquidate si > timeout
 
@@ -235,28 +144,17 @@ FICHIER: execution/order_lifecycle.py (NEW)
 CONTAINS:
   class OrderLifecycleManager:
     - track_order(order_id, created_at, symbol, qty)
-<<<<<<< HEAD
     - get_stale_orders(timeout_sec=300) ÔåÆ List[stale_orders]
     - force_cancel_stale() ÔåÆ None (cancel + log)
     - force_liquidate_stale() ÔåÆ None (market order to close)
-=======
-    - get_stale_orders(timeout_sec=300) → List[stale_orders]
-    - force_cancel_stale() → None (cancel + log)
-    - force_liquidate_stale() → None (market order to close)
->>>>>>> origin/main
     
     - Properties: MAX_ORDER_AGE = 300 seconds (5 min)
 
 FICHIER: execution/IBKR API_engine.py
 ADD:
   - self.order_lifecycle = OrderLifecycleManager()
-<<<<<<< HEAD
   - submit_order() ÔåÆ registers order in lifecycle manager
   - get_stale_orders() ÔåÆ delegates to lifecycle manager
-=======
-  - submit_order() → registers order in lifecycle manager
-  - get_stale_orders() → delegates to lifecycle manager
->>>>>>> origin/main
 
 FICHIER: main.py
 CHANGE:
@@ -275,22 +173,14 @@ TESTS:
 ```
 
 **Effort**: 5h  
-<<<<<<< HEAD
 **Impact**: ­ƒö┤ÔåÆ­ƒƒá (prevents stuck orders)  
-=======
-**Impact**: 🔴→🟠 (prevents stuck orders)  
->>>>>>> origin/main
 **Check**: `pytest tests/test_order_lifecycle.py -v`
 
 ---
 
 ### 1.5 Add Monitoring + Slack Alerts (8h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Pas d'alerts ÔåÆ humans unaware of failures
-=======
-**Problème**: Pas d'alerts → humans unaware of failures
->>>>>>> origin/main
 
 **Solution**: Critical alerts to Slack (equity drop, errors, order timeout)
 
@@ -362,11 +252,7 @@ TESTS:
 ```
 
 **Effort**: 8h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (visibility + response)  
-=======
-**Impact**: 🟠→🟢 (visibility + response)  
->>>>>>> origin/main
 **Check**: 
 ```bash
 pytest tests/test_alerter.py -v
@@ -375,7 +261,6 @@ curl -s http://localhost:8000/status.json  # Check dashboard
 
 ---
 
-<<<<<<< HEAD
 ## PHASE 1 CHECKPOINT: Score 4ÔåÆ6/10 Ô£à
 
 | Item | Before | After | Gained |
@@ -384,16 +269,6 @@ curl -s http://localhost:8000/status.json  # Check dashboard
 | State management | 20% | 70% | ­ƒƒá Major |
 | Error handling | 15% | 60% | ­ƒƒá Major |
 | Observability | 5% | 50% | ­ƒƒá Major |
-=======
-## PHASE 1 CHECKPOINT: Score 4→6/10 ✅
-
-| Item | Before | After | Gained |
-|------|--------|-------|--------|
-| Input validation | 0% | 95% | 🟠 Major |
-| State management | 20% | 70% | 🟠 Major |
-| Error handling | 15% | 60% | 🟠 Major |
-| Observability | 5% | 50% | 🟠 Major |
->>>>>>> origin/main
 
 **Actions**: 1 + 2 + 3 + 4 + 5  
 **Effort**: 4 + 1 + 6 + 5 + 8 = **24 hours**  
@@ -406,19 +281,11 @@ pytest tests/test_validators.py tests/test_risk_engine.py tests/test_reconciliat
 
 ---
 
-<<<<<<< HEAD
 ## PHASE 2: ROBUSTNESS (6ÔåÆ7/10) ÔÇö 20 heures
 
 ### 2.1 Input Validation in Configuration (2h)
 
 **Probl├¿me**: YAML config peut avoir n'importe quelle valeur
-=======
-## PHASE 2: ROBUSTNESS (6→7/10) — 20 heures
-
-### 2.1 Input Validation in Configuration (2h)
-
-**Problème**: YAML config peut avoir n'importe quelle valeur
->>>>>>> origin/main
 
 **Solution**: Validate config schema on load
 
@@ -435,13 +302,8 @@ CONTAINS:
 
 FICHIER: config/settings.py
 CHANGE:
-<<<<<<< HEAD
   - Load YAML ÔåÆ Validate with Pydantic
   - If validation fails ÔåÆ raise ConfigError with clear message
-=======
-  - Load YAML → Validate with Pydantic
-  - If validation fails → raise ConfigError with clear message
->>>>>>> origin/main
   - Log all config values on startup (for audit)
 
 FICHIER: tests/test_config_validation.py
@@ -452,21 +314,13 @@ TESTS:
 ```
 
 **Effort**: 2h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (config errors caught immediately)
-=======
-**Impact**: 🟠→🟢 (config errors caught immediately)
->>>>>>> origin/main
 
 ---
 
 ### 2.2 Refactor Paper/Live Code Duplication (4h)
 
-<<<<<<< HEAD
 **Probl├¿me**: `run_paper_trading()` et `run_live_trading()` = 90% duplicate code
-=======
-**Problème**: `run_paper_trading()` et `run_live_trading()` = 90% duplicate code
->>>>>>> origin/main
 
 **Solution**: Extract common loop, separate pre-flight checks
 
@@ -487,19 +341,11 @@ FICHIER: execution/modes.py (NEW)
 CONTAINS:
   class ExecutionMode(ABC):
     @abstractmethod
-<<<<<<< HEAD
     def validate_startup_conditions() ÔåÆ None
     @abstractmethod
     def on_startup(context: ExecutionContext) ÔåÆ None
     @abstractmethod
     def on_shutdown(context: ExecutionContext) ÔåÆ None
-=======
-    def validate_startup_conditions() → None
-    @abstractmethod
-    def on_startup(context: ExecutionContext) → None
-    @abstractmethod
-    def on_shutdown(context: ExecutionContext) → None
->>>>>>> origin/main
   
   class BacktestMode(ExecutionMode): ...
   class PaperMode(ExecutionMode): ...
@@ -571,21 +417,13 @@ TESTS:
 ```
 
 **Effort**: 4h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (eliminates bugs from copy-paste)
-=======
-**Impact**: 🟠→🟢 (eliminates bugs from copy-paste)
->>>>>>> origin/main
 
 ---
 
 ### 2.3 Add Graceful Error Recovery (3h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Exception echoue toute la boucle silencieusement
-=======
-**Problème**: Exception echoue toute la boucle silencieusement
->>>>>>> origin/main
 
 **Solution**: Retry logic dengan exponential backoff, circuit breaker
 
@@ -606,11 +444,7 @@ FICHIER: common/circuit_breaker.py (NEW)
 CONTAINS:
   class CircuitBreaker:
     def __init__(self, failure_threshold: int = 5, timeout_sec: int = 60)
-<<<<<<< HEAD
     def call(func, *args) ÔåÆ result or raises CircuitBreakerOpen
-=======
-    def call(func, *args) → result or raises CircuitBreakerOpen
->>>>>>> origin/main
     # Opens after 5 failures, stays open 60 sec, then half-open
     
     Properties (for monitoring):
@@ -633,21 +467,13 @@ TESTS:
 ```
 
 **Effort**: 3h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (resilient to transient failures)
-=======
-**Impact**: 🟠→🟢 (resilient to transient failures)
->>>>>>> origin/main
 
 ---
 
 ### 2.4 Secure Secrets Management (4h)
 
-<<<<<<< HEAD
 **Probl├¿me**: API keys in .env, exposed in logs/memory
-=======
-**Problème**: API keys in .env, exposed in logs/memory
->>>>>>> origin/main
 
 **Solution**: Use proper secrets management
 
@@ -655,22 +481,14 @@ TESTS:
 FICHIER: common/secrets.py (NEW)
 CONTAINS:
   class SecretsManager:
-<<<<<<< HEAD
     def load_secret(key_name: str) ÔåÆ str
-=======
-    def load_secret(key_name: str) → str
->>>>>>> origin/main
     # Priority:
     # 1. Environment variables (for deployed)
     # 2. AWS Secrets Manager (if AWS_REGION set)
     # 3. HashiCorp Vault (if VAULT_ADDR set)
     # 4. Local encrypted file (for dev, with warning)
     
-<<<<<<< HEAD
     def mask_secret(secret: str, show_last_n: int = 4) ÔåÆ str
-=======
-    def mask_secret(secret: str, show_last_n: int = 4) → str
->>>>>>> origin/main
     # Returns: "sk_live_****...j9a5"
 
 FICHIER: common/logging_filters.py (NEW)
@@ -709,21 +527,13 @@ TESTS:
 ```
 
 **Effort**: 4h  
-<<<<<<< HEAD
 **Impact**: ­ƒö┤ÔåÆ­ƒƒá (security critical)
-=======
-**Impact**: 🔴→🟠 (security critical)
->>>>>>> origin/main
 
 ---
 
 ### 2.5 Add Data Integrity Checks (3h)
 
-<<<<<<< HEAD
 **Probl├¿me**: OHLCV data peut avoir NaN, gaps, volumes=0
-=======
-**Problème**: OHLCV data peut avoir NaN, gaps, volumes=0
->>>>>>> origin/main
 
 **Solution**: Validate data quality before use
 
@@ -731,11 +541,7 @@ TESTS:
 FICHIER: data/validators.py (NEW)
 CONTAINS:
   class OHLCVValidator:
-<<<<<<< HEAD
     def validate(df: pd.DataFrame) ÔåÆ ValidationResult
-=======
-    def validate(df: pd.DataFrame) → ValidationResult
->>>>>>> origin/main
     Checks:
       - No NaN values
       - High >= Low
@@ -765,7 +571,6 @@ TESTS:
 ```
 
 **Effort**: 3h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (prevents bad signals from garbage data)
 
 ---
@@ -779,21 +584,6 @@ TESTS:
 | Error resilience | 30% | 85% | ­ƒƒó Good |
 | Secrets safety | 10% | 90% | ­ƒƒó Good |
 | Data quality | 20% | 85% | ­ƒƒó Good |
-=======
-**Impact**: 🟠→🟢 (prevents bad signals from garbage data)
-
----
-
-## PHASE 2 CHECKPOINT: Score 6→7/10 ✅
-
-| Item | Before | After | Gained |
-|------|--------|-------|--------|
-| Config safety | 20% | 95% | 🟢 Good |
-| Code DRY | 40% | 90% | 🟢 Good |
-| Error resilience | 30% | 85% | 🟢 Good |
-| Secrets safety | 10% | 90% | 🟢 Good |
-| Data quality | 20% | 85% | 🟢 Good |
->>>>>>> origin/main
 
 **Actions**: 2.1 + 2.2 + 2.3 + 2.4 + 2.5  
 **Effort**: 2 + 4 + 3 + 4 + 3 = **16 hours**  
@@ -801,19 +591,11 @@ TESTS:
 
 ---
 
-<<<<<<< HEAD
 ## PHASE 3: QUALITY (7ÔåÆ8/10) ÔÇö 20 heures
 
 ### 3.1 Comprehensive Integration Tests (10h)
 
 **Probl├¿me**: ~25% code coverage, no end-to-end tests
-=======
-## PHASE 3: QUALITY (7→8/10) — 20 heures
-
-### 3.1 Comprehensive Integration Tests (10h)
-
-**Problème**: ~25% code coverage, no end-to-end tests
->>>>>>> origin/main
 
 **Solution**: Test entire trading flow
 
@@ -821,7 +603,6 @@ TESTS:
 FICHIER: tests/test_integration_e2e.py (NEW)
 CONTAINS:
   - test_complete_backtest_flow()
-<<<<<<< HEAD
     Load data ÔåÆ Generate signals ÔåÆ Risk gate ÔåÆ Calc returns
   
   - test_complete_paper_trading_mock()
@@ -844,30 +625,6 @@ CONTAINS:
   
   - test_data_validation_rejects_bad_candles()
     NaN data ÔåÆ skipped Ô£ô
-=======
-    Load data → Generate signals → Risk gate → Calc returns
-  
-  - test_complete_paper_trading_mock()
-    Mock IBKR API + Data → Full trading loop → Verify positions
-  
-  - test_strategy_with_real_cointegration()
-    Use actual cointegration test → Generate real signals
-  
-  - test_risk_engine_stops_trades_on_drawdown()
-    Simulate daily loss accumulation → Risk engine blocks new trades
-  
-  - test_order_lifecycle_complete()
-    Submit → Fill (partial) → Timeout → Force cancel
-  
-  - test_broker_reconciliation_catches_mismatch()
-    Local state ≠ broker → raises error ✓
-  
-  - test_monitoring_alerts_on_critical()
-    Equity drop/error → alert generated ✓
-  
-  - test_data_validation_rejects_bad_candles()
-    NaN data → skipped ✓
->>>>>>> origin/main
 
 FICHIER: tests/fixtures/ (NEW)
 CONTAINS:
@@ -886,21 +643,13 @@ COVERAGE TARGET: 70%+ of code
 ```
 
 **Effort**: 10h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (confidence in production readiness)
-=======
-**Impact**: 🟠→🟢 (confidence in production readiness)
->>>>>>> origin/main
 
 ---
 
 ### 3.2 Add Type Hints Throughout (6h)
 
-<<<<<<< HEAD
 **Probl├¿me**: No type hints ÔåÆ refactor risky, IDE can't help
-=======
-**Problème**: No type hints → refactor risky, IDE can't help
->>>>>>> origin/main
 
 **Solution**: Add type hints to all public APIs
 
@@ -958,21 +707,13 @@ CONTAINS:
 ```
 
 **Effort**: 6h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒíÔåÆ­ƒƒó (safer refactors, better IDE)
-=======
-**Impact**: 🟡→🟢 (safer refactors, better IDE)
->>>>>>> origin/main
 
 ---
 
 ### 3.3 Position-Level Stop Losses (2h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Positions peuvent perdre illimit├®; seulement limite portfolio
-=======
-**Problème**: Positions peuvent perdre illimité; seulement limite portfolio
->>>>>>> origin/main
 
 **Solution**: Add stop loss at entry
 
@@ -1001,11 +742,7 @@ CONTAINS:
 FICHIER: risk/engine.py
 ADD:
   - position_stops: Dict[symbol, PositionStop]
-<<<<<<< HEAD
   - check_position_exits() ÔåÆ List[positions_to_close]
-=======
-  - check_position_exits() → List[positions_to_close]
->>>>>>> origin/main
 
 FICHIER: main.py
 CHANGE:
@@ -1020,21 +757,13 @@ ADD:
 ```
 
 **Effort**: 2h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (limits downside per trade)
-=======
-**Impact**: 🟠→🟢 (limits downside per trade)
->>>>>>> origin/main
 
 ---
 
 ### 3.4 Backtest Realism Improvement (2h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Backtest simulator trop simplifi├®, pas r├®aliste
-=======
-**Problème**: Backtest simulator trop simplifié, pas réaliste
->>>>>>> origin/main
 
 **Solution**: Add slippage, commissions, partial fills
 
@@ -1068,7 +797,6 @@ TESTS:
 ```
 
 **Effort**: 2h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒíÔåÆ­ƒƒó (backtest more predictive)
 
 ---
@@ -1081,20 +809,6 @@ TESTS:
 | Type safety | 0% | 95% | ­ƒƒó Very Good |
 | Position safety | 60% | 100% | ­ƒƒó Perfect |
 | Backtest quality | 40% | 85% | ­ƒƒó Good |
-=======
-**Impact**: 🟡→🟢 (backtest more predictive)
-
----
-
-## PHASE 3 CHECKPOINT: Score 7→8/10 ✅
-
-| Item | Before | After | Gained |
-|------|--------|-------|--------|
-| Test coverage | 25% | 70% | 🟢 Very Good |
-| Type safety | 0% | 95% | 🟢 Very Good |
-| Position safety | 60% | 100% | 🟢 Perfect |
-| Backtest quality | 40% | 85% | 🟢 Good |
->>>>>>> origin/main
 
 **Actions**: 3.1 + 3.2 + 3.3 + 3.4  
 **Effort**: 10 + 6 + 2 + 2 = **20 hours**  
@@ -1102,19 +816,11 @@ TESTS:
 
 ---
 
-<<<<<<< HEAD
 ## PHASE 4: EXCELLENCE (8ÔåÆ10/10) ÔÇö 15 heures
 
 ### 4.1 Performance Profiling + Optimization (4h)
 
 **Probl├¿me**: Pas de benchmarking; scalabilit├® inconnue
-=======
-## PHASE 4: EXCELLENCE (8→10/10) — 15 heures
-
-### 4.1 Performance Profiling + Optimization (4h)
-
-**Problème**: Pas de benchmarking; scalabilité inconnue
->>>>>>> origin/main
 
 **Solution**: Profile + optimize hot paths
 
@@ -1162,21 +868,13 @@ RUN:
 ```
 
 **Effort**: 4h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒíÔåÆ­ƒƒó (identify bottlenecks)
-=======
-**Impact**: 🟡→🟢 (identify bottlenecks)
->>>>>>> origin/main
 
 ---
 
 ### 4.2 Documentation + Architecture Handbook (5h)
 
-<<<<<<< HEAD
 **Probl├¿me**: Pas de doc syst├¿me; onboarding difficile
-=======
-**Problème**: Pas de doc système; onboarding difficile
->>>>>>> origin/main
 
 **Solution**: Write comprehensive guides
 
@@ -1184,11 +882,7 @@ RUN:
 FICHIER: docs/ARCHITECTURE.md
 CONTAINS:
   1. System Design (boxes + arrows)
-<<<<<<< HEAD
   2. Data Flow (strategy ÔåÆ risk ÔåÆ execution)
-=======
-  2. Data Flow (strategy → risk → execution)
->>>>>>> origin/main
   3. State Machine (order lifecycle, position lifecycle)
   4. Risk Model (detailed)
   5. Configuration Guide
@@ -1227,21 +921,13 @@ FICHIER: docs/API_REFERENCE.md
 ```
 
 **Effort**: 5h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒíÔåÆ­ƒƒó (onboarding, maintenance)
-=======
-**Impact**: 🟡→🟢 (onboarding, maintenance)
->>>>>>> origin/main
 
 ---
 
 ### 4.3 CI/CD Pipeline + Automated Testing (4h)
 
-<<<<<<< HEAD
 **Probl├¿me**: No automated tests on commits; manual approval risky
-=======
-**Problème**: No automated tests on commits; manual approval risky
->>>>>>> origin/main
 
 **Solution**: GitHub Actions pipeline
 
@@ -1277,15 +963,9 @@ CONTAINS:
         - Check for hardcoded secrets
         - Fail if vulnerabilities found
 
-<<<<<<< HEAD
 R├êGLES:
   - No PR merge without: Ô£ô Tests pass, Ô£ô Coverage >= 70%, Ô£ô Type hints valid
   - Release requires: Ô£ô All above + Ô£ô Manual approval + Ô£ô Release notes
-=======
-RÈGLES:
-  - No PR merge without: ✓ Tests pass, ✓ Coverage >= 70%, ✓ Type hints valid
-  - Release requires: ✓ All above + ✓ Manual approval + ✓ Release notes
->>>>>>> origin/main
 
 FICHIER: pyproject.toml
 ADD:
@@ -1298,28 +978,19 @@ ADD:
 ```
 
 **Effort**: 4h  
-<<<<<<< HEAD
 **Impact**: ­ƒƒáÔåÆ­ƒƒó (catch bugs early)
-=======
-**Impact**: 🟠→🟢 (catch bugs early)
->>>>>>> origin/main
 
 ---
 
 ### 4.4 Operational Readiness Review (2h)
 
-<<<<<<< HEAD
 **Probl├¿me**: No formal checklist; production readiness unclear
-=======
-**Problème**: No formal checklist; production readiness unclear
->>>>>>> origin/main
 
 **Solution**: Structured pre-flight check
 
 ```
 FICHIER: docs/PRODUCTION_READINESS_CHECKLIST.md
 CONTAINS:
-<<<<<<< HEAD
   Ô£ô Code
     - Ô£ô All tests passing
     - Ô£ô Coverage >= 70%
@@ -1355,43 +1026,6 @@ CONTAINS:
     - Ô£ô Terms of service reviewed
     - Ô£ô Tax implications known
     - Ô£ô Compliance rules met
-=======
-  ✓ Code
-    - ✓ All tests passing
-    - ✓ Coverage >= 70%
-    - ✓ Type hints 100%
-    - ✓ No security vulnerabilities
-    - ✓ No hardcoded secrets
-  
-  ✓ Configuration
-    - ✓ All required env vars set
-    - ✓ API keys rotated < 30 days
-    - ✓ Config validated at startup
-    - ✓ Secrets encrypted
-  
-  ✓ Infrastructure
-    - ✓ Broker API responsive
-    - ✓ Data sources responsive
-    - ✓ Monitoring active
-    - ✓ Alerts configured
-  
-  ✓ Risk
-    - ✓ Capital at risk quantified
-    - ✓ Max loss acceptable
-    - ✓ Broker position limits OK
-    - ✓ Kill-switch tested (manual)
-  
-  ✓ Operations
-    - ✓ Runbooks written
-    - ✓ On-call schedule set
-    - ✓ Incident log initialized
-    - ✓ Backup procedures tested
-  
-  ✓ Legal
-    - ✓ Terms of service reviewed
-    - ✓ Tax implications known
-    - ✓ Compliance rules met
->>>>>>> origin/main
 
 FICHIER: scripts/pre_flight_check.py (NEW)
 CONTAINS:
@@ -1407,7 +1041,6 @@ CONTAINS:
 
 USAGE:
   python scripts/pre_flight_check.py --mode live
-<<<<<<< HEAD
   # Outputs: Ô£ô PRODUCTION READY or Ô£ù BLOCKED because...
 ```
 
@@ -1424,24 +1057,6 @@ USAGE:
 | Documentation | 20% | 95% | ­ƒƒó Excellent |
 | CI/CD | 0% | 100% | ­ƒƒó Perfect |
 | Operational readiness | 30% | 100% | ­ƒƒó Perfect |
-=======
-  # Outputs: ✓ PRODUCTION READY or ✗ BLOCKED because...
-```
-
-**Effort**: 2h  
-**Impact**: 🟢→🟢 (confidence check)
-
----
-
-## PHASE 4 CHECKPOINT: Score 8→10/10 ✅
-
-| Item | Before | After | Gained |
-|------|--------|-------|--------|
-| Performance understood | 20% | 95% | 🟢 Excellent |
-| Documentation | 20% | 95% | 🟢 Excellent |
-| CI/CD | 0% | 100% | 🟢 Perfect |
-| Operational readiness | 30% | 100% | 🟢 Perfect |
->>>>>>> origin/main
 
 **Actions**: 4.1 + 4.2 + 4.3 + 4.4  
 **Effort**: 4 + 5 + 4 + 2 = **15 hours**  
@@ -1453,38 +1068,23 @@ USAGE:
 
 | Phase | Score Gain | Hours | Cumulative |
 |-------|-----------|-------|-----------|
-<<<<<<< HEAD
 | 1: Critical Fix | 4ÔåÆ6 | 24 | 24h |
 | 2: Robustness | 6ÔåÆ7 | 16 | 40h |
 | 3: Quality | 7ÔåÆ8 | 20 | 60h |
 | 4: Excellence | 8ÔåÆ10 | 15 | **75h** |
-=======
-| 1: Critical Fix | 4→6 | 24 | 24h |
-| 2: Robustness | 6→7 | 16 | 40h |
-| 3: Quality | 7→8 | 20 | 60h |
-| 4: Excellence | 8→10 | 15 | **75h** |
->>>>>>> origin/main
 
 **Total effort**: **~75 hours** = **2-3 weeks full-time**
 
 **Risk level**:
-<<<<<<< HEAD
 - Phase 1: ­ƒö┤ Blocks deployment (fix now)
 - Phase 2: ­ƒƒá Major improvements (fix before launch)
 - Phase 3: ­ƒƒí Quality (fix in first month)
 - Phase 4: ­ƒƒó Polish (fix in first quarter)
-=======
-- Phase 1: 🔴 Blocks deployment (fix now)
-- Phase 2: 🟠 Major improvements (fix before launch)
-- Phase 3: 🟡 Quality (fix in first month)
-- Phase 4: 🟢 Polish (fix in first quarter)
->>>>>>> origin/main
 
 ---
 
 ## SUCCESS CRITERIA: SCORE 10/10
 
-<<<<<<< HEAD
 Ô£à All critical validation in place (input, config, data)  
 Ô£à Broker state synced at startup + periodically  
 Ô£à Orders timeout-protected + force-close logic  
@@ -1504,27 +1104,6 @@ USAGE:
 Ô£à Operational readiness checklist  
 
 **Verdict**: Ô£à **PRODUCTION READY** for real trading with capital
-=======
-✅ All critical validation in place (input, config, data)  
-✅ Broker state synced at startup + periodically  
-✅ Orders timeout-protected + force-close logic  
-✅ Monitoring + alerts active (Slack, dashboard)  
-✅ No code duplication (DRY enforced)  
-✅ Configuration safe + validated  
-✅ Error recovery with exponential backoff  
-✅ Secrets properly managed + masked  
-✅ Data quality validated before use  
-✅ Position-level stop losses enforced  
-✅ 70%+ test coverage + integration tests  
-✅ 100% type hints (mypy strict)  
-✅ Realistic backtest simulator  
-✅ Performance profiled + optimized  
-✅ Architecture documented (5000+ words)  
-✅ CI/CD pipeline + mandatory checks  
-✅ Operational readiness checklist  
-
-**Verdict**: ✅ **PRODUCTION READY** for real trading with capital
->>>>>>> origin/main
 
 ---
 
@@ -1563,9 +1142,5 @@ End: Testing all Phase 4, score check 10/10
 
 ---
 
-<<<<<<< HEAD
 **Ready to start?** ­ƒÜÇ Pick Phase 1, Action 1.1 and let's go!
-=======
-**Ready to start?** 🚀 Pick Phase 1, Action 1.1 and let's go!
->>>>>>> origin/main
 

@@ -1,16 +1,8 @@
-<<<<<<< HEAD
 ﻿"""
 Realistic cost model for pair trading backtests.
 
 Sprint 1.1 (C-01) ÔÇô foundation for unified backtest.
 Sprint 2.3 (M-03) ÔÇô extended with borrowing/financing cost for leveraged positions.
-=======
-"""
-Realistic cost model for pair trading backtests.
-
-Sprint 1.1 (C-01) – foundation for unified backtest.
-Sprint 2.3 (M-03) – extended with borrowing/financing cost for leveraged positions.
->>>>>>> origin/main
 
 Each pair-trading round-trip involves **4 transactions**:
   Entry:  long leg  + short leg
@@ -23,22 +15,16 @@ Cost components:
   4. Financing rate for leveraged/margined positions
 """
 
-<<<<<<< HEAD
 from __future__ import annotations
 
 import csv
 from dataclasses import dataclass, field
 from pathlib import Path
-=======
-from dataclasses import dataclass
-from typing import Optional
->>>>>>> origin/main
 
 
 @dataclass
 class CostModelConfig:
     """Trading cost parameters for US equities via IBKR."""
-<<<<<<< HEAD
 
     maker_fee_bps: float = 1.5  # IBKR avg execution cost
     taker_fee_bps: float = 2.0  # Taker + exchange fees
@@ -112,19 +98,6 @@ class CostModelConfig:
             execution_delay_days=execution_delay_days,
             default_adv_usd=default_adv_usd,
         )
-=======
-    maker_fee_bps: float = 1.5          # IBKR avg execution cost
-    taker_fee_bps: float = 2.0          # Taker + exchange fees
-    base_slippage_bps: float = 2.0      # Large-cap average bid-ask spread
-    borrowing_cost_annual_pct: float = 0.5  # General collateral ETB rate
-    include_borrowing: bool = True
-    slippage_model: str = "almgren_chriss"  # "fixed", "volume_adaptive", or "almgren_chriss"
-    include_funding: bool = False         # Not applicable for equities
-    funding_rate_daily_bps: float = 0.0   # Not used for equities (kept for API compat)
-    # Almgren-Chriss market impact parameters
-    market_impact_eta: float = 0.05      # Temporary impact coefficient (calibrated v32j)
-    execution_delay_days: float = 0.01   # Execution delay in trading days (calibrated v32j)
->>>>>>> origin/main
 
 
 class CostModel:
@@ -140,11 +113,7 @@ class CostModel:
         total = model.round_trip_cost(5000, holding_days=7)
     """
 
-<<<<<<< HEAD
     def __init__(self, config: CostModelConfig | None = None):
-=======
-    def __init__(self, config: Optional[CostModelConfig] = None):
->>>>>>> origin/main
         self.config = config or CostModelConfig()
 
     # ------------------------------------------------------------------
@@ -152,13 +121,9 @@ class CostModel:
     # ------------------------------------------------------------------
 
     def execution_cost_one_leg(
-<<<<<<< HEAD
         self,
         notional: float,
         volume_24h: float = 1e7,
-=======
-        self, notional: float, volume_24h: float = 1e7,
->>>>>>> origin/main
         sigma_daily: float = 0.02,
     ) -> float:
         """Cost for ONE transaction (one leg, one direction).
@@ -166,11 +131,7 @@ class CostModel:
         Args:
             notional: Order size in USD.
             volume_24h: 24-hour volume in USD for the traded symbol.
-<<<<<<< HEAD
                 Default is $10M ÔÇô a conservative estimate for mid-cap
-=======
-                Default is $10M – a conservative estimate for mid-cap
->>>>>>> origin/main
                 assets.  Callers should pass real volume data whenever
                 available.
             sigma_daily: Daily return volatility of the symbol (decimal).
@@ -189,14 +150,8 @@ class CostModel:
         sigma_sym2: float = 0.02,
     ) -> float:
         """Cost to ENTER a pair trade (2 legs)."""
-<<<<<<< HEAD
         return self.execution_cost_one_leg(notional_per_leg, volume_24h_sym1, sigma_sym1) + self.execution_cost_one_leg(
             notional_per_leg, volume_24h_sym2, sigma_sym2
-=======
-        return (
-            self.execution_cost_one_leg(notional_per_leg, volume_24h_sym1, sigma_sym1)
-            + self.execution_cost_one_leg(notional_per_leg, volume_24h_sym2, sigma_sym2)
->>>>>>> origin/main
         )
 
     def exit_cost(
@@ -211,7 +166,6 @@ class CostModel:
         return self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2, sigma_sym1, sigma_sym2)
 
     def holding_cost(
-<<<<<<< HEAD
         self,
         notional_short_leg: float,
         holding_days: int,
@@ -234,21 +188,6 @@ class CostModel:
     def funding_cost(self, notional_per_leg: float, holding_days: int) -> float:
         """Financing cost for leveraged positions over *holding_days*.
 
-=======
-        self, notional_short_leg: float, holding_days: int
-    ) -> float:
-        """Borrowing cost for the short leg over *holding_days*."""
-        if not self.config.include_borrowing or holding_days <= 0:
-            return 0.0
-        daily_rate = self.config.borrowing_cost_annual_pct / 100.0 / 365.0  # Calendar days
-        return notional_short_leg * daily_rate * holding_days
-
-    def funding_cost(
-        self, notional_per_leg: float, holding_days: int
-    ) -> float:
-        """Financing cost for leveraged positions over *holding_days*.
-        
->>>>>>> origin/main
         Both legs may be subject to margin financing.
         Conservative approach: charge financing on both legs.
         """
@@ -264,7 +203,6 @@ class CostModel:
         holding_days: int = 0,
         volume_24h_sym1: float = 1e7,
         volume_24h_sym2: float = 1e7,
-<<<<<<< HEAD
         short_symbol: str = "",
     ) -> float:
         """Total cost for a complete round-trip (entry + exit + holding + funding).
@@ -276,14 +214,6 @@ class CostModel:
             self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
             + self.exit_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
             + self.holding_cost(notional_per_leg, holding_days, symbol=short_symbol)
-=======
-    ) -> float:
-        """Total cost for a complete round-trip (entry + exit + holding + funding)."""
-        return (
-            self.entry_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
-            + self.exit_cost(notional_per_leg, volume_24h_sym1, volume_24h_sym2)
-            + self.holding_cost(notional_per_leg, holding_days)
->>>>>>> origin/main
             + self.funding_cost(notional_per_leg, holding_days)
         )
 
@@ -298,12 +228,7 @@ class CostModel:
     # Internal
     # ------------------------------------------------------------------
 
-<<<<<<< HEAD
     def _slippage(self, order_size: float, volume_24h: float, sigma_daily: float = 0.02) -> float:
-=======
-    def _slippage(self, order_size: float, volume_24h: float,
-                   sigma_daily: float = 0.02) -> float:
->>>>>>> origin/main
         """Return slippage as a decimal fraction (not bps).
 
         Three models available:
@@ -327,21 +252,12 @@ class CostModel:
         # 1. Spread (bid-ask)
         spread = self.config.base_slippage_bps / 10_000
 
-<<<<<<< HEAD
         # 2. Temporary market impact: ╬À ├ù ¤â ├ù ÔêÜ(Q/ADV)
         eta = self.config.market_impact_eta
         participation = order_size / volume_24h
         market_impact = eta * sigma_daily * (participation**0.5)
 
         # 3. Timing cost: ¤â ├ù ÔêÜ(T_exec / 252)
-=======
-        # 2. Temporary market impact: η × σ × √(Q/ADV)
-        eta = self.config.market_impact_eta
-        participation = order_size / volume_24h
-        market_impact = eta * sigma_daily * (participation ** 0.5)
-
-        # 3. Timing cost: σ × √(T_exec / 252)
->>>>>>> origin/main
         t_exec = self.config.execution_delay_days
         timing_cost = sigma_daily * (t_exec / 252) ** 0.5
 
@@ -353,21 +269,14 @@ class CostModel:
 # Pre-built configurations for different markets
 # ======================================================================
 
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 def equity_cost_config() -> CostModelConfig:
     """
     Cost model for US equities via Interactive Brokers.
 
     IBKR Pro tiered pricing:
       - Commission: ~$0.005/share (modelled as ~1.0 bps on average)
-<<<<<<< HEAD
       - SEC fee: ~$0.00008 ├ù notional on sells (~0.08 bps)
-=======
-      - SEC fee: ~$0.00008 × notional on sells (~0.08 bps)
->>>>>>> origin/main
       - Exchange/clearing: ~0.3 bps
       - Total execution: ~1.5-2.0 bps per leg
 
@@ -378,7 +287,6 @@ def equity_cost_config() -> CostModelConfig:
 
     Slippage (Almgren-Chriss):
       - Spread: ~2 bps (mega-cap bid-ask)
-<<<<<<< HEAD
       - Market impact: ╬À=0.10, ¤â-dependent
       - Timing cost: half-day execution delay
     """
@@ -393,20 +301,4 @@ def equity_cost_config() -> CostModelConfig:
         include_funding=False,
         market_impact_eta=0.10,  # Temporary impact (mega-caps)
         execution_delay_days=0.5,  # Half-day execution
-=======
-      - Market impact: η=0.10, σ-dependent
-      - Timing cost: half-day execution delay
-    """
-    return CostModelConfig(
-        maker_fee_bps=1.5,               # IBKR execution ~1.5 bps avg
-        taker_fee_bps=2.0,               # Taker + exchange fees
-        base_slippage_bps=2.0,           # Large-cap bid-ask spread
-        borrowing_cost_annual_pct=0.5,   # General collateral ETB rate
-        include_borrowing=True,
-        slippage_model="almgren_chriss", # Institutional 3-component model
-        funding_rate_daily_bps=0.0,      # Not applicable for equities
-        include_funding=False,
-        market_impact_eta=0.10,          # Temporary impact (mega-caps)
-        execution_delay_days=0.5,        # Half-day execution
->>>>>>> origin/main
     )

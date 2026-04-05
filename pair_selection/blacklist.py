@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Dynamic pair blacklist ÔÇö ├ëtape 3 (post-v27 correction).
-=======
-"""
-Dynamic pair blacklist — Étape 3 (post-v27 correction).
->>>>>>> origin/main
 
 Tracks consecutive losses per pair. After ``max_consecutive_losses``
 losses in a row, the pair enters a cooldown for ``cooldown_days``
@@ -27,16 +22,9 @@ Usage (simulator integration)::
 from __future__ import annotations
 
 import json
-<<<<<<< HEAD
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
-=======
-from dataclasses import dataclass, field
-from datetime import date, timedelta
-from pathlib import Path
-from typing import Dict, Optional
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -47,13 +35,8 @@ logger = get_logger(__name__)
 class _PairState:
     """Internal bookkeeping for one pair."""
     consecutive_losses: int = 0
-<<<<<<< HEAD
     blacklisted_on: str | None = None   # ISO date string or None
     cooldown_until: str | None = None   # ISO date string or None
-=======
-    blacklisted_on: Optional[str] = None   # ISO date string or None
-    cooldown_until: Optional[str] = None   # ISO date string or None
->>>>>>> origin/main
     total_losses: int = 0
     total_wins: int = 0
 
@@ -78,31 +61,19 @@ class PairBlacklist:
         self,
         max_consecutive_losses: int = 2,
         cooldown_days: int = 30,
-<<<<<<< HEAD
         persist_path: str | None = None,
-=======
-        persist_path: Optional[str] = None,
->>>>>>> origin/main
         enabled: bool = True,
     ):
         self.max_consecutive_losses = max_consecutive_losses
         self.cooldown_days = cooldown_days
         self.persist_path = Path(persist_path) if persist_path else None
         self.enabled = enabled
-<<<<<<< HEAD
         self._pairs: dict[str, _PairState] = {}
-=======
-        self._pairs: Dict[str, _PairState] = {}
->>>>>>> origin/main
 
         if self.persist_path and self.persist_path.exists():
             self._load()
 
-<<<<<<< HEAD
     # ÔöÇÔöÇ Public API ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-    # ── Public API ───────────────────────────────────────────────────
->>>>>>> origin/main
 
     def record_outcome(self, pair_key: str, pnl: float, trade_date: date) -> None:
         """Record a closed trade outcome for *pair_key*.
@@ -153,11 +124,7 @@ class PairBlacklist:
         if check_date < cooldown_end:
             return True
 
-<<<<<<< HEAD
         # Cooldown expired ÔÇö rehabilitate the pair
-=======
-        # Cooldown expired — rehabilitate the pair
->>>>>>> origin/main
         logger.info(
             "pair_cooldown_expired",
             pair=pair_key,
@@ -194,11 +161,7 @@ class PairBlacklist:
         if self.persist_path and self.persist_path.exists():
             self.persist_path.unlink()
 
-<<<<<<< HEAD
     # ÔöÇÔöÇ Persistence ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-    # ── Persistence ──────────────────────────────────────────────────
->>>>>>> origin/main
 
     def _save(self) -> None:
         if self.persist_path is None:
@@ -220,11 +183,7 @@ class PairBlacklist:
         if self.persist_path is None or not self.persist_path.exists():
             return
         try:
-<<<<<<< HEAD
             with open(self.persist_path, encoding="utf-8") as f:
-=======
-            with open(self.persist_path, "r", encoding="utf-8") as f:
->>>>>>> origin/main
                 data = json.load(f)
             for pair, d in data.items():
                 self._pairs[pair] = _PairState(

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿import pytest
 
-=======
-import pytest
-from risk.engine import RiskEngine
->>>>>>> origin/main
 from common.validators import EquityError
 from risk.engine import RiskEngine
 
@@ -13,15 +8,8 @@ def test_risk_engine_position_limit():
     """Test max concurrent position limit."""
     engine = RiskEngine(initial_equity=100000.0)
     engine.config.max_concurrent_positions = 3
-<<<<<<< HEAD
 
     can_enter, reason = engine.can_enter_trade("AAPL_MSFT", 10.0, 100000, 0.05)
-=======
-    
-    can_enter, reason = engine.can_enter_trade(
-        "AAPL_MSFT", 10.0, 100000, 0.05
-    )
->>>>>>> origin/main
     assert can_enter
 
     # Add positions
@@ -125,13 +113,7 @@ class TestRiskEngineEquityInjection:
 
         # Negative position size should raise validation error
         with pytest.raises(Exception):
-<<<<<<< HEAD
             engine.can_enter_trade("AAPL_MSFT", -10.0, 100000, 0.05)
-=======
-            engine.can_enter_trade(
-                "AAPL_MSFT", -10.0, 100000, 0.05
-            )
->>>>>>> origin/main
 
     def test_can_enter_trade_validates_volatility(self):
         """Test that can_enter_trade validates volatility input."""
@@ -139,13 +121,7 @@ class TestRiskEngineEquityInjection:
 
         # Negative volatility should raise validation error
         with pytest.raises(Exception):
-<<<<<<< HEAD
             engine.can_enter_trade("AAPL_MSFT", 10.0, 100000, -0.05)
-=======
-            engine.can_enter_trade(
-                "AAPL_MSFT", 10.0, 100000, -0.05
-            )
->>>>>>> origin/main
 
     def test_initialization_stores_equity_values(self):
         """Test that initialization stores equity values correctly."""

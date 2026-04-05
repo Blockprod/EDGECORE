@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Backtest Engine ÔÇö Clean orchestrator over the proven StrategyBacktestSimulator.
-=======
-"""
-Backtest Engine — Clean orchestrator over the proven StrategyBacktestSimulator.
->>>>>>> origin/main
 
 Composes:
     - backtests.runner.BacktestRunner          (legacy + unified paths)
@@ -21,7 +16,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-<<<<<<< HEAD
 from typing import Any
 
 import pandas as pd
@@ -30,14 +24,6 @@ from structlog import get_logger
 from backtester.oos import OOSConfig, OOSReport
 from backtests.metrics import BacktestMetrics
 from backtests.runner import BacktestRunner
-=======
-from typing import Any, Dict, List, Optional
-
-from structlog import get_logger
-
-from backtests.runner import BacktestRunner
-from backtests.metrics import BacktestMetrics
->>>>>>> origin/main
 
 logger = get_logger(__name__)
 
@@ -45,16 +31,10 @@ logger = get_logger(__name__)
 @dataclass
 class BacktestConfig:
     """Configuration for a single backtest run."""
-<<<<<<< HEAD
 
     symbols: list[str] = field(default_factory=list)
     start_date: str | None = None
     end_date: str | None = None
-=======
-    symbols: List[str] = field(default_factory=list)
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
->>>>>>> origin/main
     initial_capital: float = 100_000.0
     commission_bps: float = 5.0
     slippage_bps: float = 2.0
@@ -66,10 +46,7 @@ class BacktestConfig:
 @dataclass
 class BacktestResult:
     """Structured backtest result."""
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     metrics: BacktestMetrics
     config: BacktestConfig
     run_time_seconds: float = 0.0
@@ -96,11 +73,7 @@ class BacktestResult:
     def total_trades(self) -> int:
         return getattr(self.metrics, "total_trades", 0)
 
-<<<<<<< HEAD
     def summary(self) -> dict[str, Any]:
-=======
-    def summary(self) -> Dict[str, Any]:
->>>>>>> origin/main
         """Return a summary dict for logging / display."""
         return {
             "total_return": self.total_return,
@@ -177,13 +150,8 @@ class BacktestEngine:
 
     def run_batch(
         self,
-<<<<<<< HEAD
         configs: list[BacktestConfig],
     ) -> list[BacktestResult]:
-=======
-        configs: List[BacktestConfig],
-    ) -> List[BacktestResult]:
->>>>>>> origin/main
         """
         Run multiple backtests sequentially.
 
@@ -200,7 +168,6 @@ class BacktestEngine:
             logger.info("batch_backtest_run", run=i, total=len(configs))
             results.append(self.run(cfg))
         return results
-<<<<<<< HEAD
 
     def run_oos_validation(
         self,
@@ -242,5 +209,3 @@ class BacktestEngine:
             total=report.total_pairs,
         )
         return report
-=======
->>>>>>> origin/main

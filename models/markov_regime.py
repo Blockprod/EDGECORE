@@ -1,20 +1,11 @@
-<<<<<<< HEAD
 ﻿"""
 Markov-Switching Regime Detector ÔÇô Phase 3 (addresses audit ┬º2.6).
-=======
-"""
-Markov-Switching Regime Detector – Phase 3 (addresses audit §2.6).
->>>>>>> origin/main
 
 Problem
 -------
 The original ``RegimeDetector`` classifies volatility into LOW/NORMAL/HIGH
 using **fixed percentile thresholds** on a rolling window.  This is a
-<<<<<<< HEAD
 classification, not a detection model ÔÇô it cannot estimate:
-=======
-classification, not a detection model – it cannot estimate:
->>>>>>> origin/main
 
   * Transition probabilities between regimes.
   * The probability of *being in* a given regime at any point (filtering).
@@ -26,13 +17,8 @@ being fast enough for bar-by-bar execution.
 Solution
 --------
 A 3-state Gaussian HMM fitted on rolling volatility (or returns) via
-<<<<<<< HEAD
 the BaumÔÇôWelch (EM) algorithm.  States are ordered by their emission
 mean Ôåô mapped to LOW / NORMAL / HIGH.
-=======
-the Baum–Welch (EM) algorithm.  States are ordered by their emission
-mean ↓ mapped to LOW / NORMAL / HIGH.
->>>>>>> origin/main
 
 The detector maintains the **same public API** as ``RegimeDetector``
 (``update()``, ``get_position_multiplier()``, ``get_entry_threshold_multiplier()``,
@@ -48,7 +34,6 @@ Fitting is done in two modes:
 
 Dependencies: ``hmmlearn`` (pip install hmmlearn).  Falls back to the
 legacy percentile detector if ``hmmlearn`` is not installed.
-<<<<<<< HEAD
 
 DECISION 2026-03-22 (C-09): MarkovRegimeDetector is RETAINED as an optional
 drop-in replacement for RegimeDetector, gated by
@@ -56,13 +41,10 @@ drop-in replacement for RegimeDetector, gated by
 It is NOT dead code — it is disabled by default in prod for stability and
 enabled explicitly via config for research/live A/B.
 Tests: tests/phase4/test_phase4_signals.py (concordance, hmm_available).
-=======
->>>>>>> origin/main
 """
 
 from __future__ import annotations
 
-<<<<<<< HEAD
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
@@ -78,35 +60,16 @@ logger = get_logger(__name__)
 
 # ÔôÇÔôÇ Optional HMM import ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 GaussianHMM: Any = None  # pre-init; overwritten if hmmlearn is available
-=======
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime
-import numpy as np
-from collections import deque
-from structlog import get_logger
-
-# Re-use the canonical types from the existing detector
-from models.regime_detector import VolatilityRegime, RegimeState
-
-logger = get_logger(__name__)
-
-# ⓀⓀ Optional HMM import ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 try:
     from hmmlearn.hmm import GaussianHMM  # type: ignore[import-untyped]
 
     _HMM_AVAILABLE = True
 except ImportError:
     _HMM_AVAILABLE = False
-<<<<<<< HEAD
     logger.warning(
         "hmmlearn_not_installed",
         msg="pip install hmmlearn for Markov regime detection; falling back to percentile detector",
     )
-=======
-    logger.warning("hmmlearn_not_installed", msg="pip install hmmlearn for Markov regime detection; falling back to percentile detector")
->>>>>>> origin/main
 
 
 @dataclass
@@ -142,11 +105,7 @@ class MarkovRegimeConfig:
 
 class MarkovRegimeDetector:
     """
-<<<<<<< HEAD
     HMM-based regime detector ÔÇô drop-in replacement for ``RegimeDetector``.
-=======
-    HMM-based regime detector – drop-in replacement for ``RegimeDetector``.
->>>>>>> origin/main
 
     Public API matches ``RegimeDetector`` exactly so that existing code
     (``PairTradingStrategy``, ``AdaptiveThresholdCalculator``) works
@@ -159,13 +118,8 @@ class MarkovRegimeDetector:
         low_percentile: float = 0.33,
         high_percentile: float = 0.67,
         min_regime_duration: int = 1,
-<<<<<<< HEAD
         config: MarkovRegimeConfig | None = None,
         **_kwargs: Any,
-=======
-        config: Optional[MarkovRegimeConfig] = None,
-        **kwargs: Any,
->>>>>>> origin/main
     ):
         cfg = config or MarkovRegimeConfig(
             lookback_window=lookback_window,
@@ -187,13 +141,8 @@ class MarkovRegimeDetector:
         self._spread_history: deque = deque(maxlen=cfg.lookback_window)
 
         # HMM model (fitted lazily)
-<<<<<<< HEAD
         self._model: Any | None = None  # GaussianHMM when fitted
         self._state_order: np.ndarray | None = None  # maps HMM state Ôåô regime idx
-=======
-        self._model: Optional[Any] = None  # GaussianHMM when fitted
-        self._state_order: Optional[np.ndarray] = None  # maps HMM state ↓ regime idx
->>>>>>> origin/main
         self._is_fitted: bool = False
         self._bars_since_fit: int = 0
 
@@ -201,7 +150,6 @@ class MarkovRegimeDetector:
         self.current_regime = VolatilityRegime.NORMAL
         self.current_regime_start_bar = 0
         self.bars_processed = 0
-<<<<<<< HEAD
         self.regime_transitions: list[tuple[int, VolatilityRegime, VolatilityRegime]] = []
         self.regime_change_signals: list[str] = []
         self.instant_transition_count: int = 0
@@ -211,17 +159,6 @@ class MarkovRegimeDetector:
 
         # Transition matrix (populated after fit)
         self.transition_matrix: np.ndarray | None = None
-=======
-        self.regime_transitions: List[Tuple[int, VolatilityRegime, VolatilityRegime]] = []
-        self.regime_change_signals: List[str] = []
-        self.instant_transition_count: int = 0
-        self.state_history: List[RegimeState] = []
-        self.last_state: Optional[RegimeState] = None
-        self.volatility_history: deque = deque(maxlen=cfg.lookback_window)
-
-        # Transition matrix (populated after fit)
-        self.transition_matrix: Optional[np.ndarray] = None
->>>>>>> origin/main
 
         logger.info(
             "markov_regime_detector_initialized",
@@ -231,22 +168,13 @@ class MarkovRegimeDetector:
             hmm_available=_HMM_AVAILABLE,
         )
 
-<<<<<<< HEAD
     # ÔôÇÔôÇ Core public API (matches RegimeDetector) ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
-=======
-    # ⓀⓀ Core public API (matches RegimeDetector) ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
     def update(
         self,
         spread: float,
-<<<<<<< HEAD
         returns: float | None = None,
         date: datetime | None = None,
-=======
-        returns: Optional[float] = None,
-        date: Optional[datetime] = None,
->>>>>>> origin/main
     ) -> RegimeState:
         """Update with a new bar and return the current regime state."""
         timestamp = date or datetime.now()
@@ -259,7 +187,6 @@ class MarkovRegimeDetector:
             else:
                 returns = 0.0
 
-<<<<<<< HEAD
         returns_val: float = float(returns) if returns is not None else 0.0
         self._spread_history.append(spread)
         # Use signed returns — HMM can distinguish bull/bear/sideways regimes
@@ -271,46 +198,20 @@ class MarkovRegimeDetector:
         if _HMM_AVAILABLE and n >= self.config.min_fit_obs:
             need_fit = not self._is_fitted or (
                 self.config.refit_interval > 0 and self._bars_since_fit >= self.config.refit_interval
-=======
-        self._spread_history.append(spread)
-        # Use signed returns — HMM can distinguish bull/bear/sideways regimes
-        self._obs.append(returns)
-        self.volatility_history.append(abs(returns))
-
-        # ⓀⓀ Attempt HMM fit / refit ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-        n = len(self._obs)
-        if _HMM_AVAILABLE and n >= self.config.min_fit_obs:
-            need_fit = (
-                not self._is_fitted
-                or (self.config.refit_interval > 0 and self._bars_since_fit >= self.config.refit_interval)
->>>>>>> origin/main
             )
             if need_fit:
                 self._fit_hmm()
 
-<<<<<<< HEAD
         # ÔôÇÔôÇ Determine regime ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
-=======
-        # ⓀⓀ Determine regime ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
         new_regime = self._predict_regime()
 
         # Transition logic
         if new_regime != self.current_regime:
             bars_in = self.bars_processed - self.current_regime_start_bar
             if bars_in >= self.min_regime_duration:
-<<<<<<< HEAD
                 self.regime_transitions.append((self.bars_processed, self.current_regime, new_regime))
                 self.regime_change_signals.append(
                     f"Transition at bar {self.bars_processed}: {self.current_regime.value} -> {new_regime.value}"
-=======
-                self.regime_transitions.append(
-                    (self.bars_processed, self.current_regime, new_regime)
-                )
-                self.regime_change_signals.append(
-                    f"Transition at bar {self.bars_processed}: "
-                    f"{self.current_regime.value} -> {new_regime.value}"
->>>>>>> origin/main
                 )
                 self.current_regime = new_regime
                 self.current_regime_start_bar = self.bars_processed
@@ -324,7 +225,6 @@ class MarkovRegimeDetector:
 
         return state
 
-<<<<<<< HEAD
     def get_position_multiplier(self, regime: VolatilityRegime | None = None) -> float:
         r = regime or self.current_regime
         return 0.5 if r == VolatilityRegime.HIGH else 1.0
@@ -338,21 +238,6 @@ class MarkovRegimeDetector:
         return 0.9 if r == VolatilityRegime.LOW else 1.0
 
     def get_regime_stats(self) -> dict:
-=======
-    def get_position_multiplier(self, regime: Optional[VolatilityRegime] = None) -> float:
-        r = regime or self.current_regime
-        return 0.5 if r == VolatilityRegime.HIGH else 1.0
-
-    def get_entry_threshold_multiplier(self, regime: Optional[VolatilityRegime] = None) -> float:
-        r = regime or self.current_regime
-        return 1.2 if r == VolatilityRegime.HIGH else 1.0
-
-    def get_exit_threshold_multiplier(self, regime: Optional[VolatilityRegime] = None) -> float:
-        r = regime or self.current_regime
-        return 0.9 if r == VolatilityRegime.LOW else 1.0
-
-    def get_regime_stats(self) -> Dict:
->>>>>>> origin/main
         counts = {VolatilityRegime.LOW: 0, VolatilityRegime.NORMAL: 0, VolatilityRegime.HIGH: 0}
         vols = []
         for s in self.state_history:
@@ -392,11 +277,7 @@ class MarkovRegimeDetector:
         self.instant_transition_count = 0
         self.transition_matrix = None
 
-<<<<<<< HEAD
     # ÔôÇÔôÇ HMM internals ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
-=======
-    # ⓀⓀ HMM internals ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
     def _fit_hmm(self) -> None:
         """Fit the GaussianHMM on the current observation buffer."""
@@ -413,11 +294,7 @@ class MarkovRegimeDetector:
             model.fit(obs)
 
             # Map states by ascending emission mean:
-<<<<<<< HEAD
             # lowest mean ÔåÆ LOW/bearish, middle ÔåÆ NORMAL, highest ÔåÆ HIGH/bullish
-=======
-            # lowest mean → LOW/bearish, middle → NORMAL, highest → HIGH/bullish
->>>>>>> origin/main
             # Works with signed returns: negative mean = bearish regime
             means = model.means_.flatten()
             self._state_order = np.argsort(means)  # index 0=lowest mean = LOW
@@ -447,11 +324,7 @@ class MarkovRegimeDetector:
             # Use last N observations for prediction context
             context_len = min(len(self._obs), 20)
             obs = np.array(list(self._obs))[-context_len:].reshape(-1, 1)
-<<<<<<< HEAD
             hidden_states = self._model.predict(obs)  # type: ignore[union-attr]
-=======
-            hidden_states = self._model.predict(obs)
->>>>>>> origin/main
             raw_state = hidden_states[-1]  # latest
 
             # Map to ordered regime
@@ -488,11 +361,7 @@ class MarkovRegimeDetector:
             r_idx = regime_to_idx.get(self.current_regime, 1)
             raw = self._state_order[r_idx]
             # P(leaving current state) = 1 - P(staying)
-<<<<<<< HEAD
             transition_prob = float(1.0 - float(self.transition_matrix[raw, raw]))
-=======
-            transition_prob = float(1.0 - self.transition_matrix[raw, raw])
->>>>>>> origin/main
         else:
             transition_prob = rolling_std / (rolling_mean + 1e-10) if rolling_mean > 0 else 0.0
 
@@ -520,7 +389,6 @@ class MarkovRegimeDetector:
         if rng < 1e-10:
             return 0.8
         if self.current_regime == VolatilityRegime.LOW:
-<<<<<<< HEAD
             return float(max(0, min(1, 1.0 - (current_vol - lo) / rng)))
         elif self.current_regime == VolatilityRegime.HIGH:
             return float(max(0, min(1, 1.0 - (hi - current_vol) / rng)))
@@ -530,46 +398,23 @@ class MarkovRegimeDetector:
     # ÔôÇÔôÇ Extra: regime-specific insights ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
     def get_expected_regime_duration(self) -> float | None:
-=======
-            return max(0, min(1, 1.0 - (current_vol - lo) / rng))
-        elif self.current_regime == VolatilityRegime.HIGH:
-            return max(0, min(1, 1.0 - (hi - current_vol) / rng))
-        mid = (lo + hi) / 2
-        return max(0, min(1, 1.0 - abs(current_vol - mid) / (rng / 2)))
-
-    # ⓀⓀ Extra: regime-specific insights ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-
-    def get_expected_regime_duration(self) -> Optional[float]:
->>>>>>> origin/main
         """Expected bars remaining in the current regime (from transition matrix)."""
         if self.transition_matrix is None or self._state_order is None:
             return None
         regime_to_idx = {VolatilityRegime.LOW: 0, VolatilityRegime.NORMAL: 1, VolatilityRegime.HIGH: 2}
         r_idx = regime_to_idx.get(self.current_regime, 1)
         raw = self._state_order[r_idx]
-<<<<<<< HEAD
         p_stay = float(self.transition_matrix[raw, raw])
-=======
-        p_stay = self.transition_matrix[raw, raw]
->>>>>>> origin/main
         if p_stay >= 1.0:
             return float("inf")
         return 1.0 / (1.0 - p_stay)
 
-<<<<<<< HEAD
     def get_regime_probabilities(self) -> dict[str, float] | None:
-=======
-    def get_regime_probabilities(self) -> Optional[Dict[str, float]]:
->>>>>>> origin/main
         """Stationary distribution: long-run probability of each regime."""
         if self.transition_matrix is None or self._state_order is None:
             return None
         try:
-<<<<<<< HEAD
             # Solve ¤ÇT = ¤Ç with ╬ú¤Ç = 1
-=======
-            # Solve πT = π with Σπ = 1
->>>>>>> origin/main
             A = self.transition_matrix.T - np.eye(self.config.n_states)
             A[-1, :] = 1.0
             b = np.zeros(self.config.n_states)

@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Risk Engine Module ÔÇö Multi-level position and portfolio risk management.
-=======
-"""
-Risk Engine Module — Multi-level position and portfolio risk management.
->>>>>>> origin/main
 
 Provides:
     - PositionRiskManager: Per-position stops (trailing, time, P&L)

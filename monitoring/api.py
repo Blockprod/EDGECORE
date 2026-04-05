@@ -1,10 +1,7 @@
 ﻿"""Flask API endpoints for EDGECORE dashboard."""
 
-<<<<<<< HEAD
-=======
 from typing import Optional, Dict, Any, Tuple
 from flask import Flask, request
->>>>>>> origin/main
 from datetime import datetime
 from typing import Any
 
@@ -13,15 +10,10 @@ from flask import Flask, render_template_string, request
 
 from monitoring.api_security import (
     add_security_headers,
-<<<<<<< HEAD
     get_request_stats,
     log_api_call,
     require_api_key,
     require_rate_limit,
-=======
-    log_api_call,
-    get_request_stats
->>>>>>> origin/main
 )
 from monitoring.dashboard import DashboardGenerator
 
@@ -218,7 +210,6 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
         stats = get_request_stats()
         return stats, 200
 
-<<<<<<< HEAD
     @app.route("/api/public/summary", methods=["GET"])
     @require_rate_limit
     @log_api_call
@@ -396,42 +387,6 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
                 "/api/dashboard/status",
                 "/api/stats",
             ],
-=======
-    @app.route('/metrics', methods=['GET'])
-    def prometheus_metrics():
-        """
-        Prometheus scrape endpoint.
-
-        Returns Prometheus text format metrics for the trading system.
-        No auth required — intended for internal Prometheus scraping.
-        """
-        from monitoring.metrics import SystemMetrics
-        from flask import Response
-
-        # Use global metrics instance if available, else default
-        metrics = getattr(app, '_system_metrics', None) or SystemMetrics()
-        body = metrics.to_prometheus_format()
-        return Response(body, mimetype='text/plain; version=0.0.4; charset=utf-8')
-
-    @app.errorhandler(404)
-    def not_found(error) -> Tuple[Dict[str, Any], int]:
-        """Handle 404 errors."""
-        return {
-            'error': 'Not found',
-            'message': f"Endpoint not found: {request.path}",
-            'available_endpoints': [
-                '/health',
-                '/metrics',
-                '/api/dashboard',
-                '/api/dashboard/system',
-                '/api/dashboard/risk',
-                '/api/dashboard/positions',
-                '/api/dashboard/orders',
-                '/api/dashboard/performance',
-                '/api/dashboard/status',
-                '/api/stats'
-            ]
->>>>>>> origin/main
         }, 404
 
     @app.errorhandler(500)

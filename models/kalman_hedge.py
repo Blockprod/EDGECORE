@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Sprint 4.2 ÔÇô Kalman Filter for dynamic hedge ratio estimation.
 
@@ -6,24 +5,11 @@ Replaces static OLS ╬▓ with an adaptive bar-by-bar estimate:
 - State: ╬▓_t (hedge ratio at time t)
 - Observation: y_t = ╬▓_t ├ù x_t + ╬Á_t
 - Transition: ╬▓_t = ╬▓_{t-1} + ╬À_t
-=======
-"""
-Sprint 4.2 – Kalman Filter for dynamic hedge ratio estimation.
-
-Replaces static OLS β with an adaptive bar-by-bar estimate:
-- State: β_t (hedge ratio at time t)
-- Observation: y_t = β_t × x_t + ε_t
-- Transition: β_t = β_{t-1} + η_t
->>>>>>> origin/main
 
 Advantages over rolling OLS:
 - No window parameter needed (adapts continuously)
 - Detects breakdowns in real-time (normalized innovation > threshold)
-<<<<<<< HEAD
 - Produces ╬▓ with confidence interval (via state covariance P)
-=======
-- Produces β with confidence interval (via state covariance P)
->>>>>>> origin/main
 - Adapts faster to structural changes
 
 Usage:
@@ -35,10 +21,7 @@ Usage:
 
 import numpy as np
 import pandas as pd
-<<<<<<< HEAD
-=======
 from typing import Tuple, Optional, List
->>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -49,7 +32,6 @@ class KalmanHedgeRatio:
     Dynamic hedge ratio estimation via Kalman Filter.
 
     State-space model (with intercept):
-<<<<<<< HEAD
         State: [╬▓_t, ╬▒_t]  (hedge ratio and intercept)
         Transition: ╬©_t = ╬©_{t-1} + ╬À_t,  ╬À ~ N(0, Q)
         Observation: y_t = ╬▓_t * x_t + ╬▒_t + ╬Á_t,  ╬Á ~ N(0, R)
@@ -61,19 +43,6 @@ class KalmanHedgeRatio:
         ve: Initial observation variance estimate.
         innovation_threshold: Normalized innovation threshold for
             breakdown alerts (default 3.0 = 3¤â).
-=======
-        State: [β_t, α_t]  (hedge ratio and intercept)
-        Transition: θ_t = θ_{t-1} + η_t,  η ~ N(0, Q)
-        Observation: y_t = β_t * x_t + α_t + ε_t,  ε ~ N(0, R)
-
-    Parameters:
-        delta: State noise variance – controls adaptation speed.
-               Higher delta → β adapts faster but is noisier.
-               Typical range: 1e-5 (slow) to 1e-3 (fast).
-        ve: Initial observation variance estimate.
-        innovation_threshold: Normalized innovation threshold for
-            breakdown alerts (default 3.0 = 3σ).
->>>>>>> origin/main
         r_smoothing: Exponential smoothing factor for adaptive R
             (0 = no adaptation, 0.98 = slow, 0.90 = fast).
     """
@@ -96,46 +65,26 @@ class KalmanHedgeRatio:
         self.r_smoothing = r_smoothing
 
         # State: [beta, intercept]
-<<<<<<< HEAD
         self.beta: float | None = None
         self.intercept: float = 0.0
         # 2x2 state covariance matrix
         self.P: np.ndarray | None = None
         self.R: float = ve  # Observation noise variance (adaptive)
         self.S: float = 0.0  # Innovation variance (for diagnostics)
-=======
-        self.beta: Optional[float] = None
-        self.intercept: float = 0.0
-        # 2x2 state covariance matrix
-        self.P: Optional[np.ndarray] = None
-        self.R: float = ve            # Observation noise variance (adaptive)
-        self.S: float = 0.0           # Innovation variance (for diagnostics)
->>>>>>> origin/main
         # State transition noise
         self.Q: np.ndarray = np.diag([delta, delta * 0.1])  # intercept changes slower
 
         # History
-<<<<<<< HEAD
         self.beta_history: list[float] = []
         self.spread_history: list[float] = []
         self.innovation_history: list[float] = []
         self.P_history: list[float] = []
-=======
-        self.beta_history: List[float] = []
-        self.spread_history: List[float] = []
-        self.innovation_history: List[float] = []
-        self.P_history: List[float] = []
->>>>>>> origin/main
 
         # Breakdown tracking
         self.breakdown_count: int = 0
         self.bars_processed: int = 0
 
-<<<<<<< HEAD
     def update(self, y: float, x: float) -> tuple[float, float, float]:
-=======
-    def update(self, y: float, x: float) -> Tuple[float, float, float]:
->>>>>>> origin/main
         """
         Update hedge ratio with a new observation (y, x).
 
@@ -148,17 +97,10 @@ class KalmanHedgeRatio:
                 beta: Updated hedge ratio estimate
                 spread: y - beta * x (current residual)
                 normalized_innovation: Innovation / sqrt(S).
-<<<<<<< HEAD
                     |innovation| > threshold Ôåô potential breakdown.
         """
         if abs(x) < 1e-12:
             # x Ôëê 0 ÔåÆ can't estimate ╬▓, return current state
-=======
-                    |innovation| > threshold ↓ potential breakdown.
-        """
-        if abs(x) < 1e-12:
-            # x ≈ 0 → can't estimate β, return current state
->>>>>>> origin/main
             spread = y - (self.beta or 0.0) * x - self.intercept
             self.bars_processed += 1
             return self.beta or 0.0, spread, 0.0
@@ -198,21 +140,12 @@ class KalmanHedgeRatio:
         self.P = P_pred - np.outer(K, H) @ P_pred
 
         # Ensure P stays positive semi-definite (numerical stability)
-<<<<<<< HEAD
         self.P = (self.P + self.P.T) / 2.0  # type: ignore[operator]
         np.fill_diagonal(self.P, np.maximum(np.diag(self.P), 1e-12))  # type: ignore[arg-type]
 
         # --- Adaptive R: exponential smoothing of squared innovation ---
         if self.r_smoothing > 0 and self.bars_processed > 5:
             self.R = float(self.r_smoothing * self.R + (1 - self.r_smoothing) * (innovation**2))
-=======
-        self.P = (self.P + self.P.T) / 2.0
-        np.fill_diagonal(self.P, np.maximum(np.diag(self.P), 1e-12))
-
-        # --- Adaptive R: exponential smoothing of squared innovation ---
-        if self.r_smoothing > 0 and self.bars_processed > 5:
-            self.R = self.r_smoothing * self.R + (1 - self.r_smoothing) * (innovation ** 2)
->>>>>>> origin/main
             self.R = max(self.R, 1e-12)  # floor
 
         # Spread for downstream use
@@ -236,24 +169,14 @@ class KalmanHedgeRatio:
         self.beta_history.append(self.beta)
         self.spread_history.append(spread)
         self.innovation_history.append(normalized_innovation)
-<<<<<<< HEAD
         self.P_history.append(float(self.P[0, 0]) if self.P is not None else 0.0)  # type: ignore[index]
-=======
-        self.P_history.append(float(self.P[0, 0]))
->>>>>>> origin/main
 
         self.bars_processed += 1
         return self.beta, spread, normalized_innovation
 
-<<<<<<< HEAD
     def get_confidence_interval(self, z: float = 1.96) -> tuple[float, float]:
         """
         Return (lower, upper) confidence interval for current ╬▓.
-=======
-    def get_confidence_interval(self, z: float = 1.96) -> Tuple[float, float]:
-        """
-        Return (lower, upper) confidence interval for current β.
->>>>>>> origin/main
 
         Args:
             z: Z-score for CI (1.96 = 95%, 2.576 = 99%)
@@ -272,7 +195,6 @@ class KalmanHedgeRatio:
             return False
         return bool(abs(self.innovation_history[-1]) > self.innovation_threshold)
 
-<<<<<<< HEAD
     @property
     def is_broken(self) -> bool:
         """True if cumulative breakdown_count exceeds 10 % of observed bars.
@@ -284,8 +206,6 @@ class KalmanHedgeRatio:
             return False
         return self.breakdown_count >= max(int(self.bars_processed * 0.10), 5)
 
-=======
->>>>>>> origin/main
     def get_recent_breakdown_rate(self, window: int = 20) -> float:
         """
         Fraction of recent bars with normalized innovation > threshold.
@@ -299,13 +219,7 @@ class KalmanHedgeRatio:
         if len(self.innovation_history) < 2:
             return 0.0
         recent = self.innovation_history[-window:]
-<<<<<<< HEAD
         return sum(1 for inn in recent if abs(inn) > self.innovation_threshold) / len(recent)
-=======
-        return sum(
-            1 for inn in recent if abs(inn) > self.innovation_threshold
-        ) / len(recent)
->>>>>>> origin/main
 
     def run_filter(
         self,
@@ -323,21 +237,11 @@ class KalmanHedgeRatio:
             DataFrame with columns: beta, spread, innovation, P
         """
         if len(y) != len(x):
-<<<<<<< HEAD
             raise ValueError(f"y and x must have same length, got {len(y)} vs {len(x)}")
 
         # Reset state for a clean run
         self.beta = None
         self.P = None
-=======
-            raise ValueError(
-                f"y and x must have same length, got {len(y)} vs {len(x)}"
-            )
-
-        # Reset state for a clean run
-        self.beta = None
-        self.P = 0.0
->>>>>>> origin/main
         self.R = self.ve
         self.beta_history = []
         self.spread_history = []
@@ -346,11 +250,7 @@ class KalmanHedgeRatio:
         self.breakdown_count = 0
         self.bars_processed = 0
 
-<<<<<<< HEAD
         for y_val, x_val in zip(y.values, x.values, strict=False):
-=======
-        for y_val, x_val in zip(y.values, x.values):
->>>>>>> origin/main
             self.update(float(y_val), float(x_val))
 
         return pd.DataFrame(

@@ -1,13 +1,7 @@
-<<<<<<< HEAD
 ﻿"""Analyze entry z-scores, exits, and signal quality for v27."""
 
 import re
 from collections import Counter
-=======
-"""Analyze entry z-scores, exits, and signal quality for v27."""
-import re
-from collections import defaultdict, Counter
->>>>>>> origin/main
 
 with open("results/bt_v27_output.txt", encoding="utf-16-le") as f:
     text = f.read()
@@ -30,11 +24,7 @@ if zs:
     print("Entry Z-score |abs| distribution:")
     print(f"  Min: {min(zs):.3f}")
     print(f"  Max: {max(zs):.3f}")
-<<<<<<< HEAD
     print(f"  Avg: {sum(zs) / len(zs):.3f}")
-=======
-    print(f"  Avg: {sum(zs)/len(zs):.3f}")
->>>>>>> origin/main
     print(f"  Below 1.5: {sum(1 for z in zs if z < 1.5)}")
     print(f"  1.5-2.0: {sum(1 for z in zs if 1.5 <= z < 2.0)}")
     print(f"  2.0-2.5: {sum(1 for z in zs if 2.0 <= z < 2.5)}")
@@ -102,14 +92,7 @@ else:
     if coint2:
         pvs = [float(pv) for _, pv in coint2]
         passed = sum(1 for pv in pvs if pv < 0.05)
-<<<<<<< HEAD
         print(f"  p < 0.05: {passed} ({passed / len(pvs) * 100:.1f}%)")
         print(f"  p >= 0.05: {len(pvs) - passed} ({(len(pvs) - passed) / len(pvs) * 100:.1f}%)")
         print(f"  Avg p-value: {sum(pvs) / len(pvs):.4f}")
         print(f"  Median p-value: {sorted(pvs)[len(pvs) // 2]:.4f}")
-=======
-        print(f"  p < 0.05: {passed} ({passed/len(pvs)*100:.1f}%)")
-        print(f"  p >= 0.05: {len(pvs) - passed} ({(len(pvs)-passed)/len(pvs)*100:.1f}%)")
-        print(f"  Avg p-value: {sum(pvs)/len(pvs):.4f}")
-        print(f"  Median p-value: {sorted(pvs)[len(pvs)//2]:.4f}")
->>>>>>> origin/main

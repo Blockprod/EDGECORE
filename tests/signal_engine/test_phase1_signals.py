@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""
-=======
-"""
->>>>>>> origin/main
 Tests for Phase 1 signal engines:
     - OUSignalGenerator (1.1)
     - CrossSectionalMomentum (1.2)
@@ -14,7 +10,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-<<<<<<< HEAD
 from signal_engine.combiner import SignalCombiner, SignalSource
 from signal_engine.cross_sectional import CrossSectionalMomentum
 from signal_engine.ou_signal import OUSignalGenerator
@@ -22,16 +17,6 @@ from signal_engine.vol_signal import VolatilityRegimeSignal
 
 # ===========================================================================
 # SECTION 1 ÔÇö OUSignalGenerator
-=======
-from signal_engine.ou_signal import OUSignalGenerator, OUParams
-from signal_engine.cross_sectional import CrossSectionalMomentum
-from signal_engine.vol_signal import VolatilityRegimeSignal
-from signal_engine.combiner import SignalCombiner, SignalSource
-
-
-# ===========================================================================
-# SECTION 1 — OUSignalGenerator
->>>>>>> origin/main
 # ===========================================================================
 
 class TestOUSignalGenerator:
@@ -108,11 +93,7 @@ class TestOUSignalGenerator:
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 2 ÔÇö CrossSectionalMomentum
-=======
-# SECTION 2 — CrossSectionalMomentum
->>>>>>> origin/main
 # ===========================================================================
 
 class TestCrossSectionalMomentum:
@@ -158,11 +139,7 @@ class TestCrossSectionalMomentum:
         prices = self._make_prices()
         csm = CrossSectionalMomentum()
         csm.update_rankings(prices)
-<<<<<<< HEAD
         # SYM9 should have highest drift ÔåÆ highest rank
-=======
-        # SYM9 should have highest drift → highest rank
->>>>>>> origin/main
         score = csm.compute_score("SYM9", "SYM0")
         assert score > 0  # SYM9 > SYM0
 
@@ -194,11 +171,7 @@ class TestCrossSectionalMomentum:
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 3 ÔÇö VolatilityRegimeSignal
-=======
-# SECTION 3 — VolatilityRegimeSignal
->>>>>>> origin/main
 # ===========================================================================
 
 class TestVolatilityRegimeSignal:
@@ -260,11 +233,7 @@ class TestVolatilityRegimeSignal:
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 4 ÔÇö SignalCombiner Multi-Source Integration
-=======
-# SECTION 4 — SignalCombiner Multi-Source Integration
->>>>>>> origin/main
 # ===========================================================================
 
 class TestMultiSourceCombiner:

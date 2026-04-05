@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python
-=======
-#!/usr/bin/env python
->>>>>>> origin/main
 """EDGECORE Final Calibration -- execution_delay + eta tuning.
 
 Previous findings:

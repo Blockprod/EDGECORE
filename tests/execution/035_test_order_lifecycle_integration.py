@@ -26,11 +26,7 @@ class TestCoreIntegration:
         # Pattern from main.py: order_id = submit_order() then track_order()
         order_id = "paper_order_12345_AAPL"
         integration.track_order(order_id, "AAPL", 10.0, 45000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Verify tracked
         assert order_id in integration.order_mgr.orders
         assert integration.order_mgr.orders[order_id].symbol == "AAPL"
@@ -44,11 +40,7 @@ class TestCoreIntegration:
         # Track multiple orders
         integration.track_order("order_1", "AAPL", 1.0, 45000.0)
         integration.track_order("order_2", "MSFT", 10.0, 2500.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Process timeouts - should not error
         for _i in range(3):
             count = integration.process_timeouts()
@@ -73,31 +65,19 @@ class TestCoreIntegration:
         """? Multiple orders can be tracked per symbol."""
         mock_engine = Mock()
         integration = OrderLifecycleIntegration(execution_engine=mock_engine)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Track 3 AAPL orders
         integration.track_order("order_1", "AAPL", 1.0, 45000.0)
         integration.track_order("order_2", "AAPL", 2.0, 44900.0)
         integration.track_order("order_3", "AAPL", 0.5, 45100.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Verify all tracked
         assert len(integration.order_mgr.orders) == 3
 
         # Get orders for symbol
         orders = integration.get_pending_orders_for_symbol("AAPL")
         assert len(orders) >= 2  # Should find AAPL orders
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def test_cross_symbol_trading(self):
         """? Orders across multiple symbols tracked independently."""
         mock_engine = Mock()
@@ -107,11 +87,7 @@ class TestCoreIntegration:
         integration.track_order("order_1", "AAPL", 1.0, 45000.0)
         integration.track_order("order_2", "MSFT", 10.0, 2500.0)
         integration.track_order("order_3", "BAC", 100.0, 1.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # All tracked
         assert len(integration.order_mgr.orders) == 3
 
@@ -170,11 +146,7 @@ class TestOrderAging:
 
         order_id = "test_order"
         integration.track_order(order_id, "AAPL", 1.0, 45000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Immediately after creation
         age_1 = integration.get_order_age_seconds(order_id)
 
@@ -194,11 +166,7 @@ class TestOrderAging:
 
         order_id = "test_order"
         integration.track_order(order_id, "AAPL", 1.0, 45000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Manually set to 5 seconds old
         integration.order_mgr.orders[order_id].created_at = datetime.now(UTC) - timedelta(seconds=5)
 
@@ -220,7 +188,6 @@ class TestRealWorldScenario:
             execution_engine=mock_engine,
             timeout_seconds=30,  # 30s timeout
         )
-<<<<<<< HEAD
 
         # Submit pair trade: Long AAPL, Short MSFT
         aapl_order_id = "paper_order_1_AAPL"
@@ -229,16 +196,6 @@ class TestRealWorldScenario:
         integration.track_order(aapl_order_id, "AAPL", 1.0, 45000.0)
         integration.track_order(eth_order_id, "MSFT", 10.0, 2500.0)
 
-=======
-        
-        # Submit pair trade: Long AAPL, Short MSFT
-        aapl_order_id = "paper_order_1_AAPL"
-        eth_order_id = "paper_order_2_MSFT"
-        
-        integration.track_order(aapl_order_id, "AAPL", 1.0, 45000.0)
-        integration.track_order(eth_order_id, "MSFT", 10.0, 2500.0)
-        
->>>>>>> origin/main
         # Both tracked
         assert aapl_order_id in integration.order_mgr.orders
         assert eth_order_id in integration.order_mgr.orders
@@ -250,11 +207,7 @@ class TestRealWorldScenario:
         # Can mark fills
         integration.mark_filled(aapl_order_id, 1.0)
         assert integration.order_mgr.orders[aapl_order_id].status == OrderStatus.FILLED
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # MSFT still pending
         assert integration.order_mgr.orders[eth_order_id].status == OrderStatus.PENDING
 

@@ -21,11 +21,7 @@ def main():
     3. Filter by half-life of mean reversion
     4. Output ranked list of trading candidates
     """
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     # Example US equity symbols to analyze
     symbols = [
         "AAPL",
@@ -44,11 +40,7 @@ def main():
         # Load 2 years of daily data for each symbol
         prices = {}
         for symbol in symbols:
-<<<<<<< HEAD
             print(f"    Ôåô Loading {symbol}...")
-=======
-            print(f"    ↓ Loading {symbol}...")
->>>>>>> origin/main
             try:
                 df = loader.load_ibkr_data(
                     symbol=symbol,
@@ -57,11 +49,7 @@ def main():
                 )
                 prices[symbol] = df["close"]
             except Exception as e:
-<<<<<<< HEAD
                 print(f"    Ô£ö Failed to load {symbol}: {e}")
-=======
-                print(f"    ✔ Failed to load {symbol}: {e}")
->>>>>>> origin/main
                 continue
 
         if not prices:
@@ -73,17 +61,8 @@ def main():
 
         # Screen for cointegrated pairs
         print("\n[*] Screening for cointegrated pairs...")
-<<<<<<< HEAD
         candidates = screen_pairs(prices_df, min_corr=0.7, max_half_life=60)
 
-=======
-        candidates = screen_pairs(
-            prices_df,
-            min_corr=0.7,
-            max_half_life=60
-        )
-        
->>>>>>> origin/main
         if not candidates:
             print("[!] No cointegrated pairs found. Try longer lookback or more symbols.")
             sys.exit(0)
@@ -102,19 +81,11 @@ def main():
             beta = pair["beta"]
 
             print(f"{sym1}_{sym2:<15} {corr:>10.3f}      {pval:>10.6f}       {hl:>10} days")
-<<<<<<< HEAD
             print(f"  -''ÔôÇ Spread model: {sym1} = {beta:.4f} ├ù {sym2} + constant")
 
         print(f"\n[*] Top candidate: {candidates[0]['sym1']}_{candidates[0]['sym2']}")
         print("    Ready for pair trading strategy deployment.")
 
-=======
-            print(f"  -''Ⓚ Spread model: {sym1} = {beta:.4f} × {sym2} + constant")
-        
-        print(f"\n[*] Top candidate: {candidates[0]['sym1']}_{candidates[0]['sym2']}")
-        print("    Ready for pair trading strategy deployment.")
-        
->>>>>>> origin/main
     except ImportError as e:
         print(f"[!] Missing dependency: {e}")
         print("    Run: pip install -r requirements.txt")

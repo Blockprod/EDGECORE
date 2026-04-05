@@ -8,10 +8,7 @@ Tests all edge cases:
 """
 
 import pytest
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 from common.validators import (
     ConfigError,
     EquityError,
@@ -62,29 +59,17 @@ class TestValidateSymbol:
         """Non-alphanumeric symbol should raise."""
         with pytest.raises(SymbolError):
             validate_symbol("$$INVALID$$")
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def test_symbol_multiple_slashes(self):
         """Symbol with multiple slashes should raise."""
         with pytest.raises(SymbolError):
             validate_symbol("AAPL/X")
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def test_symbol_invalid_characters(self):
         """Symbol with invalid characters should raise."""
         with pytest.raises(SymbolError):
             validate_symbol("AAPL-@")
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def test_symbol_case_insensitive(self):
         """Lowercase symbols should be accepted."""
         validate_symbol("AAPL")  # Should not raise
@@ -292,18 +277,8 @@ class TestValidateTradeEntry:
 
     def test_valid_trade_entry(self):
         """Valid trade entry should not raise."""
-<<<<<<< HEAD
         validate_trade_entry(symbol="AAPL", position_size=10.0, equity=100000.0, volatility=0.02)
 
-=======
-        validate_trade_entry(
-            symbol="AAPL",
-            position_size=10.0,
-            equity=100000.0,
-            volatility=0.02
-        )
-    
->>>>>>> origin/main
     def test_invalid_symbol_in_trade_entry(self):
         """Invalid symbol should raise."""
         with pytest.raises(SymbolError):
@@ -312,7 +287,6 @@ class TestValidateTradeEntry:
     def test_invalid_position_in_trade_entry(self):
         """Invalid position size should raise."""
         with pytest.raises(ValidationError):
-<<<<<<< HEAD
             validate_trade_entry(symbol="AAPL", position_size=0.0, equity=100000.0, volatility=0.02)
 
     def test_invalid_equity_in_trade_entry(self):
@@ -324,34 +298,6 @@ class TestValidateTradeEntry:
         """Invalid volatility should raise."""
         with pytest.raises(VolatilityError):
             validate_trade_entry(symbol="AAPL", position_size=10.0, equity=100000.0, volatility=-0.02)
-=======
-            validate_trade_entry(
-                symbol="AAPL",
-                position_size=0.0,
-                equity=100000.0,
-                volatility=0.02
-            )
-    
-    def test_invalid_equity_in_trade_entry(self):
-        """Invalid equity should raise."""
-        with pytest.raises(EquityError):
-            validate_trade_entry(
-                symbol="AAPL",
-                position_size=10.0,
-                equity=0.0,
-                volatility=0.02
-            )
-    
-    def test_invalid_volatility_in_trade_entry(self):
-        """Invalid volatility should raise."""
-        with pytest.raises(VolatilityError):
-            validate_trade_entry(
-                symbol="AAPL",
-                position_size=10.0,
-                equity=100000.0,
-                volatility=-0.02
-            )
->>>>>>> origin/main
 
 
 class TestValidateRiskParameters:
@@ -397,11 +343,7 @@ class TestSanityCheckContext:
         with pytest.raises(SymbolError):
             with SanityCheckContext("test_operation"):
                 validate_symbol("AAPL")  # OK
-<<<<<<< HEAD
                 validate_symbol("INVALID")  # Fails here
-=======
-                validate_symbol("INVALID")   # Fails here
->>>>>>> origin/main
                 validate_position_size(10.0)  # Never reached
 
 

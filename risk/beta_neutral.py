@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Beta-Neutral Hedge ÔÇô Phase 3 (addresses equity migration risk).
-=======
-"""
-Beta-Neutral Hedge – Phase 3 (addresses equity migration risk).
->>>>>>> origin/main
 
 Problem
 -------
@@ -18,11 +13,7 @@ Solution
 1. Estimate the portfolio's residual beta to a benchmark (default: SPY)
    by regressing the portfolio's daily returns on the benchmark's returns.
 2. If |beta| > ``max_beta`` (default 0.10), compute the notional hedge
-<<<<<<< HEAD
    required: ``hedge_notional = -beta ├ù portfolio_value``.
-=======
-   required: ``hedge_notional = -beta × portfolio_value``.
->>>>>>> origin/main
 3. Express the hedge as a long or short position in the benchmark ETF.
 
 The hedge is recalculated every ``rebalance_interval`` bars and bounded to
@@ -38,11 +29,7 @@ Usage::
 """
 
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import Any
-=======
-from typing import Dict, Optional, Any
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -81,17 +68,10 @@ class BetaNeutralHedger:
     Estimates and manages a benchmark hedge to achieve market neutrality.
     """
 
-<<<<<<< HEAD
     def __init__(self, config: BetaNeutralConfig | None = None):
         self.config = config or BetaNeutralConfig()
         self._current_hedge_notional: float = 0.0
         self._last_beta: float | None = None
-=======
-    def __init__(self, config: Optional[BetaNeutralConfig] = None):
-        self.config = config or BetaNeutralConfig()
-        self._current_hedge_notional: float = 0.0
-        self._last_beta: Optional[float] = None
->>>>>>> origin/main
         self._bars_since_rebalance: int = 0
         logger.info(
             "beta_neutral_hedger_initialized",
@@ -103,11 +83,7 @@ class BetaNeutralHedger:
         self,
         portfolio_returns: pd.Series,
         benchmark_returns: pd.Series,
-<<<<<<< HEAD
     ) -> float | None:
-=======
-    ) -> Optional[float]:
->>>>>>> origin/main
         """Estimate the portfolio's beta to the benchmark.
 
         Uses OLS regression: R_portfolio = alpha + beta * R_benchmark + epsilon.
@@ -146,11 +122,7 @@ class BetaNeutralHedger:
         portfolio_returns: pd.Series,
         benchmark_returns: pd.Series,
         portfolio_value: float,
-<<<<<<< HEAD
     ) -> dict[str, Any]:
-=======
-    ) -> Dict[str, Any]:
->>>>>>> origin/main
         """Compute the hedge recommendation.
 
         Args:
@@ -160,11 +132,7 @@ class BetaNeutralHedger:
 
         Returns:
             Dict with 'action' ('buy'|'sell'|'none'), 'notional',
-<<<<<<< HEAD
             'shares' (assuming priceÔëê1 for simplicity ÔÇô caller resolves),
-=======
-            'shares' (assuming price≈1 for simplicity – caller resolves),
->>>>>>> origin/main
             'beta', 'hedge_ratio'.
         """
         self._bars_since_rebalance += 1
@@ -186,11 +154,7 @@ class BetaNeutralHedger:
             return {"action": "none", "notional": 0.0, "beta": None, "hedge_ratio": 0.0}
 
         if abs(beta) <= self.config.max_beta:
-<<<<<<< HEAD
             # Beta is small enough ÔÇô unwind any existing hedge
-=======
-            # Beta is small enough – unwind any existing hedge
->>>>>>> origin/main
             if self._current_hedge_notional != 0:
                 old_hedge = self._current_hedge_notional
                 self._current_hedge_notional = 0.0
@@ -234,11 +198,7 @@ class BetaNeutralHedger:
             "hedge_ratio": capped_hedge / max(portfolio_value, 1),
         }
 
-<<<<<<< HEAD
     def get_status(self) -> dict[str, Any]:
-=======
-    def get_status(self) -> Dict[str, Any]:
->>>>>>> origin/main
         """Get current hedge status."""
         return {
             "current_hedge_notional": self._current_hedge_notional,

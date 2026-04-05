@@ -1,9 +1,6 @@
 """Tests for Monte Carlo order book simulation."""
 
-<<<<<<< HEAD
-=======
 import numpy as np
->>>>>>> origin/main
 from datetime import datetime
 
 import numpy as np
@@ -108,26 +105,15 @@ class TestMonteCarloSimulation:
             )
             for _ in range(10)
         ]
-<<<<<<< HEAD
 
         sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
             symbol="AAPL",
             config=config,  # type: ignore[arg-type]
-=======
-        
-        sim = MonteCarloSimulation(
-            symbol="AAPL",
-            config=config,
->>>>>>> origin/main
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
         )
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         assert sim.symbol == "AAPL"
         assert len(sim.paths) == 10
         assert sim.initial_price == 100.0
@@ -159,17 +145,10 @@ class TestMonteCarloSimulation:
             )
             for _ in range(5)
         ]
-<<<<<<< HEAD
 
         sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
             symbol="AAPL",
             config=config,  # type: ignore[arg-type]
-=======
-        
-        sim = MonteCarloSimulation(
-            symbol="AAPL",
-            config=config,
->>>>>>> origin/main
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
@@ -198,7 +177,6 @@ class TestMonteCarloSimulation:
             volumes = np.ones(len(prices))
             spreads = np.full(len(prices), 0.0005)
             returns = np.concatenate([[0.0], np.diff(np.log(prices))])
-<<<<<<< HEAD
 
             paths.append(
                 PricePath(
@@ -213,20 +191,6 @@ class TestMonteCarloSimulation:
         sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
             symbol="AAPL",
             config=config,  # type: ignore[arg-type]
-=======
-            
-            paths.append(PricePath(
-                symbol="AAPL",
-                prices=prices,
-                volumes=volumes,
-                spreads=spreads,
-                returns=returns,
-            ))
-        
-        sim = MonteCarloSimulation(
-            symbol="AAPL",
-            config=config,
->>>>>>> origin/main
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),
@@ -283,15 +247,9 @@ class TestMonteCarloOrderBookSimulator:
             initial_price=100.0,
             seed=42,
         )
-<<<<<<< HEAD
 
         path = simulator.simulate_single_path("AAPL")
 
-=======
-        
-        path = simulator.simulate_single_path("AAPL")
-        
->>>>>>> origin/main
         assert path.symbol == "AAPL"
         assert len(path.prices) == config["time_steps"] + 1
         assert path.prices[0] == 100.0
@@ -314,15 +272,9 @@ class TestMonteCarloOrderBookSimulator:
             initial_price=100.0,
             seed=42,
         )
-<<<<<<< HEAD
 
         path = simulator.simulate_single_path("AAPL")
 
-=======
-        
-        path = simulator.simulate_single_path("AAPL")
-        
->>>>>>> origin/main
         assert path.symbol == "AAPL"
         assert len(path.prices) == config["time_steps"] + 1
         assert all(p > 0 for p in path.prices)
@@ -368,15 +320,9 @@ class TestMonteCarloOrderBookSimulator:
             initial_price=100.0,
             seed=42,
         )
-<<<<<<< HEAD
 
         sim = simulator.simulate("AAPL")
 
-=======
-        
-        sim = simulator.simulate("AAPL")
-        
->>>>>>> origin/main
         assert sim.symbol == "AAPL"
         assert len(sim.paths) == 50
         assert sim.initial_price == 100.0
@@ -419,11 +365,7 @@ class TestCorrelatedSimulations:
             "jump_size_std": 0.0,
             "volume_scaling": 1.0,
         }
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         symbols = ["AAPL", "MSFT"]
         initial_prices = {"AAPL": 100.0, "MSFT": 50.0}
         correlation_matrix = np.array([[1.0, 0.8], [0.8, 1.0]])
@@ -435,11 +377,7 @@ class TestCorrelatedSimulations:
             correlation_matrix=correlation_matrix,
             seed=42,
         )
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         assert "AAPL" in results
         assert "MSFT" in results
         assert len(results["AAPL"].paths) == 20
@@ -468,7 +406,6 @@ class TestRiskMetrics:
             volumes = np.ones(2)
             spreads = np.full(2, 0.0005)
             returns = np.array([0.0, np.log(prices[1] / prices[0])])
-<<<<<<< HEAD
 
             paths.append(
                 PricePath(
@@ -483,20 +420,6 @@ class TestRiskMetrics:
         sim = MonteCarloSimulation(  # type: ignore[call-arg, arg-type]
             symbol="AAPL",
             config=config,  # type: ignore[arg-type]
-=======
-            
-            paths.append(PricePath(
-                symbol="AAPL",
-                prices=prices,
-                volumes=volumes,
-                spreads=spreads,
-                returns=returns,
-            ))
-        
-        sim = MonteCarloSimulation(
-            symbol="AAPL",
-            config=config,
->>>>>>> origin/main
             paths=paths,
             initial_price=100.0,
             generated_at=datetime.now(),

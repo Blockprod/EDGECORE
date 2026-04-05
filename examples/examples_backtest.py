@@ -28,16 +28,11 @@ def main():
     symbols = ["AAPL", "MSFT"]
     start_date = "2023-01-01"
     end_date = "2024-01-01"
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     print("\n[*] Backtest Configuration:")
     print(f"    Symbols:    {symbols}")
     print(f"    Period:     {start_date} to {end_date}")
     print("    Strategy:   Pair Trading (Mean Reversion)")
-<<<<<<< HEAD
 
     try:
         runner = BacktestRunner()
@@ -45,19 +40,6 @@ def main():
         print("\n[*] Running backtest...")
         metrics = runner.run(symbols=symbols, start_date=start_date, end_date=end_date)
 
-=======
-    
-    try:
-        runner = BacktestRunner()
-        
-        print("\n[*] Running backtest...")
-        metrics = runner.run(
-            symbols=symbols,
-            start_date=start_date,
-            end_date=end_date
-        )
-        
->>>>>>> origin/main
         # Display results
         print(metrics.summary())
 
@@ -69,11 +51,7 @@ def main():
         print("    2. Check logs in logs/ directory")
         print("    3. If Sharpe > 1.0 and max drawdown < 20%, consider paper trading")
         print("    4. Test live on small position size first")
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
     except ImportError as e:
         print(f"\n[!] Missing dependency: {e}")
         print("    Run: pip install -r requirements.txt")

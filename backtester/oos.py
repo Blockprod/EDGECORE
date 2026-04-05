@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 OOS Validation Engine ÔÇö Out-of-sample validation wrapper.
-=======
-"""
-OOS Validation Engine — Out-of-sample validation wrapper.
->>>>>>> origin/main
 
 Wraps :class:`validation.oos_validator.OutOfSampleValidator` behind a clean
 API.  This module ensures that pair discoveries are validated against
@@ -18,25 +13,16 @@ lose money in production.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-<<<<<<< HEAD
 from typing import Any
-=======
-from typing import Any, Dict, List, Optional
->>>>>>> origin/main
 
 import pandas as pd
 from structlog import get_logger
 
 from validation.oos_validator import (
-<<<<<<< HEAD
     OOSValidationResult as _RawResult,
 )
 from validation.oos_validator import (
     OutOfSampleValidator,
-=======
-    OutOfSampleValidator,
-    OOSValidationResult as _RawResult,
->>>>>>> origin/main
 )
 
 logger = get_logger(__name__)
@@ -45,24 +31,16 @@ logger = get_logger(__name__)
 @dataclass
 class OOSConfig:
     """Configuration for OOS validation."""
-<<<<<<< HEAD
 
     acceptance_threshold: float = 0.70  # 70% of pairs must validate
     half_life_drift_tolerance: float = 0.50  # max ┬▒50% HL drift
     num_symbols: int = 50  # for Bonferroni correction
     oos_window_days: int = 21  # forward test window
-=======
-    acceptance_threshold: float = 0.70    # 70% of pairs must validate
-    half_life_drift_tolerance: float = 0.50  # max ±50% HL drift
-    num_symbols: int = 50                    # for Bonferroni correction
-    oos_window_days: int = 21                # forward test window
->>>>>>> origin/main
 
 
 @dataclass
 class OOSReport:
     """Aggregated OOS validation report."""
-<<<<<<< HEAD
 
     total_pairs: int
     passed_pairs: int
@@ -73,17 +51,6 @@ class OOSReport:
     config: OOSConfig = field(default_factory=OOSConfig)
 
     def summary(self) -> dict[str, Any]:
-=======
-    total_pairs: int
-    passed_pairs: int
-    failed_pairs: int
-    persistence_rate: float        # fraction of pairs that pass OOS
-    strategy_validated: bool       # True if persistence_rate >= threshold
-    per_pair_results: List[_RawResult] = field(default_factory=list)
-    config: OOSConfig = field(default_factory=OOSConfig)
-
-    def summary(self) -> Dict[str, Any]:
->>>>>>> origin/main
         return {
             "total_pairs": self.total_pairs,
             "passed_pairs": self.passed_pairs,
@@ -114,17 +81,12 @@ class OOSValidationEngine:
             print("Strategy passes OOS validation")
     """
 
-<<<<<<< HEAD
     def __init__(self, config: OOSConfig | None = None):
         if config is None:
             from config.settings import get_settings
 
             config = OOSConfig(acceptance_threshold=get_settings().strategy.oos_acceptance_threshold)
         self.config = config
-=======
-    def __init__(self, config: Optional[OOSConfig] = None):
-        self.config = config or OOSConfig()
->>>>>>> origin/main
         self._validator = OutOfSampleValidator(
             oos_acceptance_threshold=self.config.acceptance_threshold,
             hl_drift_tolerance=self.config.half_life_drift_tolerance,
@@ -133,11 +95,7 @@ class OOSValidationEngine:
 
     def validate(
         self,
-<<<<<<< HEAD
         pairs: list[tuple],
-=======
-        pairs: List[tuple],
->>>>>>> origin/main
         price_data: pd.DataFrame,
         split_date: str,
     ) -> OOSReport:
@@ -167,11 +125,7 @@ class OOSValidationEngine:
                 config=self.config,
             )
 
-<<<<<<< HEAD
         results: list[_RawResult] = []
-=======
-        results: List[_RawResult] = []
->>>>>>> origin/main
 
         for sym1, sym2 in pairs:
             if sym1 not in price_data.columns or sym2 not in price_data.columns:

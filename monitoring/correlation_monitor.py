@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Ongoing Correlation Monitor ÔÇö Phase 4 (addresses audit ┬º3.5).
-=======
-"""
-Ongoing Correlation Monitor — Phase 4 (addresses audit §3.5).
->>>>>>> origin/main
 
 Continuously tracks rolling correlation between pair legs during position
 lifetime.  Triggers exit signals when correlation degrades below threshold.
@@ -24,11 +19,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
-<<<<<<< HEAD
 from typing import Any
-=======
-from typing import Any, Dict, List, Optional
->>>>>>> origin/main
 
 import numpy as np
 from structlog import get_logger
@@ -62,15 +53,9 @@ class PairCorrelationTracker:
         self._prices_a: deque = deque(maxlen=config.lookback)
         self._prices_b: deque = deque(maxlen=config.lookback)
         self._below_count: int = 0
-<<<<<<< HEAD
         self.last_correlation: float | None = None
 
     def update(self, price_a: float, price_b: float) -> dict[str, Any] | None:
-=======
-        self.last_correlation: Optional[float] = None
-
-    def update(self, price_a: float, price_b: float) -> Optional[Dict[str, Any]]:
->>>>>>> origin/main
         """Add a new bar and return alert if correlation degraded."""
         self._prices_a.append(price_a)
         self._prices_b.append(price_b)
@@ -82,11 +67,7 @@ class PairCorrelationTracker:
         a = np.array(self._prices_a, dtype=np.float64)
         b = np.array(self._prices_b, dtype=np.float64)
 
-<<<<<<< HEAD
         corr = float(np.corrcoef(a, b, dtype=np.float64)[0, 1])
-=======
-        corr = float(np.corrcoef(a, b)[0, 1])
->>>>>>> origin/main
         self.last_correlation = corr
         abs_corr = abs(corr)
 
@@ -127,15 +108,9 @@ class CorrelationMonitor:
                 # exit the pair
     """
 
-<<<<<<< HEAD
     def __init__(self, config: CorrelationMonitorConfig | None = None):
         self.config = config or CorrelationMonitorConfig()
         self._trackers: dict[str, PairCorrelationTracker] = {}
-=======
-    def __init__(self, config: Optional[CorrelationMonitorConfig] = None):
-        self.config = config or CorrelationMonitorConfig()
-        self._trackers: Dict[str, PairCorrelationTracker] = {}
->>>>>>> origin/main
         logger.info(
             "correlation_monitor_initialized",
             lookback=self.config.lookback,
@@ -143,13 +118,7 @@ class CorrelationMonitor:
             exit_correlation=self.config.exit_correlation,
         )
 
-<<<<<<< HEAD
     def update(self, pair_key: str, price_a: float, price_b: float) -> dict[str, Any] | None:
-=======
-    def update(
-        self, pair_key: str, price_a: float, price_b: float
-    ) -> Optional[Dict[str, Any]]:
->>>>>>> origin/main
         """Update correlation tracking for a pair.
 
         Args:
@@ -161,20 +130,13 @@ class CorrelationMonitor:
             Alert dict if correlation degraded, else None.
         """
         if pair_key not in self._trackers:
-<<<<<<< HEAD
             self._trackers[pair_key] = PairCorrelationTracker(pair_key=pair_key, config=self.config)
-=======
-            self._trackers[pair_key] = PairCorrelationTracker(
-                pair_key=pair_key, config=self.config
-            )
->>>>>>> origin/main
         return self._trackers[pair_key].update(price_a, price_b)
 
     def remove_pair(self, pair_key: str) -> None:
         """Stop tracking a pair (on position close)."""
         self._trackers.pop(pair_key, None)
 
-<<<<<<< HEAD
     def get_all_correlations(self) -> dict[str, float | None]:
         """Get latest correlation for all tracked pairs."""
         return {k: t.last_correlation for k, t in self._trackers.items()}
@@ -187,13 +149,6 @@ class CorrelationMonitor:
         return sum(abs(v) for v in values) / len(values)
 
     def get_degraded_pairs(self) -> list[str]:
-=======
-    def get_all_correlations(self) -> Dict[str, Optional[float]]:
-        """Get latest correlation for all tracked pairs."""
-        return {k: t.last_correlation for k, t in self._trackers.items()}
-
-    def get_degraded_pairs(self) -> List[str]:
->>>>>>> origin/main
         """Get pair keys whose correlation is below threshold."""
         degraded = []
         for key, tracker in self._trackers.items():

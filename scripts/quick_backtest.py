@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python
-=======
-#!/usr/bin/env python
->>>>>>> origin/main
 """Quick backtest test"""
 
 import sys
@@ -28,15 +24,9 @@ try:
     
     # Check if metrics are at least non-zero
     if metrics.total_trades > 0:
-<<<<<<< HEAD
         print("Ô£à Backtest produced trades!")
     else:
         print("ÔÜá´©Å  Backtest had zero trades")
-=======
-        print("✅ Backtest produced trades!")
-    else:
-        print("⚠️  Backtest had zero trades")
->>>>>>> origin/main
     
 except Exception as e:
     print(f"ERROR: {e}")

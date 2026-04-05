@@ -1,23 +1,13 @@
-<<<<<<< HEAD
 ﻿# ­ƒÄ» REMEDIATION ROADMAP ÔÇö Atteindre 10/10 sur tous les niveaux
 
 **Baseline audit** : Qualit├® statistique 2.5/10 | Robustesse r├®elle 3.0/10  
 **Objectif** : Qualit├® 9.5+/10 | Robustesse 9.0+/10 | Score de survie 12m: 85%+
 
 **Dur├®e totale estim├®e** : 120-140 heures  
-=======
-# 🎯 REMEDIATION ROADMAP — Atteindre 10/10 sur tous les niveaux
-
-**Baseline audit** : Qualité statistique 2.5/10 | Robustesse réelle 3.0/10  
-**Objectif** : Qualité 9.5+/10 | Robustesse 9.0+/10 | Score de survie 12m: 85%+
-
-**Durée totale estimée** : 120-140 heures  
->>>>>>> origin/main
 **Timeline** : 4 sprints de 2 semaines chacun
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒôè Priorit├®s (Impact vs Effort)
 
 ```
@@ -45,40 +35,10 @@ OPTIMIZATION & ENHANCEMENTS (Phase 2)
 Ôö£ÔöÇ Intraday signal integration              [10h] ÔåÆ +15 signal frequency
 Ôö£ÔöÇ Smart execution (iceberg orders)         [8h] ÔåÆ +10 execution quality
 ÔööÔöÇ Real-time monitoring dashboard           [12h] ÔåÆ +20 operational safety
-=======
-## 📊 Priorités (Impact vs Effort)
-
-```
-IMPACT ÉLEVÉ / EFFORT FAIBLE (Quick Wins)
-├─ C4: Slippage/Commissions intégrés        [3h] → +15 Sharpe accuracy
-├─ C6: Z-score threshold justification      [2h] → +10 params clarity
-├─ Mi3: Spread std alert logic              [1h] → +5 robustness
-└─ M2: Rolling window consistency           [2h] → +8 temporal correctness
-
-IMPACT ÉLEVÉ / EFFORT MODÉRÉ (Core Fixes)
-├─ C1: Bonferroni + p-value refactor        [4h] → +30 false positive reduction
-├─ C2: OOS pair validation framework        [6h] → +25 lookback bias reduction
-├─ M1: Dynamic hedge ratio reestimation     [5h] → +20 drift correction
-└─ M5: Regime change detection              [8h] → +25 robustness
-
-IMPACT ÉLEVÉ / EFFORT ÉLEVÉ (Deep Dives)
-├─ C3: Half-life re-estimation on spreads   [7h] → +15 mean-reversion accuracy
-├─ C5: WF cache isolation + persistence     [6h] → +20 test validity
-├─ M3: Trailing stop implementation         [4h] → +12 downside protection
-├─ M4: Cross-symbol concentration limits    [5h] → +18 portfolio diversification
-└─ Advanced ML: Z-score threshold learning  [16h] → +20 signal quality
-
-OPTIMIZATION & ENHANCEMENTS (Phase 2)
-├─ Markov switching regime model            [12h] → +25 regime robustness
-├─ Intraday signal integration              [10h] → +15 signal frequency
-├─ Smart execution (iceberg orders)         [8h] → +10 execution quality
-└─ Real-time monitoring dashboard           [12h] → +20 operational safety
->>>>>>> origin/main
 ```
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒö┤ SPRINT 1: Statut Critique (3 semaines)
 
 **Objectif** : Passer de 2.5/10 ÔåÆ 5.5/10 en validit├® statistique  
@@ -104,59 +64,20 @@ Impl├®menter correction multiplie testing rigoureuse dans `models/cointegrati
   
   # ├ëtape 2: confirmation ├á ╬▒_corrected
   confirmed = [p for p in candidate_pairs if p.pvalue < ╬▒_corrected]
-=======
-## 🔴 SPRINT 1: Statut Critique (3 semaines)
-
-**Objectif** : Passer de 2.5/10 → 5.5/10 en validité statistique  
-**Focus** : Éliminer les faux positifs et biais de base
-
-### Task S1.1: Bonferroni Correction Framework [4h]
-
-**Dépend de** : Aucune  
-**Bloque** : S1.2, S2.1
-
-**Description**
-Implémenter correction multiplie testing rigoureuse dans `models/cointegration.py`
-
-**Sous-tâches**
-- [ ] **S1.1a** (30min) : Ajouter param `num_symbols` à `engle_granger_test()`
-  - Calculer alpha corrigé : `α_adj = 0.05 / (n*(n-1)/2)`
-  - Logger: `p-value_critical = 0.05 / {n_pairs}` au startup
-  
-- [ ] **S1.1b** (1h) : Refactor `find_cointegrated_pairs()` à deux niveaux
-  ```python
-  # Étape 1: screening rapide à α = 0.05
-  candidate_pairs = [p for p in all_pairs if p.pvalue < 0.05]
-  
-  # Étape 2: confirmation à α_corrected
-  confirmed = [p for p in candidate_pairs if p.pvalue < α_corrected]
->>>>>>> origin/main
   
   logger.info("pair_discovery_bonferroni", 
     candidates=len(candidate_pairs), 
     confirmed=len(confirmed),
-<<<<<<< HEAD
     bonferroni_alpha=╬▒_corrected)
-=======
-    bonferroni_alpha=α_corrected)
->>>>>>> origin/main
   ```
 
 - [ ] **S1.1c** (1.5h) : Ajouter test unitaire `test_bonferroni_multiple_testing`
   ```python
-<<<<<<< HEAD
   # G├®n├®rer 100 synthetic random pairs (non-coint├®gr├®s)
   # V├®rifier que Z├ëRO sont accepted avec Bonferroni
   # V├®rifier que ~5% sont accepted sans Bonferroni (expected false positive rate)
   assert confirmed_pairs == 0  # With Bonferroni
   assert len(candidates) > 3   # Without: 5% of 100 Ôëê 5
-=======
-  # Générer 100 synthetic random pairs (non-cointégrés)
-  # Vérifier que ZÉRO sont accepted avec Bonferroni
-  # Vérifier que ~5% sont accepted sans Bonferroni (expected false positive rate)
-  assert confirmed_pairs == 0  # With Bonferroni
-  assert len(candidates) > 3   # Without: 5% of 100 ≈ 5
->>>>>>> origin/main
   ```
 
 - [ ] **S1.1d** (1h) : Documenter dans `README.md` + add config param
@@ -167,17 +88,10 @@ Implémenter correction multiplie testing rigoureuse dans `models/cointegration.
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Pair discovery count Ôåô 70-80% (expected: 100 pairs ÔåÆ 15-25)
 - Ô£à Sharpe ratio backtest ┬▒ 5% (l├®g├¿re am├®lioration, moins de faux positifs)
 - Ô£à Test 100% passing
 - Ô£à Config loaded at startup
-=======
-- ✅ Pair discovery count ↓ 70-80% (expected: 100 pairs → 15-25)
-- ✅ Sharpe ratio backtest ± 5% (légère amélioration, moins de faux positifs)
-- ✅ Test 100% passing
-- ✅ Config loaded at startup
->>>>>>> origin/main
 
 **Expected Impact** : +30% reduction en faux positifs
 
@@ -185,7 +99,6 @@ Implémenter correction multiplie testing rigoureuse dans `models/cointegration.
 
 ### Task S1.2: Out-of-Sample Pair Validation [6h]
 
-<<<<<<< HEAD
 **D├®pend de** : S1.1  
 **Bloque** : S2.1
 
@@ -194,16 +107,6 @@ Impl├®menter validation OOS des paires apr├¿s discovery
 
 **Sous-t├óches**
 - [ ] **S1.2a** (1.5h) : Cr├®er module `models/oos_validation.py`
-=======
-**Dépend de** : S1.1  
-**Bloque** : S2.1
-
-**Description**
-Implémenter validation OOS des paires après discovery
-
-**Sous-tâches**
-- [ ] **S1.2a** (1.5h) : Créer module `models/oos_validation.py`
->>>>>>> origin/main
   ```python
   class OOSPairValidator:
       """Validate cointegrated pairs on unseen data."""
@@ -226,15 +129,9 @@ Implémenter validation OOS des paires après discovery
           """
   ```
 
-<<<<<<< HEAD
 - [ ] **S1.2b** (2h) : Int├®grer dans pair discovery
   ```python
   # Apr├¿s S1.1 confirmation:
-=======
-- [ ] **S1.2b** (2h) : Intégrer dans pair discovery
-  ```python
-  # Après S1.1 confirmation:
->>>>>>> origin/main
   confirmed_pairs = [...]  # After Bonferroni
   
   # Validate on OOS window
@@ -268,17 +165,10 @@ Implémenter validation OOS des paires après discovery
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Validated pairs < 50% of confirmed pairs (expected fallout)
 - Ô£à OOS validation score logged per pair
 - Ô£à Walk-forward backtest: confirmed_pairs vs validated_pairs comparison
 - Ô£à Sharpe improvement 0.20-0.35 (fewer false pairs)
-=======
-- ✅ Validated pairs < 50% of confirmed pairs (expected fallout)
-- ✅ OOS validation score logged per pair
-- ✅ Walk-forward backtest: confirmed_pairs vs validated_pairs comparison
-- ✅ Sharpe improvement 0.20-0.35 (fewer false pairs)
->>>>>>> origin/main
 
 **Expected Impact** : +25% reduction en lookback bias, +0.30 Sharpe
 
@@ -286,7 +176,6 @@ Implémenter validation OOS des paires après discovery
 
 ### Task S1.3: Slippage & Commission Integration [3h]
 
-<<<<<<< HEAD
 **D├®pend de** : Aucune  
 **Bloque** : S1.5
 
@@ -295,16 +184,6 @@ Int├®grer r├®aliste frais/slippage dans backtests P&L
 
 **Sous-t├óches**
 - [ ] **S1.3a** (1h) : Cr├®er `models/costs.py`
-=======
-**Dépend de** : Aucune  
-**Bloque** : S1.5
-
-**Description**
-Intégrer réaliste frais/slippage dans backtests P&L
-
-**Sous-tâches**
-- [ ] **S1.3a** (1h) : Créer `models/costs.py`
->>>>>>> origin/main
   ```python
   @dataclass
   class TradesCosts:
@@ -312,11 +191,7 @@ Intégrer réaliste frais/slippage dans backtests P&L
       
       # Entry costs
       entry_slippage_bps: float = 5.0            # 5 bps per leg
-<<<<<<< HEAD
       entry_commission_pct: float = 0.001        # 0.1% taker IBKR ├ù 2 legs
-=======
-      entry_commission_pct: float = 0.001        # 0.1% taker IBKR × 2 legs
->>>>>>> origin/main
       
       # Exit costs
       exit_slippage_bps: float = 5.0
@@ -333,11 +208,7 @@ Intégrer réaliste frais/slippage dans backtests P&L
       # Example: 5 + 10 = 15 bps entry, 15 exit = 30 bps round-trip
   ```
 
-<<<<<<< HEAD
 - [ ] **S1.3b** (1h) : Int├®grer dans `backtests/metrics.py`
-=======
-- [ ] **S1.3b** (1h) : Intégrer dans `backtests/metrics.py`
->>>>>>> origin/main
   ```python
   @classmethod
   def from_returns(cls, returns, trades, start_date, end_date, costs: TradeCosts):
@@ -370,17 +241,10 @@ Intégrer réaliste frais/slippage dans backtests P&L
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Backtest Sharpe Ôåô 30-40% (expected impact)
 - Ô£à Win rate Ôåô 15-25% (marginal trades eliminated)
 - Ô£à Max DD Ôåæ 1-2% (costs add friction)
 - Ô£à Config readable, documentation clear
-=======
-- ✅ Backtest Sharpe ↓ 30-40% (expected impact)
-- ✅ Win rate ↓ 15-25% (marginal trades eliminated)
-- ✅ Max DD ↑ 1-2% (costs add friction)
-- ✅ Config readable, documentation clear
->>>>>>> origin/main
 
 **Expected Impact** : +15 points Sharpe accuracy
 
@@ -388,21 +252,13 @@ Intégrer réaliste frais/slippage dans backtests P&L
 
 ### Task S1.4: Z-Score Threshold Justification & Optimization [2h]
 
-<<<<<<< HEAD
 **D├®pend de** : S1.3  
-=======
-**Dépend de** : S1.3  
->>>>>>> origin/main
 **Bloque** : S2.2
 
 **Description**
 Justifier/optimiser empiriquement le seuil |Z| > 2.0
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S1.4a** (1h) : Grid search sur seuils
   ```python
   def optimize_z_score_threshold(backtest_data, threshold_range=[1.0, 3.0, 0.1]):
@@ -446,15 +302,9 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Optimal threshold identified (usually 2.0-2.3)
 - Ô£à Justification documented
 - Ô£à OOS Sharpe improvement 0.05-0.15 vs hardcoded 2.0
-=======
-- ✅ Optimal threshold identified (usually 2.0-2.3)
-- ✅ Justification documented
-- ✅ OOS Sharpe improvement 0.05-0.15 vs hardcoded 2.0
->>>>>>> origin/main
 
 **Expected Impact** : +10 parameter clarity
 
@@ -462,7 +312,6 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
 
 ### Task S1.5: Walk-Forward Cache Isolation [6h]
 
-<<<<<<< HEAD
 **D├®pend de** : S1.3  
 **Bloque** : S2.1
 
@@ -470,25 +319,12 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
 ├ëliminer cache 24h que persiste entre periods WF
 
 **Sous-t├óches**
-=======
-**Dépend de** : S1.3  
-**Bloque** : S2.1
-
-**Description**
-Éliminer cache 24h que persiste entre periods WF
-
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S1.5a** (1h) : Auditer logique cache actuelle
   ```python
   # Current: pair_trading.py:210
   def find_cointegrated_pairs(self, ...):
       if use_cache:
-<<<<<<< HEAD
           cached = self.load_cached_pairs(max_age_hours=24)  # ÔåÉ PROBLEM
-=======
-          cached = self.load_cached_pairs(max_age_hours=24)  # ← PROBLEM
->>>>>>> origin/main
           if cached is not None:
               return cached  # Reuse 24h old pairs!
   ```
@@ -505,11 +341,7 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
       """
       If cache_scope=BACKTEST_PERIOD:
         - Cache WITHIN a WF period
-<<<<<<< HEAD
         - Clear at period boundary (train ÔåÆ test)
-=======
-        - Clear at period boundary (train → test)
->>>>>>> origin/main
       If cache_scope=NONE:
         - No caching (recompute every call)
         - Slowest but most correct for validation
@@ -532,11 +364,7 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
           return pairs
   ```
 
-<<<<<<< HEAD
 - [ ] **S1.5c** (1.5h) : Int├®grer dans WF backtest
-=======
-- [ ] **S1.5c** (1.5h) : Intégrer dans WF backtest
->>>>>>> origin/main
   ```python
   # walk_forward.py
   def run_walk_forward(...):
@@ -569,17 +397,10 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Cache scoped to period boundaries
 - Ô£à Walk-forward backtest reproducible (deterministic)
 - Ô£à No hidden data leakage in metrics
 - Ô£à WF Sharpe ┬▒3% of expected (realistic)
-=======
-- ✅ Cache scoped to period boundaries
-- ✅ Walk-forward backtest reproducible (deterministic)
-- ✅ No hidden data leakage in metrics
-- ✅ WF Sharpe ±3% of expected (realistic)
->>>>>>> origin/main
 
 **Expected Impact** : +20 points test validity
 
@@ -587,7 +408,6 @@ Justifier/optimiser empiriquement le seuil |Z| > 2.0
 
 ### Task S1.6: Metrics Cleanup & Documentation [2h]
 
-<<<<<<< HEAD
 **D├®pend de** : S1.3  
 **Bloque** : S1.7
 
@@ -596,16 +416,6 @@ Documenter tout ce qui a chang├®, setup final S1
 
 **Sous-t├óches**
 - [ ] **S1.6a** (1h) : Mettre ├á jour config
-=======
-**Dépend de** : S1.3  
-**Bloque** : S1.7
-
-**Description**
-Documenter tout ce qui a changé, setup final S1
-
-**Sous-tâches**
-- [ ] **S1.6a** (1h) : Mettre à jour config
->>>>>>> origin/main
   ```yaml
   # config/dev.yaml
   
@@ -628,19 +438,11 @@ Documenter tout ce qui a changé, setup final S1
   # SPRINT 1 COMPLETION SUMMARY
   
   **Changes:**
-<<<<<<< HEAD
   - Ô£à Bonferroni correction: 70-80% reduction en faux positifs
   - Ô£à OOS validation: Eliminates 50% of "phantom" pairs
   - Ô£à Slippage integration: -30-40% Sharpe realistic
   - Ô£à Z-threshold optimized: +0.10 Sharpe OOS
   - Ô£à Cache isolation: No leakage between WF periods
-=======
-  - ✅ Bonferroni correction: 70-80% reduction en faux positifs
-  - ✅ OOS validation: Eliminates 50% of "phantom" pairs
-  - ✅ Slippage integration: -30-40% Sharpe realistic
-  - ✅ Z-threshold optimized: +0.10 Sharpe OOS
-  - ✅ Cache isolation: No leakage between WF periods
->>>>>>> origin/main
   
   **New Config Parameters:**
   - bonferroni_correction: true
@@ -650,7 +452,6 @@ Documenter tout ce qui a changé, setup final S1
   **Test Results:**
   - Unit tests: 35/35 PASSING
   - Integration tests: 12/12 PASSING
-<<<<<<< HEAD
   - WF reproducibility: Ô£à Confirmed
   ```
 
@@ -658,15 +459,6 @@ Documenter tout ce qui a changé, setup final S1
 - Ô£à All changes documented
 - Ô£à Config defaults sensible
 - Ô£à Code comments clear
-=======
-  - WF reproducibility: ✅ Confirmed
-  ```
-
-**Success Criteria**
-- ✅ All changes documented
-- ✅ Config defaults sensible
-- ✅ Code comments clear
->>>>>>> origin/main
 
 ---
 
@@ -675,17 +467,12 @@ Documenter tout ce qui a changé, setup final S1
 **Checklist**
 - [ ] All 6 tasks completed
 - [ ] 100% test passing
-<<<<<<< HEAD
 - [ ] Backtest Sharpe: 1.8 ÔåÆ 1.2 (expected)
-=======
-- [ ] Backtest Sharpe: 1.8 → 1.2 (expected)
->>>>>>> origin/main
 - [ ] OOS validation pairs: 70-80% of confirmed
 - [ ] Cache isolation verified WF
 - [ ] Documentation complete
 
 **Expected Outcome after S1**
-<<<<<<< HEAD
 - Validit├® statistique: 2.5/10 ÔåÆ 5.5/10 (+120%)
 - Robustesse r├®elle: 3.0/10 ÔåÆ 4.5/10 (+50%)
 - False positives: 75% ÔåÆ 15%
@@ -711,33 +498,6 @@ R├®-estimer hedge ratio ╬▓ mensuellement pour chaque paire
   ```python
   class HedgeRatioTracker:
       """Track hedge ratio (╬▓) stability over time."""
-=======
-- Validité statistique: 2.5/10 → 5.5/10 (+120%)
-- Robustesse réelle: 3.0/10 → 4.5/10 (+50%)
-- False positives: 75% → 15%
-- Sharpe accuracy: ±50% → ±20%
-
----
-
-## 🟠 SPRINT 2: Problèmes majeurs (3 semaines)
-
-**Objectif** : Passer de 5.5/10 → 7.5/10 en validité | 4.5/10 → 6.5/10 en robustesse  
-**Focus** : Stabilité hedge ratio + regime changes + concentration
-
-### Task S2.1: Dynamic Hedge Ratio Reestimation [5h]
-
-**Dépend de** : S1.2  
-**Bloque** : S2.3
-
-**Description**
-Ré-estimer hedge ratio β mensuellement pour chaque paire
-
-**Sous-tâches**
-- [ ] **S2.1a** (1h) : Créer `models/hedge_ratio_tracker.py`
-  ```python
-  class HedgeRatioTracker:
-      """Track hedge ratio (β) stability over time."""
->>>>>>> origin/main
       
       def __init__(self):
           self.pair_betas = {}  # {pair_key: [(date, beta, is_stable)]}
@@ -745,13 +505,8 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
       
       def reestimate_if_needed(self, pair_key, price_data):
           """
-<<<<<<< HEAD
           Reestimate ╬▓ if enough time has passed.
           Log drift if ╬▓ changed > 10%.
-=======
-          Reestimate β if enough time has passed.
-          Log drift if β changed > 10%.
->>>>>>> origin/main
           """
           last_estimate_date = self.pair_betas[pair_key][-1][0]
           days_elapsed = (today - last_estimate_date).days
@@ -783,11 +538,7 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
           return self.pair_betas[pair_key][-1][1], True
   ```
 
-<<<<<<< HEAD
 - [ ] **S2.1b** (1.5h) : Int├®grer dans `SpreadModel`
-=======
-- [ ] **S2.1b** (1.5h) : Intégrer dans `SpreadModel`
->>>>>>> origin/main
   ```python
   class SpreadModel:
       def __init__(self, y, x, hedge_ratio_tracker=None):
@@ -801,15 +552,9 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
           self.last_beta_update_date = today
       
       def compute_spread(self, y, x):
-<<<<<<< HEAD
           """Compute spread with potentially updated ╬▓."""
           
           # Check if ╬▓ needs reestimation
-=======
-          """Compute spread with potentially updated β."""
-          
-          # Check if β needs reestimation
->>>>>>> origin/main
           if self.tracker is not None:
               new_beta, is_stable = self.tracker.reestimate_if_needed(
                   self.pair_key, 
@@ -826,11 +571,7 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
           return y - (self.intercept + self.beta * x)
   ```
 
-<<<<<<< HEAD
 - [ ] **S2.1c** (1.5h) : Int├®grer dans strat├®gie
-=======
-- [ ] **S2.1c** (1.5h) : Intégrer dans stratégie
->>>>>>> origin/main
   ```python
   # pair_trading.py
   def generate_signals(self, market_data):
@@ -857,11 +598,7 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
   def test_hedge_ratio_reestimation():
       tracker = HedgeRatioTracker()
       
-<<<<<<< HEAD
       # Initial estimate: ╬▓ = 1.5
-=======
-      # Initial estimate: β = 1.5
->>>>>>> origin/main
       beta1 = tracker.estimate_beta(data[0:252])
       
       # After 30 days, no reestimate
@@ -879,7 +616,6 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à ╬▓ tracked per pair with dates
 - Ô£à Monthly reestimation implemented
 - Ô£à Drift > 10% flags pair for deprecation
@@ -887,37 +623,19 @@ Ré-estimer hedge ratio β mensuellement pour chaque paire
 - Ô£à Tests 100% passing
 
 **Expected Impact** : +20 points drift correction (5% ÔåÆ 2% spread error)
-=======
-- ✅ β tracked per pair with dates
-- ✅ Monthly reestimation implemented
-- ✅ Drift > 10% flags pair for deprecation
-- ✅ Spread calculation uses updated β
-- ✅ Tests 100% passing
-
-**Expected Impact** : +20 points drift correction (5% → 2% spread error)
->>>>>>> origin/main
 
 ---
 
 ### Task S2.2: Z-Score Window Consistency [2h]
 
-<<<<<<< HEAD
 **D├®pend de** : S1.4  
-=======
-**Dépend de** : S1.4  
->>>>>>> origin/main
 **Bloque** : S2.4
 
 **Description**
 Align Z-score rolling window (20 days) avec half-life (60 days)
 
-<<<<<<< HEAD
 **Sous-t├óches**
 - [ ] **S2.2a** (1h) : Justifier fen├¬tre
-=======
-**Sous-tâches**
-- [ ] **S2.2a** (1h) : Justifier fenêtre
->>>>>>> origin/main
   ```python
   # models/spread.py
   def compute_z_score(self, spread, lookback=None):
@@ -955,15 +673,9 @@ Align Z-score rolling window (20 days) avec half-life (60 days)
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Lookback window inferred from half-life
 - Ô£à Config documented
 - Ô£à Z-score more stable (less jitter)
-=======
-- ✅ Lookback window inferred from half-life
-- ✅ Config documented
-- ✅ Z-score more stable (less jitter)
->>>>>>> origin/main
 
 **Expected Impact** : +8 temporal correctness
 
@@ -971,21 +683,13 @@ Align Z-score rolling window (20 days) avec half-life (60 days)
 
 ### Task S2.3: Trailing Stop Implementation [4h]
 
-<<<<<<< HEAD
 **D├®pend de** : S2.1  
-=======
-**Dépend de** : S2.1  
->>>>>>> origin/main
 **Bloque** : S2.5
 
 **Description**
 Ajouter trailing stop pour limiter downside
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S2.3a** (1.5h) : Logic de stop
   ```python
   class TrailingStopManager:
@@ -999,11 +703,7 @@ Ajouter trailing stop pour limiter downside
           - Entry Z-score: z_entry = 2.2
           - Spread range at entry: sigma_entry
           - Current spread: spread_current
-<<<<<<< HEAD
           - Exit if: spread widens by > 1.0¤â from entry
-=======
-          - Exit if: spread widens by > 1.0σ from entry
->>>>>>> origin/main
           """
           entry_spread_zscore = position['entry_z']
           current_spread_zscore = self.compute_zscore(spread)
@@ -1011,11 +711,7 @@ Ajouter trailing stop pour limiter downside
           # If spread widens beyond entry:
           widening = abs(current_spread_zscore) - abs(entry_spread_zscore)
           
-<<<<<<< HEAD
           if widening > 1.0:  # Widened by 1¤â from entry
-=======
-          if widening > 1.0:  # Widened by 1σ from entry
->>>>>>> origin/main
               logger.warning("trailing_stop_triggered",
                 pair=position['pair'],
                 entry_z=entry_spread_zscore,
@@ -1026,11 +722,7 @@ Ajouter trailing stop pour limiter downside
           return False
   ```
 
-<<<<<<< HEAD
 - [ ] **S2.3b** (1.5h) : Int├®grer dans pair_trading.py
-=======
-- [ ] **S2.3b** (1.5h) : Intégrer dans pair_trading.py
->>>>>>> origin/main
   ```python
   def generate_signals(self, market_data):
       signals = []
@@ -1048,11 +740,7 @@ Ajouter trailing stop pour limiter downside
               signals.append(Signal(
                   symbol_pair=pair_key,
                   side="exit",
-<<<<<<< HEAD
                   reason="Trailing stop: spread widened > 1¤â"
-=======
-                  reason="Trailing stop: spread widened > 1σ"
->>>>>>> origin/main
               ))
               del self.active_trades[pair_key]
   ```
@@ -1061,36 +749,21 @@ Ajouter trailing stop pour limiter downside
   ```python
   def test_trailing_stop():
       # Entry at Z = 2.2
-<<<<<<< HEAD
       # Current Z = 3.8 (widened 1.6¤â)
-=======
-      # Current Z = 3.8 (widened 1.6σ)
->>>>>>> origin/main
       # Should trigger exit
       assert should_exit_on_trailing_stop == True
       
       # Entry at Z = 2.2
-<<<<<<< HEAD
       # Current Z = 2.8 (widened 0.6¤â)
-=======
-      # Current Z = 2.8 (widened 0.6σ)
->>>>>>> origin/main
       # Should NOT trigger exit
       assert should_exit_on_trailing_stop == False
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Trailing stop logic implemented
 - Ô£à Exit reason logged
 - Ô£à Tests passing
 - Ô£à Max loss per trade reduced
-=======
-- ✅ Trailing stop logic implemented
-- ✅ Exit reason logged
-- ✅ Tests passing
-- ✅ Max loss per trade reduced
->>>>>>> origin/main
 
 **Expected Impact** : +12 downside protection
 
@@ -1098,7 +771,6 @@ Ajouter trailing stop pour limiter downside
 
 ### Task S2.4: Regime Change Detection [8h]
 
-<<<<<<< HEAD
 **D├®pend de** : S2.2  
 **Bloque** : S2.5
 
@@ -1107,16 +779,6 @@ D├®tecter vol/corr├®lation breaks et adapter strat├®gie
 
 **Sous-t├óches**
 - [ ] **S2.4a** (2h) : Cr├®er `models/regime_detector.py`
-=======
-**Dépend de** : S2.2  
-**Bloque** : S2.5
-
-**Description**
-Détecter vol/corrélation breaks et adapter stratégie
-
-**Sous-tâches**
-- [ ] **S2.4a** (2h) : Créer `models/regime_detector.py`
->>>>>>> origin/main
   ```python
   class RegimeDetector:
       """Detect market regime changes via volatility percentiles."""
@@ -1151,11 +813,7 @@ Détecter vol/corrélation breaks et adapter stratégie
           return regime
   ```
 
-<<<<<<< HEAD
 - [ ] **S2.4b** (2h) : Adapter strat├®gie selon r├®gime
-=======
-- [ ] **S2.4b** (2h) : Adapter stratégie selon régime
->>>>>>> origin/main
   ```python
   def generate_signals(self, market_data):
       regime = self.regime_detector.detect_regime_break(...)
@@ -1205,17 +863,10 @@ Détecter vol/corrélation breaks et adapter stratégie
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Regime detection working
 - Ô£à Entry thresholds adjusted per regime
 - Ô£à Decorrelation ÔåÆ strategy stops
 - Ô£à Backtest Sharpe stable across regimes
-=======
-- ✅ Regime detection working
-- ✅ Entry thresholds adjusted per regime
-- ✅ Decorrelation → strategy stops
-- ✅ Backtest Sharpe stable across regimes
->>>>>>> origin/main
 
 **Expected Impact** : +25 robustesse (less drawdown in crashes)
 
@@ -1223,7 +874,6 @@ Détecter vol/corrélation breaks et adapter stratégie
 
 ### Task S2.5: Cross-Symbol Concentration Limits [5h]
 
-<<<<<<< HEAD
 **D├®pend de** : S2.3  
 **Bloque** : S3.1
 
@@ -1232,16 +882,6 @@ Limiter exposition ├á chaque symbole
 
 **Sous-t├óches**
 - [ ] **S2.5a** (1.5h) : Cr├®er `risk/concentration_limits.py`
-=======
-**Dépend de** : S2.3  
-**Bloque** : S3.1
-
-**Description**
-Limiter exposition à chaque symbole
-
-**Sous-tâches**
-- [ ] **S2.5a** (1.5h) : Créer `risk/concentration_limits.py`
->>>>>>> origin/main
   ```python
   class ConcentrationManager:
       """Limit portfolio concentration per symbol."""
@@ -1280,11 +920,7 @@ Limiter exposition à chaque symbole
           return True, max(sym1_pct, sym2_pct)
   ```
 
-<<<<<<< HEAD
 - [ ] **S2.5b** (1.5h) : Int├®grer dans risk engine
-=======
-- [ ] **S2.5b** (1.5h) : Intégrer dans risk engine
->>>>>>> origin/main
   ```python
   class RiskEngine:
       def __init__(self):
@@ -1313,11 +949,7 @@ Limiter exposition à chaque symbole
   def test_concentration_limits():
       mgr = ConcentrationManager(max_pct=0.30)
       
-<<<<<<< HEAD
       # Single position 25% notional ÔåÆ OK
-=======
-      # Single position 25% notional → OK
->>>>>>> origin/main
       allowed, pct = mgr.check_concentration(
           position_25pct,
           [], 
@@ -1325,11 +957,7 @@ Limiter exposition à chaque symbole
       )
       assert allowed and pct <= 0.30
       
-<<<<<<< HEAD
       # Add another position same symbol, 20% ÔåÆ REJECTED (total 45%)
-=======
-      # Add another position same symbol, 20% → REJECTED (total 45%)
->>>>>>> origin/main
       allowed, pct = mgr.check_concentration(
           position_20pct,
           [position_25pct],
@@ -1339,17 +967,10 @@ Limiter exposition à chaque symbole
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Concentration tracked per symbol
 - Ô£à Limit enforced (30% max)
 - Ô£à Risk engine blocks violating positions
 - Ô£à Portfolio stays market-neutral
-=======
-- ✅ Concentration tracked per symbol
-- ✅ Limit enforced (30% max)
-- ✅ Risk engine blocks violating positions
-- ✅ Portfolio stays market-neutral
->>>>>>> origin/main
 
 **Expected Impact** : +18 portfolio diversification
 
@@ -1366,32 +987,20 @@ Limiter exposition à chaque symbole
 - [ ] Concentration limits enforced
 
 **Expected Outcome after S2**
-<<<<<<< HEAD
 - Validit├® statistique: 5.5/10 ÔåÆ 7.5/10 (+36%)
 - Robustesse r├®elle: 4.5/10 ÔåÆ 6.5/10 (+44%)
-=======
-- Validité statistique: 5.5/10 → 7.5/10 (+36%)
-- Robustesse réelle: 4.5/10 → 6.5/10 (+44%)
->>>>>>> origin/main
 - Backtest Sharpe: Stable across volatility regimes
 - Max DD: < 8%
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒƒí SPRINT 3: Validations & Hardening (2 semaines)
 
 **Objectif** : Passer de 7.5/10 ÔåÆ 8.5/10 validit├® | 6.5/10 ÔåÆ 7.5/10 robustesse  
-=======
-## 🟡 SPRINT 3: Validations & Hardening (2 semaines)
-
-**Objectif** : Passer de 7.5/10 → 8.5/10 validité | 6.5/10 → 7.5/10 robustesse  
->>>>>>> origin/main
 **Focus** : Nettoyage, tests exhaustifs, documentation
 
 ### Task S3.1: Comprehensive Test Suite [12h]
 
-<<<<<<< HEAD
 **D├®pend de** : S2.5  
 **Bloque** : S4.1
 
@@ -1399,15 +1008,6 @@ Limiter exposition à chaque symbole
 ├ëcrire tests exhaustifs pour tous les modules
 
 **Sous-t├óches**
-=======
-**Dépend de** : S2.5  
-**Bloque** : S4.1
-
-**Description**
-Écrire tests exhaustifs pour tous les modules
-
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S3.1a** (3h) : Cointegration tests
   ```python
   # tests/test_cointegration_hardened.py
@@ -1416,19 +1016,11 @@ Limiter exposition à chaque symbole
       def test_bonferroni_vs_nominal():
           """Verify Bonferroni reduces false positives."""
           # 100 random pairs, none cointegrated
-<<<<<<< HEAD
           # Nominal ╬▒: ~5 false positives
           # Bonferroni: 0 false positives
       
       def test_hedge_ratio_stability():
           """Verify ╬▓ doesn't drift excessively."""
-=======
-          # Nominal α: ~5 false positives
-          # Bonferroni: 0 false positives
-      
-      def test_hedge_ratio_stability():
-          """Verify β doesn't drift excessively."""
->>>>>>> origin/main
           # Generate stable pair
           # Reestimate monthly
           # Verify drift < 10%
@@ -1443,11 +1035,7 @@ Limiter exposition à chaque symbole
           """Verify half-life realistic."""
           # Generate synthetic OU process with known HL
           # Estimate HL
-<<<<<<< HEAD
           # Assert estimate within ┬▒30% of true value
-=======
-          # Assert estimate within ±30% of true value
->>>>>>> origin/main
   ```
 
 - [ ] **S3.1b** (3h) : Strategy tests
@@ -1468,11 +1056,7 @@ Limiter exposition à chaque symbole
           """Verify signals generated bar-by-bar without lookahead."""
       
       def test_position_lifecycle():
-<<<<<<< HEAD
           """Verify position entry ÔåÆ trailing stop ÔåÆ exit."""
-=======
-          """Verify position entry → trailing stop → exit."""
->>>>>>> origin/main
   ```
 
 - [ ] **S3.1c** (3h) : Risk engine tests
@@ -1506,11 +1090,7 @@ Limiter exposition à chaque symbole
       
       def test_pair_discovery_per_period():
           """Pairs rediscovered each period."""
-<<<<<<< HEAD
           # Period 1 pairs Ôëá Period 2 pairs (mostly)
-=======
-          # Period 1 pairs ≠ Period 2 pairs (mostly)
->>>>>>> origin/main
       
       def test_oos_metrics_realistic():
           """OOS Sharpe < IS Sharpe (expected)."""
@@ -1519,7 +1099,6 @@ Limiter exposition à chaque symbole
           """Metrics stable across volatility regimes."""
       
       def test_walk_forward_reproducibility():
-<<<<<<< HEAD
           """Same seeds ÔåÆ same results."""
   ```
 
@@ -1528,16 +1107,6 @@ Limiter exposition à chaque symbole
 - Ô£à 95%+ test passing rate
 - Ô£à All behaviors tested
 - Ô£à Edge cases covered
-=======
-          """Same seeds → same results."""
-  ```
-
-**Success Criteria**
-- ✅ 100+ new test cases
-- ✅ 95%+ test passing rate
-- ✅ All behaviors tested
-- ✅ Edge cases covered
->>>>>>> origin/main
 
 **Expected Impact** : +20 confidence, full coverage
 
@@ -1545,7 +1114,6 @@ Limiter exposition à chaque symbole
 
 ### Task S3.2: Half-Life Re-Estimation Refinement [7h]
 
-<<<<<<< HEAD
 **D├®pend de** : S1.2  
 **Bloque** : S4.1
 
@@ -1556,27 +1124,11 @@ Am├®liorer l'estimation du half-life (probl├¿me C3)
 - [ ] **S3.2a** (2h) : Analyser probl├¿me C3
   ```python
   # Probl├¿me actuel:
-=======
-**Dépend de** : S1.2  
-**Bloque** : S4.1
-
-**Description**
-Améliorer l'estimation du half-life (problème C3)
-
-**Sous-tâches**
-- [ ] **S3.2a** (2h) : Analyser problème C3
-  ```python
-  # Problème actuel:
->>>>>>> origin/main
   # half_life_mean_reversion() estime HL sur RESIDUALS
   # Mais residuals = bruit blanc si cointegration vraie
   # Donc HL = infini ou non-estimable
   
-<<<<<<< HEAD
   # Solution: Estimer HL sur le SPREAD lui-m├¬me
-=======
-  # Solution: Estimer HL sur le SPREAD lui-même
->>>>>>> origin/main
   class SpreadHalfLifeEstimator:
       """Estimate half-life from actual spread, not residuals."""
       
@@ -1585,17 +1137,10 @@ Améliorer l'estimation du half-life (problème C3)
           Estimate half-life of spread mean reversion.
           
           Uses AR(1) model on the spread directly:
-<<<<<<< HEAD
           spread_t = ╬╝ + ¤ü * (spread_{t-1} - ╬╝) + ╬Á_t
           
           If ¤ü < 1: spread is mean-reverting
           Half-life = -ln(2) / ln(¤ü)
-=======
-          spread_t = μ + ρ * (spread_{t-1} - μ) + ε_t
-          
-          If ρ < 1: spread is mean-reverting
-          Half-life = -ln(2) / ln(ρ)
->>>>>>> origin/main
           """
   ```
 
@@ -1618,19 +1163,11 @@ Améliorer l'estimation du half-life (problème C3)
       # Remove mean
       data_centered = data - data.mean()
       
-<<<<<<< HEAD
       # AR(1) regression: X_t = ¤ü * X_{t-1}
       X = data_centered.shift(1).dropna().values.reshape(-1, 1)
       y = data_centered.dropna().values
       
       # OLS: y = ¤ü * X
-=======
-      # AR(1) regression: X_t = ρ * X_{t-1}
-      X = data_centered.shift(1).dropna().values.reshape(-1, 1)
-      y = data_centered.dropna().values
-      
-      # OLS: y = ρ * X
->>>>>>> origin/main
       rho = np.linalg.lstsq(X, y, rcond=None)[0][0]
       
       if rho >= 1.0 or rho <= 0.0:
@@ -1655,13 +1192,8 @@ Améliorer l'estimation du half-life (problème C3)
       # Estimate HL
       estimated_hl = estimate_half_life_from_spread(ou_process)
       
-<<<<<<< HEAD
       # Should be within ┬▒30% of true value
       assert abs(estimated_hl - 30) < 10  # ┬▒33%
-=======
-      # Should be within ±30% of true value
-      assert abs(estimated_hl - 30) < 10  # ±33%
->>>>>>> origin/main
       
   def test_half_life_non_stationary():
       # Generate random walk (non-stationary)
@@ -1686,17 +1218,10 @@ Améliorer l'estimation du half-life (problème C3)
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à HL estimated on spread, not residuals
 - Ô£à HL validation bounds [5-200 days]
 - Ô£à Tests 100% passing
 - Ô£à Z-score window inferred from HL
-=======
-- ✅ HL estimated on spread, not residuals
-- ✅ HL validation bounds [5-200 days]
-- ✅ Tests 100% passing
-- ✅ Z-score window inferred from HL
->>>>>>> origin/main
 
 **Expected Impact** : +15 mean-reversion accuracy
 
@@ -1704,21 +1229,13 @@ Améliorer l'estimation du half-life (problème C3)
 
 ### Task S3.3: Documentation & Runbook [5h]
 
-<<<<<<< HEAD
 **D├®pend de** : S3.1  
-=======
-**Dépend de** : S3.1  
->>>>>>> origin/main
 **Bloque** : S4.1
 
 **Description**
 Documenter tout exhaustivement
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S3.3a** (2h) : Architecture documentation
   ```markdown
   # EDGECORE Architecture
@@ -1739,13 +1256,8 @@ Documenter tout exhaustivement
   
   3. **Spread Modeling** (T3: Dynamic, monthly reestimate)
      - Input: Price series pair
-<<<<<<< HEAD
      - Process: OLS regression ╬╝ = ╬▒ + ╬▓*X
      - Hedge ratio: ╬▓ reestimated monthly
-=======
-     - Process: OLS regression μ = α + β*X
-     - Hedge ratio: β reestimated monthly
->>>>>>> origin/main
      - Flag: Deprecated if drift > 10%
   
   4. **Z-Score Calculation** (T4: Rolling, adaptive window)
@@ -1755,13 +1267,8 @@ Documenter tout exhaustivement
   
   5. **Signal Generation** (T5: Per-bar)
      - Entry: If |Z| > threshold (2.0-3.0 per regime)
-<<<<<<< HEAD
      - Exit 1: If |Z| Ôëñ 0.0 (mean reversion)
      - Exit 2: If spread widened > 1¤â (trailing stop)
-=======
-     - Exit 1: If |Z| ≤ 0.0 (mean reversion)
-     - Exit 2: If spread widened > 1σ (trailing stop)
->>>>>>> origin/main
      - Exit 3: If regime = DECORRELATION (kill all)
   
   6. **Risk Check** (T6: Gate before execution)
@@ -1771,11 +1278,7 @@ Documenter tout exhaustivement
      - Position size / volatility adjustment
   
   7. **Execution** (T7: IBKR via IBKR API)
-<<<<<<< HEAD
      - Slippage: ┬▒5 bps
-=======
-     - Slippage: ±5 bps
->>>>>>> origin/main
      - Commission: 0.1% taker
      - Total cost: ~25-30 bps round-trip
   ```
@@ -1842,37 +1345,22 @@ Documenter tout exhaustivement
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Architecture documented
 - Ô£à Config options clear
 - Ô£à Troubleshooting guide complete
 - Ô£à Wiki/README updated
-=======
-- ✅ Architecture documented
-- ✅ Config options clear
-- ✅ Troubleshooting guide complete
-- ✅ Wiki/README updated
->>>>>>> origin/main
 
 ---
 
 ### Task S3.4: Performance Optimization [5h]
 
-<<<<<<< HEAD
 **D├®pend de** : S3.1  
-=======
-**Dépend de** : S3.1  
->>>>>>> origin/main
 **Bloque** : S4.1
 
 **Description**
 Optimiser vitesse de pair discovery + signal gen
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S3.4a** (2h) : Parallelize pair discovery
   ```python
   # Already partially done, enhance:
@@ -1883,11 +1371,7 @@ Optimiser vitesse de pair discovery + signal gen
       """
       Parallelize cointegration testing via multiprocessing.
       
-<<<<<<< HEAD
       For 100 symbols ÔåÆ ~4,950 pairs:
-=======
-      For 100 symbols → ~4,950 pairs:
->>>>>>> origin/main
       - Sequential: 30+ seconds
       - Parallel (8 cores): 4-5 seconds (6x speedup)
       """
@@ -1936,15 +1420,9 @@ Optimiser vitesse de pair discovery + signal gen
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à Pair discovery: < 5 seconds for 100 pairs
 - Ô£à Signal generation: < 100ms per bar
 - Ô£à Memory usage: < 500MB for full pipeline
-=======
-- ✅ Pair discovery: < 5 seconds for 100 pairs
-- ✅ Signal generation: < 100ms per bar
-- ✅ Memory usage: < 500MB for full pipeline
->>>>>>> origin/main
 
 ---
 
@@ -1957,46 +1435,27 @@ Optimiser vitesse de pair discovery + signal gen
 - [ ] Hardening: Edge cases covered
 
 **Expected Outcome after S3**
-<<<<<<< HEAD
 - Validit├® statistique: 7.5/10 ÔåÆ 8.5/10
 - Robustesse r├®elle: 6.5/10 ÔåÆ 7.5/10
-=======
-- Validité statistique: 7.5/10 → 8.5/10
-- Robustesse réelle: 6.5/10 → 7.5/10
->>>>>>> origin/main
 - Code quality: Production-ready
 - Documentation: Comprehensive
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒÆÄ SPRINT 4: Advanced & Excellence (2 semaines)
 
 **Objectif** : Passer de 8.5/10 ÔåÆ 9.5/10 validit├® | 7.5/10 ÔåÆ 8.5/10 robustesse  
-=======
-## 💎 SPRINT 4: Advanced & Excellence (2 semaines)
-
-**Objectif** : Passer de 8.5/10 → 9.5/10 validité | 7.5/10 → 8.5/10 robustesse  
->>>>>>> origin/main
 **Focus** : ML-based optimization, advanced risk management, 12m survival
 
 ### Task S4.1: ML-Based Z-Score Threshold Optimization [16h]
 
-<<<<<<< HEAD
 **D├®pend de** : S3.1  
-=======
-**Dépend de** : S3.1  
->>>>>>> origin/main
 **Bloque** : S4.3
 
 **Description**
 Utiliser RL/ML pour optimiser seuils de Z-score
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S4.1a** (4h) : Create `models/threshold_optimizer.py`
   ```python
   from sklearn.ensemble import RandomForestRegressor
@@ -2036,11 +1495,7 @@ Utiliser RL/ML pour optimiser seuils de Z-score
           """
           Train optimizer on historical backtest results.
           
-<<<<<<< HEAD
           Data: [(pair, vol, corr, hl, wr) ÔåÆ optimal_z_sharpe]
-=======
-          Data: [(pair, vol, corr, hl, wr) → optimal_z_sharpe]
->>>>>>> origin/main
           """
           self.X_features = [r['features'] for r in historical_backtest_results]
           self.y_targets = [r['sharpe_at_optimal_z'] for r in historical_backtest_results]
@@ -2054,13 +1509,8 @@ Utiliser RL/ML pour optimiser seuils de Z-score
       """
       Backtest over range of Z-thresholds to build training data.
       
-<<<<<<< HEAD
       Grid: Z Ôêê [1.5, 2.0, 2.5, 3.0], Vol Ôêê [Low, Normal, High]
       Result: DataFrame with (market_context ÔåÆ optimal_z)
-=======
-      Grid: Z ∈ [1.5, 2.0, 2.5, 3.0], Vol ∈ [Low, Normal, High]
-      Result: DataFrame with (market_context → optimal_z)
->>>>>>> origin/main
       """
       
       results = []
@@ -2132,17 +1582,10 @@ Utiliser RL/ML pour optimiser seuils de Z-score
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à ML model trained on OOS data
 - Ô£à Live predictions working
 - Ô£à Sharpe improvement 5-15% vs fixed threshold
 - Ô£à Adaptive to volatility regimes
-=======
-- ✅ ML model trained on OOS data
-- ✅ Live predictions working
-- ✅ Sharpe improvement 5-15% vs fixed threshold
-- ✅ Adaptive to volatility regimes
->>>>>>> origin/main
 
 **Expected Impact** : +20 signal quality
 
@@ -2150,21 +1593,13 @@ Utiliser RL/ML pour optimiser seuils de Z-score
 
 ### Task S4.2: Markov Switching Regime Model [12h]
 
-<<<<<<< HEAD
 **D├®pend de** : S2.4  
-=======
-**Dépend de** : S2.4  
->>>>>>> origin/main
 **Bloque** : S4.3
 
 **Description**
 Impl probabilistic regime switching (Hidden Markov)
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S4.2a** (3h) : Create `models/hmm_regime.py`
   ```python
   from hmmlearn.hmm import GaussianHMM
@@ -2270,17 +1705,10 @@ Impl probabilistic regime switching (Hidden Markov)
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à HMM model trained
 - Ô£à 3 regimes identified + parameters set
 - Ô£à Live regime prediction working
 - Ô£à Sharpe improvement 8-15% via switching
-=======
-- ✅ HMM model trained
-- ✅ 3 regimes identified + parameters set
-- ✅ Live regime prediction working
-- ✅ Sharpe improvement 8-15% via switching
->>>>>>> origin/main
 
 **Expected Impact** : +25 robustness across regimes
 
@@ -2288,21 +1716,13 @@ Impl probabilistic regime switching (Hidden Markov)
 
 ### Task S4.3: Final Validation & Production Readiness [8h]
 
-<<<<<<< HEAD
 **D├®pend de** : S4.1, S4.2  
-=======
-**Dépend de** : S4.1, S4.2  
->>>>>>> origin/main
 **Bloque** : Deployment
 
 **Description**
 Validation finale avant production
 
-<<<<<<< HEAD
 **Sous-t├óches**
-=======
-**Sous-tâches**
->>>>>>> origin/main
 - [ ] **S4.3a** (2h) : Complete backtest suite
   ```python
   def run_complete_validation():
@@ -2335,7 +1755,6 @@ Validation finale avant production
       """
       All criteria must be met for production:
       
-<<<<<<< HEAD
       Ô£à Sharpe ratio (OOS) >= 0.8
       Ô£à Max drawdown (OOS) <= 12%
       Ô£à Win rate >= 50%
@@ -2343,15 +1762,6 @@ Validation finale avant production
       Ô£à Stress test (COVID): Sharpe >= 0.5
       Ô£à Monte Carlo (5% tail loss): <= 15%
       Ô£à Test success rate: >= 95%
-=======
-      ✅ Sharpe ratio (OOS) >= 0.8
-      ✅ Max drawdown (OOS) <= 12%
-      ✅ Win rate >= 50%
-      ✅ Consecutive losses <= 5
-      ✅ Stress test (COVID): Sharpe >= 0.5
-      ✅ Monte Carlo (5% tail loss): <= 15%
-      ✅ Test success rate: >= 95%
->>>>>>> origin/main
       """
       
       checks = {}
@@ -2428,17 +1838,10 @@ Validation finale avant production
   ```
 
 **Success Criteria**
-<<<<<<< HEAD
 - Ô£à All acceptance criteria met
 - Ô£à Deployment checklist signed
 - Ô£à 12-month survival probability: 75%+
 - Ô£à Production config finalized
-=======
-- ✅ All acceptance criteria met
-- ✅ Deployment checklist signed
-- ✅ 12-month survival probability: 75%+
-- ✅ Production config finalized
->>>>>>> origin/main
 
 ---
 
@@ -2455,7 +1858,6 @@ Validation finale avant production
 - [ ] Deployment checklist signed
 
 **Final Outcome**
-<<<<<<< HEAD
 - Ô£à Validit├® statistique: **9.5/10**
 - Ô£à Robustesse r├®elle: **8.5/10**
 - Ô£à Sharpe ratio (OOS): **1.2-1.5**
@@ -2466,25 +1868,12 @@ Validation finale avant production
 ---
 
 ## ÔÜá´©Å Why NOT 10/10? Rendements d├®croissants
-=======
-- ✅ Validité statistique: **9.5/10**
-- ✅ Robustesse réelle: **8.5/10**
-- ✅ Sharpe ratio (OOS): **1.2-1.5**
-- ✅ Max drawdown: **< 8%**
-- ✅ Win rate: **52-55%**
-- ✅ 12-month survival: **85%+**
-
----
-
-## ⚠️ Why NOT 10/10? Rendements décroissants
->>>>>>> origin/main
 
 ### La courbe de l'excellence
 
 ```
 Score vs Effort (logarithmic scale)
 
-<<<<<<< HEAD
 10.0 |                    Ôò▒Ôò▒Ôò▒Ôò▒ (impossible, asymptotique)
  9.9 |               Ôò▒Ôò▒Ôò▒Ôò▒
  9.8 |            Ôò▒Ôò▒Ôò▒         (+200h, returns: -0.3/pt)
@@ -2511,34 +1900,6 @@ Score vs Effort (logarithmic scale)
 ---
 
 ### Les r├®alit├®s du 9.9-10.0
-=======
-10.0 |                    ╱╱╱╱ (impossible, asymptotique)
- 9.9 |               ╱╱╱╱
- 9.8 |            ╱╱╱         (+200h, returns: -0.3/pt)
- 9.5 |         ╱╱╱             (+140h, returns: -0.5/pt)
- 8.5 |      ╱╱               (+100h, returns: -1.0/pt)
- 7.5 |    ╱╱                 (+60h, returns: -2.0/pt)
- 5.5 |   ╱                   (+30h, returns: -3.0/pt)
- 2.5 |╱                      (baseline)
-     └─────────────────────────────────────
-     0    50   100  150  200  250  300 hours
-```
-
-### Pourquoi s'arrêter à 9.5/10 ?
-
-**Progressions par 0.5 points supplémentaires :**
-
-| Target | Effort additionnel | ROI | Réalisme | Verdict |
-|--------|-------------------|-----|----------|---------|
-| **9.5** | 140h (total) | Excellent | ✅ Faisable | **RECOMMANDÉ** |
-| **9.7** | +60h = 200h | Faible (-0.5h/pt) | ⚠️ Marginal | Questionnable |
-| **9.9** | +80h = 280h | Very faible (-0.3h/pt) | ❌ Hardcore | Not worth |
-| **10.0** | +∞ | Zero | ❌ Impossible | Asymptotique |
-
----
-
-### Les réalités du 9.9-10.0
->>>>>>> origin/main
 
 **Pour vraiment atteindre 9.9/10 :**
 - Auditer CHAQUE ligne de code (500+ heures)
@@ -2548,7 +1909,6 @@ Score vs Effort (logarithmic scale)
 - **Total: 850+ heures + 6 mois calendar**
 
 **Retours en diminution :**
-<<<<<<< HEAD
 - 2.5 ÔåÆ 5.5/10 = +3.0 points / 30h = **0.10 pt/h**
 - 5.5 ÔåÆ 7.5/10 = +2.0 points / 60h = **0.033 pt/h**
 - 7.5 ÔåÆ 8.5/10 = +1.0 point / 100h = **0.010 pt/h**
@@ -2556,15 +1916,6 @@ Score vs Effort (logarithmic scale)
 - 9.5 ÔåÆ 9.9/10 = +0.4 point / 280h = **0.001 pt/h** ÔØî
 
 **├Ç 9.5/10, vous gagnez 0.1% par heure de travail suppl├®mentaire.**
-=======
-- 2.5 → 5.5/10 = +3.0 points / 30h = **0.10 pt/h**
-- 5.5 → 7.5/10 = +2.0 points / 60h = **0.033 pt/h**
-- 7.5 → 8.5/10 = +1.0 point / 100h = **0.010 pt/h**
-- 8.5 → 9.5/10 = +1.0 point / 140h = **0.007 pt/h**
-- 9.5 → 9.9/10 = +0.4 point / 280h = **0.001 pt/h** ❌
-
-**À 9.5/10, vous gagnez 0.1% par heure de travail supplémentaire.**
->>>>>>> origin/main
 
 ---
 
@@ -2573,7 +1924,6 @@ Score vs Effort (logarithmic scale)
 **Alternative: "Excellence Progressive" (16 semaines, 350h)**
 
 ```
-<<<<<<< HEAD
 ÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ
 Ôöé  SPRINT SEQUENCE FOR 10.0/10 TARGET (Theoretical)       Ôöé
 ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÿ
@@ -2614,48 +1964,6 @@ S8: Live Trading Proof     [9.85 ÔåÆ 9.95/10] 6+ months
 
 S9: Pure Perfection       [9.95 ÔåÆ 10.0/10] Infinite
    ÔööÔöÇ NP-hard optimization problem; asymptotically approaches
-=======
-┌─────────────────────────────────────────────────────────┐
-│  SPRINT SEQUENCE FOR 10.0/10 TARGET (Theoretical)       │
-└─────────────────────────────────────────────────────────┘
-
-S1: Critique              [2.5 → 5.5/10]  40h  (1 week)
-S2: Majeur                [5.5 → 7.5/10]  60h  (1.5 weeks)
-S3: Tests & Hardening     [7.5 → 8.5/10]  80h  (2 weeks)
-S4: Advanced ML           [8.5 → 9.0/10]  100h (2 weeks)
-──────────────────────────────────────────────────────────
-[TOTAL TO 9.0/10: 280 hours, 6.5 weeks] = PRODUCTION READY
-
-S5: Perfection Phase 1    [9.0 → 9.5/10]  100h (2.5 weeks)
-   ├─ Code audit (every line)
-   ├─ Exhaustive edge-case testing
-   ├─ Performance optimization to nanosecond level
-   └─ Live paper trading validation (4 weeks concurrent)
-
-S6: Perfection Phase 2    [9.5 → 9.7/10]  150h (3.5 weeks)
-   ├─ Adaptive parameter refinement via Bayesian optimization
-   ├─ Multi-market stress testing (stocks, equity, FX)
-   ├─ Regime persistence validation (all markets)
-   └─ CI/CD infrastructure hardening
-
-S7: Quantitative Rigor     [9.7 → 9.85/10] 200h (5 weeks)
-   ├─ Peer review by 3+ quant PhDs
-   ├─ Academic verification (publish preliminary results)
-   ├─ Institutional backtesting framework
-   └─ Regulatory compliance audit
-──────────────────────────────────────────────────────────
-[TOTAL TO 9.85/10: 830 hours, 20 weeks] = ACADEMIC GRADE
-
-S8: Live Trading Proof     [9.85 → 9.95/10] 6+ months
-   └─ 6+ months real live trading with real capital
-      showing consistent Sharpe > 1.2, DD < 5%, no regime breaks
-      (Only way to PROVE robustness; backtests always optimistic)
-──────────────────────────────────────────────────────────
-[TOTAL TO 9.95/10: 830h + 6 months] = INSTITUTIONAL GRADE
-
-S9: Pure Perfection       [9.95 → 10.0/10] Infinite
-   └─ NP-hard optimization problem; asymptotically approaches
->>>>>>> origin/main
       perfection but never reaches it theoretically
 ```
 
@@ -2665,51 +1973,31 @@ S9: Pure Perfection       [9.95 → 10.0/10] Infinite
 
 **At 9.5/10, you have:**
 
-<<<<<<< HEAD
 Ô£à **Statistically rigorous**
-=======
-✅ **Statistically rigorous**
->>>>>>> origin/main
 - Multiple-testing correction (Bonferroni)
 - Out-of-sample validation framework
 - Walk-forward backtesting (clean separation)
 - Realistic costs integrated
 
-<<<<<<< HEAD
 Ô£à **Structurally robust**
-=======
-✅ **Structurally robust**
->>>>>>> origin/main
 - Dynamic hedge ratio reestimation
 - Regime-change detection + adaptation
 - Trailing stops (downside protection)
 - Concentration limits (diversification)
 
-<<<<<<< HEAD
 Ô£à **Algorithmically intelligent**
-=======
-✅ **Algorithmically intelligent**
->>>>>>> origin/main
 - ML-optimized Z-score thresholds
 - Adaptive position sizing
 - Markov regime switching
 - Risk-aware execution
 
-<<<<<<< HEAD
 Ô£à **Operationally sound**
-=======
-✅ **Operationally sound**
->>>>>>> origin/main
 - 95%+ unit/integration test coverage
 - Production configuration stack
 - Comprehensive documentation
 - Deployment checklist
 
-<<<<<<< HEAD
 Ô£à **Realistically validated**
-=======
-✅ **Realistically validated**
->>>>>>> origin/main
 - Sharpe ratio 1.2-1.5 (OOS)
 - Max drawdown < 8%
 - Win rate 52-55%
@@ -2728,7 +2016,6 @@ What would you need for the final 0.5 points ?
 
 | Points | Requirement | Effort | Realism |
 |--------|-------------|--------|---------|
-<<<<<<< HEAD
 | **9.5ÔåÆ9.6** | Live trading 3+ months ($500K+) | 3 months | ÔÜá´©Å Capital required |
 | **9.6ÔåÆ9.7** | Institutional peer review | 8 weeks | ÔÜá´©Å Network required |
 | **9.7ÔåÆ9.8** | Multi-market empirical validation | 2 months | ÔÜá´©Å Data access |
@@ -2738,22 +2025,10 @@ What would you need for the final 0.5 points ?
 ---
 
 ### ­ƒôè Practical Decision Matrix
-=======
-| **9.5→9.6** | Live trading 3+ months ($500K+) | 3 months | ⚠️ Capital required |
-| **9.6→9.7** | Institutional peer review | 8 weeks | ⚠️ Network required |
-| **9.7→9.8** | Multi-market empirical validation | 2 months | ⚠️ Data access |
-| **9.8→9.9** | Regime persistence proof (all conditions) | 3 months | ❌ Nearly impossible |
-| **9.9→10.0** | Mathematical perfection proof | Infinite | ❌ Asymptote |
-
----
-
-### 📊 Practical Decision Matrix
->>>>>>> origin/main
 
 ```
 YOUR GOAL:                RECOMMENDED APPROACH:
 
-<<<<<<< HEAD
 "Ship to production    ÔåÆ   Sprint 1-4 (9.5/10)
  in 4-5 months"             140 hours
                             PRODUCTION READY Ô£à
@@ -2768,28 +2043,11 @@ YOUR GOAL:                RECOMMENDED APPROACH:
 
 "Theoretical perfection"  ÔåÆ   Add 10+ years research
                             Not feasible ÔØî
-=======
-"Ship to production    →   Sprint 1-4 (9.5/10)
- in 4-5 months"             140 hours
-                            PRODUCTION READY ✅
-
-"Institutional audit   →   Sprint 1-6 (9.7/10)
- & live validation"         350 hours + 3 months live
-                            FUND READY ✅
-
-"Academic publication →   Sprint 1-8 (9.95/10)
- & peer review"             830 hours + 6 months live
-                            DISSERTATION READY ✅
-
-"Theoretical perfection"  →   Add 10+ years research
-                            Not feasible ❌
->>>>>>> origin/main
 ```
 
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒôê Summary: Scorecard par Sprint
 
 **R├®ponse directe : "Pourquoi pas 10/10 ├á chaque sprint ?"**
@@ -2806,41 +2064,18 @@ YOUR GOAL:                RECOMMENDED APPROACH:
 | **S6*** | 9.6 ÔåÆ 9.7 | 150h | **<0.001** | ÔØî Tr├¿s faible | Non |
 | **S7*** | 9.7 ÔåÆ 9.85 | 300h | **~0.0005** | ÔØî Impossible | Non |
 | **S8*** | 9.85 ÔåÆ 10 | Ôê× | **0.000** | ÔØî Asymptotique | Non |
-=======
-## 📈 Summary: Scorecard par Sprint
-
-**Réponse directe : "Pourquoi pas 10/10 à chaque sprint ?"**
-
-**Parce que les rendements décroissants explosent après 9.5/10 :**
-
-| Sprint | Score → | Effort | ROI (pts/heure) | Réalisme | Recommandé |
-|--------|---------|--------|-----------------|----------|-----------|
-| **S1** | 2.5 → 5.5 | 40h | **+0.10** | ✅ Very High | **YES** |
-| **S2** | 5.5 → 7.5 | 60h | **+0.033** | ✅ High | **YES** |
-| **S3** | 7.5 → 8.5 | 100h | **+0.010** | ⚠️ Medium | **Oui** |
-| **S4** | 8.5 → 9.5 | 140h | **+0.007** | ⚠️ Medium-Low | **Oui** |
-| **S5*** | 9.5 → 9.6 | 100h | **+0.001** | ❌ Very Low | Non |
-| **S6*** | 9.6 → 9.7 | 150h | **<0.001** | ❌ Très faible | Non |
-| **S7*** | 9.7 → 9.85 | 300h | **~0.0005** | ❌ Impossible | Non |
-| **S8*** | 9.85 → 10 | ∞ | **0.000** | ❌ Asymptotique | Non |
->>>>>>> origin/main
 
 *S5-S8: Only if you have academic/institutional mandate + 6+ months calendar
 
 ---
 
-<<<<<<< HEAD
 ### ­ƒôè The Excellence Curve: Why 9.5/10 is the Optimal Target
-=======
-### 📊 The Excellence Curve: Why 9.5/10 is the Optimal Target
->>>>>>> origin/main
 
 **Visualized:**
 
 ```
 Sharpe Ratio vs Score:
 
-<<<<<<< HEAD
 1.8  |ÔùÅÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔùÅ = Live trading 9.5/10
 1.5  |
      |
@@ -2852,19 +2087,6 @@ Sharpe Ratio vs Score:
      Ôöé    (returns peak + cost-adjusted realistic)
 0.0  |ÔùÅÔöÇÔöÇÔöÇÔöÇÔùÅÔùîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ = Unadjusted backtest
      ÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-1.8  |●────────────────────────────● = Live trading 9.5/10
-1.5  |
-     |
-1.2  |─ Minimum professional grade
-     |     │
-0.8  |     │
-     |     │ S1-S4 work here (280h, 9.5/10)
-0.5  |◌────●──────────────────────── = Backtest 9.5/10
-     │    (returns peak + cost-adjusted realistic)
-0.0  |●────●◌──────────────────────── = Unadjusted backtest
-     └──────────────────────────────────
->>>>>>> origin/main
      2.5   5.5  7.5  8.5  9.0  9.5  9.85
                SCORE
 
@@ -2882,7 +2104,6 @@ Key insight:
 
 | Score | What It Takes | Why Hard |
 |-------|---------------|----------|
-<<<<<<< HEAD
 | **ÔåÆ9.5** | Core statistical rigor (Bonferroni, OOS, slippage, regime) | Linear complexity |
 | **ÔåÆ9.7** | Institutional peer review + 3+ months live trading | Exponential time + capital |
 | **ÔåÆ9.9** | Academic publication + 6+ months live + regime proof | Needs external validation |
@@ -2893,18 +2114,6 @@ Key insight:
 ---
 
 ## ­ƒÄ» Priority Execution Order
-=======
-| **→9.5** | Core statistical rigor (Bonferroni, OOS, slippage, regime) | Linear complexity |
-| **→9.7** | Institutional peer review + 3+ months live trading | Exponential time + capital |
-| **→9.9** | Academic publication + 6+ months live + regime proof | Needs external validation |
-| **→10.0** | Mathematical perfection (impossible) | Asymptotic limit |
-
-**Bottom line:** 9.5/10 is where the **Pareto frontier** is — 90% of the value with 40% of the effort.
-
----
-
-## 🎯 Priority Execution Order
->>>>>>> origin/main
 
 If resource-constrained (< 400 hours):
 
@@ -2915,28 +2124,16 @@ If resource-constrained (< 400 hours):
 4. S3.1 (Core tests) = 12h
 5. S3.3 (Documentation) = 5h
 
-<<<<<<< HEAD
 ÔåÆ **Reach 7.0/10 in 42 hours**
-=======
-→ **Reach 7.0/10 in 42 hours**
->>>>>>> origin/main
 
 **High-Impact Additions (60h more)**
 6. S2.3-S2.4 (Trailing stop, regime) = 12h
 7. S3.2 (Half-life fix) = 7h
 8. S4.1 (ML optimizer) = 16h
 
-<<<<<<< HEAD
 ÔåÆ **Reach 8.5/10 in 102 hours**
 
 ---
 
 **­ƒôî Start with S1.1 (Bonferroni correction) ÔÇö 4 hours, highest impact**
-=======
-→ **Reach 8.5/10 in 102 hours**
-
----
-
-**📌 Start with S1.1 (Bonferroni correction) — 4 hours, highest impact**
->>>>>>> origin/main
 

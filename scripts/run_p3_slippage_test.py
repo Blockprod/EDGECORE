@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿#!/usr/bin/env python
 """EDGECORE ÔÇö Phase 0.1 Validation: Slippage Stress-Test P3.
 
@@ -15,25 +14,6 @@ Trois niveaux de friction:
 Si P3 SÔëÑ1.2 au niveau B (r├®aliste) ÔåÆ crit├¿re Phase 0.1 VALID├ë.
 Si P3 S<1.2 au niveau B ÔåÆ les r├®sultats v45b sont surestim├®s, il faut
    calibrer le mod├¿le et relancer.
-=======
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""EDGECORE — Phase 0.1 Validation: Slippage Stress-Test P3.
-
-Objectif
---------
-Valider que P3 2022H2 (seule fenêtre PASS dans v45b, S=2.21) tient
-après application d'un modèle de slippage PLUS STRICT que le défaut.
-
-Trois niveaux de friction:
-  A. Référence    : CostModel() défaut   (eta=0.05, delay=0.01j)
-  B. Réaliste     : equity_cost_config() (eta=0.10, delay=0.5j)    <- roadmap
-  C. Spread seul  : zero_impact_slippage(eta=0.0, delay=0.0)       <- plancher
-
-Si P3 S≥1.2 au niveau B (réaliste) → critère Phase 0.1 VALIDÉ.
-Si P3 S<1.2 au niveau B → les résultats v45b sont surestimés, il faut
-   calibrer le modèle et relancer.
->>>>>>> origin/main
 
 Usage:
     python scripts/run_p3_slippage_test.py
@@ -65,7 +45,6 @@ P3_WINDOW = ("P3 2022H2", "2021-01-04", "2022-07-01", "2022-07-01", "2023-01-01"
 # Same 103-symbol universe as v45b
 WF_SYMBOLS = [
     "SPY",
-<<<<<<< HEAD
     "AAPL",
     "MSFT",
     "GOOGL",
@@ -271,78 +250,11 @@ WF_SECTOR_MAP = {
     "CMCSA": "communication",
     "DIS": "communication",
     "NFLX": "communication",
-=======
-    "AAPL", "MSFT", "GOOGL", "META", "NVDA", "AMD", "AVGO", "XLK",
-    "INTC", "QCOM", "TXN", "CRM", "ORCL", "ACN", "CSCO",
-    "JPM", "GS", "BAC", "MS", "WFC", "C", "SCHW",
-    "BLK", "AXP", "USB", "PNC", "COF", "BK", "TFC",
-    "XOM", "CVX", "COP", "EOG",
-    "SLB", "VLO", "MPC", "PSX", "OXY",
-    "KO", "PEP", "PG", "CL", "WMT", "MCD",
-    "COST", "MDLZ", "GIS", "PM", "MO",
-    "CAT", "HON", "DE", "GE", "RTX",
-    "MMM", "UPS", "BA", "ITW", "LMT", "FDX",
-    "NEE", "DUK", "SO",
-    "AEP", "EXC", "WEC",
-    "JNJ", "PFE", "UNH", "MRK", "ABBV",
-    "TMO", "ABT", "DHR", "MDT", "CVS", "CI", "BMY",
-    "AMZN", "TSLA", "HD", "NKE", "LOW", "TGT", "SBUX", "F", "GM",
-    "LIN", "APD", "ECL", "NEM", "FCX",
-    "PLD", "AMT", "SPG", "EQIX",
-    "T", "VZ", "CMCSA", "DIS", "NFLX",
-]
-
-WF_SECTOR_MAP = {
-    "AAPL": "technology", "MSFT": "technology", "GOOGL": "technology",
-    "META": "technology", "NVDA": "technology", "AMD": "technology",
-    "AVGO": "technology", "XLK": "technology",
-    "INTC": "technology", "QCOM": "technology", "TXN": "technology",
-    "CRM": "technology", "ORCL": "technology", "ACN": "technology",
-    "CSCO": "technology",
-    "JPM": "financials", "GS": "financials", "BAC": "financials",
-    "MS": "financials", "WFC": "financials", "C": "financials",
-    "SCHW": "financials",
-    "BLK": "financials", "AXP": "financials", "USB": "financials",
-    "PNC": "financials", "COF": "financials", "BK": "financials",
-    "TFC": "financials",
-    "XOM": "energy", "CVX": "energy", "COP": "energy", "EOG": "energy",
-    "SLB": "energy", "VLO": "energy", "MPC": "energy",
-    "PSX": "energy", "OXY": "energy",
-    "KO": "consumer_staples", "PEP": "consumer_staples",
-    "PG": "consumer_staples", "CL": "consumer_staples",
-    "WMT": "consumer_staples", "MCD": "consumer_staples",
-    "COST": "consumer_staples", "MDLZ": "consumer_staples",
-    "GIS": "consumer_staples", "PM": "consumer_staples",
-    "MO": "consumer_staples",
-    "CAT": "industrials", "HON": "industrials", "DE": "industrials",
-    "GE": "industrials", "RTX": "industrials",
-    "MMM": "industrials", "UPS": "industrials", "BA": "industrials",
-    "ITW": "industrials", "LMT": "industrials", "FDX": "industrials",
-    "NEE": "utilities", "DUK": "utilities", "SO": "utilities",
-    "AEP": "utilities", "EXC": "utilities", "WEC": "utilities",
-    "JNJ": "healthcare", "PFE": "healthcare", "UNH": "healthcare",
-    "MRK": "healthcare", "ABBV": "healthcare",
-    "TMO": "healthcare", "ABT": "healthcare", "DHR": "healthcare",
-    "MDT": "healthcare", "CVS": "healthcare", "CI": "healthcare",
-    "BMY": "healthcare",
-    "AMZN": "consumer_discretionary", "TSLA": "consumer_discretionary",
-    "HD": "consumer_discretionary", "NKE": "consumer_discretionary",
-    "LOW": "consumer_discretionary", "TGT": "consumer_discretionary",
-    "SBUX": "consumer_discretionary", "F": "consumer_discretionary",
-    "GM": "consumer_discretionary",
-    "LIN": "materials", "APD": "materials", "ECL": "materials",
-    "NEM": "materials", "FCX": "materials",
-    "PLD": "real_estate", "AMT": "real_estate",
-    "SPG": "real_estate", "EQIX": "real_estate",
-    "T": "communication", "VZ": "communication", "CMCSA": "communication",
-    "DIS": "communication", "NFLX": "communication",
->>>>>>> origin/main
     "SPY": "benchmark",
 }
 
 
 def _apply_v45_settings():
-<<<<<<< HEAD
     """Param├¿tres v43a fig├®s (identiques ├á v45b)."""
     s = get_settings()
     s.strategy.lookback_window = 120
@@ -382,63 +294,16 @@ def _apply_v45_settings():
     s.regime.trend_favorable_sizing = 0.80
     s.regime.neutral_sizing = 0.70
     if hasattr(s.strategy, "fdr_q_level"):
-=======
-    """Paramètres v43a figés (identiques à v45b)."""
-    s = get_settings()
-    s.strategy.lookback_window             = 120
-    s.strategy.additional_lookback_windows = [63]
-    s.strategy.entry_z_score               = 1.6
-    s.strategy.exit_z_score                = 0.2
-    s.strategy.entry_z_min_spread          = 0.30
-    s.strategy.z_score_stop                = 2.5
-    s.strategy.min_correlation             = 0.65
-    s.strategy.max_half_life               = 60
-    s.strategy.max_position_loss_pct       = 0.03
-    s.strategy.internal_max_drawdown_pct   = 0.12
-    s.strategy.use_kalman                  = True
-    s.strategy.bonferroni_correction       = True
-    s.strategy.johansen_confirmation       = True
-    s.strategy.newey_west_consensus        = True
-    s.strategy.weekly_zscore_entry_gate    = 0.3
-    s.strategy.trend_long_sizing           = 0.75
-    s.strategy.disable_shorts_in_bull_trend = False
-    s.strategy.short_sizing_multiplier     = 0.50
-    s.momentum.enabled        = True
-    s.momentum.lookback       = 20
-    s.momentum.weight         = 0.30
-    s.momentum.min_strength   = 1.0
-    s.momentum.max_boost      = 1.0
-    s.pair_blacklist.enabled                = True
-    s.pair_blacklist.max_consecutive_losses = 5
-    s.pair_blacklist.cooldown_days          = 10
-    s.risk.max_concurrent_positions         = 15
-    s.strategy.regime_directional_filter    = True
-    s.regime.enabled          = True
-    s.regime.ma_fast          = 50
-    s.regime.ma_slow          = 200
-    s.regime.vol_threshold    = 0.35
-    s.regime.vol_window       = 20
-    s.regime.neutral_band_pct = 0.02
-    s.regime.trend_favorable_sizing = 0.80
-    s.regime.neutral_sizing   = 0.70
-    if hasattr(s.strategy, 'fdr_q_level'):
->>>>>>> origin/main
         s.strategy.fdr_q_level = 0.30
 
 
 def _run_p3_with_cost(cost_model: CostModel, label: str) -> dict:
-<<<<<<< HEAD
     """Lance P3 avec un mod├¿le de co├╗ts donn├®. Retourne les m├®triques."""
     _label_p3, train_start, _train_end, oos_start, oos_end = P3_WINDOW
-=======
-    """Lance P3 avec un modèle de coûts donné. Retourne les métriques."""
-    label_p3, train_start, train_end, oos_start, oos_end = P3_WINDOW
->>>>>>> origin/main
     _apply_v45_settings()
 
     runner = BacktestRunner()
     runner.config.initial_capital = 100_000
-<<<<<<< HEAD
     ts20 = TimeStopManager(
         TimeStopConfig(
             half_life_multiplier=1.2,
@@ -446,13 +311,6 @@ def _run_p3_with_cost(cost_model: CostModel, label: str) -> dict:
             default_max_bars=20,
         )
     )
-=======
-    ts20 = TimeStopManager(TimeStopConfig(
-        half_life_multiplier=1.2,
-        max_days_cap=20,
-        default_max_bars=20,
-    ))
->>>>>>> origin/main
 
     t0 = time.time()
     try:
@@ -496,15 +354,9 @@ def _run_p3_with_cost(cost_model: CostModel, label: str) -> dict:
 
 
 def _print_slippage_breakdown(config, label: str):
-<<<<<<< HEAD
     """Affiche les co├╗ts th├®oriques par composante."""
     sm = SlippageModel(config)
     notional = 5_000  # leg typique: 5k USD
-=======
-    """Affiche les coûts théoriques par composante."""
-    sm = SlippageModel(config)
-    notional = 5_000   # leg typique: 5k USD
->>>>>>> origin/main
     adv_mega = 500_000_000
     adv_large = 150_000_000
     sigma = 0.02
@@ -514,7 +366,6 @@ def _print_slippage_breakdown(config, label: str):
     rt_mega = sm.compute_pair_roundtrip_cost(notional, notional, adv_mega, adv_mega, sigma, sigma)
     rt_large = sm.compute_pair_roundtrip_cost(notional, notional, adv_large, adv_large, sigma, sigma)
 
-<<<<<<< HEAD
     print(f"  Co├╗ts th├®oriques par leg ({label}, notional=$5k, sigma=2%):")
     print(
         "    Mega-cap (ADV=$500M)  : spread={:.1f}bps + impact={:.2f}bps + timing={:.2f}bps = {:.2f}bps".format(
@@ -528,22 +379,10 @@ def _print_slippage_breakdown(config, label: str):
     )
     print(f"    Round-trip (mega) : ${rt_mega:.2f} / $10k notional = {rt_mega / 10_000 * 10_000:.0f} bps")
     print(f"    Round-trip (large): ${rt_large:.2f} / $10k notional = {rt_large / 10_000 * 10_000:.0f} bps")
-=======
-    print("  Coûts théoriques par leg (%s, notional=$5k, sigma=2%%):" % label)
-    print("    Mega-cap (ADV=$500M)  : spread=%.1fbps + impact=%.2fbps + timing=%.2fbps = %.2fbps"
-          % (bd_mega["spread_bps"], bd_mega["market_impact_bps"],
-             bd_mega["timing_cost_bps"], bd_mega["total_bps"]))
-    print("    Large-cap (ADV=$150M) : spread=%.1fbps + impact=%.2fbps + timing=%.2fbps = %.2fbps"
-          % (bd_large["spread_bps"], bd_large["market_impact_bps"],
-             bd_large["timing_cost_bps"], bd_large["total_bps"]))
-    print("    Round-trip (mega) : $%.2f / $10k notional = %.0f bps" % (rt_mega, rt_mega / 10_000 * 10_000))
-    print("    Round-trip (large): $%.2f / $10k notional = %.0f bps" % (rt_large, rt_large / 10_000 * 10_000))
->>>>>>> origin/main
 
 
 def main():
     print("=" * 95)
-<<<<<<< HEAD
     print("  EDGECORE Phase 0.1 ÔÇö Slippage Stress-Test: P3 2022H2 (OOS)")
     print()
     print("  Base result (v45b, default slippage): S=2.21  t=33  +10.62%  DD=-2.71%")
@@ -552,45 +391,23 @@ def main():
     print("  3 niveaux de friction test├®s sur la M├èME fen├¬tre P3:")
     print("    A. D├®faut      CostModel() - eta=0.05, delay=0.01j  <- v45b actuel")
     print("    B. R├®aliste    equity_cost_config() - eta=0.10, delay=0.5j  <- roadmap")
-=======
-    print("  EDGECORE Phase 0.1 — Slippage Stress-Test: P3 2022H2 (OOS)")
-    print()
-    print("  Base result (v45b, default slippage): S=2.21  t=33  +10.62%  DD=-2.71%")
-    print("  Question: est-ce que S≥1.2 tient avec un slippage plus strict?")
-    print()
-    print("  3 niveaux de friction testés sur la MÊME fenêtre P3:")
-    print("    A. Défaut      CostModel() - eta=0.05, delay=0.01j  <- v45b actuel")
-    print("    B. Réaliste    equity_cost_config() - eta=0.10, delay=0.5j  <- roadmap")
->>>>>>> origin/main
     print("    C. Spread only zero_impact  - eta=0.0,  delay=0.0j  <- plancher")
     print()
     print("  NOTE: Cache P3 present (v45b run complet) -> pas de re-fetch IBKR")
     print("=" * 95)
 
-<<<<<<< HEAD
     # --- D├®tail theorique avant simulation ---
     print()
     print("  D├®tail slippage par composante (avant simulation):")
     print()
     _print_slippage_breakdown(realistic_equity_slippage(), "R├®aliste B")
-=======
-    # --- Détail theorique avant simulation ---
-    print()
-    print("  Détail slippage par composante (avant simulation):")
-    print()
-    _print_slippage_breakdown(realistic_equity_slippage(), "Réaliste B")
->>>>>>> origin/main
     print()
     _print_slippage_breakdown(conservative_equity_slippage(), "Conservateur")
     print()
     _print_slippage_breakdown(zero_impact_slippage(), "Spread only C")
     print()
     print("  ATTENTION: Le simulateur COMBINE algo_executor (impact TWAP) + cost_model")
-<<<<<<< HEAD
     print("             La diff├®rence entre A et B refl├¿te uniquement le delta cost_model")
-=======
-    print("             La différence entre A et B reflète uniquement le delta cost_model")
->>>>>>> origin/main
     print()
 
     # --- Define cost configs ---
@@ -601,7 +418,6 @@ def main():
     cost_b = CostModel(equity_cost_config())  # eta=0.10, delay=0.5
 
     # C: spread + commission only (zero market impact + timing)
-<<<<<<< HEAD
     cost_c = CostModel(
         CostModelConfig(
             maker_fee_bps=1.5,
@@ -619,28 +435,10 @@ def main():
         (cost_a, "A ÔÇö D├®faut (v45b)      [eta=0.05 delay=0.01]"),
         (cost_b, "B ÔÇö R├®aliste (roadmap) [eta=0.10 delay=0.50]"),
         (cost_c, "C ÔÇö Spread seul        [eta=0.00 delay=0.00]"),
-=======
-    cost_c = CostModel(CostModelConfig(
-        maker_fee_bps=1.5,
-        taker_fee_bps=2.0,
-        base_slippage_bps=2.0,
-        borrowing_cost_annual_pct=0.5,
-        include_borrowing=True,
-        slippage_model="fixed",   # spread only
-        market_impact_eta=0.0,
-        execution_delay_days=0.0,
-    ))
-
-    configs = [
-        (cost_a, "A — Défaut (v45b)      [eta=0.05 delay=0.01]"),
-        (cost_b, "B — Réaliste (roadmap) [eta=0.10 delay=0.50]"),
-        (cost_c, "C — Spread seul        [eta=0.00 delay=0.00]"),
->>>>>>> origin/main
     ]
 
     results = []
     for cost_model, label in configs:
-<<<<<<< HEAD
         print(f"  Running {label} ...")
         r = _run_p3_with_cost(cost_model, label)
         results.append(r)
@@ -651,24 +449,11 @@ def main():
             print(
                 f"  -> S={r['sharpe']:5.2f}  {r['return_pct']:+6.2f}%  WR={r['wr_pct']:5.1f}%  t={r['trades']:2d}  DD={r['dd_pct']:+6.2f}%  [{v}/{r['elapsed']}s]"
             )
-=======
-        print("  Running %s ..." % label)
-        r = _run_p3_with_cost(cost_model, label)
-        results.append(r)
-        if r["error"]:
-            print("  -> ERROR: %s" % r["error"])
-        else:
-            v = "PASS" if r["sharpe"] >= 1.2 else ("S-PASS" if r["sharpe"] >= 0.8 else "FAIL")
-            print("  -> S=%5.2f  %+6.2f%%  WR=%5.1f%%  t=%2d  DD=%+6.2f%%  [%s/%ds]"
-                  % (r["sharpe"], r["return_pct"], r["wr_pct"],
-                     r["trades"], r["dd_pct"], v, r["elapsed"]))
->>>>>>> origin/main
         print()
 
     # --- Summary ---
     print()
     print("=" * 95)
-<<<<<<< HEAD
     print("  R├ëSULTATS ÔÇö P3 2022H2 par niveau de slippage")
     print("=" * 95)
     print()
@@ -707,43 +492,6 @@ def main():
             print("     1. R├®duire les co├╗ts simul├®s: utiliser delay=0.10 (6min) au lieu de 0.5j")
             print("     2. Re-calibrer entry_z ├á la hausse (ex 1.8) pour n'entrer que sur")
             print("        les divergences les plus profondes (meilleur rapport qualit├®/co├╗t)")
-=======
-    print("  RÉSULTATS — P3 2022H2 par niveau de slippage")
-    print("=" * 95)
-    print()
-    print("  %-42s  Sharpe  Return  Trades  DD     Verdict" % "Config slippage")
-    print("  " + "-" * 80)
-    for r in results:
-        if r["error"]:
-            print("  %-42s  ERROR: %s" % (r["label"], r["error"]))
-        else:
-            v = "PASS" if r["sharpe"] >= 1.2 else ("S-PASS" if r["sharpe"] >= 0.8 else "FAIL")
-            print("  %-42s  %5.2f   %+6.2f%%   %3d    %+6.2f%%   %s"
-                  % (r["label"], r["sharpe"], r["return_pct"], r["trades"], r["dd_pct"], v))
-
-    print()
-    print("  Référence v45b (A défaut): S=2.21  t=33  +10.62%  DD=-2.71%")
-    print()
-
-    # Verdict
-    r_b = next((r for r in results if "Réaliste" in r["label"]), None)
-    if r_b and r_b["error"] is None:
-        if r_b["sharpe"] >= 1.2:
-            print("  ✓  PHASE 0.1 VALIDÉE: P3 tient à S=%.2f après slippage réaliste (B)." % r_b["sharpe"])
-            print("     Le modèle de slippage actuel est adéquat pour la validation WF.")
-            print("     P3 S=2.21 est réaliste et non-artefact de coûts sous-estimés.")
-            print()
-            print("  NEXT: Analyser P1/P4 failures -> sélection paires cross-industrie")
-        elif r_b["sharpe"] >= 0.8:
-            print("  ~ BORDERLINE: P3 S=%.2f après slippage réaliste (S-PASS)" % r_b["sharpe"])
-            print("    Le WF tient mais marginalement. Calibrer eta vers 0.07 comme compromis.")
-        else:
-            print("  ✗  ATTENTION: P3 tombe à S=%.2f avec slippage réaliste (B)." % r_b["sharpe"])
-            print("     Les résultats v45b sont surestimés. Plusieurs options:")
-            print("     1. Réduire les coûts simulés: utiliser delay=0.10 (6min) au lieu de 0.5j")
-            print("     2. Re-calibrer entry_z à la hausse (ex 1.8) pour n'entrer que sur")
-            print("        les divergences les plus profondes (meilleur rapport qualité/coût)")
->>>>>>> origin/main
             print("     3. Filtrer les trades < 0.5% expected PnL (before-cost)")
     print()
 

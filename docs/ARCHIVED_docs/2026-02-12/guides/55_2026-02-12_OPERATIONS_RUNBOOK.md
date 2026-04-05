@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿# Operations Runbook
-=======
-# Operations Runbook
->>>>>>> origin/main
 
 **Version**: 3.0 (Post-S3.2 Half-Life Refinement)  
 **Last Updated**: February 12, 2026  
@@ -10,11 +6,7 @@
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒôï Table of Contents
-=======
-## 📋 Table of Contents
->>>>>>> origin/main
 
 1. [Quick Diagnostics](#quick-diagnostics)
 2. [Common Issues & Solutions](#common-issues--solutions)
@@ -25,11 +17,7 @@
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒöì Quick Diagnostics
-=======
-## 🔍 Quick Diagnostics
->>>>>>> origin/main
 
 ### System Health Check
 
@@ -43,7 +31,6 @@ echo "=== EDGECORE System Diagnostics ==="
 
 # 1. Python environment
 python --version
-<<<<<<< HEAD
 pip show edgecore 2>/dev/null || echo "ÔÜá´©Å  EDGECORE package not installed"
 
 # 2. Dependencies
@@ -57,21 +44,6 @@ if [ -d "data" ] && [ -f "data/loader.py" ]; then
     echo "Ô£ô Data module available"
 else
     echo "ÔÜá´©Å  Data module missing"
-=======
-pip show edgecore 2>/dev/null || echo "⚠️  EDGECORE package not installed"
-
-# 2. Dependencies
-python -c "import pandas, numpy, IBKR API, pytest; print('✓ All dependencies installed')"
-
-# 3. Configuration
-python -c "from config.settings import get_settings; s = get_settings(); print(f'✓ Config loaded, env={s.env}, symbols={len(s.trading_universe.symbols)}')"
-
-# 4. Data
-if [ -d "data" ] && [ -f "data/loader.py" ]; then
-    echo "✓ Data module available"
-else
-    echo "⚠️  Data module missing"
->>>>>>> origin/main
 fi
 
 # 5. Tests
@@ -79,17 +51,10 @@ python -m pytest tests/ --collect-only -q 2>/dev/null | tail -1
 
 # 6. Logs
 if [ -d "logs" ]; then
-<<<<<<< HEAD
     echo "Ô£ô Logs directory exists"
     tail -5 logs/*.log 2>/dev/null | grep -i error | head -3 || echo "  No recent errors"
 else
     echo "ÔÜá´©Å  Logs directory not found"
-=======
-    echo "✓ Logs directory exists"
-    tail -5 logs/*.log 2>/dev/null | grep -i error | head -3 || echo "  No recent errors"
-else
-    echo "⚠️  Logs directory not found"
->>>>>>> origin/main
 fi
 
 echo "=== Diagnostics Complete ==="
@@ -107,24 +72,14 @@ loader = DataLoader(settings)
 # Test connection to data store
 try:
     symbols = loader.get_symbols()
-<<<<<<< HEAD
     print(f"Ô£ô Data connection OK ({len(symbols)} symbols available)")
 except Exception as e:
     print(f"Ô£ù Data connection FAILED: {e}")
-=======
-    print(f"✓ Data connection OK ({len(symbols)} symbols available)")
-except Exception as e:
-    print(f"✗ Data connection FAILED: {e}")
->>>>>>> origin/main
 ```
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒÉø Common Issues & Solutions
-=======
-## 🐛 Common Issues & Solutions
->>>>>>> origin/main
 
 ### Issue 1: "No pairs found in discovery"
 
@@ -143,11 +98,7 @@ except Exception as e:
               print(f'Min required: 252 bars, Min found: {min(lengths.values())}')"
    ```
    
-<<<<<<< HEAD
    **Solution**: Ensure data directory has ÔëÑ252 days of OHLCV data
-=======
-   **Solution**: Ensure data directory has ≥252 days of OHLCV data
->>>>>>> origin/main
    ```bash
    # Reload fresh data
    python scripts/fetch_data.py --lookback 365
@@ -158,22 +109,14 @@ except Exception as e:
    # Current alpha calculation
    n_symbols = 100
    n_pairs = n_symbols * (n_symbols - 1) / 2  # 4,950 pairs
-<<<<<<< HEAD
    alpha_corrected = 0.05 / n_pairs  # Ôëê 0.000010 (very strict!)
-=======
-   alpha_corrected = 0.05 / n_pairs  # ≈ 0.000010 (very strict!)
->>>>>>> origin/main
    ```
    
    **Solution**: Reduce symbol count
    ```yaml
    # config/dev.yaml
    strategy:
-<<<<<<< HEAD
      num_symbols: 20  # Reduces pairs to 190, alpha Ôëê 0.0003 (more reasonable)
-=======
-     num_symbols: 20  # Reduces pairs to 190, alpha ≈ 0.0003 (more reasonable)
->>>>>>> origin/main
    ```
 
 3. **Universe Symbols Missing from Data**
@@ -201,11 +144,7 @@ except Exception as e:
        prices = loader.get_prices(symbol)
        issues = validator.validate(prices)
        if issues:
-<<<<<<< HEAD
            print(f"ÔÜá´©Å  {symbol}: {issues}")
-=======
-           print(f"⚠️  {symbol}: {issues}")
->>>>>>> origin/main
    ```
    
    **Solution**: Clean data
@@ -274,11 +213,7 @@ print(f"With Bonferroni: {len(pairs)} pairs found")
    print(f"Normal regime: {normal_pct:.1%}")
    
    if normal_pct < 0.7:
-<<<<<<< HEAD
        print("ÔÜá´©Å  Regime detector too sensitive, killing trades")
-=======
-       print("⚠️  Regime detector too sensitive, killing trades")
->>>>>>> origin/main
    ```
    
    **Solution**: Reduce regime sensitivity
@@ -299,11 +234,7 @@ print(f"With Bonferroni: {len(pairs)} pairs found")
    print(f"Win rate: {win_rate:.1%}")
    
    if win_rate < 0.50:
-<<<<<<< HEAD
        print("ÔÜá´©Å  Win rate <50%, threshold too low")
-=======
-       print("⚠️  Win rate <50%, threshold too low")
->>>>>>> origin/main
    ```
    
    **Solution**: Increase entry threshold
@@ -324,19 +255,11 @@ print(f"With Bonferroni: {len(pairs)} pairs found")
        hl = estimator.estimate_half_life_from_spread(spread)
        
        if hl is None:
-<<<<<<< HEAD
            print(f"ÔÜá´©Å  {pair}: No HL (possibly non-stationary)")
        elif hl > 100:
            print(f"ÔÜá´©Å  {pair}: HL={hl}d too slow, high overnight risk")
        else:
            print(f"Ô£ô {pair}: HL={hl}d acceptable")
-=======
-           print(f"⚠️  {pair}: No HL (possibly non-stationary)")
-       elif hl > 100:
-           print(f"⚠️  {pair}: HL={hl}d too slow, high overnight risk")
-       else:
-           print(f"✓ {pair}: HL={hl}d acceptable")
->>>>>>> origin/main
    ```
    
    **Solution**: Adjust half-life bounds
@@ -375,15 +298,9 @@ python scripts/diagnose_poor_returns.py --backtest_results results.parquet
    settings = get_settings()
    if settings.risk.daily_loss_kill_switch_enabled:
        threshold = settings.risk.max_daily_loss_pct
-<<<<<<< HEAD
        print(f"Ô£ô Kill-switch enabled at {threshold:.1%}")
    else:
        print("ÔÜá´©Å  Kill-switch DISABLED - drawdown unprotected!")
-=======
-       print(f"✓ Kill-switch enabled at {threshold:.1%}")
-   else:
-       print("⚠️  Kill-switch DISABLED - drawdown unprotected!")
->>>>>>> origin/main
    ```
    
    **Solution**: Enable kill-switch
@@ -405,15 +322,9 @@ python scripts/diagnose_poor_returns.py --backtest_results results.parquet
    print(f"Threshold: {engine.max_daily_loss_pct:.2%}")
    
    if daily_pnl < engine.max_daily_loss_pct:
-<<<<<<< HEAD
        print("Ô£ô Kill-switch should be active")
    else:
        print("ÔÜá´©Å  Kill-switch not active (threshold not breached)")
-=======
-       print("✓ Kill-switch should be active")
-   else:
-       print("⚠️  Kill-switch not active (threshold not breached)")
->>>>>>> origin/main
    ```
    
    **Solution**: Check reset schedule
@@ -434,11 +345,7 @@ python scripts/diagnose_poor_returns.py --backtest_results results.parquet
    print(f"Large overnight gaps ({len(large_gaps)}): {large_gaps.head()}")
    
    if len(large_gaps) > 0:
-<<<<<<< HEAD
        print("ÔÜá´©Å  Large overnight gaps detected - may exceed kill-switch")
-=======
-       print("⚠️  Large overnight gaps detected - may exceed kill-switch")
->>>>>>> origin/main
    ```
    
    **Solution**: Close positions before market close
@@ -488,11 +395,7 @@ python scripts/analyze_drawdown.py --last_24_hours
    
    # Window should be 2x-3x half-life for smooth signals
    if spread_model.z_score_lookback > spread_model.half_life * 3:
-<<<<<<< HEAD
        print("ÔÜá´©Å  Window too large, signals laggy")
-=======
-       print("⚠️  Window too large, signals laggy")
->>>>>>> origin/main
    ```
    
    **Solution**: Use estimated half-life properly
@@ -517,11 +420,7 @@ python scripts/analyze_drawdown.py --last_24_hours
        mr_pct = mr_exits / total_exits
        
        if mr_pct < 0.6:
-<<<<<<< HEAD
            print(f"ÔÜá´©Å  Only {mr_pct:.0%} exits on mean reversion (should be >60%)")
-=======
-           print(f"⚠️  Only {mr_pct:.0%} exits on mean reversion (should be >60%)")
->>>>>>> origin/main
    ```
    
    **Solution**: Increase exit threshold
@@ -540,11 +439,7 @@ python scripts/analyze_drawdown.py --last_24_hours
    
    is_mr = estimator.validate_mean_reversion(spread)
    if not is_mr:
-<<<<<<< HEAD
        print(f"ÔÜá´©Å  Spread NOT mean-reverting, HL estimation unreliable")
-=======
-       print(f"⚠️  Spread NOT mean-reverting, HL estimation unreliable")
->>>>>>> origin/main
    ```
    
    **Solution**: Filter pairs better
@@ -592,11 +487,7 @@ python scripts/analyze_drawdown.py --last_24_hours
    print(f"Rate limit: {limiter.rate_limit}")
    
    if limiter.get_call_count() > limiter.rate_limit * 0.8:
-<<<<<<< HEAD
        print("ÔÜá´©Å  Approaching rate limit")
-=======
-       print("⚠️  Approaching rate limit")
->>>>>>> origin/main
    ```
    
    **Solution**: Reduce API calls
@@ -631,11 +522,7 @@ python main.py --mode live --resume_from_checkpoint
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒôè Performance Monitoring
-=======
-## 📊 Performance Monitoring
->>>>>>> origin/main
 
 ### Daily Metrics Dashboard
 
@@ -656,7 +543,6 @@ win_count = (today_trades['pnl'] > 0).sum()
 total_count = len(today_trades)
 
 print(f"""
-<<<<<<< HEAD
 ÔòöÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòù
 Ôòæ  EDGECORE Daily Summary ({pd.Timestamp.utcnow().date()})         
 ÔòáÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòú
@@ -669,35 +555,14 @@ print(f"""
 Ôòæ  Max Drawdown Today:  {monitor.get_daily_drawdown():5.2f}%              
 Ôòæ  Sharpe (30-day):     {monitor.get_sharpe_30d():5.2f}                 
 ÔòÜÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòØ
-=======
-╔════════════════════════════════════════════╗
-║  EDGECORE Daily Summary ({pd.Timestamp.utcnow().date()})         
-╠════════════════════════════════════════════╣
-║  Total Trades:        {total_count:5d}                   
-║  Winning Trades:      {win_count:5d} ({win_count/total_count*100:5.1f}%)              
-║  Daily P&L:           ${daily_pnl:10,.2f}         
-║  Return:              {daily_pnl / monitor.portfolio_value * 100:5.2f}%               
-║  
-║  Open Positions:      {len(monitor.get_open_positions()):5d}                   
-║  Max Drawdown Today:  {monitor.get_daily_drawdown():5.2f}%              
-║  Sharpe (30-day):     {monitor.get_sharpe_30d():5.2f}                 
-╚════════════════════════════════════════════╝
->>>>>>> origin/main
 """)
 
 # Alert if issues
 if daily_pnl < monitor.max_daily_loss_pct * monitor.portfolio_value:
-<<<<<<< HEAD
     print(f"­ƒÜ¿ ALERT: Daily loss limit reached! P&L={daily_pnl:.2f}")
 
 if len(monitor.get_open_positions()) > monitor.max_concurrent_positions:
     print(f"ÔÜá´©Å  WARNING: {len(monitor.get_open_positions())} positions (limit={monitor.max_concurrent_positions})")
-=======
-    print(f"🚨 ALERT: Daily loss limit reached! P&L={daily_pnl:.2f}")
-
-if len(monitor.get_open_positions()) > monitor.max_concurrent_positions:
-    print(f"⚠️  WARNING: {len(monitor.get_open_positions())} positions (limit={monitor.max_concurrent_positions})")
->>>>>>> origin/main
 ```
 
 ### Key Metrics to Monitor
@@ -708,11 +573,7 @@ if len(monitor.get_open_positions()) > monitor.max_concurrent_positions:
 | Sharpe (24h) | >1.0 | <0.5 | <0.0 |
 | Max Drawdown | <-3% | <-4% | <-5% |
 | Avg Trade Duration | 5-15 days | >20 days | >30 days |
-<<<<<<< HEAD
 | Open Positions | Ôëñ5-10 | >12 | >15 |
-=======
-| Open Positions | ≤5-10 | >12 | >15 |
->>>>>>> origin/main
 | Daily Loss % | -0.5% to +0.5% | <-1% | <-2% |
 
 ### Automated Alerts
@@ -736,11 +597,7 @@ monitoring:
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒÜ¿ Emergency Procedures
-=======
-## 🚨 Emergency Procedures
->>>>>>> origin/main
 
 ### Scenario 1: Market Crash (-10%+ in 1 hour)
 
@@ -793,11 +650,7 @@ from data.validators import DataValidator
 
 validator = DataValidator()
 if not validator.is_data_current(tolerance_minutes=5):
-<<<<<<< HEAD
     print("ÔÜá´©Å  Data is stale!")
-=======
-    print("⚠️  Data is stale!")
->>>>>>> origin/main
 ```
 
 **Response**:
@@ -850,11 +703,7 @@ python scripts/log_incident.py --category stuck_position --position 12345
 
 ---
 
-<<<<<<< HEAD
 ## Ô£à Daily Operations Checklist
-=======
-## ✅ Daily Operations Checklist
->>>>>>> origin/main
 
 ### Before Market Open (UTC 23:50 - 00:00)
 
@@ -884,11 +733,7 @@ python scripts/log_incident.py --category stuck_position --position 12345
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒöº Data Troubleshooting
-=======
-## 🔧 Data Troubleshooting
->>>>>>> origin/main
 
 ### Data Missing for a Symbol
 
@@ -900,11 +745,7 @@ symbol = 'MS'
 prices = loader.get_prices(symbol)
 
 if len(prices) == 0 or prices.isnull().all():
-<<<<<<< HEAD
     print(f"ÔÜá´©Å  No data for {symbol}")
-=======
-    print(f"⚠️  No data for {symbol}")
->>>>>>> origin/main
     
     # Solution 1: Fetch from IBKR
     python scripts/fetch_data.py --symbols MS --lookback 365
@@ -951,11 +792,7 @@ for symbol, anomaly_list in anomalies.items():
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒô× Support & Escalation
-=======
-## 📞 Support & Escalation
->>>>>>> origin/main
 
 ### When to Escalate
 
@@ -972,7 +809,6 @@ for symbol, anomaly_list in anomalies.items():
 
 ```
 On-Duty Engineer:
-<<<<<<< HEAD
 Ôö£ÔöÇ Critical: Page (PagerDuty)
 Ôö£ÔöÇ Urgent: Slack #edgecore-ops
 ÔööÔöÇ Normal: Email
@@ -986,30 +822,11 @@ Ops Manager (market hours):
 Ôö£ÔöÇ System down: Page
 Ôö£ÔöÇ Data unavailable: Call
 ÔööÔöÇ Performance degradation: Slack
-=======
-├─ Critical: Page (PagerDuty)
-├─ Urgent: Slack #edgecore-ops
-└─ Normal: Email
-
-Risk Manager:
-├─ Daily loss breach: Immediate call
-├─ Position limit breach: Slack
-└─ P&L review: Email summary
-
-Ops Manager (market hours):
-├─ System down: Page
-├─ Data unavailable: Call
-└─ Performance degradation: Slack
->>>>>>> origin/main
 ```
 
 ---
 
-<<<<<<< HEAD
 ## ­ƒôÜ Related Documentation
-=======
-## 📚 Related Documentation
->>>>>>> origin/main
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) - System design and signal pipeline
 - [CONFIG_GUIDE.md](CONFIG_GUIDE.md) - Configuration and parameter tuning

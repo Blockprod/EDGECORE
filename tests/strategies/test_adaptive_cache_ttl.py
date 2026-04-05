@@ -1,16 +1,8 @@
-<<<<<<< HEAD
 ﻿"""
 Sprint 3.5 ÔÇô Adaptive cache TTL based on volatility regime.
 
 Faille: ­ƒƒí m-05 ÔÇô Cache de 24h trop long
 Fix: TTL adapts to regime: HIGHÔåô2h, NORMALÔåô12h, LOWÔåô24h
-=======
-"""
-Sprint 3.5 – Adaptive cache TTL based on volatility regime.
-
-Faille: 🟡 m-05 – Cache de 24h trop long
-Fix: TTL adapts to regime: HIGH↓2h, NORMAL↓12h, LOW↓24h
->>>>>>> origin/main
 
 Tests:
 - get_cache_ttl_hours returns correct TTL per regime
@@ -23,7 +15,6 @@ Tests:
 - Config values are respected when present
 """
 
-<<<<<<< HEAD
 import json
 import os
 from datetime import datetime, timedelta
@@ -34,48 +25,25 @@ import pandas as pd
 
 from models.regime_detector import VolatilityRegime
 from strategies.pair_trading import PairTradingStrategy
-=======
-import os
-import json
-import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta
-from unittest.mock import patch
-
-from strategies.pair_trading import PairTradingStrategy
-from models.regime_detector import VolatilityRegime
->>>>>>> origin/main
 
 
 class TestGetCacheTtlHours:
     """Test the regime-based TTL calculation logic."""
 
     def test_high_regime_returns_2h(self):
-<<<<<<< HEAD
         """HIGH volatility Ôåô 2h TTL (frequent re-discovery)."""
-=======
-        """HIGH volatility ↓ 2h TTL (frequent re-discovery)."""
->>>>>>> origin/main
         strategy = PairTradingStrategy()
         strategy.regime_detector.current_regime = VolatilityRegime.HIGH
         assert strategy.get_cache_ttl_hours() == 2
 
     def test_normal_regime_returns_12h(self):
-<<<<<<< HEAD
         """NORMAL volatility Ôåô 12h TTL (moderate)."""
-=======
-        """NORMAL volatility ↓ 12h TTL (moderate)."""
->>>>>>> origin/main
         strategy = PairTradingStrategy()
         strategy.regime_detector.current_regime = VolatilityRegime.NORMAL
         assert strategy.get_cache_ttl_hours() == 12
 
     def test_low_regime_returns_24h(self):
-<<<<<<< HEAD
         """LOW volatility Ôåô 24h TTL (stable market, long cache)."""
-=======
-        """LOW volatility ↓ 24h TTL (stable market, long cache)."""
->>>>>>> origin/main
         strategy = PairTradingStrategy()
         strategy.regime_detector.current_regime = VolatilityRegime.LOW
         assert strategy.get_cache_ttl_hours() == 24
@@ -118,11 +86,7 @@ class TestLoadCachedPairsAdaptive:
         test_pairs = [('AAPL', 'GOOGL', 0.01, 10.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=3)
 
-<<<<<<< HEAD
         result = strategy.load_cached_pairs()  # adaptive TTL Ôåô 2h
-=======
-        result = strategy.load_cached_pairs()  # adaptive TTL ↓ 2h
->>>>>>> origin/main
         assert result is None, "Cache 3h old should expire with HIGH regime (TTL=2h)"
 
     def test_high_regime_keeps_fresh_cache(self):
@@ -132,11 +96,7 @@ class TestLoadCachedPairsAdaptive:
         test_pairs = [('AAPL', 'GOOGL', 0.01, 10.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=1)
 
-<<<<<<< HEAD
         result = strategy.load_cached_pairs()  # adaptive TTL Ôåô 2h
-=======
-        result = strategy.load_cached_pairs()  # adaptive TTL ↓ 2h
->>>>>>> origin/main
         assert result == test_pairs, "Cache 1h old should be valid with HIGH regime (TTL=2h)"
 
     def test_normal_regime_keeps_10h_old_cache(self):
@@ -146,11 +106,7 @@ class TestLoadCachedPairsAdaptive:
         test_pairs = [('AAPL', 'GOOGL', 0.01, 10.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=10)
 
-<<<<<<< HEAD
         result = strategy.load_cached_pairs()  # adaptive TTL Ôåô 12h
-=======
-        result = strategy.load_cached_pairs()  # adaptive TTL ↓ 12h
->>>>>>> origin/main
         assert result == test_pairs, "Cache 10h old should be valid with NORMAL regime (TTL=12h)"
 
     def test_normal_regime_expires_after_13h(self):
@@ -160,11 +116,7 @@ class TestLoadCachedPairsAdaptive:
         test_pairs = [('AAPL', 'GOOGL', 0.01, 10.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=13)
 
-<<<<<<< HEAD
         result = strategy.load_cached_pairs()  # adaptive TTL Ôåô 12h
-=======
-        result = strategy.load_cached_pairs()  # adaptive TTL ↓ 12h
->>>>>>> origin/main
         assert result is None, "Cache 13h old should expire with NORMAL regime (TTL=12h)"
 
     def test_low_regime_keeps_20h_old_cache(self):
@@ -174,11 +126,7 @@ class TestLoadCachedPairsAdaptive:
         test_pairs = [('AAPL', 'GOOGL', 0.01, 10.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=20)
 
-<<<<<<< HEAD
         result = strategy.load_cached_pairs()  # adaptive TTL Ôåô 24h
-=======
-        result = strategy.load_cached_pairs()  # adaptive TTL ↓ 24h
->>>>>>> origin/main
         assert result == test_pairs, "Cache 20h old should be valid with LOW regime (TTL=24h)"
 
     def test_low_regime_expires_after_25h(self):
@@ -188,11 +136,7 @@ class TestLoadCachedPairsAdaptive:
         test_pairs = [('AAPL', 'GOOGL', 0.01, 10.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=25)
 
-<<<<<<< HEAD
         result = strategy.load_cached_pairs()  # adaptive TTL Ôåô 24h
-=======
-        result = strategy.load_cached_pairs()  # adaptive TTL ↓ 24h
->>>>>>> origin/main
         assert result is None, "Cache 25h old should expire with LOW regime (TTL=24h)"
 
 
@@ -278,11 +222,7 @@ class TestRegimeTransitionChangesCache:
         result_low = strategy.load_cached_pairs()
         assert result_low == test_pairs, "5h cache should be valid in LOW regime (TTL=24h)"
 
-<<<<<<< HEAD
         # Market spikes Ôåô HIGH regime (TTL=2h), same 5h old cache now expired
-=======
-        # Market spikes ↓ HIGH regime (TTL=2h), same 5h old cache now expired
->>>>>>> origin/main
         strategy.regime_detector.current_regime = VolatilityRegime.HIGH
         result_high = strategy.load_cached_pairs()
         assert result_high is None, "5h cache should be expired in HIGH regime (TTL=2h)"
@@ -293,7 +233,6 @@ class TestRegimeTransitionChangesCache:
         test_pairs = [('JPM', 'BAC', 0.02, 8.0)]
         self._save_cache_with_age(strategy, test_pairs, age_hours=15)
 
-<<<<<<< HEAD
         # LOW (TTL=24h): 15h < 24h Ôåô valid
         strategy.regime_detector.current_regime = VolatilityRegime.LOW
         assert strategy.load_cached_pairs() == test_pairs
@@ -303,17 +242,6 @@ class TestRegimeTransitionChangesCache:
         assert strategy.load_cached_pairs() is None
 
         # HIGH (TTL=2h): 15h > 2h Ôåô expired
-=======
-        # LOW (TTL=24h): 15h < 24h ↓ valid
-        strategy.regime_detector.current_regime = VolatilityRegime.LOW
-        assert strategy.load_cached_pairs() == test_pairs
-
-        # NORMAL (TTL=12h): 15h > 12h ↓ expired
-        strategy.regime_detector.current_regime = VolatilityRegime.NORMAL
-        assert strategy.load_cached_pairs() is None
-
-        # HIGH (TTL=2h): 15h > 2h ↓ expired
->>>>>>> origin/main
         strategy.regime_detector.current_regime = VolatilityRegime.HIGH
         assert strategy.load_cached_pairs() is None
 

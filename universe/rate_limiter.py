@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 IBKR API Rate Limiter ÔÇö Token-bucket pacing for Interactive Brokers.
-=======
-"""
-IBKR API Rate Limiter — Token-bucket pacing for Interactive Brokers.
->>>>>>> origin/main
 
 IBKR enforces strict API rate limits:
   - 50 messages/second (global)
@@ -29,10 +24,7 @@ import threading
 import time
 from collections import deque
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Dict
->>>>>>> origin/main
 
 from structlog import get_logger
 
@@ -132,11 +124,7 @@ class IBKRRateLimiter:
         self._last_historical = 0.0
 
         # Category-specific sliding windows
-<<<<<<< HEAD
         self._windows: dict[str, _SlidingWindowCounter] = {
-=======
-        self._windows: Dict[str, _SlidingWindowCounter] = {
->>>>>>> origin/main
             "message": _SlidingWindowCounter(
                 self.config.max_messages_per_second, 1.0
             ),
@@ -207,11 +195,7 @@ class IBKRRateLimiter:
 
         return total_wait
 
-<<<<<<< HEAD
     def stats(self) -> dict[str, float | int]:
-=======
-    def stats(self) -> Dict[str, float | int]:
->>>>>>> origin/main
         """Return rate limiter statistics."""
         return {
             "total_acquires": self._total_acquires,

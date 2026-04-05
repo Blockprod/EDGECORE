@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿"""
 Tests for Sprint 2.8 ÔÇô Outlier pipeline pre-signal (M-08).
 
@@ -7,16 +6,6 @@ Coverage:
   - Z-score clamped to [-6, +6] in SpreadModel & DynamicSpreadModel
   - Spike injection (+50%) Ôåô no aberrant signal
   - Non-regression: clean data Ôåô identical results (4¤â threshold preserves normal data)
-=======
-"""
-Tests for Sprint 2.8 – Outlier pipeline pre-signal (M-08).
-
-Coverage:
-  - remove_outliers(threshold=4σ) applied before spread computation
-  - Z-score clamped to [-6, +6] in SpreadModel & DynamicSpreadModel
-  - Spike injection (+50%) ↓ no aberrant signal
-  - Non-regression: clean data ↓ identical results (4σ threshold preserves normal data)
->>>>>>> origin/main
   - Edge cases: all NaN, constant series, single spike
 """
 
@@ -24,7 +13,6 @@ import numpy as np
 import pandas as pd
 
 from data.preprocessing import remove_outliers
-<<<<<<< HEAD
 from models.adaptive_thresholds import DynamicSpreadModel
 from models.spread import SpreadModel
 
@@ -32,15 +20,6 @@ from models.spread import SpreadModel
 # Helpers
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-=======
-from models.spread import SpreadModel
-from models.adaptive_thresholds import DynamicSpreadModel
-
-
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# Helpers
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
 def _make_clean_prices(n: int = 200, seed: int = 42):
     """Two cointegrated price series with no outliers."""
@@ -59,22 +38,15 @@ def _inject_spike(series: pd.Series, idx: int, factor: float = 1.5) -> pd.Series
     return s
 
 
-<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 # remove_outliers() tests
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-=======
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# remove_outliers() tests
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
 class TestRemoveOutliers:
     """Tests for the price-level outlier removal."""
 
     def test_zscore_4sigma_preserves_normal_data(self):
-<<<<<<< HEAD
         """Normal data within 4¤â should be untouched."""
         rng = np.random.RandomState(42)
         series = pd.Series(rng.normal(100, 2, 500))
@@ -86,19 +58,6 @@ class TestRemoveOutliers:
     def test_zscore_4sigma_removes_extreme_spike(self):
         """A +50% spike on a price series should be flagged as NaN."""
         y, _x = _make_clean_prices(n=200)
-=======
-        """Normal data within 4σ should be untouched."""
-        rng = np.random.RandomState(42)
-        series = pd.Series(rng.normal(100, 2, 500))
-        cleaned = remove_outliers(series, method="zscore", threshold=4.0)
-        # At 4σ, normal data should have ~0 outliers removed
-        n_nan = cleaned.isna().sum()
-        assert n_nan <= 2, f"4σ threshold removed {n_nan} points from normal data"
-
-    def test_zscore_4sigma_removes_extreme_spike(self):
-        """A +50% spike on a price series should be flagged as NaN."""
-        y, x = _make_clean_prices(n=200)
->>>>>>> origin/main
         y_spiked = _inject_spike(y, idx=100, factor=1.5)
         cleaned = remove_outliers(y_spiked, method="zscore", threshold=4.0)
         assert cleaned.isna().any(), "50% spike should be removed by 4σ filter"
@@ -107,11 +66,7 @@ class TestRemoveOutliers:
 
     def test_ffill_bfill_restores_continuity(self):
         """After removing outlier and filling, no NaN should remain."""
-<<<<<<< HEAD
         y, _x = _make_clean_prices(n=200)
-=======
-        y, x = _make_clean_prices(n=200)
->>>>>>> origin/main
         y_spiked = _inject_spike(y, idx=100, factor=1.5)
         cleaned = remove_outliers(y_spiked, method="zscore", threshold=4.0)
         filled = cleaned.ffill().bfill()
@@ -133,22 +88,15 @@ class TestRemoveOutliers:
         assert len(cleaned) == 0
 
 
-<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 # Z-score clamping ÔÇô SpreadModel
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-=======
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# Z-score clamping – SpreadModel
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
 class TestSpreadModelZScoreClamp:
     """Tests for Z-score clamping in the legacy SpreadModel."""
 
     def test_z_score_clamped_at_6(self):
-<<<<<<< HEAD
         """Z-score values should never exceed ┬▒6."""
         y, x = _make_clean_prices(n=200)
         # Inject a massive spike to produce extreme z-score
@@ -158,36 +106,17 @@ class TestSpreadModelZScoreClamp:
         spread = model.compute_spread(y_spiked, x)
         z = model.compute_z_score(spread)
 
-=======
-        """Z-score values should never exceed ±6."""
-        y, x = _make_clean_prices(n=200)
-        # Inject a massive spike to produce extreme z-score
-        y_spiked = _inject_spike(y, idx=100, factor=3.0)
-        
-        model = SpreadModel(y_spiked, x)
-        spread = model.compute_spread(y_spiked, x)
-        z = model.compute_z_score(spread)
-        
->>>>>>> origin/main
         valid_z = z.dropna()
         assert valid_z.max() <= 6.0, f"Z-score max {valid_z.max()} exceeds 6.0"
         assert valid_z.min() >= -6.0, f"Z-score min {valid_z.min()} below -6.0"
 
     def test_clean_data_z_score_unchanged(self):
-<<<<<<< HEAD
         """On clean data, z-score should be well within [-6, 6] ÔÇô clamp is a no-op."""
-=======
-        """On clean data, z-score should be well within [-6, 6] – clamp is a no-op."""
->>>>>>> origin/main
         y, x = _make_clean_prices(n=200)
         model = SpreadModel(y, x)
         spread = model.compute_spread(y, x)
         z = model.compute_z_score(spread)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         valid_z = z.dropna()
         # Normal z should be comfortably within [-4, 4]
         assert valid_z.max() < 5.0
@@ -197,17 +126,10 @@ class TestSpreadModelZScoreClamp:
         """Clamping should work regardless of lookback window."""
         y, x = _make_clean_prices(n=300)
         y_spiked = _inject_spike(y, idx=150, factor=5.0)
-<<<<<<< HEAD
 
         model = SpreadModel(y_spiked, x)
         spread = model.compute_spread(y_spiked, x)
 
-=======
-        
-        model = SpreadModel(y_spiked, x)
-        spread = model.compute_spread(y_spiked, x)
-        
->>>>>>> origin/main
         for lookback in [10, 20, 60, 120]:
             z = model.compute_z_score(spread, lookback=lookback)
             valid_z = z.dropna()
@@ -215,22 +137,15 @@ class TestSpreadModelZScoreClamp:
             assert valid_z.min() >= -6.0
 
 
-<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 # Z-score clamping ÔÇô DynamicSpreadModel
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-=======
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# Z-score clamping – DynamicSpreadModel
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
 class TestDynamicSpreadModelZScoreClamp:
     """Tests for Z-score clamping in DynamicSpreadModel."""
 
     def test_z_score_clamped_at_6(self):
-<<<<<<< HEAD
         """Z-score values should never exceed ┬▒6."""
         y, x = _make_clean_prices(n=200)
         y_spiked = _inject_spike(y, idx=100, factor=3.0)
@@ -239,16 +154,6 @@ class TestDynamicSpreadModelZScoreClamp:
         spread = model.compute_spread(y_spiked, x)
         z = model.compute_z_score(spread)
 
-=======
-        """Z-score values should never exceed ±6."""
-        y, x = _make_clean_prices(n=200)
-        y_spiked = _inject_spike(y, idx=100, factor=3.0)
-        
-        model = DynamicSpreadModel(y_spiked, x, half_life=20)
-        spread = model.compute_spread(y_spiked, x)
-        z = model.compute_z_score(spread)
-        
->>>>>>> origin/main
         valid_z = z.dropna()
         assert valid_z.max() <= 6.0
         assert valid_z.min() >= -6.0
@@ -257,26 +162,16 @@ class TestDynamicSpreadModelZScoreClamp:
         """Adaptive signal z-scores should also be clamped."""
         y, x = _make_clean_prices(n=200)
         y_spiked = _inject_spike(y, idx=100, factor=3.0)
-<<<<<<< HEAD
 
         model = DynamicSpreadModel(y_spiked, x, half_life=20)
         spread = model.compute_spread(y_spiked, x)
         _, info = model.get_adaptive_signals(spread)
 
         z = info["z_score"].dropna()
-=======
-        
-        model = DynamicSpreadModel(y_spiked, x, half_life=20)
-        spread = model.compute_spread(y_spiked, x)
-        _, info = model.get_adaptive_signals(spread)
-        
-        z = info['z_score'].dropna()
->>>>>>> origin/main
         assert z.max() <= 6.0
         assert z.min() >= -6.0
 
 
-<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 # Integration: Spike Ôåô no aberrant signal
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
@@ -285,20 +180,10 @@ class TestDynamicSpreadModelZScoreClamp:
 class TestSpikeNoAberrantSignal:
     """
     DoD: inject a +50% spike on one bar Ôåô no aberrant entry signal.
-=======
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# Integration: Spike ↓ no aberrant signal
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-
-class TestSpikeNoAberrantSignal:
-    """
-    DoD: inject a +50% spike on one bar ↓ no aberrant entry signal.
->>>>>>> origin/main
     The outlier pipeline (remove_outliers + clamp) must suppress it.
     """
 
     def test_spike_cleaned_before_spread(self):
-<<<<<<< HEAD
         """Full pipeline: clean Ôåô spread Ôåô z-score stays bounded."""
         y, x = _make_clean_prices(n=200)
         y_spiked = _inject_spike(y, idx=100, factor=1.5)
@@ -315,50 +200,21 @@ class TestSpikeNoAberrantSignal:
         # Around the spike bar (100), z-score should be well-behaved
         z_around_spike = z.iloc[95:105].dropna()
         assert z_around_spike.abs().max() <= 6.0, f"Z-score near spike: max |z|={z_around_spike.abs().max()}"
-=======
-        """Full pipeline: clean ↓ spread ↓ z-score stays bounded."""
-        y, x = _make_clean_prices(n=200)
-        y_spiked = _inject_spike(y, idx=100, factor=1.5)
-        
-        # Apply outlier cleaning (as done in generate_signals)
-        y_clean = remove_outliers(y_spiked, method="zscore", threshold=4.0).ffill().bfill()
-        x_clean = x.copy()  # x is clean
-        
-        model = DynamicSpreadModel(y_clean, x_clean, half_life=20)
-        spread = model.compute_spread(y_clean, x_clean)
-        signals, info = model.get_adaptive_signals(spread)
-        
-        z = info['z_score']
-        # Around the spike bar (100), z-score should be well-behaved
-        z_around_spike = z.iloc[95:105].dropna()
-        assert z_around_spike.abs().max() <= 6.0, (
-            f"Z-score near spike: max |z|={z_around_spike.abs().max()}"
-        )
->>>>>>> origin/main
 
     def test_spike_without_cleaning_would_be_extreme(self):
         """Without cleaning, a +50% spike would create extreme z-score (pre-clamp baseline)."""
         y, x = _make_clean_prices(n=200)
         y_spiked = _inject_spike(y, idx=100, factor=1.5)
-<<<<<<< HEAD
 
         # Raw spread without outlier removal
         model = DynamicSpreadModel(y_spiked, x, half_life=20)
         spread = model.compute_spread(y_spiked, x)
 
-=======
-        
-        # Raw spread without outlier removal
-        model = DynamicSpreadModel(y_spiked, x, half_life=20)
-        spread = model.compute_spread(y_spiked, x)
-        
->>>>>>> origin/main
         # Compute raw z-score manually (unclamped) to show impact
         lookback = 60  # 3 * 20
         rolling_mean = spread.rolling(window=lookback).mean()
         rolling_std = spread.rolling(window=lookback).std()
         z_raw = (spread - rolling_mean) / (rolling_std + 1e-8)
-<<<<<<< HEAD
 
         # The spike should produce a large deviation in the raw z-score
         max_z_around_spike = z_raw.iloc[95:105].dropna().abs().max()
@@ -374,53 +230,23 @@ class TestSpikeNoAberrantSignal:
 
 class TestNonRegression:
     """Verify that 4¤â threshold doesn't alter clean data."""
-=======
-        
-        # The spike should produce a large deviation in the raw z-score
-        max_z_around_spike = z_raw.iloc[95:105].dropna().abs().max()
-        # With clamping, it'd be ≤ 6. Without, it should be larger
-        # (exact value depends on data, but spike effect should be visible)
-        assert max_z_around_spike > 2.0, (
-            f"Expected visible spike effect in raw z, got {max_z_around_spike}"
-        )
-
-
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# Non-regression: clean data unchanged
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-
-class TestNonRegression:
-    """Verify that 4σ threshold doesn't alter clean data."""
->>>>>>> origin/main
 
     def test_clean_data_signals_identical(self):
         """On clean data, signals before/after outlier pipeline are the same."""
         y, x = _make_clean_prices(n=200)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Without cleaning
         model1 = DynamicSpreadModel(y, x, half_life=20)
         spread1 = model1.compute_spread(y, x)
         signals1, _ = model1.get_adaptive_signals(spread1)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # With cleaning (should be no-op on clean data)
         y_clean = remove_outliers(y, method="zscore", threshold=4.0).ffill().bfill()
         x_clean = remove_outliers(x, method="zscore", threshold=4.0).ffill().bfill()
         model2 = DynamicSpreadModel(y_clean, x_clean, half_life=20)
         spread2 = model2.compute_spread(y_clean, x_clean)
         signals2, _ = model2.get_adaptive_signals(spread2)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Signals should be identical (or nearly so)
         match_pct = (signals1 == signals2).mean()
         assert match_pct > 0.95, f"Signal match: {match_pct:.1%}, expected >95%"
@@ -430,64 +256,38 @@ class TestNonRegression:
         y, x = _make_clean_prices(n=500)
         y_cleaned = remove_outliers(y, method="zscore", threshold=4.0)
         x_cleaned = remove_outliers(x, method="zscore", threshold=4.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Allow at most 1-2 NaNs from random chance
         assert y_cleaned.isna().sum() <= 2
         assert x_cleaned.isna().sum() <= 2
 
 
-<<<<<<< HEAD
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 # Edge cases
 # ÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇÔôÇ
 
-=======
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
-# Edge cases
-# ⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀⓀ
->>>>>>> origin/main
 
 class TestOutlierEdgeCases:
     """Edge cases and boundary conditions."""
 
     def test_multiple_spikes(self):
         """Multiple spikes should all be cleaned."""
-<<<<<<< HEAD
         y, _x = _make_clean_prices(n=300)
         y_spiked = _inject_spike(y, idx=50, factor=2.0)
         y_spiked = _inject_spike(y_spiked, idx=150, factor=2.0)
         y_spiked = _inject_spike(y_spiked, idx=250, factor=0.3)  # Negative spike
 
-=======
-        y, x = _make_clean_prices(n=300)
-        y_spiked = _inject_spike(y, idx=50, factor=2.0)
-        y_spiked = _inject_spike(y_spiked, idx=150, factor=2.0)
-        y_spiked = _inject_spike(y_spiked, idx=250, factor=0.3)  # Negative spike
-        
->>>>>>> origin/main
         cleaned = remove_outliers(y_spiked, method="zscore", threshold=4.0)
         assert pd.isna(cleaned.iloc[50])
         assert pd.isna(cleaned.iloc[150])
         assert pd.isna(cleaned.iloc[250])
 
     def test_constant_series_no_crash(self):
-<<<<<<< HEAD
         """Constant series Ôåô std=0 Ôåô should not crash."""
         const = pd.Series(np.ones(100))
         # std = 0, z-score = inf, all flagged as NaN
         cleaned = remove_outliers(const, method="zscore", threshold=4.0)
         # Either all NaN (div by zero) or all kept ÔÇô just no crash
-=======
-        """Constant series ↓ std=0 ↓ should not crash."""
-        const = pd.Series(np.ones(100))
-        # std = 0, z-score = inf, all flagged as NaN
-        cleaned = remove_outliers(const, method="zscore", threshold=4.0)
-        # Either all NaN (div by zero) or all kept – just no crash
->>>>>>> origin/main
         assert len(cleaned) == 100
 
     def test_series_with_nans(self):
@@ -508,10 +308,6 @@ class TestOutlierEdgeCases:
         )
         z = model.compute_z_score(spread, lookback=50)
         valid_z = z.dropna()
-<<<<<<< HEAD
         # After clip, z should be Ôëñ 6
-=======
-        # After clip, z should be ≤ 6
->>>>>>> origin/main
         assert valid_z.max() <= 6.0
         assert valid_z.min() >= -6.0

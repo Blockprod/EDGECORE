@@ -8,24 +8,17 @@ Provides Monte Carlo simulation for order book dynamics, supporting:
 - Statistical analysis of price distributions
 """
 
-<<<<<<< HEAD
-=======
 import numpy as np
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
->>>>>>> origin/main
 import logging
 from dataclasses import dataclass
 from datetime import datetime
 
-<<<<<<< HEAD
 import numpy as np
 
 from common.types import MonteCarloConfig, MonteCarloResult, Symbol
-=======
-from common.types import Symbol, MonteCarloConfig, MonteCarloResult
->>>>>>> origin/main
 
 logger = logging.getLogger(__name__)
 
@@ -249,11 +242,7 @@ class MonteCarloOrderBookSimulator:
             spreads[i] = max(base_spread + vol_adjustment - volume_adjustment, 0.0001)
 
         return spreads
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def simulate_single_path(self, symbol: Symbol = "AAPL") -> PricePath:
         """Generate a single Monte Carlo price path."""
         # Convert annual drift from BPS to decimal
@@ -292,11 +281,7 @@ class MonteCarloOrderBookSimulator:
             spreads=spreads,
             returns=np.concatenate([[0.0], returns]),
         )
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     def simulate(self, symbol: Symbol = "AAPL") -> MonteCarloSimulation:
         """
         Generate complete Monte Carlo simulation.
@@ -357,11 +342,7 @@ def create_correlated_simulations(
 
     # Generate correlated random numbers using Cholesky decomposition
     np.linalg.cholesky(correlation_matrix)
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     results = {}
 
     for _i, symbol in enumerate(symbols):

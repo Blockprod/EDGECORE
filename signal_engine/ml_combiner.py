@@ -1,20 +1,11 @@
-<<<<<<< HEAD
 ﻿"""
 Phase 4.4 ÔÇö ML Signal Combiner (Walk-Forward).
-=======
-"""
-Phase 4.4 — ML Signal Combiner (Walk-Forward).
->>>>>>> origin/main
 
 Replaces equal-weight ``SignalCombiner`` with a learned model that
 optimally combines all signal sources to predict trade outcome.
 
 Model: GradientBoostingClassifier (sklearn) with optional LightGBM.
-<<<<<<< HEAD
 Training: Walk-forward (train on 504 bars Ôëê 2y, test on 126 bars Ôëê 6m, roll).
-=======
-Training: Walk-forward (train on 504 bars ≈ 2y, test on 126 bars ≈ 6m, roll).
->>>>>>> origin/main
 Anti-overfitting:
   - Purified cross-validation (gap between train/test).
   - Feature importance monitoring.
@@ -31,43 +22,28 @@ Fallback: if insufficient training data, falls back to equal-weight.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-<<<<<<< HEAD
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-=======
-from typing import Any, Dict, List, Optional, Tuple
-
-import numpy as np
-import pandas as pd
->>>>>>> origin/main
 from structlog import get_logger
 
 logger = get_logger(__name__)
 
 # Try LightGBM first, fall back to sklearn
 try:
-<<<<<<< HEAD
     from lightgbm import LGBMClassifier as _TreeModel  # type: ignore[import-untyped]
 
     _ML_BACKEND = "lightgbm"
 except ImportError:
     from sklearn.ensemble import GradientBoostingClassifier as _TreeModel
 
-=======
-    from lightgbm import LGBMClassifier as _TreeModel
-    _ML_BACKEND = "lightgbm"
-except ImportError:
-    from sklearn.ensemble import GradientBoostingClassifier as _TreeModel
->>>>>>> origin/main
     _ML_BACKEND = "sklearn"
 
 
 @dataclass
 class MLPrediction:
     """Output of the ML signal combiner."""
-<<<<<<< HEAD
 
     composite_score: float  # Predicted score [-1, 1]
     direction: str  # "long" | "short" | "exit" | "none"
@@ -76,28 +52,14 @@ class MLPrediction:
     source_scores: dict[str, float] = field(default_factory=dict)
     source_weights: dict[str, float] = field(default_factory=dict)
     model_trained: bool = False  # Whether a trained model was used
-=======
-    composite_score: float           # Predicted score [-1, 1]
-    direction: str                   # "long" | "short" | "exit" | "none"
-    confidence: float                # Model confidence [0, 1]
-    feature_importance: Dict[str, float] = field(default_factory=dict)
-    source_scores: Dict[str, float] = field(default_factory=dict)
-    source_weights: Dict[str, float] = field(default_factory=dict)
-    model_trained: bool = False      # Whether a trained model was used
->>>>>>> origin/main
 
 
 @dataclass
 class _TrainingBar:
     """One row of training data collected during backtest."""
-<<<<<<< HEAD
 
     bar_idx: int
     features: dict[str, float]
-=======
-    bar_idx: int
-    features: Dict[str, float]
->>>>>>> origin/main
     label: float  # future return label (+1 win, -1 loss, 0 flat)
 
 
@@ -124,7 +86,6 @@ class MLSignalCombiner:
     """
 
     FEATURE_NAMES = [
-<<<<<<< HEAD
         "zscore",
         "momentum",
         "ou",
@@ -134,11 +95,6 @@ class MLSignalCombiner:
         "earnings",
         "options_flow",
         "sentiment",
-=======
-        "zscore", "momentum", "ou", "vol_regime",
-        "cross_sectional", "intraday_mr",
-        "earnings", "options_flow", "sentiment",
->>>>>>> origin/main
     ]
 
     def __init__(
@@ -172,7 +128,6 @@ class MLSignalCombiner:
         self.exit_threshold = exit_threshold
         self.enabled = enabled
 
-<<<<<<< HEAD
         self._model: Any | None = None
         self._training_data: list[_TrainingBar] = []
         self._last_train_bar: int = -999
@@ -186,25 +141,13 @@ class MLSignalCombiner:
             check_interval_bars=252,
         )
 
-=======
-        self._model: Optional[Any] = None
-        self._training_data: List[_TrainingBar] = []
-        self._last_train_bar: int = -999
-        self._feature_importance: Dict[str, float] = {}
-        self._n_trainings: int = 0
-
->>>>>>> origin/main
         # Equal-weight fallback weights
         self._fallback_weights = {name: 1.0 for name in self.FEATURE_NAMES}
 
     def record_trade(
         self,
         bar_idx: int,
-<<<<<<< HEAD
         features: dict[str, float],
-=======
-        features: Dict[str, float],
->>>>>>> origin/main
         outcome: float,
     ) -> None:
         """Record a completed trade for training.
@@ -217,7 +160,6 @@ class MLSignalCombiner:
         # Classify: win (+1), loss (-1)
         label = 1.0 if outcome > 0 else -1.0
 
-<<<<<<< HEAD
         self._training_data.append(
             _TrainingBar(
                 bar_idx=bar_idx,
@@ -225,13 +167,6 @@ class MLSignalCombiner:
                 label=label,
             )
         )
-=======
-        self._training_data.append(_TrainingBar(
-            bar_idx=bar_idx,
-            features={k: features.get(k, 0.0) for k in self.FEATURE_NAMES},
-            label=label,
-        ))
->>>>>>> origin/main
 
     def _should_retrain(self, current_bar: int) -> bool:
         """Check if model should be retrained."""
@@ -253,34 +188,17 @@ class MLSignalCombiner:
         """
         # Filter training data: only use bars before purge boundary
         purge_boundary = current_bar - self.purge_gap
-<<<<<<< HEAD
         valid_data = [d for d in self._training_data if d.bar_idx < purge_boundary]
-=======
-        valid_data = [
-            d for d in self._training_data
-            if d.bar_idx < purge_boundary
-        ]
->>>>>>> origin/main
 
         if len(valid_data) < self.min_samples:
             return False
 
         # Use most recent train_window samples
         if len(valid_data) > self.train_window:
-<<<<<<< HEAD
             valid_data = valid_data[-self.train_window :]
 
         # Build feature matrix
         X = np.array([[d.features.get(f, 0.0) for f in self.FEATURE_NAMES] for d in valid_data])
-=======
-            valid_data = valid_data[-self.train_window:]
-
-        # Build feature matrix
-        X = np.array([
-            [d.features.get(f, 0.0) for f in self.FEATURE_NAMES]
-            for d in valid_data
-        ])
->>>>>>> origin/main
         y = np.array([d.label for d in valid_data])
 
         # Check class balance
@@ -297,7 +215,6 @@ class MLSignalCombiner:
 
         try:
             if _ML_BACKEND == "lightgbm":
-<<<<<<< HEAD
                 _lgbm_kwargs: dict[str, Any] = {
                     "n_estimators": 100,
                     "max_depth": 3,
@@ -311,20 +228,6 @@ class MLSignalCombiner:
                     "random_state": 42,
                 }
                 model = _TreeModel(**_lgbm_kwargs)  # type: ignore[call-arg]
-=======
-                model = _TreeModel(
-                    n_estimators=100,
-                    max_depth=3,
-                    learning_rate=0.05,
-                    min_child_samples=max(5, len(valid_data) // 10),
-                    subsample=0.8,
-                    colsample_bytree=0.8,
-                    reg_alpha=0.1,
-                    reg_lambda=1.0,
-                    verbose=-1,
-                    random_state=42,
-                )
->>>>>>> origin/main
             else:
                 model = _TreeModel(
                     n_estimators=100,
@@ -343,7 +246,6 @@ class MLSignalCombiner:
             # Extract feature importance
             importances = model.feature_importances_
             self._feature_importance = {
-<<<<<<< HEAD
                 name: float(imp) for name, imp in zip(self.FEATURE_NAMES, importances, strict=False)
             }
 
@@ -359,12 +261,6 @@ class MLSignalCombiner:
             }
             self._drift_monitor.set_reference(train_stats)
 
-=======
-                name: float(imp)
-                for name, imp in zip(self.FEATURE_NAMES, importances)
-            }
-
->>>>>>> origin/main
             logger.info(
                 "ml_combiner_trained",
                 n_samples=len(valid_data),
@@ -384,11 +280,7 @@ class MLSignalCombiner:
 
     def predict(
         self,
-<<<<<<< HEAD
         features: dict[str, float],
-=======
-        features: Dict[str, float],
->>>>>>> origin/main
         current_bar: int = 0,
         in_position: bool = False,
     ) -> MLPrediction:
@@ -418,11 +310,7 @@ class MLSignalCombiner:
 
     def _predict_ml(
         self,
-<<<<<<< HEAD
         scores: dict[str, float],
-=======
-        scores: Dict[str, float],
->>>>>>> origin/main
         in_position: bool,
     ) -> MLPrediction:
         """Use the trained ML model for prediction."""
@@ -430,11 +318,7 @@ class MLSignalCombiner:
 
         try:
             # Get probability of positive class
-<<<<<<< HEAD
             proba = self._model.predict_proba(X)[0]  # type: ignore[union-attr]
-=======
-            proba = self._model.predict_proba(X)[0]
->>>>>>> origin/main
             # proba[1] = P(win), proba[0] = P(loss)
             # Map to [-1, 1]: 2 * P(win) - 1
             if len(proba) >= 2:
@@ -465,22 +349,11 @@ class MLSignalCombiner:
 
     def _predict_fallback(
         self,
-<<<<<<< HEAD
         scores: dict[str, float],
         in_position: bool,
     ) -> MLPrediction:
         """Equal-weight fallback when no model is trained."""
         active_scores = {k: v for k, v in scores.items() if abs(v) > 1e-10}
-=======
-        scores: Dict[str, float],
-        in_position: bool,
-    ) -> MLPrediction:
-        """Equal-weight fallback when no model is trained."""
-        active_scores = {
-            k: v for k, v in scores.items()
-            if abs(v) > 1e-10
-        }
->>>>>>> origin/main
 
         if active_scores:
             composite = sum(active_scores.values()) / len(active_scores)
@@ -515,11 +388,7 @@ class MLSignalCombiner:
 
     def combine(
         self,
-<<<<<<< HEAD
         scores: dict[str, float],
-=======
-        scores: Dict[str, float],
->>>>>>> origin/main
         in_position: bool = False,
         current_bar: int = 0,
     ) -> MLPrediction:
@@ -529,7 +398,6 @@ class MLSignalCombiner:
         ``CompositeSignal`` (composite_score, direction, confidence,
         source_scores).
         """
-<<<<<<< HEAD
         # C-09: Record live features for drift monitoring
         self._drift_monitor.record(scores)
         return self.predict(scores, current_bar=current_bar, in_position=in_position)
@@ -540,12 +408,6 @@ class MLSignalCombiner:
 
     @property
     def feature_importance(self) -> dict[str, float]:
-=======
-        return self.predict(scores, current_bar=current_bar, in_position=in_position)
-
-    @property
-    def feature_importance(self) -> Dict[str, float]:
->>>>>>> origin/main
         """Return current feature importance (empty if untrained)."""
         return dict(self._feature_importance)
 
@@ -559,7 +421,6 @@ class MLSignalCombiner:
         """ML backend in use ('lightgbm' or 'sklearn')."""
         return _ML_BACKEND
 
-<<<<<<< HEAD
     def save(self, path: str | Path) -> None:
         """Persist the trained model and metadata to disk via joblib.
 
@@ -617,8 +478,6 @@ class MLSignalCombiner:
             logger.warning("ml_combiner_load_failed", path=str(dest), error=str(exc))
             return False
 
-=======
->>>>>>> origin/main
     def reset(self) -> None:
         """Clear model and training data."""
         self._model = None

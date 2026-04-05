@@ -11,12 +11,8 @@ EDGECORE Remediation: Validates data integrity enforcement across data pipeline.
 from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
-<<<<<<< HEAD
 import pandas as pd
 import pytest
-=======
-from unittest.mock import Mock, MagicMock, patch
->>>>>>> origin/main
 import structlog
 
 from backtests.runner import BacktestRunner
@@ -31,11 +27,7 @@ def _make_bars(opens, highs, lows, closes, volumes, dates=None):
     if dates is None:
         dates = pd.date_range('2022-01-03', periods=len(opens), freq='B')
     bars = []
-<<<<<<< HEAD
     for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes, strict=False):
-=======
-    for d, o, h, l, c, v in zip(dates, opens, highs, lows, closes, volumes):
->>>>>>> origin/main
         bar = MagicMock()
         bar.date = d.strftime('%Y%m%d') if hasattr(d, 'strftime') else str(d)
         bar.open = o
@@ -401,11 +393,7 @@ class TestCompleteDataPipeline:
     """Test complete data loading and validation pipeline."""
     
     def test_data_pipeline_end_to_end_with_valid_data(self):
-<<<<<<< HEAD
         """Complete pipeline: load Ôåô validate Ôåô use in backtest."""
-=======
-        """Complete pipeline: load ↓ validate ↓ use in backtest."""
->>>>>>> origin/main
         loader = DataLoader()
         
         # Create a mock validator that accepts data

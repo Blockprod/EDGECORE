@@ -34,11 +34,7 @@ def test_t1_5():
     try:
         get_settings()
         DataLoader()
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # This would normally hit the API; we just check it doesn't crash on init
         print("[OK] DataLoader and settings initialized")
     except Exception as e:

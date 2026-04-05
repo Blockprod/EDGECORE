@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Phase 4 Tests ÔÇö Signaux Avanc├®s & ML.
-=======
-"""
-Phase 4 Tests — Signaux Avancés & ML.
->>>>>>> origin/main
 
 4.1  EarningsSurpriseSignal (PEAD)
 4.2  OptionsFlowSignal
@@ -15,18 +10,10 @@ Phase 4 Tests — Signaux Avancés & ML.
 import numpy as np
 import pandas as pd
 import pytest
-<<<<<<< HEAD
 
 
 # =====================================================================
 # 4.1 ÔÇö Earnings Surprise Signal
-=======
-from datetime import datetime, timedelta
-
-
-# =====================================================================
-# 4.1 — Earnings Surprise Signal
->>>>>>> origin/main
 # =====================================================================
 class TestEarningsSurpriseSignal:
     """Tests for signal_engine/earnings_signal.py"""
@@ -43,159 +30,98 @@ class TestEarningsSurpriseSignal:
 
     def test_import(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         es = EarningsSurpriseSignal()
         assert es.gap_threshold == 0.03
         assert es.drift_window == 45
 
     def test_no_events_empty_df(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         es = EarningsSurpriseSignal()
         assert es.compute_score("A", "B") == 0.0
 
     def test_detect_gap(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         es = EarningsSurpriseSignal(gap_threshold=0.03)
         prices = self._make_prices(n=100, gap_at=50, gap_pct=0.06)
         # Process all bars up to and including the gap
         for i in range(3, 52):
-<<<<<<< HEAD
             es.update(prices.iloc[: i + 1])
-=======
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         # Should detect at least one event for SYM1
         assert es.has_active_event("SYM1")
 
     def test_no_detect_small_gap(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
         es = EarningsSurpriseSignal(gap_threshold=0.10)
         prices = self._make_prices(n=100, gap_at=50, gap_pct=0.03)
         for i in range(3, 55):
             es.update(prices.iloc[: i + 1])
-=======
-        es = EarningsSurpriseSignal(gap_threshold=0.10)
-        prices = self._make_prices(n=100, gap_at=50, gap_pct=0.03)
-        for i in range(3, 55):
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         assert not es.has_active_event("SYM1")
 
     def test_pair_score_range(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
         es = EarningsSurpriseSignal(gap_threshold=0.03)
         prices = self._make_prices(n=100, gap_at=50, gap_pct=0.08)
         for i in range(3, 55):
             es.update(prices.iloc[: i + 1])
-=======
-        es = EarningsSurpriseSignal(gap_threshold=0.03)
-        prices = self._make_prices(n=100, gap_at=50, gap_pct=0.08)
-        for i in range(3, 55):
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         score = es.compute_score("SYM1", "SYM2")
         assert -1.0 <= score <= 1.0
 
     def test_drift_decay(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         es = EarningsSurpriseSignal(gap_threshold=0.02, drift_window=10)
         prices = self._make_prices(n=80, gap_at=30, gap_pct=0.06)
         # Process up to gap
         for i in range(3, 35):
-<<<<<<< HEAD
             es.update(prices.iloc[: i + 1])
         score_early = es._symbol_drift_score("SYM1")
         # Continue processing ÔÇö drift should decay
         for i in range(35, 50):
             es.update(prices.iloc[: i + 1])
-=======
-            es.update(prices.iloc[:i+1])
-        score_early = es._symbol_drift_score("SYM1")
-        # Continue processing — drift should decay
-        for i in range(35, 50):
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         score_later = es._symbol_drift_score("SYM1")
         assert abs(score_later) <= abs(score_early) + 0.01
 
     def test_reset(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
         es = EarningsSurpriseSignal()
         prices = self._make_prices(n=60, gap_at=30, gap_pct=0.08)
         for i in range(3, 35):
             es.update(prices.iloc[: i + 1])
-=======
-        es = EarningsSurpriseSignal()
-        prices = self._make_prices(n=60, gap_at=30, gap_pct=0.08)
-        for i in range(3, 35):
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         es.reset()
         assert not es.has_active_event("SYM1")
         assert es.compute_score("SYM1", "SYM2") == 0.0
 
     def test_invalid_gap_threshold(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         with pytest.raises(ValueError):
             EarningsSurpriseSignal(gap_threshold=-0.01)
 
     def test_invalid_drift_window(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         with pytest.raises(ValueError):
             EarningsSurpriseSignal(drift_window=2)
 
     def test_get_events(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
         es = EarningsSurpriseSignal(gap_threshold=0.02)
         prices = self._make_prices(n=60, gap_at=30, gap_pct=0.06)
         for i in range(3, 35):
             es.update(prices.iloc[: i + 1])
-=======
-        es = EarningsSurpriseSignal(gap_threshold=0.02)
-        prices = self._make_prices(n=60, gap_at=30, gap_pct=0.06)
-        for i in range(3, 35):
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         events = es.get_events("SYM1")
         assert isinstance(events, list)
 
     def test_max_events_limit(self):
         from signal_engine.earnings_signal import EarningsSurpriseSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         es = EarningsSurpriseSignal(gap_threshold=0.01, max_events=2)
         # Create prices with multiple large moves
         dates = pd.date_range("2024-01-01", periods=100, freq="B")
@@ -208,21 +134,13 @@ class TestEarningsSurpriseSignal:
             vals.append(vals[-1] + change)
         prices = pd.DataFrame({"SYM1": vals, "SYM2": np.linspace(100, 110, 100)}, index=dates)
         for i in range(3, 70):
-<<<<<<< HEAD
             es.update(prices.iloc[: i + 1])
-=======
-            es.update(prices.iloc[:i+1])
->>>>>>> origin/main
         events = es.get_events("SYM1")
         assert len(events) <= 2
 
 
 # =====================================================================
-<<<<<<< HEAD
 # 4.2 ÔÇö Options Flow Signal
-=======
-# 4.2 — Options Flow Signal
->>>>>>> origin/main
 # =====================================================================
 class TestOptionsFlowSignal:
     """Tests for signal_engine/options_flow.py"""
@@ -230,7 +148,6 @@ class TestOptionsFlowSignal:
     def _make_prices(self, n=100):
         dates = pd.date_range("2024-01-01", periods=n, freq="B")
         np.random.seed(42)
-<<<<<<< HEAD
         return pd.DataFrame(
             {
                 "AAPL": 150 + np.cumsum(np.random.randn(n) * 0.8),
@@ -243,26 +160,13 @@ class TestOptionsFlowSignal:
     def test_import(self):
         from signal_engine.options_flow import OptionsFlowSignal
 
-=======
-        return pd.DataFrame({
-            "AAPL": 150 + np.cumsum(np.random.randn(n) * 0.8),
-            "MSFT": 300 + np.cumsum(np.random.randn(n) * 0.6),
-            "SPY": 450 + np.cumsum(np.random.randn(n) * 0.3),
-        }, index=dates)
-
-    def test_import(self):
-        from signal_engine.options_flow import OptionsFlowSignal
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         assert ofs.pc_lookback == 21
         assert ofs.vol_lookback == 60
 
     def test_score_range(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         prices = self._make_prices(n=120)
         ofs.update(prices)
@@ -271,19 +175,13 @@ class TestOptionsFlowSignal:
 
     def test_no_data_returns_zero(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         assert ofs.compute_score("X", "Y") == 0.0
 
     def test_snapshot_exists(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         prices = self._make_prices(n=120)
         ofs.update(prices)
@@ -294,10 +192,7 @@ class TestOptionsFlowSignal:
 
     def test_spy_excluded(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         prices = self._make_prices(n=120)
         ofs.update(prices)
@@ -305,10 +200,7 @@ class TestOptionsFlowSignal:
 
     def test_reset(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         prices = self._make_prices(n=120)
         ofs.update(prices)
@@ -317,28 +209,19 @@ class TestOptionsFlowSignal:
 
     def test_invalid_lookback(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         with pytest.raises(ValueError):
             OptionsFlowSignal(pc_lookback=2)
 
     def test_composite_weights_sum(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         total = OptionsFlowSignal.PC_WEIGHT + OptionsFlowSignal.IV_WEIGHT + OptionsFlowSignal.UNUSUAL_WEIGHT
         assert abs(total - 1.0) < 1e-10
 
     def test_symmetric_difference(self):
         from signal_engine.options_flow import OptionsFlowSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ofs = OptionsFlowSignal()
         prices = self._make_prices(n=120)
         ofs.update(prices)
@@ -348,11 +231,7 @@ class TestOptionsFlowSignal:
 
 
 # =====================================================================
-<<<<<<< HEAD
 # 4.3 ÔÇö Sentiment Signal
-=======
-# 4.3 — Sentiment Signal
->>>>>>> origin/main
 # =====================================================================
 class TestSentimentSignal:
     """Tests for signal_engine/sentiment.py"""
@@ -360,7 +239,6 @@ class TestSentimentSignal:
     def _make_prices(self, n=100):
         dates = pd.date_range("2024-01-01", periods=n, freq="B")
         np.random.seed(42)
-<<<<<<< HEAD
         return pd.DataFrame(
             {
                 "AAPL": 150 + np.cumsum(np.random.randn(n) * 0.8),
@@ -374,27 +252,13 @@ class TestSentimentSignal:
     def test_import(self):
         from signal_engine.sentiment import SentimentSignal
 
-=======
-        return pd.DataFrame({
-            "AAPL": 150 + np.cumsum(np.random.randn(n) * 0.8),
-            "MSFT": 300 + np.cumsum(np.random.randn(n) * 0.6),
-            "GOOGL": 140 + np.cumsum(np.random.randn(n) * 0.7),
-            "SPY": 450 + np.cumsum(np.random.randn(n) * 0.3),
-        }, index=dates)
-
-    def test_import(self):
-        from signal_engine.sentiment import SentimentSignal
->>>>>>> origin/main
         ss = SentimentSignal()
         assert ss.lookback == 20
         assert ss.long_lookback == 60
 
     def test_score_range(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         prices = self._make_prices(n=120)
         ss.update(prices, sector_map={"AAPL": "tech", "MSFT": "tech", "GOOGL": "tech"})
@@ -403,19 +267,13 @@ class TestSentimentSignal:
 
     def test_no_data_returns_zero(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         assert ss.compute_score("X", "Y") == 0.0
 
     def test_snapshot_content(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         prices = self._make_prices(n=120)
         ss.update(prices)
@@ -427,10 +285,7 @@ class TestSentimentSignal:
 
     def test_with_sector_map(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         prices = self._make_prices(n=120)
         sector_map = {"AAPL": "tech", "MSFT": "tech", "GOOGL": "tech"}
@@ -440,10 +295,7 @@ class TestSentimentSignal:
 
     def test_without_sector_map(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         prices = self._make_prices(n=120)
         ss.update(prices)
@@ -452,10 +304,7 @@ class TestSentimentSignal:
 
     def test_reset(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         prices = self._make_prices(n=120)
         ss.update(prices)
@@ -464,28 +313,19 @@ class TestSentimentSignal:
 
     def test_invalid_lookback(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         with pytest.raises(ValueError):
             SentimentSignal(lookback=2)
 
     def test_weights_sum(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         total = SentimentSignal.DIVERGENCE_WEIGHT + SentimentSignal.CONVICTION_WEIGHT + SentimentSignal.SURPRISE_WEIGHT
         assert abs(total - 1.0) < 1e-10
 
     def test_symmetric(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal()
         prices = self._make_prices(n=120)
         ss.update(prices)
@@ -495,29 +335,18 @@ class TestSentimentSignal:
 
     def test_smoothing(self):
         from signal_engine.sentiment import SentimentSignal
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ss = SentimentSignal(smoothing=3)
         prices = self._make_prices(n=120)
         # Call update multiple times to accumulate history
         for i in range(70, 120):
-<<<<<<< HEAD
             ss.update(prices.iloc[: i + 1])
-=======
-            ss.update(prices.iloc[:i+1])
->>>>>>> origin/main
         snap = ss.get_snapshot("AAPL")
         assert snap is not None
 
 
 # =====================================================================
-<<<<<<< HEAD
 # 4.4 ÔÇö ML Signal Combiner
-=======
-# 4.4 — ML Signal Combiner
->>>>>>> origin/main
 # =====================================================================
 class TestMLSignalCombiner:
     """Tests for signal_engine/ml_combiner.py"""
@@ -537,31 +366,21 @@ class TestMLSignalCombiner:
 
     def test_import(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner()
         assert ml.min_samples == 30
         assert ml.retrain_interval == 63
 
     def test_backend(self):
-<<<<<<< HEAD
         from signal_engine.ml_combiner import _ML_BACKEND, MLSignalCombiner
 
-=======
-        from signal_engine.ml_combiner import MLSignalCombiner, _ML_BACKEND
->>>>>>> origin/main
         ml = MLSignalCombiner()
         assert ml.backend in ("lightgbm", "sklearn")
         assert ml.backend == _ML_BACKEND
 
     def test_fallback_no_data(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner()
         result = ml.predict(self._make_features(0.5))
         assert -1.0 <= result.composite_score <= 1.0
@@ -569,29 +388,18 @@ class TestMLSignalCombiner:
 
     def test_fallback_direction(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
         ml = MLSignalCombiner(entry_threshold=0.3)
         # Strong positive signals ÔåÆ long
         result = ml.predict(self._make_features(0.8))
         assert result.direction == "long"
         # Strong negative signals ÔåÆ short
-=======
-        ml = MLSignalCombiner(entry_threshold=0.3)
-        # Strong positive signals → long
-        result = ml.predict(self._make_features(0.8))
-        assert result.direction == "long"
-        # Strong negative signals → short
->>>>>>> origin/main
         result = ml.predict(self._make_features(-0.8))
         assert result.direction == "short"
 
     def test_record_trade(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner()
         ml.record_trade(bar_idx=10, features=self._make_features(0.5), outcome=0.02)
         ml.record_trade(bar_idx=20, features=self._make_features(-0.3), outcome=-0.01)
@@ -599,10 +407,7 @@ class TestMLSignalCombiner:
 
     def test_retrain_with_enough_data(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner(min_samples=10, retrain_interval=5)
         np.random.seed(42)
         # Generate enough training data
@@ -617,10 +422,7 @@ class TestMLSignalCombiner:
 
     def test_predict_with_model(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner(min_samples=10, retrain_interval=5)
         np.random.seed(42)
         for i in range(30):
@@ -635,10 +437,7 @@ class TestMLSignalCombiner:
 
     def test_feature_importance(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner(min_samples=10, retrain_interval=5)
         np.random.seed(42)
         for i in range(30):
@@ -652,10 +451,7 @@ class TestMLSignalCombiner:
 
     def test_auto_retrain(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner(min_samples=10, retrain_interval=5)
         np.random.seed(42)
         for i in range(20):
@@ -663,16 +459,11 @@ class TestMLSignalCombiner:
             outcome = 0.01 if score > 0 else -0.01
             ml.record_trade(bar_idx=i, features=self._make_features(score), outcome=outcome)
         # Should trigger auto-retrain
-<<<<<<< HEAD
         _result = ml.predict(self._make_features(0.3), current_bar=100)
-=======
-        result = ml.predict(self._make_features(0.3), current_bar=100)
->>>>>>> origin/main
         assert ml.n_trainings >= 1
 
     def test_combine_interface(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
         ml = MLSignalCombiner()
         result = ml.combine(self._make_features(0.5))
@@ -684,17 +475,6 @@ class TestMLSignalCombiner:
     def test_reset(self):
         from signal_engine.ml_combiner import MLSignalCombiner
 
-=======
-        ml = MLSignalCombiner()
-        result = ml.combine(self._make_features(0.5))
-        assert hasattr(result, 'composite_score')
-        assert hasattr(result, 'direction')
-        assert hasattr(result, 'confidence')
-        assert hasattr(result, 'source_scores')
-
-    def test_reset(self):
-        from signal_engine.ml_combiner import MLSignalCombiner
->>>>>>> origin/main
         ml = MLSignalCombiner(min_samples=10)
         for i in range(15):
             ml.record_trade(bar_idx=i, features=self._make_features(0.1 * i), outcome=0.01)
@@ -706,10 +486,7 @@ class TestMLSignalCombiner:
 
     def test_disabled_mode(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner(enabled=False, min_samples=5)
         for i in range(15):
             score = 0.5 if i % 2 == 0 else -0.5
@@ -719,41 +496,27 @@ class TestMLSignalCombiner:
 
     def test_purge_gap(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         ml = MLSignalCombiner(min_samples=10, purge_gap=20)
         np.random.seed(42)
         # Record all data at bars 90-99 (very recent)
         for i in range(10):
-<<<<<<< HEAD
             ml.record_trade(bar_idx=90 + i, features=self._make_features(0.3), outcome=0.01)
         # Try to retrain at bar 100 ÔÇö purge_gap=20 means only bars < 80 are used
-=======
-            ml.record_trade(bar_idx=90+i, features=self._make_features(0.3), outcome=0.01)
-        # Try to retrain at bar 100 — purge_gap=20 means only bars < 80 are used
->>>>>>> origin/main
         success = ml._retrain(current_bar=100)
         assert not success  # all data is too recent
 
     def test_class_balance_check(self):
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
         ml = MLSignalCombiner(min_samples=5)
         # All wins ÔÇö no class balance
-=======
-        ml = MLSignalCombiner(min_samples=5)
-        # All wins — no class balance
->>>>>>> origin/main
         for i in range(10):
             ml.record_trade(bar_idx=i, features=self._make_features(0.5), outcome=0.05)
         # Should fail due to insufficient negative class
         success = ml._retrain(current_bar=100)
         assert not success
 
-<<<<<<< HEAD
     def test_save_skipped_when_no_model(self, tmp_path):
         """save() is a no-op when no model has been trained yet."""
         from signal_engine.ml_combiner import MLSignalCombiner
@@ -795,8 +558,6 @@ class TestMLSignalCombiner:
         assert ok is False
         assert ml._model is None
 
-=======
->>>>>>> origin/main
 
 # =====================================================================
 # Integration: Combiner wiring
@@ -806,22 +567,12 @@ class TestPhase4Integration:
 
     def test_simulator_has_phase4_signals(self):
         """Check that the simulator initializes Phase 4 signal generators."""
-<<<<<<< HEAD
         # We test that imports exist without running the full sim
         from signal_engine.earnings_signal import EarningsSurpriseSignal
         from signal_engine.ml_combiner import MLSignalCombiner
         from signal_engine.options_flow import OptionsFlowSignal
         from signal_engine.sentiment import SentimentSignal
 
-=======
-        from unittest.mock import patch, MagicMock
-        import importlib
-        # We test that imports exist without running the full sim
-        from signal_engine.earnings_signal import EarningsSurpriseSignal
-        from signal_engine.options_flow import OptionsFlowSignal
-        from signal_engine.sentiment import SentimentSignal
-        from signal_engine.ml_combiner import MLSignalCombiner
->>>>>>> origin/main
         # All classes instantiate cleanly
         assert EarningsSurpriseSignal()
         assert OptionsFlowSignal()
@@ -830,12 +581,8 @@ class TestPhase4Integration:
 
     def test_strategy_has_phase4_sources(self):
         """Verify PairTradingStrategy creates Phase 4 signal instances."""
-<<<<<<< HEAD
         from unittest.mock import MagicMock, patch
 
-=======
-        from unittest.mock import patch, MagicMock
->>>>>>> origin/main
         # Mock get_settings to provide required config
         mock_settings = MagicMock()
         mock_settings.strategy.lookback_window = 120
@@ -866,7 +613,6 @@ class TestPhase4Integration:
         mock_settings.momentum.weight = 0.30
         mock_settings.momentum.min_strength = 0.30
         mock_settings.momentum.max_boost = 1.0
-<<<<<<< HEAD
         mock_settings.signal_combiner.zscore_weight = 0.70
         mock_settings.signal_combiner.momentum_weight = 0.30
         mock_settings.signal_combiner.entry_threshold = 0.60
@@ -880,24 +626,11 @@ class TestPhase4Integration:
                 assert hasattr(strategy, "_earnings_signal")
                 assert hasattr(strategy, "_options_flow")
                 assert hasattr(strategy, "_sentiment_signal")
-=======
-
-        with patch('strategies.pair_trading.get_settings', return_value=mock_settings):
-            with patch('config.settings.get_settings', return_value=mock_settings):
-                from strategies.pair_trading import PairTradingStrategy
-                strategy = PairTradingStrategy()
-                assert hasattr(strategy, '_earnings_signal')
-                assert hasattr(strategy, '_options_flow')
-                assert hasattr(strategy, '_sentiment_signal')
->>>>>>> origin/main
 
     def test_ml_prediction_compatible_with_composite(self):
         """MLPrediction has same interface as CompositeSignal."""
         from signal_engine.ml_combiner import MLPrediction
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         pred = MLPrediction(composite_score=0.5, direction="long", confidence=0.8)
         assert pred.composite_score == 0.5
         assert pred.direction == "long"
@@ -907,7 +640,6 @@ class TestPhase4Integration:
     def test_feature_names_complete(self):
         """All 9 signal sources present in FEATURE_NAMES."""
         from signal_engine.ml_combiner import MLSignalCombiner
-<<<<<<< HEAD
 
         expected = {
             "zscore",
@@ -1007,9 +739,3 @@ class TestMarkovRegimeConcordance:
         with patch("config.settings.get_settings", return_value=mock_settings):
             gen = SignalGenerator()
             assert isinstance(gen.regime_detector, RegimeDetector)
-=======
-        expected = {"zscore", "momentum", "ou", "vol_regime",
-                    "cross_sectional", "intraday_mr",
-                    "earnings", "options_flow", "sentiment"}
-        assert set(MLSignalCombiner.FEATURE_NAMES) == expected
->>>>>>> origin/main

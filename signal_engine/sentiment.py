@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Phase 4.3 ÔÇö NLP Sentiment Signal.
-=======
-"""
-Phase 4.3 — NLP Sentiment Signal.
->>>>>>> origin/main
 
 Sentiment-based alpha from news/text data:
   - In live mode: FinBERT (HuggingFace) on news headlines.
@@ -23,10 +18,7 @@ Pair score = sym1_sentiment - sym2_sentiment.
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from typing import Dict, List, Optional
->>>>>>> origin/main
 
 import numpy as np
 import pandas as pd
@@ -50,19 +42,11 @@ class SentimentSignal:
 
     In backtest mode, approximates sentiment from price dynamics:
       1. **Momentum divergence**: symbol return vs sector average.
-<<<<<<< HEAD
          If a stock outperforms its sector ÔåÆ positive sentiment.
       2. **Conviction**: consistency of daily returns direction.
          Mostly positive days ÔåÆ bullish conviction.
       3. **Surprise factor**: cross-sectional return anomaly.
          Unusually high/low returns relative to the universe ÔåÆ surprise.
-=======
-         If a stock outperforms its sector → positive sentiment.
-      2. **Conviction**: consistency of daily returns direction.
-         Mostly positive days → bullish conviction.
-      3. **Surprise factor**: cross-sectional return anomaly.
-         Unusually high/low returns relative to the universe → surprise.
->>>>>>> origin/main
 
     Usage::
 
@@ -96,24 +80,14 @@ class SentimentSignal:
         self.smoothing = smoothing
 
         # symbol -> SentimentSnapshot
-<<<<<<< HEAD
         self._snapshots: dict[str, SentimentSnapshot] = {}
         # symbol -> list of recent composite scores (for smoothing)
         self._history: dict[str, list[float]] = {}
-=======
-        self._snapshots: Dict[str, SentimentSnapshot] = {}
-        # symbol -> list of recent composite scores (for smoothing)
-        self._history: Dict[str, List[float]] = {}
->>>>>>> origin/main
 
     def update(
         self,
         prices_df: pd.DataFrame,
-<<<<<<< HEAD
         sector_map: dict[str, str] | None = None,
-=======
-        sector_map: Optional[Dict[str, str]] = None,
->>>>>>> origin/main
     ) -> None:
         """Update sentiment estimates from daily prices.
 
@@ -132,15 +106,9 @@ class SentimentSignal:
         universe_mean = recent_returns.mean(axis=1)  # daily cross-sectional mean
 
         # Pre-compute sector averages
-<<<<<<< HEAD
         sector_means: dict[str, pd.Series] = {}
         if sector_map:
             sectors_seen: dict[str, list] = {}
-=======
-        sector_means: Dict[str, pd.Series] = {}
-        if sector_map:
-            sectors_seen: Dict[str, list] = {}
->>>>>>> origin/main
             for sym, sec in sector_map.items():
                 if sym in recent_returns.columns:
                     sectors_seen.setdefault(sec, []).append(sym)
@@ -243,11 +211,7 @@ class SentimentSignal:
         diff = c1 - c2
         return float(np.clip(diff, -1.0, 1.0))
 
-<<<<<<< HEAD
     def get_snapshot(self, symbol: str) -> SentimentSnapshot | None:
-=======
-    def get_snapshot(self, symbol: str) -> Optional[SentimentSnapshot]:
->>>>>>> origin/main
         """Return the latest sentiment snapshot for a symbol."""
         return self._snapshots.get(symbol)
 

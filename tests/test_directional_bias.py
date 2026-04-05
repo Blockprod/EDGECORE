@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""
-=======
-"""
->>>>>>> origin/main
 Tests for Directional Bias & Adaptive Regime Gate.
 
 Etape 4 (legacy): short sizing reduction in bull trend.
@@ -19,17 +15,8 @@ This module validates:
 """
 
 import pytest
-<<<<<<< HEAD
 
 # ÔöÇÔöÇ 1. Config defaults ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-from dataclasses import dataclass
-from unittest.mock import MagicMock, patch
-from enum import Enum
-
-
-# ── 1. Config defaults ──────────────────────────────────────────────
->>>>>>> origin/main
 
 class TestDirectionalBiasConfigDefaults:
     """Verify StrategyConfig has the new fields with correct defaults."""
@@ -55,85 +42,49 @@ class TestDirectionalBiasConfigDefaults:
         assert cfg.disable_shorts_in_bull_trend is True
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ 2. YAML has the parameters ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── 2. YAML has the parameters ──────────────────────────────────────
->>>>>>> origin/main
 
 class TestDirectionalBiasYAML:
     """Verify config.yaml and dev.yaml contain the new parameters."""
 
     def test_config_yaml_has_short_sizing(self):
-<<<<<<< HEAD
         from pathlib import Path
 
         import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(p, encoding="utf-8") as f:
-=======
-        import yaml
-        from pathlib import Path
-        p = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
-        with open(p, "r", encoding="utf-8") as f:
->>>>>>> origin/main
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["short_sizing_multiplier"] == 0.50
 
     def test_config_yaml_has_disable_shorts(self):
-<<<<<<< HEAD
         from pathlib import Path
 
         import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
         with open(p, encoding="utf-8") as f:
-=======
-        import yaml
-        from pathlib import Path
-        p = Path(__file__).resolve().parents[1] / "config" / "config.yaml"
-        with open(p, "r", encoding="utf-8") as f:
->>>>>>> origin/main
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["disable_shorts_in_bull_trend"] is False
 
     def test_dev_yaml_has_short_sizing(self):
-<<<<<<< HEAD
         from pathlib import Path
 
         import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "dev.yaml"
         with open(p, encoding="utf-8") as f:
-=======
-        import yaml
-        from pathlib import Path
-        p = Path(__file__).resolve().parents[1] / "config" / "dev.yaml"
-        with open(p, "r", encoding="utf-8") as f:
->>>>>>> origin/main
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["short_sizing_multiplier"] == 0.50
 
     def test_dev_yaml_has_disable_shorts(self):
-<<<<<<< HEAD
         from pathlib import Path
 
         import yaml
         p = Path(__file__).resolve().parents[1] / "config" / "dev.yaml"
         with open(p, encoding="utf-8") as f:
-=======
-        import yaml
-        from pathlib import Path
-        p = Path(__file__).resolve().parents[1] / "config" / "dev.yaml"
-        with open(p, "r", encoding="utf-8") as f:
->>>>>>> origin/main
             cfg = yaml.safe_load(f)
         assert cfg["strategy"]["disable_shorts_in_bull_trend"] is False
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ 3. Schema validation ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── 3. Schema validation ────────────────────────────────────────────
->>>>>>> origin/main
 
 class TestDirectionalBiasSchema:
     """Verify Pydantic schema validates short_sizing_multiplier."""
@@ -147,11 +98,7 @@ class TestDirectionalBiasSchema:
         assert s.short_sizing_multiplier == 0.50
 
     def test_multiplier_zero_valid(self):
-<<<<<<< HEAD
         """0.0 means block all shorts ÔÇö valid."""
-=======
-        """0.0 means block all shorts — valid."""
->>>>>>> origin/main
         from config.schemas import StrategyConfigSchema
         s = StrategyConfigSchema(
             entry_z_score=2.0, exit_z_score=0.5,
@@ -160,11 +107,7 @@ class TestDirectionalBiasSchema:
         assert s.short_sizing_multiplier == 0.0
 
     def test_multiplier_one_valid(self):
-<<<<<<< HEAD
         """1.0 means full sizing ÔÇö valid."""
-=======
-        """1.0 means full sizing — valid."""
->>>>>>> origin/main
         from config.schemas import StrategyConfigSchema
         s = StrategyConfigSchema(
             entry_z_score=2.0, exit_z_score=0.5,
@@ -189,11 +132,7 @@ class TestDirectionalBiasSchema:
             )
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ 4. Simulator directional bias logic ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── 4. Simulator directional bias logic ─────────────────────────────
->>>>>>> origin/main
 
 class TestSimulatorShortSizing:
     """
@@ -202,11 +141,7 @@ class TestSimulatorShortSizing:
     """
 
     def test_short_in_trending_gets_reduced(self):
-<<<<<<< HEAD
         """Short signal in TRENDING regime ÔåÆ alloc ├ù short_sizing_multiplier."""
-=======
-        """Short signal in TRENDING regime → alloc × short_sizing_multiplier."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0  # 10% allocation
@@ -230,11 +165,7 @@ class TestSimulatorShortSizing:
         assert adjusted_alloc == pytest.approx(5.0)
 
     def test_short_in_neutral_gets_reduced(self):
-<<<<<<< HEAD
         """Short signal in NEUTRAL regime ÔåÆ alloc ├ù short_sizing_multiplier."""
-=======
-        """Short signal in NEUTRAL regime → alloc × short_sizing_multiplier."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0
@@ -257,11 +188,7 @@ class TestSimulatorShortSizing:
         assert adjusted_alloc == pytest.approx(5.0)
 
     def test_short_in_mean_reverting_unchanged(self):
-<<<<<<< HEAD
         """Short signal in MEAN_REVERTING ÔåÆ no adjustment."""
-=======
-        """Short signal in MEAN_REVERTING → no adjustment."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0
@@ -284,11 +211,7 @@ class TestSimulatorShortSizing:
         assert adjusted_alloc == pytest.approx(10.0)  # Unchanged
 
     def test_long_in_trending_unchanged(self):
-<<<<<<< HEAD
         """Long signal in TRENDING ÔåÆ no directional bias applied."""
-=======
-        """Long signal in TRENDING → no directional bias applied."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0
@@ -311,11 +234,7 @@ class TestSimulatorShortSizing:
         assert adjusted_alloc == pytest.approx(10.0)  # Unchanged
 
     def test_long_in_neutral_unchanged(self):
-<<<<<<< HEAD
         """Long signal in NEUTRAL ÔåÆ no directional bias applied."""
-=======
-        """Long signal in NEUTRAL → no directional bias applied."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0
@@ -342,11 +261,7 @@ class TestDisableShortsInBullTrend:
     """Test the disable_shorts_in_bull_trend flag."""
 
     def test_disable_shorts_blocks_in_trending(self):
-<<<<<<< HEAD
         """When disable=True and TRENDING ÔåÆ short should be skipped (continue)."""
-=======
-        """When disable=True and TRENDING → short should be skipped (continue)."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         regime_state = MarketRegimeState(
@@ -370,11 +285,7 @@ class TestDisableShortsInBullTrend:
         assert blocked is True
 
     def test_disable_shorts_allows_in_neutral(self):
-<<<<<<< HEAD
         """When disable=True but NEUTRAL ÔåÆ short should NOT be blocked (only reduced)."""
-=======
-        """When disable=True but NEUTRAL → short should NOT be blocked (only reduced)."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         regime_state = MarketRegimeState(
@@ -398,11 +309,7 @@ class TestDisableShortsInBullTrend:
         assert blocked is False
 
     def test_disable_shorts_false_allows_in_trending(self):
-<<<<<<< HEAD
         """When disable=False and TRENDING ÔåÆ short should NOT be blocked (only reduced)."""
-=======
-        """When disable=False and TRENDING → short should NOT be blocked (only reduced)."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         regime_state = MarketRegimeState(
@@ -426,21 +333,13 @@ class TestDisableShortsInBullTrend:
         assert blocked is False
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ 5. Custom multiplier values ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── 5. Custom multiplier values ─────────────────────────────────────
->>>>>>> origin/main
 
 class TestCustomMultiplierValues:
     """Test edge cases for different multiplier values."""
 
     def test_multiplier_zero_blocks_shorts(self):
-<<<<<<< HEAD
         """short_sizing_multiplier=0.0 ÔåÆ alloc becomes 0."""
-=======
-        """short_sizing_multiplier=0.0 → alloc becomes 0."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0
@@ -463,11 +362,7 @@ class TestCustomMultiplierValues:
         assert adjusted_alloc == pytest.approx(0.0)
 
     def test_multiplier_one_no_reduction(self):
-<<<<<<< HEAD
         """short_sizing_multiplier=1.0 ÔåÆ no reduction at all."""
-=======
-        """short_sizing_multiplier=1.0 → no reduction at all."""
->>>>>>> origin/main
         from signal_engine.market_regime import MarketRegime, MarketRegimeState
 
         base_alloc = 10.0
@@ -490,11 +385,7 @@ class TestCustomMultiplierValues:
         assert adjusted_alloc == pytest.approx(10.0)
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ 6. Settings singleton loads the params ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── 6. Settings singleton loads the params ──────────────────────────
->>>>>>> origin/main
 
 class TestSettingsLoadsDirectionalBias:
     """Verify Settings singleton loads the directional bias params."""
@@ -516,11 +407,7 @@ class TestSettingsLoadsDirectionalBias:
         Settings._instance = None
 
 
-<<<<<<< HEAD
 # ÔöÇÔöÇ 7. v30 Adaptive Per-Side Regime Gate ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-=======
-# ── 7. v30 Adaptive Per-Side Regime Gate ─────────────────────────────
->>>>>>> origin/main
 
 class TestAdaptiveRegimeGate:
     """

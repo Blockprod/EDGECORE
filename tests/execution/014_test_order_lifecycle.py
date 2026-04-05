@@ -4,19 +4,8 @@ from datetime import UTC, datetime, timedelta
 from time import sleep
 
 import pytest
-<<<<<<< HEAD
 
 from execution.order_lifecycle import OrderLifecycle, OrderLifecycleEvent, OrderLifecycleManager, OrderStatus
-=======
-from datetime import datetime, timedelta
-from time import sleep
-from execution.order_lifecycle import (
-    OrderLifecycleManager,
-    OrderStatus,
-    OrderLifecycleEvent,
-    OrderLifecycle
-)
->>>>>>> origin/main
 
 
 class TestOrderLifecycle:
@@ -133,20 +122,9 @@ class TestOrderCreation:
     def test_create_order_basic(self):
         """Test creating a basic order."""
         manager = OrderLifecycleManager()
-<<<<<<< HEAD
 
         lifecycle = manager.create_order(order_id="order_1", symbol="AAPL", quantity=1.0, price=50000.0)
 
-=======
-        
-        lifecycle = manager.create_order(
-            order_id="order_1",
-            symbol="AAPL",
-            quantity=1.0,
-            price=50000.0
-        )
-        
->>>>>>> origin/main
         assert lifecycle.order_id == "order_1"
         assert lifecycle.symbol == "AAPL"
         assert lifecycle.initial_quantity == 1.0
@@ -158,15 +136,7 @@ class TestOrderCreation:
         manager = OrderLifecycleManager()
 
         lifecycle = manager.create_order(
-<<<<<<< HEAD
             order_id="order_1", symbol="AAPL", quantity=1.0, price=50000.0, timeout_seconds=600.0
-=======
-            order_id="order_1",
-            symbol="AAPL",
-            quantity=1.0,
-            price=50000.0,
-            timeout_seconds=600.0
->>>>>>> origin/main
         )
 
         remaining = lifecycle.time_remaining_seconds()
@@ -183,28 +153,15 @@ class TestOrderCreation:
                 quantity=1.0,
                 price=50000.0,
             )
-<<<<<<< HEAD
 
         with pytest.raises(ValueError):
             manager.create_order(order_id="order_1", symbol="AAPL", quantity=-1.0, price=50000.0)
 
-=======
-        
-        with pytest.raises(ValueError):
-            manager.create_order(
-                order_id="order_1",
-                symbol="AAPL",
-                quantity=-1.0,
-                price=50000.0
-            )
-    
->>>>>>> origin/main
     def test_create_order_invalid_price(self):
         """Test that invalid price raises error."""
         manager = OrderLifecycleManager()
 
         with pytest.raises(ValueError):
-<<<<<<< HEAD
             manager.create_order(order_id="order_1", symbol="AAPL", quantity=1.0, price=0.0)
 
     def test_create_order_duplicate_id(self):
@@ -213,21 +170,6 @@ class TestOrderCreation:
 
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
 
-=======
-            manager.create_order(
-                order_id="order_1",
-                symbol="AAPL",
-                quantity=1.0,
-                price=0.0
-            )
-    
-    def test_create_order_duplicate_id(self):
-        """Test that duplicate order ID raises error."""
-        manager = OrderLifecycleManager()
-        
-        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-        
->>>>>>> origin/main
         with pytest.raises(RuntimeError):
             manager.create_order("order_1", "MSFT", 1.0, 2000.0)
 
@@ -239,11 +181,7 @@ class TestOrderUpdate:
         """Test updating order status."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         lifecycle = manager.update_order(
             order_id="order_1", filled_quantity=0.5, status=OrderStatus.PARTIALLY_FILLED, message="Half filled"
         )
@@ -256,19 +194,9 @@ class TestOrderUpdate:
         """Test updating order to filled status."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
         lifecycle = manager.update_order(order_id="order_1", filled_quantity=1.0, status=OrderStatus.FILLED)
 
-=======
-        
-        lifecycle = manager.update_order(
-            order_id="order_1",
-            filled_quantity=1.0,
-            status=OrderStatus.FILLED
-        )
-        
->>>>>>> origin/main
         assert lifecycle.status == OrderStatus.FILLED
         assert lifecycle.get_event_count(OrderLifecycleEvent.FILLED) == 1
 
@@ -276,11 +204,7 @@ class TestOrderUpdate:
         """Test that filled > initial raises error."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         with pytest.raises(ValueError):
             manager.update_order(order_id="order_1", filled_quantity=1.5, status=OrderStatus.PARTIALLY_FILLED)
 
@@ -288,11 +212,7 @@ class TestOrderUpdate:
         """Test that negative filled raises error."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         with pytest.raises(ValueError):
             manager.update_order(order_id="order_1", filled_quantity=-0.5, status=OrderStatus.PARTIALLY_FILLED)
 
@@ -310,15 +230,9 @@ class TestTimeoutDetection:
     def test_check_for_timeouts_no_expired(self):
         """Test timeout check when no orders expired."""
         manager = OrderLifecycleManager(default_timeout_seconds=300.0)
-<<<<<<< HEAD
 
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
 
-=======
-        
-        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-        
->>>>>>> origin/main
         expired, actions = manager.check_for_timeouts()
 
         assert len(expired) == 0
@@ -330,15 +244,9 @@ class TestTimeoutDetection:
             default_timeout_seconds=0.1,  # 100ms timeout
             check_interval_seconds=0.05,
         )
-<<<<<<< HEAD
 
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
 
-=======
-        
-        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-        
->>>>>>> origin/main
         # Wait for timeout
         sleep(0.2)
 
@@ -350,16 +258,8 @@ class TestTimeoutDetection:
 
     def test_timeout_action_includes_remediation(self):
         """Test that timeout action includes remediation suggestions."""
-<<<<<<< HEAD
         manager = OrderLifecycleManager(default_timeout_seconds=0.1, check_interval_seconds=0.05)
 
-=======
-        manager = OrderLifecycleManager(
-            default_timeout_seconds=0.1,
-            check_interval_seconds=0.05
-        )
-        
->>>>>>> origin/main
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         sleep(0.2)
 
@@ -378,11 +278,7 @@ class TestForceClose:
         """Test force-closing an order."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         success, message = manager.force_close_order(
             order_id="order_1", close_price=49900.0, close_quantity=1.0, reason="timeout"
         )
@@ -402,11 +298,7 @@ class TestForceClose:
         """Test that invalid close price raises error."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         with pytest.raises(ValueError):
             manager.force_close_order("order_1", 0.0, 1.0)
 
@@ -414,11 +306,7 @@ class TestForceClose:
         """Test that invalid close quantity raises error."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         with pytest.raises(ValueError):
             manager.force_close_order("order_1", 49900.0, -1.0)
 
@@ -426,11 +314,7 @@ class TestForceClose:
         """Test that exceeding max retries fails."""
         manager = OrderLifecycleManager(max_retries=2)
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Try 3 force closes (max is 2)
         manager.force_close_order("order_1", 49900.0, 0.3)
         manager.force_close_order("order_1", 49900.0, 0.3)
@@ -448,11 +332,7 @@ class TestStaleOrders:
         """Test stale detection when no orders stale."""
         manager = OrderLifecycleManager()
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         stale = manager.get_stale_orders(stale_threshold_seconds=60.0)
 
         assert len(stale) == 0
@@ -461,11 +341,7 @@ class TestStaleOrders:
         """Test stale detection for orders close to timeout."""
         manager = OrderLifecycleManager(default_timeout_seconds=50.0)
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # This order will timeout in ~50s, within 60s threshold
         stale = manager.get_stale_orders(stale_threshold_seconds=60.0)
 
@@ -495,17 +371,10 @@ class TestOrderStatistics:
     def test_order_statistics_mixed_status(self):
         """Test statistics with various order statuses."""
         manager = OrderLifecycleManager()
-<<<<<<< HEAD
 
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         manager.create_order("order_2", "MSFT", 10.0, 2000.0)
 
-=======
-        
-        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-        manager.create_order("order_2", "MSFT", 10.0, 2000.0)
-        
->>>>>>> origin/main
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
 
         stats = manager.get_order_statistics()
@@ -537,21 +406,12 @@ class TestOrderCleanup:
     def test_cleanup_keep_recent_orders(self):
         """Test that recent orders are not cleaned up."""
         manager = OrderLifecycleManager()
-<<<<<<< HEAD
 
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
         manager.update_order("order_1", 1.0, OrderStatus.FILLED)
 
         manager.cleanup_resolved_orders(older_than_seconds=3600.0)
 
-=======
-        
-        manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-        manager.update_order("order_1", 1.0, OrderStatus.FILLED)
-        
-        manager.cleanup_resolved_orders(older_than_seconds=3600.0)
-        
->>>>>>> origin/main
         # Should not remove recent orders
         assert "order_1" in manager.orders
 
@@ -588,11 +448,7 @@ class TestOrderLifecycleIntegration:
 
         # Create order
         manager.create_order("order_1", "AAPL", 1.0, 50000.0)
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         # Wait for timeout
         sleep(0.2)
 

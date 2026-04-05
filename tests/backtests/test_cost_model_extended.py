@@ -1,18 +1,9 @@
-<<<<<<< HEAD
 ﻿"""
 Sprint 2.3 ÔÇô Tests for extended cost model (M-03 fix).
 
 Tests:
   - Funding rate calculation
   - Round-trip ÔëÑ 40 bps with realistic params
-=======
-"""
-Sprint 2.3 – Tests for extended cost model (M-03 fix).
-
-Tests:
-  - Funding rate calculation
-  - Round-trip ≥ 40 bps with realistic params
->>>>>>> origin/main
   - round_trip_cost_bps helper
   - CostModel backward compatibility (existing callers unaffected)
   - Integration with StrategyBacktestSimulator
@@ -29,41 +20,27 @@ from backtests.cost_model import CostModel, CostModelConfig
 @pytest.fixture(autouse=True)
 def reset_settings():
     from config.settings import Settings
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
     Settings._instance = None
     yield
     Settings._instance = None
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 1 ÔÇô Funding Rate
 # ===========================================================================
 
 
-=======
-# SECTION 1 – Funding Rate
-# ===========================================================================
-
->>>>>>> origin/main
 class TestFundingRate:
     """Tests for funding rate cost calculation."""
 
     def test_funding_disabled_by_default(self):
-<<<<<<< HEAD
         """Funding is OFF by default ÔÇô cost should be zero."""
-=======
-        """Funding is OFF by default – cost should be zero."""
->>>>>>> origin/main
         model = CostModel()
         assert not model.config.include_funding
         assert model.funding_cost(5000, 7) == 0.0
 
     def test_funding_enabled(self):
-<<<<<<< HEAD
         """When enabled, funding = 2 ├ù notional ├ù daily_rate ├ù days."""
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=1.0)
         model = CostModel(cfg)
@@ -73,17 +50,6 @@ class TestFundingRate:
 
     def test_funding_zero_days(self):
         """No holding Ôåô no funding cost."""
-=======
-        """When enabled, funding = 2 × notional × daily_rate × days."""
-        cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=1.0)
-        model = CostModel(cfg)
-        cost = model.funding_cost(notional_per_leg=5000, holding_days=10)
-        # 2 × 5000 × (1.0/10000) × 10 = 10.0
-        assert cost == pytest.approx(10.0, abs=0.01)
-
-    def test_funding_zero_days(self):
-        """No holding ↓ no funding cost."""
->>>>>>> origin/main
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=2.0)
         model = CostModel(cfg)
         assert model.funding_cost(5000, 0) == 0.0
@@ -93,18 +59,13 @@ class TestFundingRate:
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=5.0)
         model = CostModel(cfg)
         cost = model.funding_cost(10000, 30)
-<<<<<<< HEAD
         # 2 ├ù 10000 ├ù (5/10000) ├ù 30 = 300
-=======
-        # 2 × 10000 × (5/10000) × 30 = 300
->>>>>>> origin/main
         assert cost == pytest.approx(300.0, abs=0.01)
 
     def test_funding_included_in_round_trip(self):
         """round_trip_cost includes funding when enabled."""
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=1.0)
         model = CostModel(cfg)
-<<<<<<< HEAD
 
         rt_with = model.round_trip_cost(5000, holding_days=10)
 
@@ -112,24 +73,11 @@ class TestFundingRate:
         model_no = CostModel(cfg_no)
         rt_without = model_no.round_trip_cost(5000, holding_days=10)
 
-=======
-        
-        rt_with = model.round_trip_cost(5000, holding_days=10)
-        
-        cfg_no = CostModelConfig(include_funding=False)
-        model_no = CostModel(cfg_no)
-        rt_without = model_no.round_trip_cost(5000, holding_days=10)
-        
->>>>>>> origin/main
         # With funding should cost more
         assert rt_with > rt_without
 
     def test_funding_not_included_in_round_trip_by_default(self):
-<<<<<<< HEAD
         """Default config Ôåô funding not in round_trip."""
-=======
-        """Default config ↓ funding not in round_trip."""
->>>>>>> origin/main
         model = CostModel()
         # round_trip with and without holding should differ only by borrowing
         rt_0 = model.round_trip_cost(5000, holding_days=0)
@@ -140,21 +88,14 @@ class TestFundingRate:
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 2 ÔÇô Round-Trip BPS Threshold
 # ===========================================================================
 
 
-=======
-# SECTION 2 – Round-Trip BPS Threshold
-# ===========================================================================
-
->>>>>>> origin/main
 class TestRoundTripRealistic:
     """Verify realistic fee levels match DoD requirements."""
 
     def test_round_trip_ge_40bps_with_borrowing(self):
-<<<<<<< HEAD
         """RT costs ÔëÑ 8 bps with standard IBKR equity config and 15-day hold."""
         model = CostModel()
         bps = model.round_trip_cost_bps(5000, holding_days=15)
@@ -167,40 +108,17 @@ class TestRoundTripRealistic:
         model = CostModel(cfg)
         bps = model.round_trip_cost_bps(5000, holding_days=7)
         # Execution ~8 bps + funding 2├ù5000├ù1bps├ù7d = 7 bps ÔåÆ ~15 bps
-=======
-        """RT costs ≥ 8 bps with standard IBKR equity config and 15-day hold."""
-        model = CostModel()
-        bps = model.round_trip_cost_bps(5000, holding_days=15)
-        # IBKR equity: ~2 bps fee + ~2 bps slippage per leg × 4 legs + borrowing
-        assert bps >= 8, f"RT should be ≥ 8 bps with 15d hold, got {bps:.1f}"
-
-    def test_round_trip_ge_40bps_with_funding(self):
-        """RT costs ≥ 14 bps with funding enabled and 7-day hold."""
-        cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=1.0)
-        model = CostModel(cfg)
-        bps = model.round_trip_cost_bps(5000, holding_days=7)
-        # Execution ~8 bps + funding 2×5000×1bps×7d = 7 bps → ~15 bps
->>>>>>> origin/main
         assert bps >= 14
 
     def test_round_trip_execution_only_is_30bps(self):
         """Pure execution (no holding) with Almgren-Chriss 3-component model.
 
-<<<<<<< HEAD
         Components per leg (calibrated v32j defaults: ╬À=0.05, delay=0.01):
           - Fee: 2 bps
           - Spread (bid-ask): 2 bps
           - Market impact: ╬À├ù¤â├ùÔêÜ(Q/ADV) Ôëê negligible at $5K/$1B
           - Timing cost: ¤â├ùÔêÜ(T/252) Ôëê 1.3 bps (¤â=2%, T=0.01 day)
         Round trip = 4 legs ├ù ~5.3 bps Ôëê 11 bps
-=======
-        Components per leg (calibrated v32j defaults: η=0.05, delay=0.01):
-          - Fee: 2 bps
-          - Spread (bid-ask): 2 bps
-          - Market impact: η×σ×√(Q/ADV) ≈ negligible at $5K/$1B
-          - Timing cost: σ×√(T/252) ≈ 1.3 bps (σ=2%, T=0.01 day)
-        Round trip = 4 legs × ~5.3 bps ≈ 11 bps
->>>>>>> origin/main
         """
         cfg = CostModelConfig(include_borrowing=False, include_funding=False)
         model = CostModel(cfg)
@@ -210,11 +128,7 @@ class TestRoundTripRealistic:
             volume_24h_sym1=1e9,
             volume_24h_sym2=1e9,
         )
-<<<<<<< HEAD
         # Almgren-Chriss with calibrated v32j defaults (╬À=0.05, delay=0.01)
-=======
-        # Almgren-Chriss with calibrated v32j defaults (η=0.05, delay=0.01)
->>>>>>> origin/main
         assert 8 <= bps <= 18, f"Expected ~11 bps (Almgren-Chriss v32j), got {bps:.1f}"
 
     def test_round_trip_cost_bps_helper(self):
@@ -226,53 +140,31 @@ class TestRoundTripRealistic:
         assert rt_bps == pytest.approx(manual, abs=0.01)
 
     def test_round_trip_cost_bps_zero_notional(self):
-<<<<<<< HEAD
         """Zero notional Ôåô 0 bps (avoid division by zero)."""
-=======
-        """Zero notional ↓ 0 bps (avoid division by zero)."""
->>>>>>> origin/main
         model = CostModel()
         assert model.round_trip_cost_bps(0) == 0.0
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 3 ÔÇô Low-Liquidity Scenario (DoD requirement)
 # ===========================================================================
 
 
 class TestLowLiquidityScenario:
     """DoD: $1000 trade on low-volume stock with volume=$50K Ôåô slippage > 20 bps."""
-=======
-# SECTION 3 – Low-Liquidity Scenario (DoD requirement)
-# ===========================================================================
-
-class TestLowLiquidityScenario:
-    """DoD: $1000 trade on low-volume stock with volume=$50K ↓ slippage > 20 bps."""
->>>>>>> origin/main
 
     def test_low_liquidity_slippage_exceeds_20bps(self):
         """Low-liquidity stock: slippage must exceed 20 bps."""
         model = CostModel()
         # For one leg: participation = 1000/50000 = 2%
-<<<<<<< HEAD
         # impact_bps = 5 + 100├ù0.02 = 7 bps Ôåô decimal = 0.0007
-=======
-        # impact_bps = 5 + 100×0.02 = 7 bps ↓ decimal = 0.0007
->>>>>>> origin/main
         # But that's per single leg. Entry = 2 legs slippage.
         # The key metric: total slippage cost in the round-trip
         slippage_decimal = model._slippage(1000, 50_000)
         slippage_bps = slippage_decimal * 10_000
-<<<<<<< HEAD
         # participation = 1000/50000 = 2%, impact = 2 + 100├ù0.02 = 4 bps
         assert slippage_bps > 3, f"Per-leg slippage should be > 3 bps, got {slippage_bps:.1f}"
 
-=======
-        # participation = 1000/50000 = 2%, impact = 2 + 100×0.02 = 4 bps
-        assert slippage_bps > 3, f"Per-leg slippage should be > 3 bps, got {slippage_bps:.1f}"
-        
->>>>>>> origin/main
         # Total round-trip with POPCAT-like liquidity
         rt = model.round_trip_cost(
             notional_per_leg=1000,
@@ -281,11 +173,7 @@ class TestLowLiquidityScenario:
             holding_days=0,
         )
         rt_bps = rt / (2 * 1000) * 10_000
-<<<<<<< HEAD
         # 4 legs ├ù (2 bps fee + 4 bps slippage) Ôëê 12 bps total
-=======
-        # 4 legs × (2 bps fee + 4 bps slippage) ≈ 12 bps total
->>>>>>> origin/main
         assert rt_bps > 10, f"Low-liq RT should be > 10 bps, got {rt_bps:.1f}"
 
     def test_low_liq_vs_high_liq_cost_comparison(self):
@@ -296,53 +184,32 @@ class TestLowLiquidityScenario:
         assert rt_low_liq > rt_high_liq * 1.1  # At least 10% more expensive
 
     def test_zero_volume_worst_case(self):
-<<<<<<< HEAD
         """Zero volume Ôåô 50 bps slippage (worst case)."""
-=======
-        """Zero volume ↓ 50 bps slippage (worst case)."""
->>>>>>> origin/main
         model = CostModel()
         slip = model._slippage(1000, 0)
         assert slip == pytest.approx(50 / 10_000)
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 4 ÔÇô Backward Compatibility
 # ===========================================================================
 
 
-=======
-# SECTION 4 – Backward Compatibility
-# ===========================================================================
-
->>>>>>> origin/main
 class TestBackwardCompatibility:
     """Ensure existing callers (strategy_simulator, runner) are not broken."""
 
     def test_default_config_unchanged_for_execution(self):
         """Default CostModel (Almgren-Chriss) returns realistic equity execution costs.
 
-<<<<<<< HEAD
         With calibrated v32j defaults (¤â_default=2%, T_exec=0.01d, ╬À=0.05):
           Per leg: $5000 ├ù (fee 2bps + spread 2bps + timing ~1.3bps + impact ~0bps)
           = $5000 ├ù ~0.00053 Ôëê $2.64 per leg
           2 legs Ôëê $5.3
-=======
-        With calibrated v32j defaults (σ_default=2%, T_exec=0.01d, η=0.05):
-          Per leg: $5000 × (fee 2bps + spread 2bps + timing ~1.3bps + impact ~0bps)
-          = $5000 × ~0.00053 ≈ $2.64 per leg
-          2 legs ≈ $5.3
->>>>>>> origin/main
         """
         model = CostModel()
         # entry_cost for $5000 per leg, high volume (negligible market impact)
         e = model.entry_cost(5000, 1e9, 1e9)
-<<<<<<< HEAD
         # Almgren-Chriss with calibrated v32j params ÔåÆ ~$5.3
-=======
-        # Almgren-Chriss with calibrated v32j params → ~$5.3
->>>>>>> origin/main
         assert 3 < e < 9
 
     def test_exit_equals_entry_cost(self):
@@ -354,17 +221,12 @@ class TestBackwardCompatibility:
         """Default config: holding cost = borrowing only (funding off)."""
         model = CostModel()
         h = model.holding_cost(10000, 30)
-<<<<<<< HEAD
         # 10000 ├ù (0.5/100/365) ├ù 30 Ôëê 4.11 (0.5% annual ETB rate)
-=======
-        # 10000 × (0.5/100/365) × 30 ≈ 4.11 (0.5% annual ETB rate)
->>>>>>> origin/main
         assert 3.5 < h < 4.5
 
     def test_cost_model_config_has_all_fields(self):
         """Config has all required fields including new ones."""
         cfg = CostModelConfig()
-<<<<<<< HEAD
         assert hasattr(cfg, "funding_rate_daily_bps")
         assert hasattr(cfg, "include_funding")
         assert hasattr(cfg, "maker_fee_bps")
@@ -382,32 +244,13 @@ class TestBackwardCompatibility:
 # ===========================================================================
 
 
-=======
-        assert hasattr(cfg, 'funding_rate_daily_bps')
-        assert hasattr(cfg, 'include_funding')
-        assert hasattr(cfg, 'maker_fee_bps')
-        assert hasattr(cfg, 'taker_fee_bps')
-        assert hasattr(cfg, 'base_slippage_bps')
-        assert hasattr(cfg, 'borrowing_cost_annual_pct')
-        assert hasattr(cfg, 'include_borrowing')
-        assert hasattr(cfg, 'slippage_model')
-
-
-# ===========================================================================
-# SECTION 5 – Integration
-# ===========================================================================
-
->>>>>>> origin/main
 class TestIntegration:
     """Integration tests with StrategyBacktestSimulator."""
 
     def test_simulator_uses_funding_cost_model(self):
         """Simulator can accept CostModel with funding enabled."""
         from backtests.strategy_simulator import StrategyBacktestSimulator
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         cfg = CostModelConfig(include_funding=True, funding_rate_daily_bps=2.0)
         model = CostModel(cfg)
         sim = StrategyBacktestSimulator(cost_model=model, initial_capital=100000)
@@ -416,33 +259,20 @@ class TestIntegration:
     def test_runner_imports_cost_model(self):
         """runner.py should import CostModel without error."""
         from backtests.runner import _LEGACY_COST_MODEL
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
         assert _LEGACY_COST_MODEL is not None
 
 
 # ===========================================================================
-<<<<<<< HEAD
 # SECTION 6 ÔÇô Edge Cases
 # ===========================================================================
 
 
-=======
-# SECTION 6 – Edge Cases
-# ===========================================================================
-
->>>>>>> origin/main
 class TestEdgeCases:
     """Edge cases and boundary conditions."""
 
     def test_negative_holding_days(self):
-<<<<<<< HEAD
         """Negative holding days Ôåô zero costs."""
-=======
-        """Negative holding days ↓ zero costs."""
->>>>>>> origin/main
         model = CostModel(CostModelConfig(include_funding=True, include_borrowing=True))
         assert model.holding_cost(5000, -1) == 0.0
         assert model.funding_cost(5000, -1) == 0.0
@@ -467,7 +297,6 @@ class TestEdgeCases:
         s1 = model._slippage(100, 1e6)
         s2 = model._slippage(100, 1e3)
         assert s1 == s2 == pytest.approx(5 / 10_000)
-<<<<<<< HEAD
 
 
 # ===========================================================================
@@ -649,5 +478,3 @@ class TestRealADV:
         dummy_df = pd.DataFrame({"AAPL": [170.0]})
         result = sim._estimate_adv("AAPL", dummy_df, 5_000)
         assert result == custom_adv
-=======
->>>>>>> origin/main

@@ -3,11 +3,7 @@
 import time
 
 import pytest
-<<<<<<< HEAD
 
-=======
-import time
->>>>>>> origin/main
 from common.circuit_breaker import (
     CircuitBreaker,
     CircuitBreakerConfig,

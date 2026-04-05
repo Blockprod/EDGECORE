@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 ﻿"""
 Execution Engine Module ÔÇö Order routing and execution abstraction.
-=======
-"""
-Execution Engine Module — Order routing and execution abstraction.
->>>>>>> origin/main
 
 Provides:
     - ExecutionRouter: Routes orders to the appropriate execution backend

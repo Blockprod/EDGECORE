@@ -4,16 +4,10 @@ Tests for Problem #5: Performance Optimization
 Tests parallel pair discovery, caching, and performance improvements.
 """
 
-<<<<<<< HEAD
 import time
 
 import numpy as np
 import pandas as pd
-=======
-import pandas as pd
-import numpy as np
-import time
->>>>>>> origin/main
 
 from strategies.pair_trading import PairTradingStrategy
 
@@ -32,7 +26,6 @@ class TestParallelPairDiscovery:
 
         # Time sequential discovery
         start_seq = time.time()
-<<<<<<< HEAD
         seq_pairs = strategy.find_cointegrated_pairs(data, use_cache=False, use_parallel=False)
         _seq_elapsed = time.time() - start_seq
 
@@ -41,24 +34,6 @@ class TestParallelPairDiscovery:
         par_pairs = strategy.find_cointegrated_pairs(data, use_cache=False, use_parallel=True)
         _par_elapsed = time.time() - start_par
 
-=======
-        seq_pairs = strategy.find_cointegrated_pairs(
-            data, 
-            use_cache=False, 
-            use_parallel=False
-        )
-        time.time() - start_seq
-        
-        # Time parallel discovery
-        start_par = time.time()
-        par_pairs = strategy.find_cointegrated_pairs(
-            data, 
-            use_cache=False, 
-            use_parallel=True
-        )
-        time.time() - start_par
-        
->>>>>>> origin/main
         # Parallel should be comparable (may not be faster for small datasets)
         # But should return same results
         assert len(seq_pairs) == len(par_pairs), f"Sequential: {len(seq_pairs)}, Parallel: {len(par_pairs)}"
@@ -98,15 +73,8 @@ class TestParallelPairDiscovery:
 
         # This should work as a static method
         # Note: _test_pair_cointegration expects 7 args: sym1, sym2, series1, series2, min_corr, max_hl, num_symbols
-<<<<<<< HEAD
         result = PairTradingStrategy._test_pair_cointegration(("SYM1", "SYM2", series1, series2, 0.5, 60, 100))
 
-=======
-        result = PairTradingStrategy._test_pair_cointegration(
-            ('SYM1', 'SYM2', series1, series2, 0.5, 60, 100)
-        )
-        
->>>>>>> origin/main
         # Result can be None (if not cointegrated) or a tuple
         assert result is None or isinstance(result, tuple)
         if result:
@@ -340,7 +308,6 @@ class TestIntegrationWithStrategy:
         """Test PairTradingStrategy with cached discovery."""
         np.random.seed(42)
         base = np.random.randn(100).cumsum()
-<<<<<<< HEAD
         market_data = pd.DataFrame(
             {
                 "AAPL": base,
@@ -350,15 +317,6 @@ class TestIntegrationWithStrategy:
             }
         )
 
-=======
-        market_data = pd.DataFrame({
-            'AAPL': base,
-            'GOOGL': base + np.random.randn(100) * 0.15,
-            'JPM': base + np.random.randn(100) * 0.10,
-            'V': np.random.randn(100).cumsum(),
-        })
-        
->>>>>>> origin/main
         strategy = PairTradingStrategy()
 
         # First generation (discovers and caches)

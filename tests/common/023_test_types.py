@@ -11,10 +11,7 @@ Tests:
 from datetime import UTC, datetime
 
 import pytest
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 from common.types import (
     AlertRecord,
     AlertSeverity,
@@ -35,10 +32,7 @@ from common.types import (
     TradeRecord,
     ValidationResult,
 )
-<<<<<<< HEAD
-=======
 from datetime import datetime
->>>>>>> origin/main
 
 
 class TestTypedDictStructures:
@@ -89,11 +83,7 @@ class TestTypedDictStructures:
             "unrealized_pnl": 1500.0,
             "pnl_percent": 2.0,
         }
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         assert position["symbol"] == "AAPL"
         assert position["side"] == "long"
         assert position["unrealized_pnl"] == 1500.0

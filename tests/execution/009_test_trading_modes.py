@@ -1,12 +1,7 @@
 ﻿from unittest.mock import MagicMock, patch
 
 import pytest
-<<<<<<< HEAD
 
-=======
-from unittest.mock import patch, MagicMock
-from main import run_paper_trading, run_live_trading
->>>>>>> origin/main
 from config.settings import get_settings
 from main import run_live_trading, run_paper_trading
 
@@ -217,10 +212,7 @@ class TestMainModeSelection:
             mock_instance.run_unified.return_value = mock_metrics
             
             import sys
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
             from main import main
             
             # Capture output

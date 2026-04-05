@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 ﻿"""Quick test of IBKR intraday data availability."""
-=======
-"""Quick test of IBKR intraday data availability."""
->>>>>>> origin/main
 import sys
 import time
 

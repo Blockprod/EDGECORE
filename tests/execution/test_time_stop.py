@@ -1,25 +1,15 @@
-<<<<<<< HEAD
 ﻿"""
 Sprint 1.5 ÔÇô Time Stop tests.
-=======
-"""
-Sprint 1.5 – Time Stop tests.
->>>>>>> origin/main
 
 Proves C-05 fix:
   - TimeStopManager correctly computes max_holding_bars
   - should_exit fires at the right bar
   - StrategyBacktestSimulator force-closes positions that exceed the time stop
-<<<<<<< HEAD
   - Half-life drives the holding limit (2├ù half-life, capped)
-=======
-  - Half-life drives the holding limit (2× half-life, capped)
->>>>>>> origin/main
 
 Run: pytest tests/test_time_stop.py -v
 """
 
-<<<<<<< HEAD
 import numpy as np
 import pandas as pd
 import pytest
@@ -32,20 +22,6 @@ from execution.time_stop import TimeStopConfig, TimeStopManager
 # ========================================================================
 
 
-=======
-import pytest
-import numpy as np
-import pandas as pd
-
-from execution.time_stop import TimeStopManager, TimeStopConfig
-from backtests.strategy_simulator import StrategyBacktestSimulator
-
-
-# ========================================================================
-# Unit tests – TimeStopManager
-# ========================================================================
-
->>>>>>> origin/main
 class TestTimeStopManagerHoldingBars:
     """Verify max_holding_bars computation."""
 
@@ -55,67 +31,39 @@ class TestTimeStopManagerHoldingBars:
         assert tsm.max_holding_bars(half_life=15) == 30
 
     def test_cap_enforced(self):
-<<<<<<< HEAD
         """2 ├ù 40 = 80, but cap=60 Ôåô 60 (post-v27: multiplier=2.0)."""
-=======
-        """2 × 40 = 80, but cap=60 ↓ 60 (post-v27: multiplier=2.0)."""
->>>>>>> origin/main
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=40) == 60
 
     def test_none_half_life_uses_default(self):
-<<<<<<< HEAD
         """None Ôåô default_max_bars (60)."""
-=======
-        """None ↓ default_max_bars (60)."""
->>>>>>> origin/main
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=None) == 60
 
     def test_zero_half_life_uses_default(self):
-<<<<<<< HEAD
         """0 Ôåô default_max_bars."""
-=======
-        """0 ↓ default_max_bars."""
->>>>>>> origin/main
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=0) == 60
 
     def test_negative_half_life_uses_default(self):
-<<<<<<< HEAD
         """-5 Ôåô default_max_bars."""
-=======
-        """-5 ↓ default_max_bars."""
->>>>>>> origin/main
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=-5) == 60
 
     def test_custom_multiplier(self):
-<<<<<<< HEAD
         """Custom 3 ├ù 10 = 30 (explicit override)."""
-=======
-        """Custom 3 × 10 = 30 (explicit override)."""
->>>>>>> origin/main
         cfg = TimeStopConfig(half_life_multiplier=3.0, max_days_cap=100)
         tsm = TimeStopManager(config=cfg)
         assert tsm.max_holding_bars(half_life=10) == 30
 
     def test_custom_cap(self):
-<<<<<<< HEAD
         """2 ├ù 50 = 100, cap=45 Ôåô 45 (post-v27: multiplier=2.0)."""
-=======
-        """2 × 50 = 100, cap=45 ↓ 45 (post-v27: multiplier=2.0)."""
->>>>>>> origin/main
         cfg = TimeStopConfig(max_days_cap=45)
         tsm = TimeStopManager(config=cfg)
         assert tsm.max_holding_bars(half_life=50) == 45
 
     def test_exact_cap_boundary(self):
-<<<<<<< HEAD
         """2 ├ù 30 = 60, cap=60 Ôåô 60 (edge case: exactly at cap, post-v27)."""
-=======
-        """2 × 30 = 60, cap=60 ↓ 60 (edge case: exactly at cap, post-v27)."""
->>>>>>> origin/main
         tsm = TimeStopManager()
         assert tsm.max_holding_bars(half_life=30) == 60
 
@@ -127,11 +75,7 @@ class TestTimeStopShouldExit:
         tsm = TimeStopManager()
         should, reason = tsm.should_exit(holding_bars=29, half_life=15)
         assert should is False
-<<<<<<< HEAD
         assert reason is None  # 29 < 30 (2├ù15)
-=======
-        assert reason is None  # 29 < 30 (2×15)
->>>>>>> origin/main
 
     def test_exit_at_limit(self):
         tsm = TimeStopManager()
@@ -141,31 +85,18 @@ class TestTimeStopShouldExit:
 
     def test_exit_past_limit(self):
         tsm = TimeStopManager()
-<<<<<<< HEAD
         should, _reason = tsm.should_exit(holding_bars=50, half_life=15)
-=======
-        should, reason = tsm.should_exit(holding_bars=50, half_life=15)
->>>>>>> origin/main
         assert should is True
 
     def test_no_exit_at_limit_minus_one(self):
         tsm = TimeStopManager()
         should, _ = tsm.should_exit(holding_bars=59, half_life=40)
-<<<<<<< HEAD
         assert should is False  # limit = min(2├ù40,60) = 60; 59 < 60
 
     def test_exit_at_cap(self):
         """half_life=40 Ôåô limit=60 (capped). holding_bars=60 Ôåô exit."""
         tsm = TimeStopManager()
         should, _reason = tsm.should_exit(holding_bars=60, half_life=40)
-=======
-        assert should is False  # limit = min(2×40,60) = 60; 59 < 60
-
-    def test_exit_at_cap(self):
-        """half_life=40 ↓ limit=60 (capped). holding_bars=60 ↓ exit."""
-        tsm = TimeStopManager()
-        should, reason = tsm.should_exit(holding_bars=60, half_life=40)
->>>>>>> origin/main
         assert should is True
 
     def test_exit_reason_contains_details(self):
@@ -176,16 +107,10 @@ class TestTimeStopShouldExit:
 
 
 # ========================================================================
-<<<<<<< HEAD
 # Integration test ÔÇô Simulator + TimeStop
 # ========================================================================
 
 
-=======
-# Integration test – Simulator + TimeStop
-# ========================================================================
-
->>>>>>> origin/main
 class TestSimulatorTimeStopIntegration:
     """Prove that the simulator force-closes positions at time stop."""
 
@@ -194,11 +119,7 @@ class TestSimulatorTimeStopIntegration:
         This ensures positions are held indefinitely without time stop."""
         np.random.seed(99)
         dates = pd.date_range("2023-01-01", periods=n, freq="B")
-<<<<<<< HEAD
         # sym1 trends up, sym2 trends down Ôåô spread diverges
-=======
-        # sym1 trends up, sym2 trends down ↓ spread diverges
->>>>>>> origin/main
         sym1 = 100.0 + np.cumsum(np.random.normal(0.05, 0.5, n))
         sym2 = 100.0 + np.cumsum(np.random.normal(-0.05, 0.5, n))
         return pd.DataFrame({"SYM1": sym1, "SYM2": sym2}, index=dates)
