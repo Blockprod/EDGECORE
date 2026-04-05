@@ -448,7 +448,15 @@ class LiveTradingRunner:
 
     def _maybe_reconcile(self) -> None:
         """Run periodic reconciliation every 5 minutes."""
-        if self._reconciler is None or self.config.mode != "live":
+        if self._reconciler is None:
+            if self.config.mode == "live":
+                logger.warning(
+                    "periodic_reconciliation_skipped_no_reconciler",
+                    mode=self.config.mode,
+                    iteration=getattr(self, "_iteration", 0),
+                )
+            return
+        if self.config.mode != "live":
             return
         now = datetime.now()
         if self._last_reconciliation and (now - self._last_reconciliation) < self._reconciliation_interval:
@@ -837,11 +845,16 @@ class LiveTradingRunner:
                     if _s1 in market_data.columns and _s2 in market_data.columns:
                         _spread = market_data[_s1] - market_data[_s2]
                         _vol = float(_spread.std()) if len(_spread) > 1 else 0.0
+                    # PortfolioRiskManager is the single source of truth for drawdown.
+                    # Pass its live drawdown_pct so the KillSwitch receives the real value
+                    # (previously hardcoded to 0.0 — CERT-03 fix).
+                    _dd_pct = self._portfolio_risk.drawdown_pct if self._portfolio_risk is not None else 0.0
                     facade_ok, facade_reason = self._risk_facade.can_enter_trade(
                         symbol_pair=sig.pair_key,
                         position_size=0.0,
                         current_equity=current_eq,
                         volatility=_vol,
+                        drawdown_pct=_dd_pct,
                     )
                     if not facade_ok:
                         logger.info("live_trading_signal_blocked_risk_facade", pair=sig.pair_key, reason=facade_reason)

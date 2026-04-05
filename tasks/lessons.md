@@ -279,3 +279,12 @@
 **Ref** : `.github/workflows/ci.yml` — commit `57f0083` (2026-04-05)
 
 ---
+
+## L-29 · cert: CERT-01 to CERT-10 — 9/10 corrections appliquees, 2742 tests verts [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `cd3f7c7` : cert: CERT-01 to CERT-10 — 9/10 corrections appliquees, 2742 tests verts. Fichiers : backtests/strategy_simulator.py, data/loader.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `backtests/strategy_simulator.py`, `data/loader.py`, `live_trading/runner.py` — commit `cd3f7c7` (2026-04-05)
+
+---

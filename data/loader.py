@@ -20,14 +20,31 @@ def load_price_data(
     cache_dir: str = "data/cache",
     max_staleness_multiplier: int = 2,
 ) -> pd.DataFrame:
-    """Convenience function for live/paper trading: load latest prices.
+    """Load latest close prices for the given symbols from IBKR only.
 
-    Cache-first strategy: on IBKR failure, falls back to disk cache.
-    Raises DataUnavailableError if no symbol yields fresh data from any source.
+    **Data source**: Interactive Brokers (IBGateway port 4002).
+    Yahoo Finance and any non-professional data vendor are strictly prohibited.
+
+    **Cache-first fallback strategy**:
+    On IBKR connection failure, the function falls back to the most recent
+    parquet snapshot written by a previous successful IBKR pull
+    (``data/cache/<symbol>_<timeframe>.parquet``).
+
+    **TTL (max staleness)**:
+    Cached data that is older than the following thresholds is **silently
+    rejected** (symbol is excluded from the result set):
+
+    ==========  ================
+    Timeframe   Max staleness
+    ==========  ================
+    ``1d``      3 calendar days
+    ``4h``      8 hours
+    ``1h``      2 hours
+    other       ``max_staleness_multiplier`` hours (default 2)
+    ==========  ================
 
     Returns a DataFrame with columns = symbols, values = close prices.
-    Uses IBGatewaySync (port 4002) with a single sequential connection.
-    Rate limiting is handled by GLOBAL_IBKR_RATE_LIMITER (40 req/s).
+    Raises ``DataUnavailableError`` if no symbol yields fresh data.
     """
     from execution.ibkr_engine import IBGatewaySync
 

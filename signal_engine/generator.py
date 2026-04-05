@@ -14,7 +14,7 @@ to ensure zero divergence between back-tested and live behavior.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 from structlog import get_logger
@@ -61,7 +61,7 @@ class Signal:
     exit_threshold: float = 0.0
     regime: VolatilityRegime = VolatilityRegime.NORMAL
     reason: str = ""
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------------------------------------------------------------------------

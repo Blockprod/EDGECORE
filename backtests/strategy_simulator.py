@@ -507,12 +507,17 @@ class StrategyBacktestSimulator:
                         from config.settings import get_settings as _gs_debug
 
                         s = _gs_debug()
-                        logger.debug(
-                            "no_pairs_found_debug",
-                            columns=_discovery_prices.columns.tolist(),
+                        logger.warning(
+                            "no_pairs_found",
+                            bar=bar_idx,
+                            date=str(prices_df.index[bar_idx])[:10],
                             entry_z_score=s.strategy.entry_z_score,
                             min_correlation=s.strategy.min_correlation,
                             lookback_window=s.strategy.lookback_window,
+                            johansen=s.strategy.johansen_confirmation,
+                            newey_west=s.strategy.newey_west_consensus,
+                            bonferroni=s.strategy.bonferroni_correction,
+                            hint="Too strict? Try fdr_q_level=0.50, entry_z=1.3",
                         )
                 else:
                     bars_since_discovery += 1
@@ -1466,6 +1471,24 @@ class StrategyBacktestSimulator:
             total_slippage=round(_total_slippage, 4),  # C-04: slippage measured
         )
 
+        # CERT-02: warn prominently when OOS period generates 0 trades.
+        # Root causes: (1) double-screening too strict for current regime,
+        # (2) entry_z_score too high in low-dispersion market,
+        # (3) data unavailable for training window.
+        if len(trades_pnl) == 0:
+            from config.settings import get_settings as _gs_warn
+
+            _s = _gs_warn()
+            logger.warning(
+                "backtest_zero_trades",
+                oos_start=str(oos_start_date) if oos_start_date else "N/A",
+                entry_z=_s.strategy.entry_z_score,
+                johansen=_s.strategy.johansen_confirmation,
+                newey_west=_s.strategy.newey_west_consensus,
+                fdr_q=getattr(_s.strategy, "fdr_q_level", "N/A"),
+                action="Consider fdr_q_level=0.50, entry_z=1.3, or disable newey_west_consensus",
+            )
+
         return metrics
 
     # ==================================================================
@@ -1563,9 +1586,7 @@ class StrategyBacktestSimulator:
 
         return 0.5 + score  # Range [0.5, 1.5]
 
-    def _unrealized_pnl(
-        self, pos: dict, prices_df: pd.DataFrame, bar_idx: int
-    ) -> float:
+    def _unrealized_pnl(self, pos: dict, prices_df: pd.DataFrame, bar_idx: int) -> float:
         """Compute unrealized P&L for a position at bar_idx."""
         sym1, sym2 = pos["sym1"], pos["sym2"]
         cur_p1 = prices_df[sym1].iloc[bar_idx]

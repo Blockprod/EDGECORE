@@ -16,97 +16,159 @@ Ta mission unique : déterminer si EDGECORE mérite le statut
 PRODUCTION-READY avec un score final sur 10.
 
 Tu n'audites PAS pour améliorer — tu audites pour CERTIFIER ou REJETER.
-Chaque point faible est une raison de refus. Sois le gate-keeper,
-pas le coach.
+Chaque point faible non résolu est une raison de refus.
+Sois le gate-keeper, pas le coach.
 
 ═══════════════════════════════════════════════════════════════
 ÉTAPE 0 — LECTURE OBLIGATOIRE AVANT TOUTE ANALYSE
 ═══════════════════════════════════════════════════════════════
-Lis ces fichiers dans cet ordre exact. Pour chaque fichier absent,
-écris immédiatement : ❌ ABSENT — [nom du fichier] et continue.
+Lis ces fichiers dans cet ordre exact.
+Pour chaque fichier absent : ❌ ABSENT — [nom] et continue.
 Ne suppose rien. Ne comble aucun vide par déduction.
 
-INFRASTRUCTURE
-  [ ] docker-compose.yml
-  [ ] Dockerfile
-  [ ] .github/workflows/*.yml  (lister tous les fichiers présents)
+RACINE — INFRASTRUCTURE
+  [ ] .gitignore
   [ ] .env.example
+  [ ] .python-version
+  [ ] pyproject.toml
+  [ ] pytest.ini
+  [ ] requirements.txt
+  [ ] setup.py
+  [ ] CMakeLists.txt
+  [ ] Dockerfile
+  [ ] docker-compose.yml
+
+RACINE — SCRIPTS VERSIONNÉS À AUDITER
+  [ ] main.py
+  [ ] diag.py
+  [ ] run_backtest.py
+  [ ] run_backtest_v17d.py
+  [ ] run_backtest_v18.py
+
+RACINE — FICHIERS .TXT À LIRE (preuves de performance et erreurs)
+  [ ] bt_best.txt
+  [ ] bt_results_v19d.txt      ← résultat le plus récent
+  [ ] bt_results_v19c.txt
+  [ ] bt_results_v19b.txt
+  [ ] bt_results_v19.txt
+  [ ] bt_errors_v18.txt        ← erreurs les plus récentes
+  [ ] bt_errors_v17g.txt
+  [ ] bt_out.txt
+  [ ] bt_out2.txt
+  [ ] bt_results_dynamic.txt
+  [ ] debug_load_errors.txt
+  [ ] debug_symbols_snapshot.txt
+  [ ] ibkr_invalid_symbols.txt
+  [ ] test_out.txt
+  [ ] universe_scoring_results.txt
+  [ ] CONFIG_SETUP_COMPLETE.txt
+
+CI/CD
+  [ ] .github/workflows/       ← lister TOUS les fichiers .yml présents
+
+CONFIG
   [ ] config/config.yaml
   [ ] config/prod.yaml
   [ ] config/dev.yaml
   [ ] config/test.yaml
   [ ] config/settings.py
+  [ ] config/                  ← lister tous les autres fichiers présents
 
 POINT D'ENTRÉE ET BOUCLE LIVE
-  [ ] main.py
-  [ ] live_trading/runner.py
-  [ ] live_trading/paper_runner.py  (ou équivalent)
+  [ ] live_trading/            ← lister tous les fichiers
+  [ ] live_trading/runner.py   (ou LiveTradingRunner équivalent)
 
-EXÉCUTION ET BROKER
-  [ ] execution_engine/router.py
-  [ ] execution/ibkr.py            (ou execution/ibkr_engine.py)
-  [ ] common/ibkr_rate_limiter.py
+MODULE EXECUTION (double architecture à cartographier)
+  [ ] execution/               ← lister TOUS les fichiers
+  [ ] execution_engine/        ← lister TOUS les fichiers
+
+MODULE RISK (double architecture à cartographier)
+  [ ] risk/                    ← lister TOUS les fichiers
+  [ ] risk_engine/             ← lister TOUS les fichiers
+
+MODULE COMMON
+  [ ] common/                  ← lister TOUS les fichiers
   [ ] common/retry.py
   [ ] common/circuit_breaker.py
+  [ ] common/ibkr_rate_limiter.py
 
-RISK
-  [ ] risk_engine/kill_switch.py
-  [ ] risk_engine/portfolio_risk.py
-  [ ] risk/beta_hedger.py          (ou équivalent)
+MODULE SIGNAL
+  [ ] signal_engine/           ← lister TOUS les fichiers
 
-SIGNAL ET MODÈLES
-  [ ] signal_engine/generator.py   (ou équivalent)
+MODULE PAIR SELECTION
+  [ ] pair_selection/          ← lister TOUS les fichiers
+
+MODULE MODELS
+  [ ] models/                  ← lister TOUS les fichiers
   [ ] models/kalman_hedge.py
   [ ] models/cointegration.py
-  [ ] models/regime.py             (ou équivalent)
+  [ ] models/regime.py         (ou équivalent)
 
-DONNÉES ET UNIVERS
-  [ ] data/loader.py
-  [ ] data/preprocessing.py        (ou équivalent)
+MODULE PORTFOLIO
+  [ ] portfolio_engine/        ← lister TOUS les fichiers
+
+MODULE UNIVERSE
+  [ ] universe/                ← lister TOUS les fichiers
   [ ] universe/manager.py
 
-BACKTEST ET VALIDATION
-  [ ] backtester/runner.py
+MODULE DATA
+  [ ] data/                    ← lister TOUS les fichiers
+  [ ] data/loader.py
+
+MODULE BACKTEST
+  [ ] backtester/              ← lister TOUS les fichiers
+  [ ] backtests/               ← lister TOUS les fichiers
   [ ] backtests/event_driven.py
   [ ] backtests/walk_forward.py
   [ ] backtests/stress_testing.py
-  [ ] backtests/cost_model.py      (ou équivalent)
-  [ ] validation/oos_validator.py  (ou équivalent)
+  [ ] backtests/cost_model.py  (ou équivalent)
 
-TESTS
-  [ ] tests/  (lister tous les fichiers présents + compter)
-  [ ] pytest.ini ou pyproject.toml [section pytest]
+MODULE VALIDATION
+  [ ] validation/              ← lister TOUS les fichiers
 
-MONITORING
-  [ ] monitoring/  (lister tous les fichiers présents)
-  [ ] persistence/ (lister tous les fichiers présents)
+MODULE STRATEGIES
+  [ ] strategies/              ← lister TOUS les fichiers
 
-FICHIERS DE DIAGNOSTIC À LA RACINE
-  [ ] bt_results_v19d.txt   (ou le plus récent bt_results_*.txt)
-  [ ] bt_errors_v18.txt     (ou le plus récent bt_errors_*.txt)
-  [ ] bt_best.txt
-  [ ] ibkr_invalid_symbols.txt
-  [ ] debug_load_errors.txt
-  [ ] diag.py
+MODULE MONITORING
+  [ ] monitoring/              ← lister TOUS les fichiers
+
+MODULE PERSISTENCE
+  [ ] persistence/             ← lister TOUS les fichiers
+
+MODULE RESEARCH (à surveiller : imports depuis prod ?)
+  [ ] research/                ← lister TOUS les fichiers
+
+DOSSIERS ARCHIVÉS (résidus à signaler)
+  [ ] ARCHIVED_cpp_sources/    ← lister les fichiers présents
+  [ ] ARCHIVED_crypto/         ← lister les fichiers présents
+
+MODULE EDGECORE (package principal ?)
+  [ ] edgecore/                ← lister TOUS les fichiers
+
+MODULE TESTS
+  [ ] tests/                   ← lister TOUS les fichiers + compter
+
+AUTRES
+  [ ] scripts/                 ← lister TOUS les fichiers
+  [ ] examples/                ← lister TOUS les fichiers
+  [ ] build/                   ← lister les fichiers présents
+  [ ] cache/                   ← lister les fichiers présents
 
 ═══════════════════════════════════════════════════════════════
 STOP — ACCUSÉ DE RÉCEPTION OBLIGATOIRE
 ═══════════════════════════════════════════════════════════════
-Avant toute analyse, confirme UNIQUEMENT ceci dans le chat :
+Quand la lecture est terminée, confirme UNIQUEMENT ceci dans le chat :
 
-"✅ Lecture terminée. X fichiers trouvés sur Y attendus.
- Fichiers absents : [liste complète]
+"✅ Lecture terminée.
+ Fichiers trouvés    : X
+ Fichiers absents    : [liste complète]
+ Dossiers confirmés  : [liste des dossiers réellement présents]
+ Double architecture : execution/ [X fichiers] + execution_engine/ [X fichiers]
+                       risk/ [X fichiers] + risk_engine/ [X fichiers]
+ Tests               : X fichiers, ~X fonctions def test_
+ Résultats bt        : dernière version = [nom du fichier le plus récent]
  Prêt pour la grille de certification."
 
-─────────────────────────────────────────────
-SORTIE OBLIGATOIRE
-─────────────────────────────────────────────
 Cette étape ne crée pas de fichier résultat.
-Confirme uniquement dans le chat :
-
-"✅ Lecture terminée. X fichiers trouvés sur Y attendus.
- Fichiers absents : [liste complète]
- Prêt pour la grille de certification."
-
 NE COMMENCE PAS L'ANALYSE AVANT D'AVOIR ENVOYÉ CET ACCUSÉ.
 ATTENDS LE MESSAGE SUIVANT DE L'UTILISATEUR POUR CONTINUER.

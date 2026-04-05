@@ -2,124 +2,176 @@ name: EDGECORE CI
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - fix/**
+      - feat/**
+      - chore/**
   pull_request:
-    branches: [main, develop]
+    branches:
+      - main
 
 env:
-  PYTHON_VERSION: "3.11.9"
-  EDGECORE_ENV: "test"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  lint:
-    name: Lint & Type Check
+
+  # ─────────────────────────────────────────────────────────────
+  # AUTOFIX — ruff check+format auto-commit (PR only)
+  # ─────────────────────────────────────────────────────────────
+  autofix:
+    name: Ruff autofix
+    if: github.event_name == 'pull_request' && github.actor != 'edgecore-bot'
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install lint tools
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Ruff autofix
+        run: ruff check . --fix
+
+      - name: Ruff format
+        run: ruff format .
+
+      - name: Commit fixes
         run: |
-          python -m pip install --upgrade pip
-          pip install ruff mypy
+          if ! git diff --quiet; then
+            git config user.name "edgecore-bot"
+            git config user.email "bot@edgecore.ai"
+            git commit -am "auto-fix: ruff + format"
+            git push
+          fi
 
-      - name: Ruff lint
-        run: ruff check . --output-format=github || true
-
-      - name: Mypy type check
-        run: mypy --ignore-missing-imports --no-error-summary --follow-imports=skip strategies/ models/ risk/ risk_engine/ signal_engine/ portfolio_engine/ || true
-
-  test-unit:
-    name: Unit Tests
+  # ─────────────────────────────────────────────────────────────
+  # TESTS — lint + types + security + tests + coverage
+  # if: always() → s'exécute même si autofix est skippé (push main)
+  # ─────────────────────────────────────────────────────────────
+  tests:
+    name: Run tests
+    needs: autofix
+    if: always() && github.actor != 'edgecore-bot'
     runs-on: ubuntu-latest
-    needs: lint
-    continue-on-error: true
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.6.0
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install ruff pyright "cython>=3.0,<4.0" numpy pip-audit
+          python -m pip install -e . || true
 
-      - name: Run unit tests
-        continue-on-error: true
+      # ─────────────────────────────
+      # Build Cython (critique)
+      # ─────────────────────────────
+      - name: Build Cython extensions
+        run: python setup.py build_ext --inplace
+
+      # ─────────────────────────────
+      # Lint & Types (fail fast)
+      # ─────────────────────────────
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Type check (mypy — scoped)
+        run: mypy risk/ risk_engine/ execution/ --ignore-missing-imports --no-error-summary
+
+      - name: Type check (pyright — P2-P4 scope)
         run: |
-          pytest tests/ -m "not integration and not slow and not e2e" \
-            --tb=short \
-            --junitxml=reports/unit-results.xml \
-            --cov=strategies --cov=models --cov=risk --cov=risk_engine \
-            --cov=signal_engine --cov=portfolio_engine --cov=execution \
-            --cov-report=xml:reports/coverage.xml \
-            --cov-report=term-missing \
-            --cov-fail-under=60
+          pyright data/feature_store.py models/spread.py \
+            tests/statistical/test_strategy_robustness.py \
+            tests/regression/test_pnl_regression.py \
+            tests/regression/conftest.py
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
+      # ─────────────────────────────
+      # Security
+      # ─────────────────────────────
+      - name: Security audit (pip-audit)
+        run: |
+          # CVE-2026-4539 (pygments transitive dep): no fix version available yet — tracked, ignore until patch released
+          pip-audit --skip-editable --ignore-vuln CVE-2026-4539
+
+      - name: Secret scan (trufflehog)
+        uses: trufflesecurity/trufflehog@main
         with:
-          name: unit-test-results
-          path: reports/
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
 
-  test-integration:
-    name: Integration Tests
+      # ─────────────────────────────
+      # Tests + Coverage
+      # ─────────────────────────────
+      - name: Core tests + coverage
+        run: |
+          pytest -q -p no:cacheprovider -m "not slow" \
+            --cov=. \
+            --cov-report=term \
+            --cov-config=pyproject.toml \
+            --cov-fail-under=70
+
+      - name: Statistical tests
+        run: pytest tests/statistical/ -q -m slow
+
+      - name: Regression tests
+        run: pytest tests/regression/ -q
+
+  # ─────────────────────────────────────────────────────────────
+  # DOCKER — build gate + push vers ghcr.io sur branche main
+  # ─────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker build
     runs-on: ubuntu-latest
-    needs: test-unit
-    continue-on-error: true
+    needs: tests
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v5
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Run integration tests
-        run: |
-          pytest tests/ -m "integration" \
-            --tb=short \
-            --junitxml=reports/integration-results.xml
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Build Docker image (+ push on main)
+        uses: docker/build-push-action@v6
         with:
-          name: integration-test-results
-          path: reports/
-
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: test-unit
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t edgecore:${{ github.sha }} .
-
-      - name: Verify container health
-        run: |
-          docker run -d --name edgecore-test \
-            -e EDGECORE_ENV=test \
-            edgecore:${{ github.sha }}
-          sleep 5
-          docker inspect --format='{{.State.Running}}' edgecore-test | grep true
-          docker stop edgecore-test
+          context: .
+          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/edgecore:latest
+            ghcr.io/${{ github.repository_owner }}/edgecore:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

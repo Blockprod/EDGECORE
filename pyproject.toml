@@ -65,12 +65,21 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = [
     "strategies.*",
-    "signal_engine.*",
     "portfolio_engine.*",
     "models.*",
     "monitoring.*",
 ]
 ignore_errors = true
+
+# signal_engine: progressive mypy activation (CERT-10)
+# Removed from ignore_errors=true block to enable type checking.
+# Global config is permissive (disallow_untyped_defs=false), so only
+# genuine type errors will surface — no annotation coverage required.
+[[tool.mypy.overrides]]
+module = [
+    "signal_engine.*",
+]
+ignore_missing_imports = true
 
 # Strict mode on critical financial modules
 [[tool.mypy.overrides]]

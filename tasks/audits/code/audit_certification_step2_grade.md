@@ -6,291 +6,340 @@ produit: tasks/audits/resultats/audit_certification_edgecore.md
 derniere_revision: 2026-04-05
 creation: 2026-04-05 à 14:46
 ---
-
 #codebase
 
 Lance maintenant la grille de certification complète (Critères 1 à 10).
-Respecte toutes les contraintes absolues listées ci-dessous.
+Respecte toutes les contraintes absolues listées en fin de message.
 Calcule le score final mécaniquement depuis le tableau de scoring.
 
 ═══════════════════════════════════════════════════════════════
 GRILLE DE CERTIFICATION — 10 CRITÈRES ÉLIMINATOIRES
 ═══════════════════════════════════════════════════════════════
-Pour chaque critère, rends un verdict binaire :
-  ✅ CERTIFIÉ      — exigence remplie, preuve dans le code
+Verdict par sous-point :
+  ✅ CERTIFIÉ      — preuve dans le code, citation obligatoire
   ❌ BLOQUANT      — exigence non remplie, empêche production-ready
-  ⚠️ CONDITIONNEL  — rempli partiellement, acceptable sous réserve
-                     d'une action corrective listée
+  ⚠️ CONDITIONNEL  — partiel, acceptable sous réserve d'action corrective
 
-RÈGLE DE CERTIFICATION FINALE :
-  - 0 ❌ BLOQUANT  → score possible ≥ 8/10
-  - 1 ❌ BLOQUANT  → score plafonné à 7/10
-  - 2 ❌ BLOQUANT  → score plafonné à 6/10
-  - 3+ ❌ BLOQUANT → REJET automatique, score ≤ 5/10
-  - Chaque ⚠️ CONDITIONNEL retire 0.2 point
+RÈGLE DE PLAFONNEMENT :
+  0 ❌  → score possible ≥ 8/10
+  1 ❌  → score plafonné à 7/10
+  2 ❌  → score plafonné à 6/10
+  3+ ❌ → REJET automatique ≤ 5/10
+  Chaque ⚠️ retire 0.2 point
 
-══════════════════════
-CRITÈRE 1 — RÉSILIENCE BROKER  [poids : 20%]
-══════════════════════
+══════════════════════════════════════════
+CRITÈRE 1 — RÉSILIENCE BROKER  [poids 20%]
+══════════════════════════════════════════
+
 1.1 Reconnexion automatique IBKR
-    → Cherche dans execution/ibkr.py et live_trading/runner.py
-    → Doit exister : logique de reconnect avec backoff
-    → Cite fichier:ligne ou écris ❌ ABSENT
+    → Cherche dans execution/ ET live_trading/ :
+      logique reconnect + backoff (fichier:ligne)
+    → Si absent dans les deux : ❌ BLOQUANT
 
-1.2 Rate limiting IBKR respecté
-    → common/ibkr_rate_limiter.py : méthode acquire() présente ?
-    → acquire() appelé AVANT chaque appel API dans execution/ ?
-    → Cite au moins 2 occurrences fichier:ligne
+1.2 Rate limiting IBKR
+    → common/ibkr_rate_limiter.py : méthode acquire() ?
+    → acquire() appelé avant chaque appel API dans execution/ ?
+      Cite au minimum 2 occurrences (fichier:ligne)
+    → Si non utilisé dans le chemin live : ❌ BLOQUANT
 
 1.3 Retry avec backoff exponentiel
-    → common/retry.py : implémentation backoff ? (fichier:ligne)
-    → Utilisé dans execution/ ET data/loader.py ? (fichier:ligne)
+    → common/retry.py : backoff exponentiel implémenté ?
+      (fichier:ligne)
+    → Utilisé dans execution/ ET data/loader.py ?
+      (fichier:ligne pour chaque)
 
 1.4 Circuit-breaker opérationnel
     → common/circuit_breaker.py : pattern CLOSED/OPEN/HALF-OPEN ?
-    → Branché sur le chemin d'exécution live ? (fichier:ligne)
+      (fichier:ligne)
+    → Branché dans le chemin d'exécution live ?
+      (fichier:ligne dans execution/ ou live_trading/)
 
 1.5 Gestion des positions orphelines
-    → Que se passe-t-il si connexion IBKR tombe avec position ouverte ?
-    → Cherche : reconciliation, position_sync, orphan dans
-      live_trading/ et execution/
-    → Cite fichier:ligne ou écris ❌ ABSENT
+    → Connexion IBKR tombe avec position ouverte → que se passe-t-il ?
+    → Cherche : reconciliation, position_sync, orphan
+      dans live_trading/ et execution/
+    → Cite fichier:ligne ou ❌ BLOQUANT
 
-Verdict Critère 1 : ✅ / ❌ / ⚠️
-Score partiel : __/20
+1.6 Double architecture execution/ vs execution_engine/
+    → Qui appelle qui ? (graph d'imports réel, fichier:ligne)
+    → Y a-t-il des imports croisés incohérents ?
+    → execution_engine/router.py lignes ~162 et ~189 :
+      slippage hardcodé ou lu depuis config/ ?
 
-══════════════════════
-CRITÈRE 2 — RISK MANAGEMENT CÂBLÉ  [poids : 20%]
-══════════════════════
+Verdict C1 : ✅ / ❌ / ⚠️  —  Score partiel : __/20
+
+══════════════════════════════════════════════
+CRITÈRE 2 — RISK MANAGEMENT CÂBLÉ  [poids 20%]
+══════════════════════════════════════════════
+
 2.1 Kill-switch 6 conditions
     → risk_engine/kill_switch.py : liste les 6 conditions
-      effectivement implémentées (fichier:ligne pour chacune)
-    → Le kill-switch est-il appelé dans la boucle live ?
-      (fichier:ligne dans live_trading/runner.py)
+      avec (fichier:ligne) pour chacune
+    → Appelé dans la boucle live_trading/runner.py ?
+      (fichier:ligne)
+    → Si non câblé dans live : ❌ BLOQUANT
 
-2.2 Kill-switch niveaux T1/T2/T3
-    → Niveaux distincts implémentés ou monolithique ?
-    → T3 (halt total + alert) : déclenché comment ?
+2.2 Niveaux T1 / T2 / T3
+    → Niveaux distincts ou monolithique ? (fichier:ligne)
+    → T3 (halt total + alerte) : comment déclenché ?
 
-2.3 Synchronisation des legs de paires
-    → execution_engine/router.py ou execution/ibkr.py :
-    → Que se passe-t-il si leg A exécuté, leg B rejeté ?
+2.3 Double architecture risk/ vs risk_engine/
+    → Qui est l'implémentation réelle ? Qui est la façade ?
+    → Imports croisés ? (fichier:ligne)
+
+2.4 Synchronisation des legs de paires
+    → execution_engine/router.py ou execution/ :
+      leg A exécuté, leg B rejeté → que se passe-t-il ?
     → Cherche : rollback, leg_sync, atomic, compensate
-    → Cite fichier:ligne ou écris ❌ ABSENT — CRITIQUE
+    → Cite fichier:ligne ou ❌ BLOQUANT — CRITIQUE
 
-2.4 Concentration limits
-    → portfolio_engine/ ou risk_engine/ : max 20% par paire,
-      40% par secteur — codé en dur ou configurable ?
-    → Ces limites bloquent-elles réellement un ordre ? (fichier:ligne)
+2.5 Concentration limits câblées
+    → portfolio_engine/ : max 20%/paire, 40%/secteur
+      codé en dur ou config/ ? (fichier:ligne)
+    → Ces limites bloquent-elles réellement un ordre ?
+      (fichier:ligne dans le chemin d'envoi d'ordre)
 
-2.5 Valeurs hardcodées dans risk/execution
-    → Cherche dans execution_engine/router.py lignes ~162 et ~189
-    → Des valeurs numériques de slippage/risk sont-elles
-      hardcodées plutôt que lues depuis config/ ?
-    → Lister TOUTES les occurrences trouvées (fichier:ligne:valeur)
+2.6 Valeurs hardcodées dans risk et execution
+    → Scan dans execution_engine/router.py, execution/,
+      risk_engine/, risk/ : valeurs numériques de
+      slippage/risk/threshold non lues depuis config/
+    → Lister TOUTES les occurrences (fichier:ligne:valeur)
 
-Verdict Critère 2 : ✅ / ❌ / ⚠️
-Score partiel : __/20
+Verdict C2 : ✅ / ❌ / ⚠️  —  Score partiel : __/20
 
-══════════════════════
-CRITÈRE 3 — INTÉGRITÉ DU BACKTEST  [poids : 15%]
-══════════════════════
+══════════════════════════════════════════════
+CRITÈRE 3 — INTÉGRITÉ DU BACKTEST  [poids 15%]
+══════════════════════════════════════════════
+
 3.1 Architecture event-driven réelle
     → backtests/event_driven.py : vraie queue d'événements
       (deque / asyncio.Queue / heapq) ? (fichier:ligne)
-    → Ou logique loop-based classique déguisée ?
+    → Ou loop-based déguisé ?
 
 3.2 Absence de look-ahead bias
-    → Les features/signaux sont-ils calculés STRICTEMENT
-      sur données[t-n:t] sans accès à données[t+x] ?
-    → Cherche dans signal_engine/ et strategies/ :
-      tout accès .shift(-N) ou .iloc[future_index]
-    → Cite chaque occurrence trouvée (fichier:ligne)
+    → signal_engine/ et strategies/ :
+      tout accès .shift(-N) ou .iloc[futur]
+    → Cite chaque occurrence (fichier:ligne) ou ✅ ABSENT
 
 3.3 Cost model réaliste
-    → backtests/cost_model.py : spread, commission, slippage
-      modélisés ? (fichier:ligne pour chaque composante)
-    → Les coûts sont-ils lus depuis config/ ou hardcodés ?
+    → backtests/cost_model.py (ou équivalent) :
+      spread + commission + slippage modélisés ?
+      (fichier:ligne pour chaque composante)
+    → Lus depuis config/ ou hardcodés ?
 
-3.4 Walk-forward sur données réelles
-    → backtests/walk_forward.py : nombre de folds, taille
-      IS/OOS — configurables ? (fichier:ligne)
-    → Les résultats OOS sont-ils stockés et comparables ?
+3.4 Walk-forward configurable
+    → backtests/walk_forward.py : folds IS/OOS
+      configurables ? (fichier:ligne)
+    → Résultats OOS stockés et comparables ?
 
-3.5 Résultats les plus récents
-    → Lis le fichier bt_results_*.txt le plus récent
-    → Extrais : Sharpe, MaxDD, Profit Factor, nb trades,
-      période couverte
-    → Seuils cibles : Sharpe > 1.5, MaxDD < 15%, PF > 1.8
-    → Verdict sur chaque seuil : ✅ / ❌
+3.5 Scripts versionnés à la racine
+    → run_backtest.py, run_backtest_v17d.py,
+      run_backtest_v18.py : dupliquent-ils la logique
+      de backtester/ ? (fichier:ligne)
+    → Trackés par git ? Couverts par .gitignore ?
 
-Verdict Critère 3 : ✅ / ❌ / ⚠️
-Score partiel : __/15
+3.6 Résultats de performance réels
+    → Lis bt_results_v19d.txt (ou le plus récent)
+    → Extrais exactement : Sharpe, MaxDD, Profit Factor,
+      nb trades, période couverte, univers de symboles
+    → Seuils cibles :
+        Sharpe > 1.5  → ✅ / ❌
+        MaxDD < 15%   → ✅ / ❌
+        PF > 1.8      → ✅ / ❌
+    → Lis bt_errors_v18.txt : types d'erreurs récurrentes ?
 
-══════════════════════
-CRITÈRE 4 — INFRASTRUCTURE PRODUCTION  [poids : 15%]
-══════════════════════
+Verdict C3 : ✅ / ❌ / ⚠️  —  Score partiel : __/15
+
+══════════════════════════════════════════════════
+CRITÈRE 4 — INFRASTRUCTURE PRODUCTION  [poids 15%]
+══════════════════════════════════════════════════
+
 4.1 Docker production-grade
-    → docker-compose.yml : healthchecks présents ? (fichier:ligne)
-    → restart: unless-stopped sur tous les services critiques ?
-    → Volumes persistants pour cache/ et logs/ ?
-    → Variable EDGECORE_ENV : valeur "prod" correcte
-      ou "production" invalide ? (fichier:ligne — vérifier
-      cohérence avec config/settings.py)
+    → docker-compose.yml :
+      - healthchecks présents ? (fichier:ligne)
+      - restart: unless-stopped sur services critiques ?
+      - volumes persistants pour cache/ et logs/ ?
+    → Dockerfile : build multi-stage ? (fichier:ligne)
+    → EDGECORE_ENV : valeur "prod" ou "production" ?
+      (docker-compose.yml:ligne ET config/settings.py:ligne)
+      → Incohérence entre les deux = ❌ BLOQUANT
 
 4.2 Séparation des environnements
-    → config/prod.yaml distinct de config/dev.yaml ?
-    → Les risk limits et ports IBKR sont-ils différenciés ?
-    → main.py lit-il EDGECORE_ENV pour switcher la config ?
+    → config/prod.yaml vs config/dev.yaml :
+      risk limits et ports IBKR différenciés ? (fichier:ligne)
+    → main.py lit EDGECORE_ENV pour switcher ? (fichier:ligne)
+    → CONFIG_SETUP_COMPLETE.txt : que contient-il ?
 
 4.3 CI/CD opérationnel
-    → .github/workflows/ : liste les fichiers .yml présents
-    → Les tests s'exécutent-ils en CI ? (workflow:ligne)
-    → Le pipeline bloque-t-il sur test failure ?
-    → Présence d'un lint/mypy dans le pipeline ?
+    → .github/workflows/ : liste des fichiers .yml
+    → Tests exécutés en CI ? Pipeline bloque sur failure ?
+      (workflow:ligne)
+    → test_out.txt tracké par git → couvert par .gitignore ?
 
 4.4 Secrets management
-    → .env.example : liste les variables requises
-    → Des credentials sont-ils hardcodés dans le code source ?
-      (cherche : password=, api_key=, token= dans tous les .py)
+    → .env.example : liste toutes les variables requises
+    → Scan complet password=, api_key=, token=, secret=
+      dans TOUS les .py hors tests/
+    → ✅ AUCUN / ❌ liste des occurrences
 
-Verdict Critère 4 : ✅ / ❌ / ⚠️
-Score partiel : __/15
+4.5 Fichiers de debug trackés à la racine
+    → diag.py, debug_load_errors.txt, debug_symbols_snapshot.txt,
+      ibkr_invalid_symbols.txt, bt_results_*.txt, bt_errors_*.txt,
+      bt_out*.txt, test_out.txt, run_backtest_v*.py :
+      couverts par .gitignore ? (ligne)
+    → Si non → ⚠️ CONDITIONNEL obligatoire
 
-══════════════════════
-CRITÈRE 5 — QUALITÉ DU CODE  [poids : 10%]
-══════════════════════
-5.1 Double architecture non résolue
-    → execution/ ET execution_engine/ coexistent-ils ?
-    → risk/ ET risk_engine/ coexistent-ils ?
-    → Si oui : qui appelle quoi ? (graph d'imports réel)
-    → Y a-t-il des imports croisés incohérents ?
+4.6 Dossiers archivés sur main branch
+    → ARCHIVED_cpp_sources/ et ARCHIVED_crypto/ présents
+      sur main : CMakeLists.txt encore nécessaire ?
+    → Résidu ou intentionnel ?
 
-5.2 Fichiers de debug à la racine
-    → diag.py, debug_load_errors.txt, ibkr_invalid_symbols.txt
-      sont-ils trackés par git ?
-    → Un .gitignore couvre-t-il les bt_results_*.txt
-      et bt_errors_*.txt ?
+Verdict C4 : ✅ / ❌ / ⚠️  —  Score partiel : __/15
 
-5.3 Versioning manuel des backtests
-    → run_backtest_v17d.py, run_backtest_v18.py à la racine :
-      présents et trackés ?
-    → Ces scripts dupliquent-ils la logique de backtester/ ?
+══════════════════════════════════════════
+CRITÈRE 5 — QUALITÉ DU CODE  [poids 10%]
+══════════════════════════════════════════
 
-5.4 Cohérence des types
-    → Mypy configuré dans pyproject.toml ou mypy.ini ?
-    → Des erreurs mypy sont-elles connues ?
-
-5.5 Imports depuis research/ dans des modules de production
-    → Cherche dans execution/, risk_engine/, live_trading/ :
+5.1 Cohérence des imports production
+    → Cherche dans execution/, execution_engine/,
+      risk_engine/, live_trading/ :
       tout import depuis research/
-    → Cite fichier:ligne ou confirme ✅ ABSENT
+    → Cite fichier:ligne ou ✅ ABSENT
 
-Verdict Critère 5 : ✅ / ❌ / ⚠️
-Score partiel : __/10
+5.2 Package edgecore/
+    → edgecore/ : quel est son rôle exact ?
+    → Est-il importé par les modules de production ?
+    → Relation avec les autres modules ? (fichier:ligne)
 
-══════════════════════
-CRITÈRE 6 — TESTS ET COUVERTURE  [poids : 10%]
-══════════════════════
-6.1 Volume et qualité des tests
-    → Nombre total de fichiers de tests dans tests/
-    → Nombre de test functions (grep def test_)
-    → Les tests couvrent-ils : signal, risk, execution, backtest ?
+5.3 Cohérence des types
+    → pyproject.toml : mypy configuré ? (ligne)
+    → Erreurs mypy connues dans le codebase ?
 
-6.2 Tests meaningful vs coverage theater
-    → Sélectionne 3 fichiers de test au hasard
+5.4 Duplication de logique
+    → strategies/ vs signal_engine/ : chevauchement ?
+    → backtester/ vs backtests/ : qui fait quoi ?
+      (fichier:ligne pour les classes principales)
+
+5.5 ARCHIVED sur main branch
+    → ARCHIVED_cpp_sources/ et ARCHIVED_crypto/ :
+      du code mort sur main est-il importé quelque part ?
+    → Cite fichier:ligne ou ✅ ISOLÉ
+
+Verdict C5 : ✅ / ❌ / ⚠️  —  Score partiel : __/10
+
+══════════════════════════════════════════
+CRITÈRE 6 — TESTS ET COUVERTURE  [poids 10%]
+══════════════════════════════════════════
+
+6.1 Volume réel
+    → Nombre de fichiers dans tests/
+    → Nombre de fonctions def test_ (approximation)
+    → Couverture : signal, risk, execution, backtest,
+      pair_selection ? (un fichier par domaine au minimum)
+
+6.2 Qualité des assertions
+    → Ouvre 3 fichiers de test au hasard
     → Les assertions testent-elles du comportement réel
-      ou juste que la fonction ne plante pas ?
-    → Présence de mocks IBKR réalistes ou juste MagicMock() vide ?
+      ou juste que la fonction ne lève pas d'exception ?
+    → Mocks IBKR réalistes ou MagicMock() vide ?
 
 6.3 Tests d'intégration
-    → Existe-t-il des tests end-to-end backtest ou paper trading ?
-    → Les tests de risk_engine testent-ils le kill-switch
-      en conditions de drawdown simulé ?
+    → Test end-to-end backtest ou paper trading ?
+    → Kill-switch testé en conditions de drawdown simulé ?
+      (fichier:ligne)
 
-Verdict Critère 6 : ✅ / ❌ / ⚠️
-Score partiel : __/10
+6.4 Cohérence avec test_out.txt
+    → test_out.txt : combien de tests passent/échouent ?
+    → Cohérent avec "295+ tests, 100% pass rate" du README ?
 
-══════════════════════
-CRITÈRE 7 — OBSERVABILITÉ  [poids : 5%]
-══════════════════════
+Verdict C6 : ✅ / ❌ / ⚠️  —  Score partiel : __/10
+
+══════════════════════════════════════════
+CRITÈRE 7 — OBSERVABILITÉ  [poids 5%]
+══════════════════════════════════════════
+
 7.1 Logging structuré
-    → Format JSON ou structuré dans monitoring/ ou config/ ?
-    → Tous les événements critiques loggés :
-      ordre envoyé, fill reçu, kill-switch déclenché,
-      erreur broker ? (fichier:ligne pour chaque)
+    → monitoring/ : format JSON ou structuré ? (fichier:ligne)
+    → Événements critiques loggés : ordre envoyé, fill reçu,
+      kill-switch déclenché, erreur broker ?
+      (fichier:ligne pour chaque)
 
 7.2 Alertes opérationnelles
-    → monitoring/ : Slack/email/webhook implémenté ?
-    → Alertes déclenchées par : kill-switch T3, connexion
-      perdue, drawdown > seuil ? (fichier:ligne)
+    → monitoring/ : Slack / email / webhook ? (fichier:ligne)
+    → Déclenchées par kill-switch T3, déconnexion,
+      drawdown > seuil ? (fichier:ligne)
 
-7.3 Métriques temps réel
-    → Prometheus exporter ou équivalent dans monitoring/ ?
-    → Dashboard opérationnel (pas juste un Rich terminal) ?
+7.3 Métriques runtime
+    → Prometheus exporter ou équivalent ? (fichier:ligne)
+    → Dashboard autre que terminal Rich ? (fichier:ligne)
 
-Verdict Critère 7 : ✅ / ❌ / ⚠️
-Score partiel : __/5
+Verdict C7 : ✅ / ❌ / ⚠️  —  Score partiel : __/5
 
-══════════════════════
-CRITÈRE 8 — DATA INTEGRITY  [poids : 5%]
-══════════════════════
-8.1 Corporate actions et delisting
-    → data/loader.py : ajustements dividendes/splits gérés ?
-    → data/ : delisting_guard présent et appelé ? (fichier:ligne)
+══════════════════════════════════════════
+CRITÈRE 8 — DATA INTEGRITY  [poids 5%]
+══════════════════════════════════════════
+
+8.1 Corporate actions
+    → data/loader.py : ajustements dividendes/splits ?
+      (fichier:ligne)
+    → delisting_guard : présent et appelé ? (fichier:ligne)
+    → ibkr_invalid_symbols.txt : que contient-il ?
+      Géré automatiquement ou manuellement ?
 
 8.2 Fallback data provider
-    → data/loader.py supporte-t-il un provider autre qu'IBKR ?
-    → Le fallback est-il automatique ou manuel ?
+    → data/loader.py : provider autre qu'IBKR ?
+      (Yahoo Finance, Polygon, CSV local) (fichier:ligne)
+    → Fallback automatique ou manuel ?
 
-8.3 Validation des données en entrée
-    → Données manquantes, NaN, gaps de marché :
-      traitement explicite ? (fichier:ligne)
-    → Validation du format OHLCV avant calcul des signaux ?
+8.3 Validation des données
+    → NaN, gaps, données manquantes : traitement explicite ?
+      (fichier:ligne dans data/ ou signal_engine/)
+    → debug_load_errors.txt : types d'erreurs récurrentes ?
 
-Verdict Critère 8 : ✅ / ❌ / ⚠️
-Score partiel : __/5
+Verdict C8 : ✅ / ❌ / ⚠️  —  Score partiel : __/5
 
-══════════════════════
-CRITÈRE 9 — SÉCURITÉ  [poids : 3%]
-══════════════════════
-9.1 Credentials
-    → Scan complet : password=, secret=, token=, api_key=
-      dans TOUS les .py (hors .env et tests/)
-    → Résultat : ✅ AUCUN trouvé / ❌ liste des occurrences
+══════════════════════════════════════════
+CRITÈRE 9 — SÉCURITÉ  [poids 3%]
+══════════════════════════════════════════
 
-9.2 Mode live protégé
-    → main.py ou live_trading/runner.py : confirmation
-      explicite requise avant démarrage en mode live ?
-    → Variable IB_PAPER_MODE ou EDGECORE_ENV vérifiée
-      au démarrage ? (fichier:ligne)
+9.1 Credentials dans le code
+    → Scan : password=, secret=, token=, api_key=
+      dans TOUS les .py (hors tests/ et .env)
+    → ✅ AUCUN / ❌ liste (fichier:ligne:valeur)
 
-Verdict Critère 9 : ✅ / ❌ / ⚠️
-Score partiel : __/3
+9.2 Protection du mode live
+    → main.py ou live_trading/runner.py :
+      confirmation explicite avant démarrage live ?
+      (fichier:ligne)
+    → EDGECORE_ENV ou IB_PAPER_MODE vérifié au boot ?
+      (fichier:ligne)
 
-══════════════════════
-CRITÈRE 10 — MATURITÉ OPÉRATIONNELLE  [poids : 2%]
-══════════════════════
-10.1 Runbook opérationnel
-     → NE PAS lire les .md
-     → Cherche dans scripts/ : procédures de démarrage,
-       arrêt propre, recovery ? (fichier:ligne)
+Verdict C9 : ✅ / ❌ / ⚠️  —  Score partiel : __/3
 
-10.2 Arrêt propre (graceful shutdown)
-     → live_trading/runner.py : signal SIGTERM/SIGINT géré ?
-     → Les positions sont-elles fermées ou sanctuarisées
-       avant shutdown ? (fichier:ligne)
+══════════════════════════════════════════════
+CRITÈRE 10 — MATURITÉ OPÉRATIONNELLE  [poids 2%]
+══════════════════════════════════════════════
 
-10.3 État persistant entre redémarrages
+10.1 Graceful shutdown
+     → live_trading/runner.py : SIGTERM/SIGINT géré ?
+       (fichier:ligne)
+     → Positions fermées ou sanctuarisées avant shutdown ?
+
+10.2 État persistant
      → persistence/ : état du portefeuille sauvegardé ?
-     → Au redémarrage, le système réconcilie-t-il avec IBKR ?
+       (fichier:ligne)
+     → Réconciliation avec IBKR au redémarrage ?
 
-Verdict Critère 10 : ✅ / ❌ / ⚠️
-Score partiel : __/2
+10.3 Scripts opérationnels
+     → scripts/ : procédures de démarrage, arrêt,
+       recovery ? (fichier:ligne)
+
+Verdict C10 : ✅ / ❌ / ⚠️  —  Score partiel : __/2
 
 ═══════════════════════════════════════════════════════════════
 VERDICT FINAL
 ═══════════════════════════════════════════════════════════════
+
 Tableau de scoring :
 | Critère                  | Poids | Score brut | Score pondéré | Verdict |
 |--------------------------|-------|------------|---------------|---------|
@@ -306,24 +355,30 @@ Tableau de scoring :
 | 10. Maturité ops         |   2%  |     /2     |               |         |
 | **TOTAL**                | 100%  |            |   **/10**     |         |
 
+Déductions ⚠️ appliquées : X × 0.2 = -X.X points
+
 Blockers identifiés :
-❌ BLOQUANT #1 : [description + fichier:ligne]
-❌ BLOQUANT #2 : [description + fichier:ligne]
+❌ BLOQUANT #1 : [description + fichier:ligne + effort correctif en jours]
+❌ BLOQUANT #2 : ...
 
 Conditionnels identifiés :
-⚠️ CONDITIONNEL #1 : [action corrective requise + effort en jours]
+⚠️ CONDITIONNEL #1 : [action corrective + effort en jours]
 
 CERTIFICATION FINALE :
-┌─────────────────────────────────────────────────────┐
-│  Score : X.X / 10                                   │
-│  Statut : [ PRODUCTION-READY ✅ ]                   │
-│           [ PRODUCTION-READY SOUS CONDITIONS ⚠️ ]   │
-│           [ NON PRODUCTION-READY ❌ ]                │
+┌──────────────────────────────────────────────────────┐
+│  Score brut    : X.X / 10                            │
+│  Déductions ⚠️ : -X.X                                │
+│  Score final   : X.X / 10                            │
 │                                                      │
-│  Blockers restants   : X                            │
-│  Conditionnels       : X                            │
-│  Délai estimé        : X jours de travail           │
-└─────────────────────────────────────────────────────┘
+│  Statut :                                            │
+│    [ PRODUCTION-READY              ✅ ]              │
+│    [ PRODUCTION-READY CONDITIONNEL ⚠️ ]              │
+│    [ NON PRODUCTION-READY          ❌ ]              │
+│                                                      │
+│  Blockers restants   : X                             │
+│  Conditionnels       : X                             │
+│  Délai estimé        : X jours de travail            │
+└──────────────────────────────────────────────────────┘
 
 Conclusion (5 lignes max, sans complaisance) :
 [Ce système peut/ne peut pas aller en production parce que...]
@@ -332,16 +387,15 @@ Conclusion (5 lignes max, sans complaisance) :
 CONTRAINTES ABSOLUES
 ═══════════════════════════════════════════════════════════════
 - Cite fichier:ligne pour CHAQUE affirmation factuelle
-- Si un fichier est absent : ❌ ABSENT — ne suppose pas son contenu
+- Fichier absent → ❌ ABSENT, jamais de supposition sur son contenu
 - Ne lis PAS les fichiers .md / .rst
-- Lis les .txt UNIQUEMENT : bt_results_*.txt, bt_errors_*.txt,
-  bt_best.txt, bt_out*.txt, ibkr_invalid_symbols.txt,
-  debug_load_errors.txt
+- Lis les .txt UNIQUEMENT ceux listés à l'Étape 0
 - "À VÉRIFIER" uniquement si la preuve est physiquement absente
-- Ne jamais conclure ✅ sans citer la ligne de code qui prouve
-  l'assertion
-- Le score final est calculé mécaniquement depuis le tableau —
-  jamais ajusté à la hausse par impression générale
+- Ne jamais conclure ✅ sans la ligne de code qui prouve l'assertion
+- Score calculé mécaniquement — jamais ajusté par impression générale
+- La double architecture execution/ + execution_engine/ et
+  risk/ + risk_engine/ doit être résolue dans le graphe d'imports
+  réel, pas supposée cohérente
 
 ─────────────────────────────────────────────
 SORTIE OBLIGATOIRE
@@ -362,6 +416,9 @@ Structure du fichier :
 Tableau synthèse :
 | ID | Bloc | Description | Fichier:Ligne | Sévérité | Impact | Effort |
 |----|------|-------------|---------------|----------|--------|--------|
+
+Ce tableau récapitule UNIQUEMENT les ❌ BLOQUANT et ⚠️ CONDITIONNEL
+identifiés dans les Critères 1 à 10. Les ✅ n'y figurent pas.
 
 Sévérité : 🔴 BLOQUANT / 🟠 CONDITIONNEL / 🟡 MINEUR.
 
