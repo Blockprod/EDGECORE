@@ -23,7 +23,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-<<<<<<< HEAD
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -33,9 +32,6 @@ dev = [
     "bandit>=1.7.0",
     "mypy>=1.8.0",
 ]
-=======
-dev = ["pytest>=7.4.0", "pytest-cov>=4.1.0", "mypy>=1.8.0"]
->>>>>>> origin/main
 
 [tool.mypy]
 python_version = "3.11"
@@ -65,7 +61,6 @@ module = [
 ]
 ignore_missing_imports = true
 
-<<<<<<< HEAD
 # Modules with broad ignore (non-critical paths or third-party-heavy code)
 [[tool.mypy.overrides]]
 module = [
@@ -90,20 +85,6 @@ check_untyped_defs = true
 warn_return_any = true
 no_implicit_optional = true
 
-=======
-[[tool.mypy.overrides]]
-module = [
-    "execution.*",
-    "strategies.*",
-    "risk.*",
-    "risk_engine.*",
-    "signal_engine.*",
-    "portfolio_engine.*",
-    "models.*",
-]
-ignore_errors = true
-
->>>>>>> origin/main
 [tool.ruff]
 line-length = 120
 exclude = [
@@ -116,7 +97,6 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-<<<<<<< HEAD
 # Rules activées
 select = [
     "E",    # pycodestyle errors
@@ -196,22 +176,3 @@ omit = [
 # Only show files with less than 100% coverage in the terminal report.
 skip_covered = false
 show_missing = true
-=======
-# Ignore minor/stylistic rules that don't affect correctness
-ignore = [
-    "E402",   # module-import-not-at-top-of-file (common in scripts)
-    "E501",   # line-too-long (handled by formatter)
-    "E722",   # bare-except (acceptable in resilient trading code)
-    "E741",   # ambiguous-variable-name (l, O, I)
-    "E721",   # type-comparison (use isinstance() - informational only)
-    "E731",   # lambda-assignment
-    "E712",   # true-false-comparison (== True)
-]
-# Rules to enforce
-select = ["F", "E"]
-
-[tool.ruff.lint.per-file-ignores]
-"scripts/*" = ["F401"]
-"tests/validation/*" = ["F401"]
-"ARCHIVED_*/**" = ["F401"]
->>>>>>> origin/main
