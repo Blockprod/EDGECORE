@@ -270,3 +270,12 @@
 **Ref** : `tests/test_order_lifecycle.py`, `tests/test_walk_forward_integration.py` — commit `4374abe` (2026-04-05)
 
 ---
+
+## L-28 · fix(ci): remove lfs-migration-preview trigger + resolve merge conflict markers [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `57f0083` : fix(ci): remove lfs-migration-preview trigger + resolve merge conflict markers. Fichiers : .github/workflows/ci.yml
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `.github/workflows/ci.yml` — commit `57f0083` (2026-04-05)
+
+---
