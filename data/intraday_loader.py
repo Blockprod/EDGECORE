@@ -210,7 +210,7 @@ class IntradayLoader:
             index=pd.DatetimeIndex([b.date for b in all_bars]),
         )
         df.index.name = "datetime"
-        df = df[~df.index.duplicated(keep="last")].sort_index()
+        df = cast(pd.DataFrame, df[~df.index.duplicated(keep="last")]).sort_index()
         logger.info(
             "intraday_ibkr_fetched",
             symbol=symbol,

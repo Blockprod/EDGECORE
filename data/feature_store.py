@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import hashlib
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pandas as pd
 import structlog
@@ -120,7 +120,7 @@ class FeatureStore:
         if not path.exists():
             return None
         try:
-            series = pd.read_parquet(path)["value"]
+            series: pd.Series = cast(pd.Series, pd.read_parquet(path)["value"])
             logger.debug("feature_store_hit", key=key[:8])
             return series
         except Exception as exc:

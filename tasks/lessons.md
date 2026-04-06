@@ -297,3 +297,12 @@
 **Ref** : `.github/workflows/main.yml` — commit `8428507` (2026-04-06)
 
 ---
+
+## L-31 · fix(pyright): 0 errors 0 warnings — cast pandas bool-index returns + fix DatetimeIndex.normalize stubs gap [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `01319cc` : fix(pyright): 0 errors 0 warnings — cast pandas bool-index returns + fix DatetimeIndex.normalize stubs gap. Fichiers : backtests/runner.py, backtests/walk_forward.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `backtests/runner.py`, `backtests/walk_forward.py`, `data/corporate_actions.py` — commit `01319cc` (2026-04-06)
+
+---

@@ -11,7 +11,7 @@ Key Insight:
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -378,7 +378,7 @@ class DynamicSpreadModel:
                 breakdown_count=self.kalman_filter.breakdown_count,
                 bars_processed=self.kalman_filter.bars_processed,
             )
-        return kf_results["spread"]
+        return cast(pd.Series, kf_results["spread"])
 
     def compute_z_score(self, spread: pd.Series, lookback: int | None = None) -> pd.Series:
         """

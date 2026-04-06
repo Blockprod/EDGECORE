@@ -47,7 +47,7 @@ import pickle
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -481,8 +481,8 @@ class ThresholdFeatureEngineer:
 
         # Extract features and targets
         X = df[feature_cols].copy()
-        y_entry = df["entry_threshold"].copy()
-        y_exit = df["exit_threshold"].copy()
+        y_entry = cast(pd.Series, df["entry_threshold"].copy())
+        y_exit = cast(pd.Series, df["exit_threshold"].copy())
 
         # Normalize features
         X_scaled = self.scaler.fit_transform(X)

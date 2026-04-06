@@ -279,10 +279,11 @@ class BacktestRunner:
 
                 _cached = _pd.read_parquet(_cache_path)
                 price_data = {col: _cached[col] for col in _cached.columns}
-                return (
+                return cast(
+                    pd.DataFrame,
                     _cached[((_cached.index >= start_date) & (_cached.index <= end_date))]
                     if len(_cached[((_cached.index >= start_date) & (_cached.index <= end_date))]) > 0
-                    else _cached.tail(252)
+                    else _cached.tail(252),
                 )
 
         # ÔöÇÔöÇ IBKR live load (no valid cache) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
@@ -379,7 +380,7 @@ class BacktestRunner:
             raise ValueError(f"No valid data loaded. Failed symbols: {failed_symbols}")
 
         prices_df = pd.DataFrame(price_data)
-        filtered = prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)]
+        filtered = cast(pd.DataFrame, prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)])
         if len(filtered) == 0:
             prices_df = prices_df.tail(252)
         else:

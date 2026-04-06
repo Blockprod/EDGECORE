@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-from typing import Any
+from typing import Any, cast
 from structlog import get_logger
 from data.loader import DataLoader
 from data.validators import DataValidationError
@@ -117,7 +117,7 @@ def load_all_data(
     loader = DataLoader()
     all_symbols = [s for syms in candidates.values() for s in syms]
     price_data = {}
-    failed = []
+    failed: list[str] = []
 
     for sym in all_symbols:
         try:
@@ -139,7 +139,7 @@ def load_all_data(
 
     prices_df = pd.DataFrame(price_data)
     # Filter to requested date range
-    prices_df = prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)]
+    prices_df = cast(pd.DataFrame, prices_df[(prices_df.index >= start_date) & (prices_df.index <= end_date)])
     print(f"\nLoaded {len(prices_df)} bars for {len(prices_df.columns)} symbols")
     if failed:
         print(f"Failed: {failed}")

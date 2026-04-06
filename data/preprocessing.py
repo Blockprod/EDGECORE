@@ -1,3 +1,5 @@
+from typing import cast
+
 import numpy as np
 import pandas as pd
 
@@ -16,7 +18,7 @@ def resample_ohlcv(df: pd.DataFrame, target_freq: str) -> pd.DataFrame:
     resampled = df.resample(target_freq).agg(
         {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
     )
-    return resampled.dropna()
+    return cast(pd.DataFrame, resampled.dropna())
 
 
 def align_pairs(df1: pd.DataFrame, df2: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:

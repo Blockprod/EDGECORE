@@ -16,7 +16,7 @@ training window and uses a FRESH strategy instance.  Zero data leakage.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -358,7 +358,7 @@ class WalkForwardBacktester:
                 raise ValueError("No symbols loaded successfully")
 
             full_df = pd.DataFrame(price_data)
-            full_df = full_df[(full_df.index >= start_date) & (full_df.index <= end_date)]
+            full_df = cast(pd.DataFrame, full_df[(full_df.index >= start_date) & (full_df.index <= end_date)])
             if len(full_df) == 0:
                 raise ValueError(f"No data in date range {start_date} to {end_date}")
             return full_df

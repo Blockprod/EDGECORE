@@ -33,7 +33,7 @@ from __future__ import annotations
 import json
 from datetime import date
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
 from structlog import get_logger
@@ -188,7 +188,7 @@ class CorporateActionsProvider:
                 all_exdates.add(ts.normalize())
 
         prices_df = prices_df.copy()
-        prices_df["is_exdate"] = cast(pd.DatetimeIndex, prices_df.index).normalize().isin(all_exdates)
+        prices_df["is_exdate"] = cast(Any, prices_df.index).normalize().isin(all_exdates)
         logger.info(
             "corporate_actions_marked",
             total_exdate_bars=int(prices_df["is_exdate"].sum()),
@@ -205,7 +205,7 @@ class CorporateActionsProvider:
         if self._use_cache:
             cached = _load_cache(symbol)
             if cached is not None:
-                return [pd.Timestamp(d) for d in cached.get("exdates", [])]
+                return cast(list[pd.Timestamp], [pd.Timestamp(d) for d in cached.get("exdates", [])])
 
         exdates = self._detect_from_ibkr(symbol)
 
