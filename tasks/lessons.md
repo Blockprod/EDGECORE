@@ -288,3 +288,12 @@
 **Ref** : `backtests/strategy_simulator.py`, `data/loader.py`, `live_trading/runner.py` — commit `cd3f7c7` (2026-04-05)
 
 ---
+
+## L-30 · ci: fix trufflehog base/head — use event.before/after instead of branch name [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `8428507` : ci: fix trufflehog base/head — use event.before/after instead of branch name. Fichiers : .github/workflows/main.yml
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `.github/workflows/main.yml` — commit `8428507` (2026-04-06)
+
+---
