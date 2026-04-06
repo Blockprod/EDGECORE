@@ -119,28 +119,6 @@ class StrategyConfigSchema(BaseModel):
         default=0.50, ge=0.0, le=5.0, description="Min absolute spread ($) for entry ÔÇö filters micro-deviations"
     )
 
-    # Stat-arb z-score entry/exit (validated in _validate_config)
-    entry_z_score: float = Field(
-        default=2.0,
-        ge=1.5,
-        le=4.0,
-        description="Z-score threshold for stat-arb entry (1.5-4.0)"
-    )
-    
-    exit_z_score: float = Field(
-        default=0.5,
-        ge=0.0,
-        le=2.0,
-        description="Z-score threshold for stat-arb exit (0-2.0)"
-    )
-
-    entry_z_min_spread: float = Field(
-        default=0.50,
-        ge=0.0,
-        le=5.0,
-        description="Min absolute spread ($) for entry — filters micro-deviations"
-    )
-
     short_sizing_multiplier: float = Field(
         default=0.50,
         ge=0.0,
