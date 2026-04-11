@@ -86,11 +86,7 @@ echo.
 echo  == Dernieres lignes de log ==
 echo.
 set "LOGDIR=C:\Users\averr\EDGECORE_V1\logs"
-for /f "delims=" %%F in ('dir /b /o-d "%LOGDIR%\*.log" 2^>nul') do (
-    echo  Fichier: %%F
-    powershell -Command "Get-Content '%LOGDIR%\%%F' -Tail 40"
-    goto LOG_DONE
-)
+for /f "delims=" %%F in ('dir /b /o-d "%LOGDIR%\*.log" 2^>nul') do (echo  Fichier: %%F& powershell -Command "Get-Content '%LOGDIR%\%%F' -Tail 40"& goto LOG_DONE)
 echo  Aucun log trouve dans %LOGDIR%
 :LOG_DONE
 echo.
@@ -108,7 +104,6 @@ goto MENU
 :OPT_DASHBOARD
 echo.
 echo  [*] Ouverture du dashboard dans le navigateur...
-echo      Le bot doit etre demarre (option 4 ou 7).
 start "" "http://127.0.0.1:5000/dashboard"
 goto MENU
 
