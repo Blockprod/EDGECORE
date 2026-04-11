@@ -13,7 +13,7 @@ set "PYTHON_EXE=C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe"
 cls
 echo.
 echo +==============================================================+
-echo |        EDGECORE V1 -- Gestion des taches                    |
+echo ^|        EDGECORE V1 -- Gestion des taches                    ^|
 echo +==============================================================+
 echo.
 

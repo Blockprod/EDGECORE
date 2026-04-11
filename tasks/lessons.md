@@ -387,3 +387,12 @@
 **Ref** : `scripts/manage_task.bat` — commit `5fb33ca` (2026-04-11)
 
 ---
+
+## L-41 · fix: manage_task.bat -- escape pipe char (^|) in echo lines [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `bbc0abb` : fix: manage_task.bat -- escape pipe char (^|) in echo lines. Fichiers : scripts/manage_task.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/manage_task.bat` — commit `bbc0abb` (2026-04-11)
+
+---
