@@ -31,8 +31,8 @@ echo  ^|  3. Arreter  IB Gateway  (planificateur)             ^|
 echo  ^|  4. Demarrer Bot         (planificateur)             ^|
 echo  ^|  5. Arreter  Bot         (planificateur)             ^|
 echo  ^|  6. Voir dernieres lignes de log                     ^|
-echo  ^|  7. Lancer en mode console  (paper)          *      ^|
-echo  ^|  8. Demarrer serveur dashboard web           *      ^|
+echo  ^|  7. Lancer le bot en mode console  (paper)           ^|
+echo  ^|  8. Ouvrir le dashboard dans le navigateur      *      ^|
 echo  ^|  9. Ouvrir Planificateur de taches Windows           ^|
 echo  ^|  0. Quitter                                          ^|
 echo  ^| 10. Ouvrir le dashboard dans le navigateur   *      ^|
@@ -130,30 +130,22 @@ goto MENU
 :: ============================================================
 :OPT_CONSOLE
 echo.
-echo  [>>] Lancement EDGECORE en mode console (paper)...
-echo  [>>] Fenetre 1 : Bot
-echo  [>>] Fenetre 2 : Serveur dashboard web (port 5000)
+echo  [>>] Lancement EDGECORE Bot en mode console (paper)...
 echo.
 
-start "EDGECORE Bot Paper"    cmd /k %PROJECT_DIR%\scripts\console_bot.bat
-start "EDGECORE Dashboard API" cmd /k %PROJECT_DIR%\scripts\console_api.bat
+start "EDGECORE Bot Paper" cmd /k %PROJECT_DIR%\scripts\console_bot.bat
 
 echo.
-echo  [OK] Deux fenetres ouvertes.
-echo       Dashboard -^> %DASHBOARD_URL%
-echo       (Option 10 pour ouvrir dans le navigateur)
+echo  [OK] Fenetre bot ouverte.
 echo.
-timeout /t 3 >nul
+timeout /t 2 >nul
 goto MENU
 
 :: ============================================================
 :OPT_API_SERVER
 echo.
-echo  [>>] Demarrage du serveur dashboard web (port 5000)...
-start "EDGECORE Dashboard API" cmd /k %PROJECT_DIR%\scripts\console_api.bat
-echo.
-echo  [OK] Serveur lance -> %DASHBOARD_URL%
-timeout /t 2 >nul
+echo  [>>] Ouverture du dashboard dans le navigateur...
+start "" "%DASHBOARD_URL%"
 goto MENU
 
 :: ============================================================

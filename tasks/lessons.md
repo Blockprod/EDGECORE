@@ -351,3 +351,12 @@
 **Ref** : `scripts/manage_task.bat` — commit `cfa5120` (2026-04-11)
 
 ---
+
+## L-37 · fix: manage_task.bat -- option 7 = bot only, option 8 = open browser dashboard [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `0d4fbc3` : fix: manage_task.bat -- option 7 = bot only, option 8 = open browser dashboard. Fichiers : scripts/manage_task.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/manage_task.bat` — commit `0d4fbc3` (2026-04-11)
+
+---
