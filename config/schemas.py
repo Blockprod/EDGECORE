@@ -144,6 +144,13 @@ class StrategyConfigSchema(BaseModel):
         description="v30: Sizing for the favorable side in trending regimes (BULL->longs, BEAR->shorts)",
     )
 
+    trend_unfavorable_sizing: float = Field(
+        default=0.0,
+        ge=0.0,
+        le=1.0,
+        description="v60: Sizing for the unfavorable side in trending regimes (BULL->shorts, BEAR->longs). 0=blocked.",
+    )
+
     neutral_sizing: float = Field(
         default=0.65, ge=0.1, le=1.0, description="v30: Sizing for both sides in NEUTRAL regime"
     )

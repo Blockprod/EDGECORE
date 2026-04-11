@@ -240,16 +240,8 @@ class KalmanHedgeRatio:
         if len(y) != len(x):
             raise ValueError(f"y and x must have same length, got {len(y)} vs {len(x)}")
 
-        # Reset state for a clean run
-        self.beta = None
-        self.P = None
-        self.R = self.ve
-        self.beta_history = []
-        self.spread_history = []
-        self.innovation_history = []
-        self.P_history = []
-        self.breakdown_count = 0
-        self.bars_processed = 0
+        # Reset state for a clean run (P3-04: use shared reset() method)
+        self.reset()
 
         for y_val, x_val in zip(y.values, x.values, strict=False):
             self.update(float(y_val), float(x_val))
@@ -277,3 +269,25 @@ class KalmanHedgeRatio:
             "ve": self.ve,
             "innovation_threshold": self.innovation_threshold,
         }
+
+    # P3-04: explicit reset so callers can re-use the instance when a pair
+    # is re-discovered after eviction, without carrying forward stale state.
+    def reset(self) -> None:
+        """Reset all filter state to its initial (post-__init__) values.
+
+        Call this when a pair is re-admitted to the active universe after
+        a period of eviction so the Kalman state from the previous regime
+        does not contaminate the new estimate.
+        """
+        self.beta = None
+        self.intercept = 0.0
+        self.P = None
+        self.R = self.ve
+        self.S = 0.0
+        self.Q = np.diag([self.delta, self.delta * 0.1])
+        self.beta_history = []
+        self.spread_history = []
+        self.innovation_history = []
+        self.P_history = []
+        self.breakdown_count = 0
+        self.bars_processed = 0

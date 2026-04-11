@@ -315,3 +315,12 @@
 **Ref** : `config/settings.py`, `execution/gw_manager.py`, `live_trading/runner.py` — commit `9783dea` (2026-04-11)
 
 ---
+
+## L-33 · feat: v63 Sweet Set CERT-03b PASS + launch infra (manage_task.bat) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `064d76c` : feat: v63 Sweet Set CERT-03b PASS + launch infra (manage_task.bat). Fichiers : backtests/position_tracker.py, backtests/runner.py
+**Erreur** : EDGECORE_ENV=production (valeur invalide) au lieu de prod
+**Règle** : Les valeurs valides sont uniquement : dev, test, prod. La valeur 'production' tombe silencieusement sur dev.yaml.
+**Ref** : `backtests/position_tracker.py`, `backtests/runner.py`, `backtests/sector_exposure_manager.py` — commit `064d76c` (2026-04-11)
+
+---

@@ -271,6 +271,20 @@ def engle_granger_test(
         # as the Cython path and downstream SpreadModel consumers.
         residuals = y.values - (alpha_raw + beta_raw * x.values)
 
+        # P3-02: Reject perfectly-correlated (rank-deficient) pairs whose
+        # residuals are constant — the ADF test cannot accept a constant series.
+        if np.std(residuals) < 1e-10:
+            return {
+                "beta": beta_raw,
+                "intercept": alpha_raw,
+                "residuals": residuals,
+                "adf_statistic": np.nan,
+                "adf_pvalue": 1.0,
+                "is_cointegrated": False,
+                "critical_values": {},
+                "error": "Rank-deficient pair (residuals are constant — series may be identical)",
+            }
+
         # Check for NaN in residuals
         if np.isnan(residuals).any() or np.isinf(residuals).any():
             return {

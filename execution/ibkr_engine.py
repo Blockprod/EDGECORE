@@ -67,8 +67,23 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         self._consecutive_failures = 0
         self._max_consecutive_failures = 5  # circuit breaker threshold
         self._last_failure_time: float = 0.0  # A-11: timestamp of last failure for auto-reset
-        _CB_RESET_TIMEOUT = 300  # 5 minutes � auto-reset after sustained inactivity
-        self._cb_reset_timeout = _CB_RESET_TIMEOUT
+        # P1-03: configurable CB reset with exponential backoff and dead-gateway detection
+        try:
+            from config.settings import get_settings as _gs
+
+            _ecfg = _gs().execution
+            _base_reset = float(getattr(_ecfg, "ibkr_cb_base_reset_seconds", 300))
+            _max_dead = int(getattr(_ecfg, "ibkr_cb_max_dead_cycles", 3))
+        except Exception:
+            _base_reset, _max_dead = 300.0, 3
+        self._cb_base_reset_timeout: float = _base_reset
+        self._cb_reset_timeout: float = _base_reset  # grows each cycle
+        self._cb_max_reset_timeout: float = _base_reset * 4  # 300 → 600 → 1200s
+        self._cb_max_dead_cycles: int = _max_dead
+        self._cb_cycle_count: int = 0
+        self._gateway_declared_dead: bool = False
+        # P2-02: orders where permId was 0 after timeout — need reconciliation on restart
+        self._pending_confirm_orders: set[str] = set()
 
         # Restore persisted order map on init (crash recovery)
         self._load_order_map()
@@ -104,17 +119,42 @@ class IBKRExecutionEngine(BaseExecutionEngine):
             self._consecutive_failures = 0
             return
 
+        # P1-03: hard stop if gateway was declared dead — operator must call reset_gateway_dead()
+        if self._gateway_declared_dead:
+            raise ConnectionError(
+                "IBKR Gateway declared dead after "
+                f"{self._cb_cycle_count} consecutive reconnect cycles. "
+                "Operator intervention required: call reset_gateway_dead()."
+            )
+
         # Circuit breaker: refuse to connect after too many failures
         if self._consecutive_failures >= self._max_consecutive_failures:
             elapsed = time.time() - self._last_failure_time
             if elapsed >= self._cb_reset_timeout:
-                # A-11: auto-reset after 5 minutes of no activity
+                # P1-03: track cycle, double reset window for next cycle (exponential backoff)
+                self._cb_cycle_count += 1
                 logger.warning(
                     "ibkr_circuit_breaker_auto_reset",
                     elapsed_s=round(elapsed, 0),
                     previous_failures=self._consecutive_failures,
+                    cycle=self._cb_cycle_count,
+                    next_reset_s=min(self._cb_reset_timeout * 2, self._cb_max_reset_timeout),
                 )
+                self._cb_reset_timeout = min(self._cb_reset_timeout * 2, self._cb_max_reset_timeout)
                 self._consecutive_failures = 0
+                # P1-03: declare dead after N cycles — requires manual operator reset
+                if self._cb_cycle_count >= self._cb_max_dead_cycles:
+                    self._gateway_declared_dead = True
+                    logger.critical(
+                        "ibkr_gateway_declared_dead_operator_alert",
+                        cycles=self._cb_cycle_count,
+                        host=self.host,
+                        port=self.port,
+                    )
+                    raise ConnectionError(
+                        f"IBKR Gateway declared dead after {self._cb_cycle_count} reconnect cycles. "
+                        "Operator intervention required: call reset_gateway_dead()."
+                    )
             else:
                 raise ConnectionError(
                     f"IBKR circuit breaker open: {self._consecutive_failures} consecutive failures. "
@@ -127,7 +167,13 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         except RuntimeError:
             asyncio.set_event_loop(asyncio.new_event_loop())
 
-        retry_base_delays = [5, 15, 30]  # seconds base
+        retry_base_delays = [5, 15, 30]  # seconds base — overridden by config when available
+        try:
+            from config.settings import get_settings as _gs_rc
+
+            retry_base_delays = list(_gs_rc().execution.ibkr_reconnect_retry_delays)
+        except Exception:
+            pass  # fall back to hardcoded defaults if settings unavailable at this call site
         last_error = None
 
         for attempt, base_delay in enumerate(retry_base_delays, 1):
@@ -178,6 +224,55 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         logger.warning("ibkr_disconnected_event", host=self.host, port=self.port)
         self._ib = None  # force reconnect on next call
 
+    def reset_gateway_dead(self) -> None:
+        """Operator method: clear the dead-gateway flag after manual intervention.
+
+        Call this after confirming IB Gateway / TWS has been restarted and is
+        reachable.  Resets CB cycle counter and reset-timeout back to the base
+        value so the engine can attempt reconnection.
+        """
+        self._gateway_declared_dead = False
+        self._cb_cycle_count = 0
+        self._cb_reset_timeout = self._cb_base_reset_timeout
+        self._consecutive_failures = 0
+        logger.warning("ibkr_gateway_dead_reset_by_operator", host=self.host, port=self.port)
+
+    def reconcile_pending_confirm(self) -> int:
+        """Resolve orders where permId timed out on a previous run.
+
+        Must be called after reconnecting to IBKR, before accepting new orders.
+        Uses ``reqOpenOrders()`` to match live IBKR orders back to
+        ``_pending_confirm_orders`` by ``orderRef`` (which is set to our
+        internal ``order_id``).
+
+        Returns the number of orders whose permId was resolved.
+        """
+        if not self._pending_confirm_orders:
+            return 0
+        resolved = 0
+        try:
+            self._ensure_connected()
+            open_orders = self._ib.reqOpenOrders()
+            for entry in open_orders:
+                ib_order = getattr(entry, "order", entry)
+                ref: str = getattr(ib_order, "orderRef", "") or ""
+                if ref in self._pending_confirm_orders:
+                    perm_id: int = getattr(ib_order, "permId", 0) or 0
+                    if perm_id:
+                        self._persisted_order_ids[ref] = perm_id
+                        self._pending_confirm_orders.discard(ref)
+                        resolved += 1
+            if resolved:
+                self._save_order_map()
+            logger.info(
+                "ibkr_pending_confirm_reconciled",
+                resolved=resolved,
+                still_pending=len(self._pending_confirm_orders),
+            )
+        except Exception as exc:
+            logger.error("ibkr_pending_confirm_reconcile_failed", error=str(exc)[:200])
+        return resolved
+
     # ������ Order management ������
     def submit_order(self, order: Order) -> str:
         """Submit order to IBKR with idempotency via persisted order mapping.
@@ -207,14 +302,29 @@ class IBKRExecutionEngine(BaseExecutionEngine):
             self._persisted_order_ids[order.order_id] = 0
             self._save_order_map()
 
-            # Give IBKR 500 ms to assign the real permId, then update.
+            # P2-02: active-poll for permId assignment (replaces fixed sleep(0.5))
+            # Poll up to 5s in 0.1s increments so we don't block the tick thread unnecessarily.
             import time as _time
 
-            _time.sleep(0.5)
-            perm_id = getattr(trade.order, "permId", 0) or 0
+            _perm_poll_deadline = _time.monotonic() + 5.0
+            perm_id = 0
+            while _time.monotonic() < _perm_poll_deadline:
+                perm_id = getattr(trade.order, "permId", 0) or 0
+                if perm_id:
+                    break
+                _time.sleep(0.1)
             if perm_id:
                 self._persisted_order_ids[order.order_id] = perm_id
                 self._save_order_map()
+                self._pending_confirm_orders.discard(order.order_id)
+            else:
+                # permId still 0 — mark as PENDING_CONFIRM; reconcile_pending_confirm() resolves it
+                self._pending_confirm_orders.add(order.order_id)
+                logger.warning(
+                    "ibkr_perm_id_timeout_pending_confirm",
+                    order_id=order.order_id,
+                    symbol=order.symbol,
+                )
 
             logger.info(
                 "ibkr_order_submitted",

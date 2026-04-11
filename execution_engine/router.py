@@ -83,6 +83,8 @@ class ExecutionRouter:
         self._orders_lock = threading.Lock()  # T3-03: guard concurrent r/w on _pending_orders
         # IBKR API rate limiter — singleton global partagé (C-04)
         self._rate_limiter = _ibkr_rate_limiter
+        # P0-02: consecutive rate-limiter timeout counter (triggers operator alert at 3)
+        self._rate_limiter_timeout_count: int = 0
 
         logger.info("execution_router_initialized", mode=mode.value)
 
@@ -295,7 +297,38 @@ class ExecutionRouter:
                 )
 
         # Rate-limit before hitting IBKR API (50 req/s hard cap)
-        self._rate_limiter.acquire()
+        # P0-02: catch RuntimeError on timeout — log CRITICAL, return REJECTED instead of crashing
+        import time as _time_rl
+
+        try:
+            self._rate_limiter.acquire()
+            self._rate_limiter_timeout_count = 0  # reset on success
+        except RuntimeError as _rl_err:
+            self._rate_limiter_timeout_count += 1
+            logger.critical(
+                "ibkr_rate_limiter_timeout",
+                error=str(_rl_err),
+                consecutive=self._rate_limiter_timeout_count,
+            )
+            if self._rate_limiter_timeout_count >= 3:
+                logger.critical(
+                    "ibkr_rate_limiter_persistent_timeout_operator_alert",
+                    consecutive=self._rate_limiter_timeout_count,
+                )
+                _time_rl.sleep(30)
+            with self._orders_lock:
+                self._pending_orders[original_order_id] = OrderStatus.REJECTED
+            return TradeExecution(
+                pair_key=pair_key,
+                symbol=ibkr_order.symbol,
+                side=side_str,
+                requested_qty=ibkr_order.quantity,
+                filled_qty=0.0,
+                fill_price=0.0,
+                commission=0.0,
+                slippage_bps=0.0,
+                is_partial=False,
+            )
 
         # Submit through IBKR engine — with retry on transient connection errors
         from common.retry import RetryPolicy, retry_with_backoff
@@ -316,9 +349,15 @@ class ExecutionRouter:
 
         submitted_order_id = _submit_with_retry(ibkr_order)
 
-        # Poll for fill (timeout after 60 seconds)
-        max_wait = 60
-        poll_interval = 0.5
+        # P4-02: record the moment the order hits the broker for latency tracking
+        _order_submitted_at = _time.monotonic()
+
+        # Poll for fill — timeout and interval from config (P1-02)
+        from config.settings import get_settings as _gs
+
+        _exec_cfg = _gs().execution
+        max_wait = _exec_cfg.order_fill_timeout_seconds
+        poll_interval = _exec_cfg.order_poll_interval_seconds
         waited = 0.0
         fill_price = order.limit_price or 0.0
         filled_qty = 0.0
@@ -353,14 +392,44 @@ class ExecutionRouter:
             waited += poll_interval
 
         if waited >= max_wait and filled_qty == 0:
-            # Timeout — cancel and log
-            logger.error("live_order_timeout", order_id=submitted_order_id, waited=max_wait)
-            self._ibkr_engine.cancel_order(submitted_order_id)
+            # P1-02: Timeout — attempt cancel with up to 3 confirmation retries, then alert operator
+            logger.critical("live_order_fill_timeout", order_id=submitted_order_id, waited=max_wait)
+            _cancel_confirmed = False
+            import time as _ct
+
+            for _cancel_attempt in range(3):
+                self._ibkr_engine.cancel_order(submitted_order_id)
+                _ct.sleep(1.0)
+                _cancel_status = self._ibkr_engine.get_order_status(submitted_order_id)
+                if _cancel_status == OrderStatus.CANCELLED:
+                    _cancel_confirmed = True
+                    break
+                logger.warning(
+                    "live_order_cancel_unconfirmed",
+                    order_id=submitted_order_id,
+                    attempt=_cancel_attempt + 1,
+                )
+            if not _cancel_confirmed:
+                logger.critical(
+                    "live_order_cancel_failed_operator_alert",
+                    order_id=submitted_order_id,
+                    symbol=order.symbol,
+                )
             is_partial = True
 
         # Compute slippage
         ref_price = order.limit_price or fill_price
         slippage_bps = abs(fill_price - ref_price) / max(ref_price, 1e-9) * 10_000 if ref_price else 0.0
+
+        # P4-02: observe order-to-fill latency and record slippage in Prometheus
+        try:
+            from monitoring.metrics import _EXECUTION_SLIPPAGE_BPS, _ORDER_FILL_LATENCY
+
+            _fill_latency = _time.monotonic() - _order_submitted_at
+            _ORDER_FILL_LATENCY.observe(_fill_latency)
+            _EXECUTION_SLIPPAGE_BPS.set(slippage_bps)
+        except Exception:
+            pass  # metrics must never crash the execution path
 
         # A-02: record final status for fill-confirmation tracking
         final_status = (

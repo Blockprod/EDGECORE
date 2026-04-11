@@ -2,14 +2,231 @@
 modele: sonnet-4.6
 mode: agent
 contexte: codebase
-produit: tasks/audits/fix_errors/PLAN_result.md
-derniere_revision: 2026-04-05
+produit: tasks/audits/fix_errors/fix_results/PLAN_result.md
+derniere_revision: 2026-04-06
 creation: 2026-03-26
 ---
 
 # PLAN DE CORRECTION — EDGECORE
 
-> Revision 2026-04-05 — basé sur SCAN_result.md (rev. 2026-04-05)
+> Revision 2026-04-06 — basé sur SCAN_result.md (rev. 2026-04-06)
+
+## LOGIQUE DE BATCHING
+
+**Contexte** : 13 erreurs pyright dans 6 fichiers, 12 violations ruff dans 5 fichiers, 0 ARG.
+Le bilan est très propre post-P0→P5-03. Il reste un bug de typing prod (`ml_impact.py`),
+4 violations ruff auto-fixables dans prod, 5 violations ruff manuelles dans les tests,
+et 5 erreurs pyright dans les tests.
+
+**Dépendances critiques** :
+- `execution/ml_impact.py` → pyright typing prod — à corriger en priorité (batch prod)
+- `strategies/pair_trading.py` → ruff F401 (imports inutilisés, aucun consommateur impacté)
+- `risk/engine.py` + `risk_engine/portfolio_risk.py` → ruff UP017 (style uniquement, auto-fix)
+- `execution_engine/router.py` → ruff F811 (_time redéfini, auto-fix)
+- Tests : corrections isolées, aucune dépendance inter-test
+
+**Ordre** : strategies/ → execution/ + execution_engine/ → risk/ + risk_engine/ → tests
+
+---
+
+## PLAN
+
+```
+PLAN = [
+  {
+    batch      : 1,
+    module     : "strategies/",
+    files      : [
+      "strategies/pair_trading.py"
+    ],
+    error_types    : ["ruff-F401"],
+    estimated_fixes: 2,
+    difficulty     : "Facile (auto-fix)",
+    fix_detail : [
+      {
+        file  : "strategies/pair_trading.py",
+        line  : 3,
+        type  : "ruff F401",
+        issue : "datetime.timedelta imported but unused",
+        fix   : "Supprimer `timedelta` du import datetime (garder uniquement datetime si utilisé)"
+      },
+      {
+        file  : "strategies/pair_trading.py",
+        line  : 20,
+        type  : "ruff F401",
+        issue : "models.cointegration.newey_west_consensus imported but unused",
+        fix   : "Supprimer la ligne d'import `newey_west_consensus`"
+      }
+    ],
+    command    : "venv\\Scripts\\python.exe -m ruff check --fix --select F401 strategies/pair_trading.py",
+    validation : "venv\\Scripts\\python.exe -m pytest tests\\strategies\\ -q --tb=no"
+  },
+
+  {
+    batch      : 2,
+    module     : "execution/ + execution_engine/",
+    files      : [
+      "execution/ml_impact.py",
+      "execution_engine/router.py"
+    ],
+    error_types    : ["typing", "ruff-F811"],
+    estimated_fixes: 7,
+    difficulty     : "Moyen",
+    fix_detail : [
+      {
+        file  : "execution/ml_impact.py",
+        lines : [135, 136, 137, 138, 139, 140],
+        type  : "pyright reportArgumentType",
+        issue : "ndarray[Unknown,Unknown]|None cannot be assigned to ArrayLike in numpy.savez(). W1/b1/W2/b2/W3/b3 are Optional[ndarray].",
+        root  : "Weights initialized to None at class level: self.W1 = None. Pyright cannot narrow to non-None inside save() without explicit guard.",
+        fix   : "Add assert guard before np.savez block:\n  if self.W1 is None or self.b1 is None or self.W2 is None or self.b2 is None or self.W3 is None or self.b3 is None:\n      raise RuntimeError('Model not trained — call fit() before save()')\n  np.savez(str(filepath.with_suffix('.npz')), W1=self.W1, ...)",
+        note  : "Le guard est sémantiquement correct : save() n'a pas de sens sur un modèle non entraîné."
+      },
+      {
+        file  : "execution_engine/router.py",
+        line  : 353,
+        type  : "ruff F811",
+        issue : "Redefinition of unused `_time` from line 243",
+        fix   : "Renommer la variable redéfinie à L353 en `_time2` ou supprimer si doublon réel",
+        command: "Vérifier le contexte L240-260 et L350-360 avant fix"
+      }
+    ],
+    validation : "venv\\Scripts\\python.exe -m pytest tests\\execution\\ tests\\execution_engine\\ -q --tb=no"
+  },
+
+  {
+    batch      : 3,
+    module     : "risk/ + risk_engine/",
+    files      : [
+      "risk/engine.py",
+      "risk_engine/portfolio_risk.py"
+    ],
+    error_types    : ["ruff-UP017"],
+    estimated_fixes: 4,
+    difficulty     : "Facile (auto-fix)",
+    fix_detail : [
+      {
+        files : ["risk/engine.py", "risk_engine/portfolio_risk.py"],
+        lines : {"risk/engine.py": [97, 459], "risk_engine/portfolio_risk.py": [94, 282]},
+        type  : "ruff UP017",
+        issue : "Use datetime.UTC alias instead of timezone.utc",
+        command: "venv\\Scripts\\python.exe -m ruff check --fix --select UP017 risk/engine.py risk_engine/portfolio_risk.py",
+        note  : "Vérifier que `from datetime import timezone` est supprimé si plus utilisé après fix"
+      }
+    ],
+    validation : "venv\\Scripts\\python.exe -m pytest tests\\risk\\ tests\\risk_engine\\ -q --tb=no"
+  },
+
+  {
+    batch      : 4,
+    module     : "tests/models + tests/execution",
+    files      : [
+      "tests/models/test_kalman_hedge.py",
+      "tests/execution/test_ibkr_crash_recovery.py",
+      "tests/execution/test_ibkr_disconnect_during_order.py"
+    ],
+    error_types    : ["ruff-B905", "typing"],
+    estimated_fixes: 7,
+    difficulty     : "Facile",
+    fix_detail : [
+      {
+        file  : "tests/models/test_kalman_hedge.py",
+        lines : [382, 392, 405, 419, 424],
+        type  : "ruff B905",
+        issue : "zip() without explicit strict= parameter",
+        fix   : "Ajouter strict=False à chaque appel zip() (les séquences peuvent être de longueurs différentes en test)",
+        example: "for yi, xi in zip(y, x, strict=False):"
+      },
+      {
+        file  : "tests/execution/test_ibkr_crash_recovery.py",
+        line  : 51,
+        type  : "pyright reportInvalidTypeForm",
+        issue : "Type annotation not supported for this statement",
+        fix   : "Lire le contexte L49-53 — probablement une annotation inline sur une variable locale dans un bloc mock/patch. Réécrire en annotation séparée ou supprimer l'annotation.",
+        example: "# Avant: mock_client: Mock = patch(...)\n# Après: mock_client = patch(...)  # type: Mock"
+      },
+      {
+        file  : "tests/execution/test_ibkr_disconnect_during_order.py",
+        line  : 47,
+        type  : "pyright reportInvalidTypeForm",
+        issue : "Même pattern que ci-dessus",
+        fix   : "Même correction"
+      }
+    ],
+    validation : "venv\\Scripts\\python.exe -m pytest tests\\models\\ tests\\execution\\ -q --tb=no"
+  },
+
+  {
+    batch      : 5,
+    module     : "tests/live_trading + tests/monitoring + tests/universe",
+    files      : [
+      "tests/live_trading/test_live_trading_recovery.py",
+      "tests/monitoring/042_test_api.py",
+      "tests/universe/test_universe_pit.py"
+    ],
+    error_types    : ["typing"],
+    estimated_fixes: 5,
+    difficulty     : "Moyen",
+    fix_detail : [
+      {
+        file  : "tests/live_trading/test_live_trading_recovery.py",
+        line  : 29,
+        type  : "pyright reportAttributeAccessIssue",
+        issue : "Cannot assign to `_positions_lock`. LockType is not assignable to RLock.",
+        fix   : "cast(threading.RLock, threading.Lock()) ou utiliser RLock directement:\n  runner._positions_lock = cast(threading.RLock, threading.RLock())",
+        note  : "Vérifier que `from typing import cast` et `import threading` sont importés dans le test"
+      },
+      {
+        file  : "tests/monitoring/042_test_api.py",
+        line  : 576,
+        type  : "pyright reportAttributeAccessIssue",
+        issue : "Cannot assign to attribute `_system_metrics` for class Flask. Attribute unknown.",
+        fix   : "Remplacer l'assignation directe par setattr:\n  setattr(app, '_system_metrics', mock_metrics)",
+        note  : "setattr contourne le type checker pour les attributs dynamiques de Flask"
+      },
+      {
+        file  : "tests/universe/test_universe_pit.py",
+        lines : [268, 276, 283],
+        type  : "pyright reportArgumentType",
+        issue : "Timestamp|NaTType not assignable to Timestamp|None parameter of get_snapshot()",
+        fix   : "Ajouter guard NaT avant chaque appel:\n  ts_val = ts if not pd.isna(ts) else None\n  snapshot = history.get_snapshot(ts_val)",
+        note  : "pd.isna(NaT) retourne True — le guard est correct"
+      }
+    ],
+    validation : "venv\\Scripts\\python.exe -m pytest tests\\live_trading\\ tests\\monitoring\\ tests\\universe\\ -q --tb=no"
+  }
+]
+```
+
+---
+
+## RÉSUMÉ
+
+```
+RÉSUMÉ:
+  total_batches    : 5
+  total_files      : 11
+  estimated_fixes  : 25  (13 pyright + 12 ruff)
+  dominant_pattern : pyright typing (Optional[ndarray], Timestamp|NaTType, AttributeAccess)
+  ordre_validation : pytest par batch → ruff global → pyright global
+
+  batch_1 : strategies/              → 1 fichier  · 2 fixes  · Facile (auto-fix F401)
+  batch_2 : execution/+exec_engine/  → 2 fichiers · 7 fixes  · Moyen  (assert guard + F811)
+  batch_3 : risk/+risk_engine/       → 2 fichiers · 4 fixes  · Facile (auto-fix UP017)
+  batch_4 : tests/models+execution   → 3 fichiers · 7 fixes  · Facile (strict=False + TypeForm)
+  batch_5 : tests/live+monitoring+universe → 3 fichiers · 5 fixes · Moyen (cast/setattr/NaT)
+
+  cible_post_fix:
+    ruff    : 0 violation
+    pyright : 0 erreur prod · 0 erreur tests
+    ARG     : 0 violation ✅ (déjà propre)
+    pytest  : ≥ 2764/2768 (maintenir les 4 pré-existants au maximum)
+```
+
+---
+
+*PLAN complet — 2026-04-06. Prêt pour P3 — FIX batch par batch.*
+
 
 ## LOGIQUE DE BATCHING
 

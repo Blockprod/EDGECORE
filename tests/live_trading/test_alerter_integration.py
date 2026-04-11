@@ -225,3 +225,56 @@ class TestErrorHandlerAlerter:
         assert alerter.send_alert.call_count >= 1
         titles = [c[1].get("title", "") if len(c) > 1 else c[0][1] for c in alerter.send_alert.call_args_list]
         assert any("max retries" in t.lower() or "Max retries" in t for t in titles)
+
+
+class TestAlertDispatchTimeout:
+    """P2-05 — alerter timeout exceptions must log WARNING and not block other alerters."""
+
+    def test_email_timeout_does_not_block_slack(self):
+        """Email SMTP timeout must not prevent Slack from receiving the alert."""
+        import smtplib
+
+        email = MagicMock()
+        email.send_alert.side_effect = smtplib.SMTPException("Timeout - no response in 10s")
+        slack = MagicMock()
+
+        runner = _make_runner(email=email, slack=slack)
+        runner._do_send_alert("CRITICAL", "Timeout test", "body")
+
+        slack.send_alert.assert_called_once_with(level="CRITICAL", title="Timeout test", message="body", data=None)
+
+    def test_email_timeout_logs_warning(self):
+        """An SMTP timeout exception must produce a WARNING (not DEBUG) log."""
+        import smtplib
+
+        import structlog.testing
+
+        email = MagicMock()
+        email.send_alert.side_effect = smtplib.SMTPException("Timeout - no response in 10s")
+        runner = _make_runner(email=email)
+
+        with structlog.testing.capture_logs() as cap_logs:
+            runner._do_send_alert("ERROR", "Hang title", "body")
+
+        warning_logs = [
+            l for l in cap_logs if l.get("log_level") == "warning" and l.get("event") == "alert_dispatch_timeout"
+        ]
+        assert warning_logs, f"Expected alert_dispatch_timeout WARNING in structlog output, got: {cap_logs}"
+
+    def test_http_timeout_does_not_block_email(self):
+        """Slack HTTP timeout must not prevent Email from receiving the alert."""
+        import requests
+
+        email = MagicMock()
+        slack = MagicMock()
+        slack.send_alert.side_effect = requests.exceptions.Timeout("HTTP timeout")
+
+        runner = _make_runner(email=email, slack=slack)
+        runner._do_send_alert("ERROR", "HTTP timeout test", "body")
+
+        email.send_alert.assert_called_once_with(level="ERROR", title="HTTP timeout test", message="body", data=None)
+
+    def test_max_workers_is_two(self):
+        """AlertExecutor must be configured with max_workers=2 (P2-05 buffer)."""
+        runner = _make_runner()
+        assert runner._alert_executor._max_workers == 2

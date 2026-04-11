@@ -350,7 +350,22 @@ class UniverseManager:
         excluded: dict[str, str] = {}
         active: list[str] = []
 
+        # P3-03: point-in-time filter — when a timestamp is given, restrict to
+        # symbols that were listed on that date to avoid look-ahead / survivorship bias.
+        if timestamp is not None and self._history_df is not None:
+            df = self._history_df
+            date_in_ok = df["date_in"] <= ts
+            date_out_ok = df["date_out"].isna() | (df["date_out"] > ts)
+            _pit_active = set(df.loc[date_in_ok & date_out_ok, "symbol"].tolist())
+        else:
+            _pit_active = None  # no filter — use all symbols
+
         for sym in self._all_symbols:
+            # Point-in-time filter: skip symbols not yet listed (or already delisted)
+            if _pit_active is not None and sym not in _pit_active:
+                excluded[sym] = "not_listed_at_bar_date"
+                continue
+
             # Manual exclusion
             if sym in self._manually_excluded:
                 excluded[sym] = "manually_excluded"

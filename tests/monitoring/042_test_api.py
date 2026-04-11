@@ -528,5 +528,136 @@ class TestDataIntegrity:
             assert value is None or isinstance(value, (int, float, str))
 
 
+# ---------------------------------------------------------------------------
+# P4-01: Prometheus SDK metrics format
+# ---------------------------------------------------------------------------
+
+
+class TestPrometheusSDKMetrics:
+    """P4-01 — /metrics must use prometheus_client SDK output."""
+
+    def test_metrics_endpoint_returns_200(self):
+        """GET /metrics returns 200 when no auth token is configured."""
+        import os
+
+        app = create_app(dashboard=None)
+        client = app.test_client()
+        with app.test_request_context():
+            env_bak = os.environ.pop("METRICS_AUTH_TOKEN", None)
+            try:
+                response = client.get("/metrics")
+                assert response.status_code == 200
+            finally:
+                if env_bak is not None:
+                    os.environ["METRICS_AUTH_TOKEN"] = env_bak
+
+    def test_metrics_content_type_is_prometheus(self):
+        """Content-Type must match Prometheus text format."""
+        import os
+
+        app = create_app(dashboard=None)
+        client = app.test_client()
+        env_bak = os.environ.pop("METRICS_AUTH_TOKEN", None)
+        try:
+            response = client.get("/metrics")
+            assert "text/plain" in response.content_type
+        finally:
+            if env_bak is not None:
+                os.environ["METRICS_AUTH_TOKEN"] = env_bak
+
+    def test_metrics_body_contains_edgecore_gauges(self):
+        """Body must contain edgecore_equity and edgecore_max_drawdown lines."""
+        import os
+
+        from monitoring.metrics import SystemMetrics
+
+        app = create_app(dashboard=None)
+        metrics = SystemMetrics(equity=123456.0, max_drawdown=0.05)
+        app._system_metrics = metrics  # pyright: ignore[reportAttributeAccessIssue]
+        client = app.test_client()
+        env_bak = os.environ.pop("METRICS_AUTH_TOKEN", None)
+        try:
+            response = client.get("/metrics")
+            body = response.data.decode()
+            assert "edgecore_equity" in body
+            assert "edgecore_max_drawdown" in body
+        finally:
+            if env_bak is not None:
+                os.environ["METRICS_AUTH_TOKEN"] = env_bak
+
+    def test_metrics_body_contains_fill_latency_histogram(self):
+        """Body must contain the order fill latency histogram."""
+        import os
+
+        app = create_app(dashboard=None)
+        client = app.test_client()
+        env_bak = os.environ.pop("METRICS_AUTH_TOKEN", None)
+        try:
+            response = client.get("/metrics")
+            body = response.data.decode()
+            assert "edgecore_order_fill_latency_seconds" in body
+        finally:
+            if env_bak is not None:
+                os.environ["METRICS_AUTH_TOKEN"] = env_bak
+
+
+# ---------------------------------------------------------------------------
+# P4-03: Bearer token authentication on /metrics
+# ---------------------------------------------------------------------------
+
+
+class TestMetricsBearerAuth:
+    """P4-03 — /metrics must return 401 when METRICS_AUTH_TOKEN is set."""
+
+    def test_no_token_returns_401_when_env_set(self):
+        """Request without Authorization header returns 401."""
+        import os
+
+        os.environ["METRICS_AUTH_TOKEN"] = "test-secret-token"
+        try:
+            app = create_app(dashboard=None)
+            client = app.test_client()
+            response = client.get("/metrics")
+            assert response.status_code == 401
+        finally:
+            del os.environ["METRICS_AUTH_TOKEN"]
+
+    def test_wrong_token_returns_401(self):
+        """Request with wrong Bearer token returns 401."""
+        import os
+
+        os.environ["METRICS_AUTH_TOKEN"] = "correct-token"
+        try:
+            app = create_app(dashboard=None)
+            client = app.test_client()
+            response = client.get("/metrics", headers={"Authorization": "Bearer wrong-token"})
+            assert response.status_code == 401
+        finally:
+            del os.environ["METRICS_AUTH_TOKEN"]
+
+    def test_correct_token_returns_200(self):
+        """Request with correct Bearer token returns 200."""
+        import os
+
+        os.environ["METRICS_AUTH_TOKEN"] = "my-secret"
+        try:
+            app = create_app(dashboard=None)
+            client = app.test_client()
+            response = client.get("/metrics", headers={"Authorization": "Bearer my-secret"})
+            assert response.status_code == 200
+        finally:
+            del os.environ["METRICS_AUTH_TOKEN"]
+
+    def test_no_env_var_allows_unauthenticated(self):
+        """When METRICS_AUTH_TOKEN is not set, /metrics is open."""
+        import os
+
+        os.environ.pop("METRICS_AUTH_TOKEN", None)
+        app = create_app(dashboard=None)
+        client = app.test_client()
+        response = client.get("/metrics")
+        assert response.status_code == 200
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

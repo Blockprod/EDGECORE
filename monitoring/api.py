@@ -1,5 +1,6 @@
 ﻿"""Flask API endpoints for EDGECORE dashboard."""
 
+import os
 from datetime import datetime
 from typing import Any
 
@@ -353,11 +354,33 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
         Prometheus scrape endpoint.
 
         Returns Prometheus text format metrics for the trading system.
-        No auth required ÔÇö intended for internal Prometheus scraping.
+        P4-03: Protected by Bearer token — set METRICS_AUTH_TOKEN env var.
+        If the env var is not set, the endpoint is open (dev convenience).
         """
         from flask import Response
 
         from monitoring.metrics import SystemMetrics
+
+        # P4-03: Bearer token authentication
+        _expected_token = os.environ.get("METRICS_AUTH_TOKEN", "")
+        if _expected_token:
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return Response(
+                    "Unauthorized: missing Bearer token",
+                    status=401,
+                    mimetype="text/plain",
+                )
+            provided_token = auth_header[len("Bearer ") :]
+            # Constant-time comparison to prevent timing attacks
+            import hmac
+
+            if not hmac.compare_digest(provided_token, _expected_token):
+                return Response(
+                    "Unauthorized: invalid token",
+                    status=401,
+                    mimetype="text/plain",
+                )
 
         # Use global metrics instance if available, else default
         metrics = getattr(app, "_system_metrics", None) or SystemMetrics()

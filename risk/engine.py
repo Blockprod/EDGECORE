@@ -1,6 +1,6 @@
 ﻿import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import cast
 
 import numpy as np
@@ -94,7 +94,7 @@ class RiskEngine:
         self.daily_loss = 0.0
         # Sector map: symbol -> sector string (e.g. {"AAPL": "Technology"})
         self.sector_map: dict[str, str] = {}
-        self._daily_date = datetime.now().date()  # track date for auto-reset
+        self._daily_date = datetime.now(UTC).date()  # track date for auto-reset (UTC)
 
         # Initialize persistent audit trail for crash recovery
         self.audit_trail = AuditTrail()
@@ -456,7 +456,7 @@ class RiskEngine:
 
     def _maybe_reset_daily(self) -> None:
         """Auto-reset daily counters when the calendar date rolls over."""
-        today = datetime.now().date()
+        today = datetime.now(UTC).date()
         if self._daily_date != today:
             self.daily_trades = 0
             self.daily_loss = 0.0

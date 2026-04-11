@@ -5,6 +5,7 @@ Covers two scenarios:
      no partial commit in _persisted_order_ids.
   2. After reconnection the engine can re-submit successfully.
 """
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,6 +16,7 @@ from execution.ibkr_engine import IBKRExecutionEngine
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_order(order_id: str = "ORD-001") -> Order:
     return Order(
@@ -42,6 +44,7 @@ def _build_engine() -> IBKRExecutionEngine:
         engine._max_consecutive_failures = 5
         engine._last_failure_time = 0.0
         engine._cb_reset_timeout = 300
+        engine._pending_confirm_orders = set()  # P2-02
         # Prevent real disk I/O
         engine._load_order_map = MagicMock()
         engine._save_order_map = MagicMock()
@@ -52,15 +55,14 @@ def _build_engine() -> IBKRExecutionEngine:
 # Test 1 — submit_order raises ConnectionError when IB is unreachable
 # ---------------------------------------------------------------------------
 
+
 class TestDisconnectDuringOrderSubmission:
     def test_connection_error_raised_when_disconnected(self):
         """submit_order() must propagate ConnectionError if all retries fail."""
         engine = _build_engine()
 
         # Simulate: _ensure_connected always fails
-        engine._ensure_connected = MagicMock(
-            side_effect=ConnectionError("Simulated IBKR unreachable")
-        )
+        engine._ensure_connected = MagicMock(side_effect=ConnectionError("Simulated IBKR unreachable"))
 
         order = _make_order("ORD-DISC-001")
         with pytest.raises(ConnectionError):
@@ -70,9 +72,7 @@ class TestDisconnectDuringOrderSubmission:
         """When ConnectionError occurs before placement, order must NOT appear
         in _persisted_order_ids (no partial commit)."""
         engine = _build_engine()
-        engine._ensure_connected = MagicMock(
-            side_effect=ConnectionError("Simulated IBKR unreachable")
-        )
+        engine._ensure_connected = MagicMock(side_effect=ConnectionError("Simulated IBKR unreachable"))
 
         order = _make_order("ORD-DISC-002")
         try:
@@ -91,9 +91,7 @@ class TestDisconnectDuringOrderSubmission:
         # Connection succeeds …
         engine._ensure_connected = MagicMock(return_value=None)
         # … but the placement itself fails
-        engine._place_order_with_retry = MagicMock(
-            side_effect=RuntimeError("Order rejected by IBKR")
-        )
+        engine._place_order_with_retry = MagicMock(side_effect=RuntimeError("Order rejected by IBKR"))
 
         order = _make_order("ORD-DISC-003")
         with pytest.raises(RuntimeError):
@@ -105,6 +103,7 @@ class TestDisconnectDuringOrderSubmission:
 # ---------------------------------------------------------------------------
 # Test 2 — reconnect after disconnect restores ability to submit
 # ---------------------------------------------------------------------------
+
 
 class TestReconnectAfterDisconnect:
     def test_reconnect_clears_ib_reference(self):

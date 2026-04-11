@@ -8,7 +8,6 @@ Provides neural network models for predicting market impact based on:
 """
 
 import logging
-import pickle
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -126,36 +125,45 @@ class NeuralNetworkModel:
         return np.clip(predictions, 0.0, 200.0)
 
     def save(self, filepath: Path) -> None:
-        """Save model to file."""
-        model_data = {
-            "input_size": self.input_size,
-            "hidden_size_1": self.hidden_size_1,
-            "hidden_size_2": self.hidden_size_2,
-            "W1": self.W1,
-            "b1": self.b1,
-            "W2": self.W2,
-            "b2": self.b2,
-            "W3": self.W3,
-            "b3": self.b3,
-            "feature_mean": self.feature_mean,
-            "feature_std": self.feature_std,
-            "output_mean": self.output_mean,
-            "output_std": self.output_std,
-        }
-        with open(filepath, "wb") as f:
-            pickle.dump(model_data, f)
-        logger.info(f"Saved model to {filepath}")
+        """Save model weights to a numpy .npz file (no pickle — CWE-502 safe)."""
+        if (
+            self.W1 is None
+            or self.b1 is None
+            or self.W2 is None
+            or self.b2 is None
+            or self.W3 is None
+            or self.b3 is None
+        ):
+            raise RuntimeError("Model not trained — call fit() before save()")
+        npz_path = Path(filepath).with_suffix(".npz")
+        np.savez(
+            str(npz_path),
+            input_size=np.array(self.input_size),
+            hidden_size_1=np.array(self.hidden_size_1),
+            hidden_size_2=np.array(self.hidden_size_2),
+            W1=self.W1,
+            b1=self.b1,
+            W2=self.W2,
+            b2=self.b2,
+            W3=self.W3,
+            b3=self.b3,
+            feature_mean=self.feature_mean if self.feature_mean is not None else np.zeros(self.input_size),
+            feature_std=self.feature_std if self.feature_std is not None else np.ones(self.input_size),
+            output_mean=np.array(self.output_mean),
+            output_std=np.array(self.output_std),
+        )
+        logger.info(f"Saved model to {npz_path}")
 
     @classmethod
     def load(cls, filepath: Path) -> "NeuralNetworkModel":
-        """Load model from file."""
-        with open(filepath, "rb") as f:
-            data = pickle.load(f)
+        """Load model weights from a numpy .npz file (no pickle — CWE-502 safe)."""
+        npz_path = Path(filepath).with_suffix(".npz")
+        data = np.load(str(npz_path), allow_pickle=False)
 
         model = cls(
-            input_size=data["input_size"],
-            hidden_size_1=data["hidden_size_1"],
-            hidden_size_2=data["hidden_size_2"],
+            input_size=int(data["input_size"]),
+            hidden_size_1=int(data["hidden_size_1"]),
+            hidden_size_2=int(data["hidden_size_2"]),
         )
 
         model.W1 = data["W1"]
@@ -166,10 +174,10 @@ class NeuralNetworkModel:
         model.b3 = data["b3"]
         model.feature_mean = data["feature_mean"]
         model.feature_std = data["feature_std"]
-        model.output_mean = data["output_mean"]
-        model.output_std = data["output_std"]
+        model.output_mean = float(data["output_mean"])
+        model.output_std = float(data["output_std"])
 
-        logger.info(f"Loaded model from {filepath}")
+        logger.info(f"Loaded model from {npz_path}")
         return model
 
 

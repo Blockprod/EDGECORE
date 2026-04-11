@@ -26,7 +26,7 @@ def _make_runner() -> LiveTradingRunner:
     """Crée un runner minimal, sans connexion IBKR."""
     runner = LiveTradingRunner()
     # Injecter un lock visible (déjà créé dans __init__)
-    runner._positions_lock = threading.Lock()
+    runner._positions_lock = threading.RLock()
     runner._slack_alerter = MagicMock()
     runner._email_alerter = MagicMock()
     return runner

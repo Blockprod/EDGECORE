@@ -514,6 +514,26 @@ class TestCointegressionPerformance:
         assert elapsed < _limit
 
 
+class TestConditionNumberGuard:
+    """P3-02 — Rank-deficient pairs must be rejected."""
+
+    def test_perfectly_correlated_pair_rejected(self):
+        """Two perfectly identical series produce a rank-deficient design matrix
+        and must be rejected with is_cointegrated=False and a descriptive error."""
+        np.random.seed(42)
+        series = pd.Series(np.cumsum(np.random.randn(300)) + 100.0)
+
+        result = engle_granger_test(series, series)
+
+        assert result["is_cointegrated"] is False, "Identical series must not be flagged as cointegrated"
+        assert "error" in result, "Result must include an error key for rank-deficient pair"
+        assert (
+            "rank" in result["error"].lower()
+            or "deficient" in result["error"].lower()
+            or "condition" in result["error"].lower()
+        ), f"Error message should mention rank-deficiency, got: {result['error']}"
+
+
 # Test execution
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "--tb=short"])

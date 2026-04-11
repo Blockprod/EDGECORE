@@ -96,6 +96,7 @@ class MarketRegimeFilter:
         neutral_band_pct: float = 0.02,
         enabled: bool = True,
         trend_favorable_sizing: float = 0.80,
+        trend_unfavorable_sizing: float = 0.0,
         neutral_sizing: float = 0.65,
     ):
         """
@@ -110,6 +111,9 @@ class MarketRegimeFilter:
             enabled: If False, always returns MEAN_REVERTING.
             trend_favorable_sizing: Sizing for the favorable side in trends.
                 In BULL: long_sizing = this value. In BEAR: short_sizing = this.
+            trend_unfavorable_sizing: Sizing for the unfavorable side in trends.
+                In BULL: short_sizing = this value. In BEAR: long_sizing = this.
+                Default 0.0 = block unfavorable side entirely.
             neutral_sizing: Sizing for both sides in NEUTRAL regime.
         """
         self.ma_fast = ma_fast
@@ -119,6 +123,7 @@ class MarketRegimeFilter:
         self.neutral_band_pct = neutral_band_pct
         self.enabled = enabled
         self.trend_favorable_sizing = trend_favorable_sizing
+        self.trend_unfavorable_sizing = trend_unfavorable_sizing
         self.neutral_sizing = neutral_sizing
         self._last_state: MarketRegimeState | None = None
 
@@ -194,19 +199,16 @@ class MarketRegimeFilter:
             long_sz = 1.0
             short_sz = 1.0
         elif ma_spread_pct > self.neutral_band_pct:
-            # Bull trend + low vol -> longs only
+            # Bull trend + low vol -> longs favored, shorts reduced/blocked
             regime = MarketRegime.BULL_TRENDING
-            sizing_mult = 0.0  # Legacy: block all (backward compat)
+            sizing_mult = self.trend_unfavorable_sizing  # Legacy compat
             long_sz = self.trend_favorable_sizing
-            short_sz = 0.0  # Block shorts in bull
+            short_sz = self.trend_unfavorable_sizing  # Configurable (was hardcoded 0.0)
         elif ma_spread_pct < -self.neutral_band_pct:
-            # Bear trend + low vol -> shorts favored, longs blocked (v43a baseline)
-            # v44 tested: neutral sizing for both sides (BEAR->neutral), but caused
-            # regime oscillation at vol_threshold=0.35 in 2022H2 -> WORSE results.
-            # Reverted to v43a to use as v44b baseline comparison.
+            # Bear trend + low vol -> shorts favored, longs reduced/blocked
             regime = MarketRegime.BEAR_TRENDING
-            sizing_mult = 0.0  # Legacy compat
-            long_sz = 0.0  # Block longs in bear trend
+            sizing_mult = self.trend_unfavorable_sizing  # Legacy compat
+            long_sz = self.trend_unfavorable_sizing  # Configurable (was hardcoded 0.0)
             short_sz = self.trend_favorable_sizing  # Favor shorts in bear
         else:
             # Near crossover -> neutral, both sides reduced

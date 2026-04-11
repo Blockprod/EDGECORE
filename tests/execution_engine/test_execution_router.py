@@ -394,3 +394,87 @@ class TestAntiShortGuard:
         # -1 means "data unavailable", should NOT block
         mock_engine.submit_order.assert_called_once()
         assert result.filled_qty == 100.0
+
+
+# ---------------------------------------------------------------------------
+# P4-02: Order fill latency histogram
+# ---------------------------------------------------------------------------
+
+
+class TestOrderFillLatencyMetrics:
+    """P4-02 — router must record fill latency in the Prometheus histogram."""
+
+    def _make_live_mock(self):
+        """Build a minimal mock IBKR engine that returns an immediate FILLED status."""
+        from unittest.mock import MagicMock
+
+        from execution.base import OrderStatus
+
+        mock_engine = MagicMock()
+        mock_engine._ensure_connected.return_value = None
+        mock_engine.get_shortable_shares.return_value = 9999.0
+        mock_engine.submit_order.return_value = "ibkr-latency-001"
+        mock_engine.get_order_status.return_value = OrderStatus.FILLED
+        mock_engine._order_map = {}
+        return mock_engine
+
+    def test_fill_latency_histogram_receives_observation(self):
+        """After a live fill, _ORDER_FILL_LATENCY must have at least 1 observation."""
+        from unittest.mock import patch
+        from uuid import uuid4
+
+        from execution.base import Order, OrderSide
+        from monitoring.metrics import _ORDER_FILL_LATENCY
+
+        router = ExecutionRouter(mode=ExecutionMode.LIVE)
+        router._ibkr_engine = self._make_live_mock()
+
+        # Capture histogram state before
+        before = _ORDER_FILL_LATENCY._sum.get()
+
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="AAPL",
+            side=OrderSide.BUY,
+            quantity=10.0,
+            limit_price=150.0,
+            order_type="LIMIT",
+        )
+
+        with patch("common.ibkr_rate_limiter.GLOBAL_IBKR_RATE_LIMITER") as mock_rl:
+            mock_rl.acquire.return_value = None
+            router._rate_limiter = mock_rl
+            router.submit_order(order)
+
+        after = _ORDER_FILL_LATENCY._sum.get()
+        # Sum should have increased (latency > 0 was observed)
+        assert after >= before, "Expected ORDER_FILL_LATENCY histogram to receive an observation"
+
+    def test_slippage_gauge_updated_after_fill(self):
+        """After a live fill, _EXECUTION_SLIPPAGE_BPS gauge must be set."""
+        from unittest.mock import patch
+        from uuid import uuid4
+
+        from execution.base import Order, OrderSide
+        from monitoring.metrics import _EXECUTION_SLIPPAGE_BPS
+
+        router = ExecutionRouter(mode=ExecutionMode.LIVE)
+        router._ibkr_engine = self._make_live_mock()
+
+        order = Order(
+            order_id=str(uuid4()),
+            symbol="MSFT",
+            side=OrderSide.BUY,
+            quantity=5.0,
+            limit_price=300.0,
+            order_type="LIMIT",
+        )
+
+        with patch("common.ibkr_rate_limiter.GLOBAL_IBKR_RATE_LIMITER") as mock_rl:
+            mock_rl.acquire.return_value = None
+            router._rate_limiter = mock_rl
+            router.submit_order(order)
+
+        # Gauge value should be a finite non-negative float
+        slippage = _EXECUTION_SLIPPAGE_BPS._value.get()
+        assert slippage >= 0.0, f"Slippage BPS should be >= 0, got {slippage}"

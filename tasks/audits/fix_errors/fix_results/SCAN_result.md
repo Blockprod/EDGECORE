@@ -2,215 +2,152 @@
 modele: sonnet-4.6
 mode: agent
 contexte: codebase
-produit: tasks/audits/fix_errors/SCAN_result.md
-derniere_revision: 2026-04-05
+produit: tasks/audits/fix_errors/fix_results/SCAN_result.md
+derniere_revision: 2026-04-06
 creation: 2026-03-26
 ---
 
 # SCAN RESULT — EDGECORE
 
-> Revision 2026-04-05 — scan post CERT-01→CERT-10 (2742/2742 ✅)
+> Revision 2026-04-06 — scan post P0→P5-03 (2764/2768 ✅, 0 CVE, 0 Bandit H/M)
 
 ## ÉTAT GLOBAL
 
 | Outil | Résultat |
 |-------|---------|
-| ruff (global) | ❌ 418 violations · ~65 fichiers |
-| ruff --select ARG | ❌ 3 violations (ARG001×3) |
-| pyright (production) | ❌ 3 dossiers KO · 4 erreurs |
+| ruff (global) | ❌ 12 violations · 4 fichiers prod + 1 test |
+| ruff --select ARG | ✅ 0 violation |
+| pyright (22 dirs prod) | ❌ 6 erreurs · 1 fichier (`execution/ml_impact.py`) |
+| pyright (23 dirs tests) | ❌ 7 erreurs · 5 fichiers |
 | get_errors (IDE) | ✅ 0 erreur |
-| pytest | ✅ 2742/2742 |
+| pytest | ✅ 2764/2768 (4 pre-existing) |
 
 ---
 
 ## FILES_TO_FIX
 
-### BATCH A — Production critique (pyright)
-
 ```
 FILES_TO_FIX = [
+
+  # ── PYRIGHT PROD ─────────────────────────────────────────────────────────────
+
   {
-    file: "data/intraday_loader.py",
-    errors: ["Timestamp"],
-    count: 1,
-    lines: [183],
-    detail: "Cannot access attribute 'strftime' for class 'NaTType' — req_end peut être NaT"
+    file: "execution/ml_impact.py",
+    errors: ["typing"],
+    count: 6,
+    lines: [135, 136, 137, 138, 139, 140],
+    details: "reportArgumentType — ndarray[Unknown,Unknown]|None cannot be assigned to ArrayLike in numpy.savez(). W1, b1, W2, b2, W3, b3 are Optional[ndarray] but numpy.savez expects ArrayLike. Root: weights initialized to None before training.",
+    pyright_code: "reportArgumentType",
+    fix: "assert self.W1 is not None (and other weights) before savez block, or cast(np.ndarray, self.W1)"
   },
+
+  # ── PYRIGHT TESTS ─────────────────────────────────────────────────────────────
+
   {
-    file: "models/performance_optimizer_s41.py",
+    file: "tests/execution/test_ibkr_crash_recovery.py",
     errors: ["typing"],
     count: 1,
-    lines: [130],
-    detail: "Argument of type 'Unknown | int' cannot be assigned to parameter 'pair_key' of type 'str'"
+    lines: [51],
+    details: "reportInvalidTypeForm — Type annotation not supported for this statement",
+    pyright_code: "reportInvalidTypeForm",
+    fix: "Rewrite annotation as standard variable annotation or remove if test-only mock"
   },
-]
-```
 
-### BATCH B — Production ruff (F811 / I001 / UP042)
-
-```
-FILES_TO_FIX = [
   {
-    file: "monitoring/logger.py",
-    errors: ["ruff"],
+    file: "tests/execution/test_ibkr_disconnect_during_order.py",
+    errors: ["typing"],
     count: 1,
-    lines: [23],
-    codes: ["UP017"],
-    detail: "Use datetime.UTC alias (auto-fix)"
+    lines: [47],
+    details: "reportInvalidTypeForm — Type annotation not supported for this statement",
+    pyright_code: "reportInvalidTypeForm",
+    fix: "Same pattern as above"
   },
+
   {
-    file: "main.py",
-    errors: ["ruff"],
-    count: 5,
-    lines: [10, 34, 36, 45, 46],
-    codes: ["I001", "F811", "F811", "F811", "F811"],
-    detail: "Import non trié + redéfinitions IBKRExecutionEngine, PaperExecutionEngine, RiskEngine, PairTradingStrategy"
+    file: "tests/live_trading/test_live_trading_recovery.py",
+    errors: ["typing"],
+    count: 1,
+    lines: [29],
+    details: "reportAttributeAccessIssue — Cannot assign `_positions_lock`. LockType is not assignable to RLock.",
+    pyright_code: "reportAttributeAccessIssue",
+    fix: "Cast: runner._positions_lock = cast(RLock, threading.Lock())"
   },
+
   {
-    file: "backtests/walk_forward.py",
-    errors: ["ruff"],
-    count: 2,
-    lines: [16, 28],
-    codes: ["I001", "F811"],
-    detail: "Import non trié + redéfinition CostModel"
+    file: "tests/monitoring/042_test_api.py",
+    errors: ["typing"],
+    count: 1,
+    lines: [576],
+    details: "reportAttributeAccessIssue — Cannot assign to `_system_metrics` for class Flask. Attribute unknown.",
+    pyright_code: "reportAttributeAccessIssue",
+    fix: "Use setattr(app, '_system_metrics', mock_metrics) or type: ignore with explicit comment"
   },
+
   {
-    file: "execution/order_lifecycle_integration.py",
-    errors: ["ruff"],
+    file: "tests/universe/test_universe_pit.py",
+    errors: ["Timestamp"],
     count: 3,
-    lines: [11, 17, 17],
-    codes: ["I001", "F811", "F811"],
-    detail: "Import non trié + redéfinition OrderLifecycleManager + OrderStatus"
+    lines: [268, 276, 283],
+    details: "reportArgumentType — Timestamp|NaTType not assignable to Timestamp|None parameter of get_snapshot(). NaTType is not None.",
+    pyright_code: "reportArgumentType",
+    fix: "Guard: ts if not pd.isna(ts) else None before passing to get_snapshot()"
   },
+
+  # ── RUFF ─────────────────────────────────────────────────────────────────────
+
   {
-    file: "execution/modes_legacy.py",
-    errors: ["ruff"],
+    file: "execution_engine/router.py",
+    errors: ["ruff-F811"],
     count: 1,
-    lines: [39],
-    codes: ["UP042"],
-    detail: "class OrderStatus hérite de str + enum.Enum → utiliser StrEnum"
+    lines: [353],
+    details: "F811 — Redefinition of unused `_time` from line 243",
+    fixable: true,
+    fix: "Remove or rename duplicate `_time` at line 353"
   },
+
   {
-    file: "research/pair_discovery.py",
-    errors: ["ruff"],
-    count: 4,
-    lines: [5, 6, 9, 9],
-    codes: ["I001", "F401", "F811", "F811"],
-    detail: "Import non trié + correlation_matrix inutilisé + redéfinitions engle_granger_test, half_life_mean_reversion"
-  },
-  {
-    file: "research/param_optimization.py",
-    errors: ["ruff"],
+    file: "risk/engine.py",
+    errors: ["ruff-UP017"],
     count: 2,
-    lines: [10, 13],
-    codes: ["I001", "F811"],
-    detail: "Import non trié + redéfinition pd"
+    lines: [97, 459],
+    details: "UP017 — Use `datetime.UTC` alias instead of `timezone.utc`",
+    fixable: true,
+    fix: "ruff check --fix --select UP017 risk/engine.py"
   },
-]
-```
 
-### BATCH C — Production ruff (UP006 / UP045 — type annotations modernes)
-
-```
-FILES_TO_FIX = [
   {
-    file: "models/performance_optimizer_s41.py",
-    errors: ["ruff"],
-    count: 14,
-    lines: [41, 41, 52, 69, 103, ...],
-    codes: ["UP045", "UP006", ...],
-    detail: "Dict/Tuple → dict/tuple + Optional[X] → X | None (14 violations)"
-  },
-  {
-    file: "monitoring/cache_advanced_s42.py",
-    errors: ["ruff"],
-    count: 17,
-    lines: [25, 54, 69, 83, 100, ...],
-    codes: ["I001", "UP045", "UP006", ...],
-    detail: "Import non trié + Dict → dict + Optional → X | None (17 violations)"
-  },
-  {
-    file: "monitoring/portfolio_extension_s43.py",
-    errors: ["ruff"],
-    count: 23,
-    lines: [33, 34, 43, 58, 58, ...],
-    codes: ["UP006", ...],
-    detail: "Set/Dict/List/Tuple → set/dict/list/tuple (23 violations)"
-  },
-]
-```
-
-### BATCH D — ARG (arguments inutilisés)
-
-```
-FILES_TO_FIX = [
-  {
-    file: "run_paper_tick.py",
-    errors: ["ARG"],
+    file: "risk_engine/portfolio_risk.py",
+    errors: ["ruff-UP017"],
     count: 2,
-    lines: [331, 331],
-    codes: ["ARG001", "ARG001"],
-    detail: "Signal handler _sigint_handler(sig, frame) → renommer _sig, _frame"
+    lines: [94, 282],
+    details: "UP017 — Use `datetime.UTC` alias instead of `timezone.utc`",
+    fixable: true,
+    fix: "ruff check --fix --select UP017 risk_engine/portfolio_risk.py"
   },
-  {
-    file: "scripts/run_backtest_v41fg.py",
-    errors: ["ARG"],
-    count: 1,
-    lines: [120],
-    codes: ["ARG001"],
-    detail: "_apply_base_settings(entry_z, exit_z, half_life_cap, rediscovery) → renommer rediscovery → _rediscovery"
-  },
-]
-```
 
-### BATCH E — Scripts backtest pyright
-
-```
-FILES_TO_FIX = [
   {
-    file: "scripts/run_backtest_v40b.py",
-    errors: ["ndarray.iloc"],
+    file: "strategies/pair_trading.py",
+    errors: ["ruff-F401"],
     count: 2,
-    lines: [142, 142],
-    detail: "Cannot access attribute 'ffill' — NDArray inféré, cast explicite pd.DataFrame(...) requis"
+    lines: [3, 20],
+    details: [
+      "L3  — F401: `datetime.timedelta` imported but unused",
+      "L20 — F401: `models.cointegration.newey_west_consensus` imported but unused"
+    ],
+    fixable: true,
+    fix: "ruff check --fix --select F401 strategies/pair_trading.py"
   },
-]
-```
 
-### BATCH F — Scripts backtest ruff (UP031/F541 — masse, auto-fixable)
-
-> **52 fichiers** `scripts/run_backtest_v*.py` — ~345 violations UP031/F541  
-> Auto-fixable intégralement avec `ruff check --fix --select UP031,F541,E401,UP009`
-
-```
-Top 5 fichiers:
-  scripts/run_backtest_v40b.py   : 29 (UP031)
-  scripts/run_backtest_v40.py    : 26 (UP031)
-  scripts/run_backtest_v39.py    : 16 (UP031)
-  scripts/run_backtest_v42_wf.py : 13 (UP031)
-  scripts/run_backtest_v44b_sweep.py : 13 (UP031)
-```
-
-### BATCH G — Tests + divers
-
-```
-FILES_TO_FIX = [
   {
-    file: "tests/test_momentum_signal.py",
-    errors: ["ruff"],
-    count: 1,
-    lines: [12],
-    codes: ["I001"],
-    detail: "Import non trié (auto-fixable)"
+    file: "tests/models/test_kalman_hedge.py",
+    errors: ["ruff-B905"],
+    count: 5,
+    lines: [382, 392, 405, 419, 424],
+    details: "B905 — zip() without explicit strict= parameter",
+    fixable: false,
+    fix: "Add strict=False (or strict=True if mismatched lengths should raise) to each zip() call"
   },
-  {
-    file: "demo_dashboard.py",
-    errors: ["ruff"],
-    count: 1,
-    lines: [4],
-    codes: ["I001"],
-    detail: "Import non trié (auto-fixable)"
-  },
+
 ]
 ```
 
@@ -219,29 +156,87 @@ FILES_TO_FIX = [
 ## TOTAUX
 
 ```
-ruff      : 418 violation(s)
-  UP031   : 228  (scripts — auto-fix)
-  F541    :  88  (scripts — auto-fix)
-  UP006   :  42  (models/, monitoring/ — auto-fix)
-  F811    :  16  (main.py, execution/, research/)
-  I001    :  15  (divers — auto-fix)
-  UP045   :   9  (models/, monitoring/ — auto-fix)
-  UP009   :   9  (scripts — auto-fix)
-  E401    :   5  (scripts anciens — auto-fix)
-  UP017   :   2  (monitoring/logger.py — auto-fix)
-  autres  :   4
+TOTAUX:
+  ruff      : 12 violation(s)
+    F811    : 1  (execution_engine/router.py:353)
+    UP017   : 4  (risk/engine.py:97,459 · risk_engine/portfolio_risk.py:94,282)
+    F401    : 2  (strategies/pair_trading.py:3,20)
+    B905    : 5  (tests/models/test_kalman_hedge.py:382,392,405,419,424)
 
-ARG       : 3 violation(s)
-  ARG001 × 2  run_paper_tick.py:331 (sig, frame)
-  ARG001 × 1  scripts/run_backtest_v41fg.py:120 (rediscovery)
+  ARG       : 0 violation(s)  ✅
 
-pyright   : 4 erreur(s) dans 3 fichiers
-  data/             → 1 erreur · intraday_loader.py:183  (NaTType.strftime)
-  models/           → 1 erreur · performance_optimizer_s41.py:130  (Unknown|int → str)
-  scripts/          → 2 erreurs · run_backtest_v40b.py:142  (ndarray.ffill)
+  pyright   : 13 erreur(s) dans 6 fichiers
+    prod (1 fichier) :
+      execution/ml_impact.py:135-140   → 6× reportArgumentType (ndarray|None → ArrayLike)
+    tests (5 fichiers) :
+      tests/execution/test_ibkr_crash_recovery.py:51        → 1× reportInvalidTypeForm
+      tests/execution/test_ibkr_disconnect_during_order.py:47 → 1× reportInvalidTypeForm
+      tests/live_trading/test_live_trading_recovery.py:29   → 1× reportAttributeAccessIssue
+      tests/monitoring/042_test_api.py:576                  → 1× reportAttributeAccessIssue
+      tests/universe/test_universe_pit.py:268,276,283       → 3× reportArgumentType (Timestamp|NaTType)
 
-IDE PROBLEMS : 0
-Tests        : 2742/2742 ✅
+  get_errors IDE : 0  ✅
+  pytest         : 2764/2768 (4 pre-existing failures unrelated to fixes)
+
+  dossiers_propres_prod: [
+    "models", "pair_selection", "signal_engine",
+    "data", "live_trading", "backtests", "backtester", "portfolio_engine",
+    "common", "config", "universe", "scheduler", "persistence", "monitoring",
+    "validation", "research"
+    // pyright-only also clean: execution_engine, risk, risk_engine
+    // (only ruff UP017/F811 violations in those 3)
+  ]
+
+  dossiers_propres_tests: [
+    "tests/backtests", "tests/common", "tests/config", "tests/data",
+    "tests/edgecore", "tests/execution_engine", "tests/integration",
+    "tests/models", "tests/persistence", "tests/phase3", "tests/phase4",
+    "tests/portfolio_engine", "tests/regression", "tests/risk",
+    "tests/risk_engine", "tests/signal_engine", "tests/statistical",
+    "tests/strategies", "tests/validation"
+  ]
+```
+
+---
+
+## DÉTAIL PAR PRIORITÉ
+
+### 🔴 CRITIQUE — Pyright prod (blocage compilation strict)
+
+| # | Fichier | Lignes | Code pyright | Description |
+|---|---|---|---|---|
+| P1 | `execution/ml_impact.py` | 135–140 | reportArgumentType | 6× `ndarray\|None` → `ArrayLike` dans numpy.savez() |
+
+**Fix** : ajouter `assert self.W1 is not None` (+ W2/W3/b1/b2/b3) avant le bloc `np.savez`, ou utiliser `cast(np.ndarray, self.W1)`.
+
+---
+
+### 🟠 IMPORTANT — Pyright tests
+
+| # | Fichier | Ligne | Code pyright | Description |
+|---|---|---|---|---|
+| T1 | `tests/execution/test_ibkr_crash_recovery.py` | 51 | reportInvalidTypeForm | Annotation type non supportée |
+| T2 | `tests/execution/test_ibkr_disconnect_during_order.py` | 47 | reportInvalidTypeForm | Annotation type non supportée |
+| T3 | `tests/live_trading/test_live_trading_recovery.py` | 29 | reportAttributeAccessIssue | `LockType` ≠ `RLock` pour `_positions_lock` |
+| T4 | `tests/monitoring/042_test_api.py` | 576 | reportAttributeAccessIssue | `_system_metrics` inconnu sur Flask |
+| T5 | `tests/universe/test_universe_pit.py` | 268, 276, 283 | reportArgumentType | `Timestamp\|NaTType` → `Timestamp\|None` |
+
+---
+
+### 🟡 MINEUR — Ruff (style, auto-fixable majoritairement)
+
+| # | Fichier | Lignes | Code | Description |
+|---|---|---|---|---|
+| R1 | `execution_engine/router.py` | 353 | F811 | Redéfinition `_time` (auto-fix) |
+| R2 | `risk/engine.py` | 97, 459 | UP017 | `timezone.utc` → `datetime.UTC` (auto-fix) |
+| R3 | `risk_engine/portfolio_risk.py` | 94, 282 | UP017 | `timezone.utc` → `datetime.UTC` (auto-fix) |
+| R4 | `strategies/pair_trading.py` | 3, 20 | F401 | Imports inutilisés (auto-fix) |
+| R5 | `tests/models/test_kalman_hedge.py` | 382, 392, 405, 419, 424 | B905 | `zip()` sans `strict=` (manuel) |
+
+---
+
+*SCAN complet — 2026-04-06. Prêt pour P2 — PLAN.*
+
 
 dossiers_propres (pyright 0 erreur):
   pair_selection, signal_engine, strategies, execution, live_trading,

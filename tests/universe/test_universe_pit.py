@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import textwrap
+from typing import cast
 
 import pandas as pd
 import pytest
@@ -251,3 +252,43 @@ class TestSimulatorPITIntegration:
 
         sim = StrategyBacktestSimulator()
         assert sim.universe_manager is None
+
+
+# ---------------------------------------------------------------------------
+# Tests: get_snapshot() point-in-time filtering (P3-03)
+# ---------------------------------------------------------------------------
+
+
+class TestSnapshotPITFilter:
+    """P3-03 — get_snapshot() must respect PIT history when timestamp is given."""
+
+    def test_future_symbol_excluded_from_snapshot(self):
+        """A symbol listed in 2015 must not appear in a 2013 snapshot."""
+        mgr = _make_manager_with_csv(_CSV_CONTENT)
+        # FUTURE has date_in = 2015-01-01
+        snap = mgr.get_snapshot(timestamp=cast(pd.Timestamp, pd.Timestamp("2013-06-01")))
+        assert "FUTURE" not in snap.symbols
+        assert snap.excluded.get("FUTURE") == "not_listed_at_bar_date"
+
+    def test_delisted_symbol_excluded_from_snapshot(self):
+        """A symbol delisted in 2006 must not appear in a 2008 snapshot."""
+        mgr = _make_manager_with_csv(_CSV_CONTENT)
+        # GONE has date_out = 2005-12-31
+        snap = mgr.get_snapshot(timestamp=cast(pd.Timestamp, pd.Timestamp("2008-01-01")))
+        assert "GONE" not in snap.symbols
+        assert snap.excluded.get("GONE") == "not_listed_at_bar_date"
+
+    def test_active_symbol_included_in_snapshot(self):
+        """AAPL (listed since 2000) must appear in a 2010 snapshot."""
+        mgr = _make_manager_with_csv(_CSV_CONTENT)
+        snap = mgr.get_snapshot(timestamp=cast(pd.Timestamp, pd.Timestamp("2010-06-01")))
+        assert "AAPL" in snap.symbols
+        assert "MSFT" in snap.symbols
+
+    def test_no_timestamp_no_filter(self):
+        """Without a timestamp, get_snapshot returns all non-excluded symbols."""
+        mgr = _make_manager_with_csv(_CSV_CONTENT)
+        snap = mgr.get_snapshot()
+        # All symbols present (no liquidity/volume filter applied here)
+        assert "FUTURE" in snap.symbols
+        assert "GONE" in snap.symbols

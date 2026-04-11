@@ -29,6 +29,8 @@ services:
       MONITORING_PORT: "5000"
       DASHBOARD_API_HOST: "0.0.0.0"
       METRICS_ENABLED: "true"
+      AUDIT_HMAC_KEY: ${AUDIT_HMAC_KEY:?AUDIT_HMAC_KEY env var is required in prod}
+      METRICS_AUTH_TOKEN: ${METRICS_AUTH_TOKEN:?METRICS_AUTH_TOKEN env var is required in prod}
     ports:
       - "5000:5000"
     volumes:

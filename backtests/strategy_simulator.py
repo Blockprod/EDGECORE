@@ -27,6 +27,8 @@ from structlog import get_logger
 from backtests.cost_model import CostModel
 from backtests.metrics import BacktestMetrics, set_trading_days
 from backtests.order_book import SimulatedOrderBook
+from backtests.position_tracker import PositionTracker
+from backtests.sector_exposure_manager import BacktestSectorExposureManager
 from backtests.simulation_loop import OOSTracker
 from data.event_filter import EventFilter
 from execution.algo_executor import AlgoConfig, AlgoType, TWAPExecutor
@@ -81,6 +83,12 @@ class StrategyBacktestSimulator:
     This class handles portfolio accounting and realistic cost application.
     """
 
+    # ── ADV tier aliases (backward-compat: tests reference these on the class) ──
+    _ADV_MEGA_CAP = PositionTracker._ADV_MEGA_CAP
+    _ADV_LARGE_CAP = PositionTracker._ADV_LARGE_CAP
+    _ADV_MID_CAP = PositionTracker._ADV_MID_CAP
+    _MEGA_CAP_SYMBOLS = PositionTracker._MEGA_CAP_SYMBOLS
+
     def __init__(
         self,
         cost_model: CostModel | None = None,
@@ -102,6 +110,7 @@ class StrategyBacktestSimulator:
         momentum_filter=None,
         universe_manager=None,
         adv_by_symbol: dict[str, float] | None = None,
+        blacklist_persist_path: str | None = None,
     ):
         """
         Args:
@@ -257,14 +266,18 @@ class StrategyBacktestSimulator:
             neutral_band_pct=_regime_cfg.neutral_band_pct,
             enabled=_regime_cfg.enabled,
             trend_favorable_sizing=_regime_cfg.trend_favorable_sizing,
+            trend_unfavorable_sizing=_regime_cfg.trend_unfavorable_sizing,
             neutral_sizing=_regime_cfg.neutral_sizing,
         )
-        # Post-v27 ├ëtape 3: Dynamic pair blacklist
+        # Post-v27 Étape 3: Dynamic pair blacklist
+        # blacklist_persist_path allows walk-forward scripts to pre-seed
+        # the blacklist from a prior window's loser list (cross-window memory).
         _bl_cfg = get_settings().pair_blacklist
         self.pair_blacklist = PairBlacklist(
             max_consecutive_losses=_bl_cfg.max_consecutive_losses,
             cooldown_days=_bl_cfg.cooldown_days,
             enabled=_bl_cfg.enabled,
+            persist_path=blacklist_persist_path,
         )
         # Post-v27 ├ëtape 4: Directional bias ÔÇö reduce/block shorts in bull trend
         _strat_cfg = get_settings().strategy
@@ -275,6 +288,17 @@ class StrategyBacktestSimulator:
         self._trend_long_sizing = _strat_cfg.trend_long_sizing
         # v46: Cross-sectional momentum divergence filter (rejects trending pairs)
         self.momentum_filter = momentum_filter
+        # ── Extracted helpers (P2-04) ──
+        self._position_tracker = PositionTracker(
+            cost_model=self.cost_model,
+            kelly_sizer=self.kelly_sizer,
+            pair_blacklist=self.pair_blacklist,
+            ml_combiner=self.ml_combiner,
+            adv_by_symbol=self.adv_by_symbol,
+        )
+        self._sector_exposure_manager = BacktestSectorExposureManager(
+            sector_map=self._sector_map,
+        )
 
     # ==================================================================
     # Public API
@@ -401,7 +425,21 @@ class StrategyBacktestSimulator:
         hist_prices: pd.DataFrame = prices_df.iloc[:lookback_min]
         realized_pnl: float = 0.0
         _disp_reason: str = ""
-        signal_stats: dict[str, int] = {}
+        signal_stats: dict[str, int] = {
+            "total_signals_generated": 0,
+            "total_entries_accepted": 0,
+            "total_entries_rejected": 0,
+            "rejected_event_blackout": 0,
+            "rejected_borrow": 0,
+            "rejected_kelly": 0,
+            "rejected_sector": 0,
+            "rejected_var": 0,
+            "rejected_heat": 0,
+            "rejected_spread_corr": 0,
+            "rejected_pca": 0,
+            "rejected_momentum": 0,
+            "rejected_risk_engine": 0,
+        }
         for bar_idx in tqdm(range(lookback_min, len(prices_df)), desc="Backtest", ncols=80):
             hist_prices = prices_df.iloc[: bar_idx + 1]
 
@@ -412,6 +450,22 @@ class StrategyBacktestSimulator:
             strategy.set_clock(_clock_fn)
 
             # ---- Phase 4: Wire strategy equity tracker (activates DD guard) --
+            # Reset strategy peak_equity AND the simulator's _dd_hw_mark at the
+            # OOS boundary.  Training losses must not carry over into the OOS
+            # period: both the strategy-internal drawdown guard
+            # (_check_internal_risk_limits) and the simulator DrawdownManager
+            # use a high-watermark that would trigger halts for the entire OOS
+            # if left unmodified after a losing training window.
+            if oos_tracker.start_bar_idx is not None and bar_idx == oos_tracker.start_bar_idx:
+                strategy.peak_equity = portfolio_values[-1]
+                strategy.current_equity = portfolio_values[-1]
+                _dd_hw_mark = portfolio_values[-1]
+                self.drawdown_manager.reset()
+                # Fix: daily_trade_count accumulates across the whole training
+                # window (uses clock-based date, not real date) — reset it at the
+                # OOS boundary so the limit doesn't carry over from training.
+                strategy.daily_trade_count = 0
+                strategy.daily_trade_date = None
             strategy.update_equity(portfolio_values[-1])
 
             # Initialize bar-level P&L accumulator
@@ -643,22 +697,7 @@ class StrategyBacktestSimulator:
             # ---- Process signals (entries & exits) ------------------
             # realized_pnl is already initialized above (before pre-signal P&L stop)
 
-            # --- Initialisation du log synthétique du flux de signaux ---
-            signal_stats = {
-                "total_signals_generated": 0,
-                "total_entries_accepted": 0,
-                "total_entries_rejected": 0,
-                "rejected_event_blackout": 0,
-                "rejected_borrow": 0,
-                "rejected_kelly": 0,
-                "rejected_sector": 0,
-                "rejected_var": 0,
-                "rejected_heat": 0,
-                "rejected_spread_corr": 0,
-                "rejected_pca": 0,
-                "rejected_momentum": 0,
-                "rejected_risk_engine": 0,
-            }
+            # --- signal_stats accumulates across all bars (initialized before loop) ---
 
             for signal in signals:
                 signal_stats["total_signals_generated"] += 1
@@ -1086,8 +1125,59 @@ class StrategyBacktestSimulator:
                 strategy.active_trades.pop(gk, None)
 
             # ---- Simulator-level Z-score exit (mean reversion) ----------
+            # Per-bar time stop: close positions held beyond their time limit.
+            # Runs every bar so training-period positions don't carry into OOS.
+            _ts_threshold = getattr(strategy.config, "z_score_stop", 3.5)
+            for _pk in list(positions.keys_list()):
+                _pos = positions.get(_pk)
+                if _pos is None:
+                    continue
+                _holding_bars = bar_idx - _pos["entry_bar"]
+                _should_ts, _ts_rsn = self.time_stop.should_exit(_holding_bars, _pos.get("half_life"))
+                if _should_ts:
+                    _pos_closed = positions.pop(_pk)
+                    _cp, _tp, _d = self._close_position(_pos_closed, prices_df, bar_idx)
+                    realized_pnl += _cp
+                    trades_pnl.append(_tp)
+                    _per_pair_trades.setdefault(_pk, []).append(_tp)
+                    _trade_durations.append(_d)
+                    self.spread_corr_guard.remove_spread(_pk)
+                    self.pca_monitor.remove_spread(_pk)
+                    self.partial_profit.remove(_pk)
+                    strategy.active_trades.pop(_pk, None)
+                    logger.debug(
+                        "time_stop_exit",
+                        pair=_pk,
+                        holding_bars=_holding_bars,
+                        half_life=_pos_closed.get("half_life"),
+                        reason=_ts_rsn,
+                        trade_pnl=round(_tp, 2),
+                    )
 
-        # ---- Log synthétique du flux de signaux (P5) -------------------
+            # Per-bar mark-to-market: keep portfolio_values current each bar
+            # so heat checks and drawdown detection use real-time equity.
+            _mtm_unrealised = 0.0
+            for _pk, _pos in positions.items_list():
+                _cp1 = prices_df[_pos["sym1"]].iloc[bar_idx]
+                _cp2 = prices_df[_pos["sym2"]].iloc[bar_idx]
+                _ep1, _ep2 = _pos["entry_price_1"], _pos["entry_price_2"]
+                _nl = _pos["notional"] / 2.0
+                if _pos["side"] == "long":
+                    _r1 = (_cp1 - _ep1) / _ep1 if _ep1 else 0
+                    _r2 = (_ep2 - _cp2) / _ep2 if _ep2 else 0
+                else:
+                    _r1 = (_ep1 - _cp1) / _ep1 if _ep1 else 0
+                    _r2 = (_cp2 - _ep2) / _ep2 if _ep2 else 0
+                _mtm_unrealised += _nl * _r1 + _nl * _r2
+            _mtm_delta = _mtm_unrealised - prev_unrealised_total
+            prev_unrealised_total = _mtm_unrealised
+            _bar_new_val = portfolio_values[-1] + realized_pnl + _mtm_delta
+            _bar_dr = (realized_pnl + _mtm_delta) / portfolio_values[-1] if portfolio_values[-1] > 0 else 0.0
+            daily_returns.append(_bar_dr)
+            portfolio_values.append(_bar_new_val)
+            oos_tracker.record(bar_idx, len(trades_pnl), _bar_dr)
+            self.var_monitor.update(_bar_dr)
+
         # Compte total signaux générés, acceptés, rejetés, motifs de rejet
         logger.info(
             "signal_flow_summary",
@@ -1116,7 +1206,10 @@ class StrategyBacktestSimulator:
         # stat-arb ÔÇö aligns with the z-score entry framework).
         z_stop_threshold = getattr(strategy.config, "z_score_stop", 3.5)
         for pair_key in list(positions.keys_list()):
-            pos = positions[pair_key]
+            pos = positions.get(pair_key)
+            if pos is None:
+                # Removed by a nested exit loop on an earlier iteration
+                continue
             sym1, sym2 = pos["sym1"], pos["sym2"]
             try:
                 if _compute_zscore_last_fast is not None:
@@ -1608,99 +1701,8 @@ class StrategyBacktestSimulator:
         prices_df: pd.DataFrame,
         bar_idx: int,
     ) -> tuple[float, float, int]:
-        """
-        Close *pos* at *bar_idx* and return (daily_realized_pnl, full_trade_pnl).
-
-        ``daily_realized_pnl`` ÔÇô what hits the portfolio on the exit day
-        (gross P&L minus exit cost and borrowing).
-
-        ``full_trade_pnl`` ÔÇô the complete round-trip P&L including the
-        entry cost that was already deducted on the entry day.
-        """
-        sym1, sym2 = pos["sym1"], pos["sym2"]
-        # C-02: T+1 fill — execute exit at bar T+1 (clamped to last bar).
-        _n_bars = len(prices_df)
-        exec_bar = min(bar_idx + 1, _n_bars - 1)
-        exit_price_1 = prices_df[sym1].iloc[exec_bar]
-        exit_price_2 = prices_df[sym2].iloc[exec_bar]
-        entry_price_1 = pos["entry_price_1"]
-        entry_price_2 = pos["entry_price_2"]
-        notional = pos["notional"]
-        not_1 = pos.get("notional_1", notional / 2.0)
-        not_2 = pos.get("notional_2", notional / 2.0)
-        notional_per_leg = notional / 2.0  # average (for cost estimation)
-        holding_days = max(exec_bar - pos["entry_bar"], 0)
-
-        # P&L per leg (% return ├ù beta-neutral per-leg notional)
-        if pos["side"] == "long":
-            # Long sym1, short sym2
-            ret_1 = (exit_price_1 - entry_price_1) / entry_price_1 if entry_price_1 != 0 else 0.0
-            ret_2 = (entry_price_2 - exit_price_2) / entry_price_2 if entry_price_2 != 0 else 0.0
-        else:
-            # Short sym1, long sym2
-            ret_1 = (entry_price_1 - exit_price_1) / entry_price_1 if entry_price_1 != 0 else 0.0
-            ret_2 = (exit_price_2 - entry_price_2) / entry_price_2 if entry_price_2 != 0 else 0.0
-
-        pnl_gross = not_1 * ret_1 + not_2 * ret_2
-
-        # Exit-day costs (Almgren-Chriss: use stored vol + estimated ADV)
-        _sig1 = pos.get("sigma1", 0.02)
-        _sig2 = pos.get("sigma2", 0.02)
-        _adv1 = self._estimate_adv(sym1, prices_df, notional_per_leg)
-        _adv2 = self._estimate_adv(sym2, prices_df, notional_per_leg)
-        x_cost = self.cost_model.exit_cost(
-            notional_per_leg,
-            volume_24h_sym1=_adv1,
-            volume_24h_sym2=_adv2,
-            sigma_sym1=_sig1,
-            sigma_sym2=_sig2,
-        )
-        borrow = self.cost_model.holding_cost(notional_per_leg, holding_days)
-        # Phase 0.4: Use per-position borrow fee when available
-        _pos_borrow_fee = pos.get("borrow_fee_pct")
-        if _pos_borrow_fee is not None and _pos_borrow_fee != self.cost_model.config.borrowing_cost_annual_pct:
-            borrow = notional_per_leg * (_pos_borrow_fee / 100.0 / 365.0) * holding_days
-        funding = self.cost_model.funding_cost(notional_per_leg, holding_days)
-
-        daily_realized = pnl_gross - x_cost - borrow - funding
-        full_trade = daily_realized - pos["entry_cost"]  # include entry cost
-
-        logger.debug(
-            "simulated_trade_closed",
-            pair=f"{sym1}_{sym2}",
-            side=pos["side"],
-            holding_days=holding_days,
-            pnl_gross=round(pnl_gross, 2),
-            exit_cost=round(x_cost, 2),
-            borrow_cost=round(borrow, 2),
-            trade_pnl=round(full_trade, 2),
-        )
-
-        # Post-v27 ├ëtape 3: Record outcome for dynamic pair blacklist
-        try:
-            _exit_date = cast(pd.Timestamp, pd.Timestamp(str(prices_df.index[bar_idx]))).date()
-            self.pair_blacklist.record_outcome(
-                f"{sym1}_{sym2}",
-                pnl=full_trade,
-                trade_date=_exit_date,
-            )
-        except Exception:
-            pass  # Non-critical ÔÇö don't break the backtest
-
-        # Phase 0.2: Record trade for adaptive Kelly computation
-        if self.kelly_sizer is not None:
-            self.kelly_sizer.record_trade(full_trade)
-
-        # Phase 4.4: Record trade outcome for ML combiner training
-        _ml_feats = pos.get("ml_features")
-        if _ml_feats is not None:
-            self.ml_combiner.record_trade(
-                bar_idx=pos["entry_bar"],
-                features=_ml_feats,
-                outcome=full_trade / notional if notional > 0 else 0.0,
-            )
-
-        return daily_realized, full_trade, holding_days
+        """Close *pos* at *bar_idx* — delegates to PositionTracker."""
+        return self._position_tracker.close_position(pos, prices_df, bar_idx)
 
     @staticmethod
     def _compute_spread(
@@ -1708,32 +1710,8 @@ class StrategyBacktestSimulator:
         sym1: str,
         sym2: str,
     ) -> pd.Series | None:
-        """Compute a simple OLS-residual spread for the correlation guard.
-
-        Uses log-price ratio as a lightweight proxy (avoids a full
-        SpreadModel fit on every bar).  Returns ``None`` on failure.
-        """
-        try:
-            s1 = prices_df[sym1]
-            s2 = prices_df[sym2]
-            if len(s1) < 30 or len(s2) < 30:
-                return None
-            # Normalised spread: log(s1) Ôêô ╬▓┬Àlog(s2), ╬▓ via simple OLS
-            # Explicitly compute cleaned series first
-            s1_cleaned = s1.replace(0, np.nan).dropna()
-            s2_cleaned = s2.replace(0, np.nan).dropna()
-            ls1 = pd.Series(np.log(s1_cleaned.values), index=s1_cleaned.index, dtype=float)
-            ls2 = pd.Series(np.log(s2_cleaned.values), index=s2_cleaned.index, dtype=float)
-            common = ls1.index.intersection(ls2.index)
-            if len(common) < 30:
-                return None
-            ls1 = ls1.loc[common]
-            ls2 = ls2.loc[common]
-            beta = np.polyfit(np.asarray(ls2.values, dtype=float), np.asarray(ls1.values, dtype=float), 1)[0]
-            spread = ls1 - beta * ls2
-            return spread
-        except Exception:
-            return None
+        """Delegates to PositionTracker.compute_spread."""
+        return PositionTracker.compute_spread(prices_df, sym1, sym2)
 
     # ==================================================================
     # Phase 4 helpers
@@ -1746,32 +1724,8 @@ class StrategyBacktestSimulator:
         sym2: str,
         lookback: int = 60,
     ) -> float:
-        """Return an inverse-volatility multiplier in [0.4, 1.5].
-
-        High-vol spreads get reduced allocation; tight mean-reverting
-        spreads get a boost.  Uses log-return volatility of the simple
-        spread as a proxy.
-        """
-        try:
-            s1 = prices_df[sym1].iloc[-lookback:]
-            s2 = prices_df[sym2].iloc[-lookback:]
-            if len(s1) < 20 or len(s2) < 20:
-                return 1.0
-            # Simple spread vol (% of combined price)
-            spread_ret = (s1.pct_change() - s2.pct_change()).dropna()
-            if len(spread_ret) < 10:
-                return 1.0
-            vol = spread_ret.std()
-            if vol <= 0:
-                return 1.0
-            # Inverse-vol: target 2% daily spread vol.
-            # If vol is lower Ôåô bigger position (up to 1.5├ù);
-            # if higher Ôåô smaller (down to 0.4├ù).
-            target_vol = 0.02
-            raw = target_vol / vol
-            return float(np.clip(raw, 0.4, 1.5))
-        except Exception:
-            return 1.0
+        """Delegates to BacktestSectorExposureManager.volatility_sizing_multiplier."""
+        return BacktestSectorExposureManager.volatility_sizing_multiplier(prices_df, sym1, sym2, lookback)
 
     @staticmethod
     def _estimate_sigma(
@@ -1779,50 +1733,8 @@ class StrategyBacktestSimulator:
         symbol: str,
         lookback: int = 60,
     ) -> float:
-        """Estimate daily return volatility for a symbol from recent prices.
-
-        Returns a decimal (e.g. 0.02 for 2% daily vol).
-        """
-        try:
-            series = prices_df[symbol].iloc[-lookback:]
-            if len(series) < 10:
-                return 0.02
-            vol = series.pct_change().dropna().std()
-            return max(vol, 0.005)  # floor at 0.5%
-        except Exception:
-            return 0.02
-
-    # ADV estimates by market-cap tier (USD notional/day).
-    # v31h universe is all mega/large-cap US equities.
-    _ADV_MEGA_CAP = 500_000_000  # $500M/day ÔÇö AAPL, MSFT, NVDA, etc.
-    _ADV_LARGE_CAP = 150_000_000  # $150M/day ÔÇö CL, SO, DUK, etc.
-    _ADV_MID_CAP = 30_000_000  # $30M/day ÔÇö fallback
-
-    # Symbols known to be mega-cap (top-20 ADV in v31h universe)
-    _MEGA_CAP_SYMBOLS = frozenset(
-        {
-            "AAPL",
-            "MSFT",
-            "GOOGL",
-            "META",
-            "NVDA",
-            "AMD",
-            "AVGO",
-            "JPM",
-            "BAC",
-            "SPY",
-            "XOM",
-            "WMT",
-            "UNH",
-            "JNJ",
-            "PFE",
-            "GS",
-            "WFC",
-            "C",
-            "MRK",
-            "ABBV",
-        }
-    )
+        """Delegates to PositionTracker.estimate_sigma."""
+        return PositionTracker.estimate_sigma(prices_df, symbol, lookback)
 
     def _estimate_adv(
         self,
@@ -1830,41 +1742,13 @@ class StrategyBacktestSimulator:
         prices_df: pd.DataFrame,
         notional_per_leg: float,
     ) -> float:
-        """Estimate Average Daily Volume in USD for slippage calculation.
-
-        Lookup order:
-        1. ``self.adv_by_symbol`` (injected real ADV from DataLoader / caller)
-        2. Static mega-cap / large-cap tier table (conservative fallback)
-        """
-        injected = self.adv_by_symbol.get(symbol.upper())
-        if injected is not None:
-            return injected
-        if symbol not in prices_df.columns:
-            logger.debug(
-                "adv_estimate_symbol_not_in_prices",
-                symbol=symbol,
-                notional_per_leg=notional_per_leg,
-            )
-        if symbol in self._MEGA_CAP_SYMBOLS:
-            return self._ADV_MEGA_CAP
-        # All v31h symbols are large-cap at minimum
-        return self._ADV_LARGE_CAP
+        """Delegates to PositionTracker.estimate_adv."""
+        return self._position_tracker.estimate_adv(symbol, prices_df, notional_per_leg)
 
     def _compute_sector_exposure(
         self,
         positions: dict[str, dict],
         portfolio_value: float,
     ) -> dict[str, float]:
-        """Compute sector exposure as % of portfolio value.
-
-        Returns dict mapping sector ÔåÆ exposure percentage.
-        """
-        if portfolio_value <= 0 or not positions:
-            return {}
-        sector_notional: dict[str, float] = {}
-        for pos in positions.values():
-            s1 = self._sector_map.get(pos["sym1"], "unknown")
-            s2 = self._sector_map.get(pos["sym2"], "unknown")
-            sector = s1 if s1 != "unknown" else s2
-            sector_notional[sector] = sector_notional.get(sector, 0.0) + pos["notional"]
-        return {s: (n / portfolio_value) * 100.0 for s, n in sector_notional.items()}
+        """Delegates to BacktestSectorExposureManager.compute_sector_exposure."""
+        return self._sector_exposure_manager.compute_sector_exposure(positions, portfolio_value)

@@ -1,5 +1,6 @@
-﻿from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timedelta
+﻿import time as _time_module
+from concurrent.futures import ThreadPoolExecutor
+from datetime import date, datetime
 from multiprocessing import cpu_count
 from pathlib import Path
 from typing import Any, Callable, cast
@@ -16,7 +17,9 @@ from models.cointegration import (
     is_cointegration_stable,
     verify_integration_order,
 )
-from models.cointegration import newey_west_consensus as _newey_west_consensus
+from models.cointegration import (
+    newey_west_consensus as _newey_west_consensus,  # noqa: F401 — re-exported for test patching  # pyright: ignore[reportUnusedImport]
+)
 from models.spread import SpreadModel
 from signal_engine.combiner import SignalCombiner, SignalSource
 from signal_engine.cross_sectional import CrossSectionalMomentum
@@ -27,6 +30,9 @@ from signal_engine.ou_signal import OUSignalGenerator
 from signal_engine.sentiment import SentimentSignal
 from signal_engine.vol_signal import VolatilityRegimeSignal
 from strategies.base import BaseStrategy, Signal
+from strategies.correlation_monitor import CorrelationMonitor
+from strategies.pair_cache_manager import PairCacheManager
+from strategies.pair_validator import PairValidator
 from strategies.trade_book import StrategyTradeBook
 
 logger = get_logger(__name__)
@@ -170,14 +176,11 @@ class PairTradingStrategy(BaseStrategy):
             exit_threshold=_sc_cfg.exit_threshold,
         )
 
-        # ÔöÇÔöÇ Leg-correlation monitoring state ÔöÇÔöÇ
-        self._excluded_pairs_correlation: set = set()
-        self._correlation_exclusions: dict[str, datetime] = {}
-        self._leg_correlation_history: dict[str, dict] = {}
+        # ── Leg-correlation monitoring parameters ──
         self.leg_correlation_window: int = self._cfg_val(_c, "leg_correlation_window", 30)
         self.leg_correlation_decay_threshold: float = self._cfg_val(_c, "leg_correlation_decay_threshold", 0.3)
 
-        # ÔöÇÔöÇ Internal risk limits ÔöÇÔöÇ
+        # ── Internal risk limits ──
         self.max_positions: int = self._cfg_val(_c, "internal_max_positions", 10)
         self.max_daily_trades: int = self._cfg_val(_c, "internal_max_daily_trades", 50)
         self.max_drawdown_pct: float = self._cfg_val(_c, "internal_max_drawdown_pct", 20.0)
@@ -185,8 +188,45 @@ class PairTradingStrategy(BaseStrategy):
         self.daily_trade_date: date | None = date.today()
         self.peak_equity: float | None = self._cfg_val(_c, "initial_capital", 100_000.0)
         self.current_equity: float | None = self.peak_equity
+        # P1-05: persistent I(1) verification cache — avoids re-running ADF/KPSS every discovery cycle
+        # keys: symbol; values: (is_I1: bool, cached_at: float monotonic timestamp)
+        self._i1_verification_cache: dict[str, tuple[bool, float]] = {}
+        self._i1_cache_ttl_seconds: float = 86400.0  # 24 h default (one full market day)
 
-    # ÔöÇÔöÇ Cache control methods ÔöÇÔöÇ
+        # ── Composed helpers (P2-04) ──
+        # CorrelationMonitor owns the correlation state; @property bridges on this
+        # class expose the underlying sets/dicts so tests that mutate them directly
+        # (e.g. strategy._excluded_pairs_correlation.add(k)) keep working.
+        self._correlation_monitor = CorrelationMonitor(
+            window=self.leg_correlation_window,
+            decay_threshold=self.leg_correlation_decay_threshold,
+            clock=self._clock,
+        )
+        # PairCacheManager owns cache I/O; use_cache flag stays on this class.
+        self._cache_manager = PairCacheManager(
+            cache_dir=self.cache_dir,
+            regime_detector=self.regime_detector,
+            config=self.config,
+            clock=self._clock,
+        )
+
+    # ── @property bridges for correlation state ──
+    # These expose the CorrelationMonitor's live collections so callers that
+    # directly mutate strategy._excluded_pairs_correlation (e.g. via .add())
+    # continue to work without modification.
+    @property
+    def _excluded_pairs_correlation(self) -> set:
+        return self._correlation_monitor._excluded_pairs_correlation
+
+    @property
+    def _correlation_exclusions(self) -> dict:
+        return self._correlation_monitor._correlation_exclusions
+
+    @property
+    def _leg_correlation_history(self) -> dict:
+        return self._correlation_monitor._leg_correlation_history
+
+    # ── Cache control methods ──
     def disable_cache(self) -> None:
         """Disable pair-cache reads/writes (used by walk-forward to avoid leakage)."""
         self.use_cache = False
@@ -197,26 +237,14 @@ class PairTradingStrategy(BaseStrategy):
 
     def clear_cache(self) -> None:
         """Delete all cached pair files."""
-        import shutil
+        self._cache_manager.clear()
 
-        if self.cache_dir.exists():
-            shutil.rmtree(self.cache_dir)
-            self.cache_dir.mkdir(parents=True, exist_ok=True)
-
-    # ÔöÇÔöÇ Adaptive cache TTL ÔöÇÔöÇ
+    # ── Adaptive cache TTL ──
     def get_cache_ttl_hours(self) -> int:
         """Return cache TTL in hours based on current volatility regime."""
-        from models.regime_detector import VolatilityRegime
+        return self._cache_manager.get_cache_ttl_hours()
 
-        regime = self.regime_detector.current_regime
-        if regime == VolatilityRegime.HIGH:
-            return int(self._cfg_val(self.config, "cache_ttl_high_vol", 2))
-        elif regime == VolatilityRegime.LOW:
-            return int(self._cfg_val(self.config, "cache_ttl_low_vol", 24))
-        else:
-            return int(self._cfg_val(self.config, "cache_ttl_normal_vol", 12))
-
-    # ÔöÇÔöÇ Leg-correlation stability ÔöÇÔöÇ
+    # ── Leg-correlation stability (delegated to CorrelationMonitor) ──
     def _check_leg_correlation_stability(
         self,
         y: pd.Series,
@@ -224,85 +252,38 @@ class PairTradingStrategy(BaseStrategy):
         pair_key: str,
         window: int | None = None,
     ) -> bool:
-        """Check if the rolling correlation between pair legs is stable.
-
-        Returns True (safe) when data is insufficient or correlation is above
-        the decay threshold.  Returns False on breakdown.
-        """
-        win = window or self.leg_correlation_window
-        threshold = self.leg_correlation_decay_threshold
-
-        if len(y) < 2 * win or len(x) < 2 * win:
-            self._leg_correlation_history[pair_key] = {
-                "stable": True,
-                "recent_corr": None,
-                "reason": "insufficient_data",
-                "window": win,
-            }
-            return True
-
-        if y.std() < 1e-12 or x.std() < 1e-12:
-            self._leg_correlation_history[pair_key] = {
-                "stable": True,
-                "recent_corr": None,
-                "reason": "constant_series",
-                "window": win,
-            }
-            return True
-
-        recent_corr = float(y.tail(win).corr(x.tail(win)))
-        historical_corr = getattr(self, "_pair_historical_corr", {}).get(pair_key, None)
-        if historical_corr is None:
-            historical_corr = float(y.corr(x))
-
-        stable = abs(recent_corr) >= threshold
-        self._leg_correlation_history[pair_key] = {
-            "stable": stable,
-            "recent_corr": recent_corr,
-            "historical_corr": historical_corr,
-            "threshold": threshold,
-            "window": win,
-        }
-
-        if not stable:
-            self._excluded_pairs_correlation.add(pair_key)
-            self._correlation_exclusions[pair_key] = self._clock()
-
-        return stable
+        """Check if the rolling correlation between pair legs is stable."""
+        return self._correlation_monitor.check_stability(y, x, pair_key, window)
 
     def get_excluded_pairs_correlation(self) -> set:
         """Return the set of pairs excluded due to correlation breakdown."""
-        return set(self._excluded_pairs_correlation)
+        return self._correlation_monitor.get_excluded_pairs()
 
     def get_correlation_exclusions(self) -> dict[str, datetime]:
         """Return currently excluded pairs with timestamps."""
-        return dict(self._correlation_exclusions)
+        return self._correlation_monitor.get_exclusions()
 
     def reset_correlation_exclusion(self, pair_key: str | None = None) -> None:
         """Remove a single pair or all pairs from the exclusion set."""
-        if pair_key is None:
-            self._excluded_pairs_correlation.clear()
-            self._correlation_exclusions.clear()
-        else:
-            self._excluded_pairs_correlation.discard(pair_key)
-            self._correlation_exclusions.pop(pair_key, None)
+        self._correlation_monitor.reset_exclusion(pair_key)
 
     def reset_all_correlation_exclusions(self) -> None:
         """Remove all correlation exclusions."""
-        self._excluded_pairs_correlation.clear()
-        self._correlation_exclusions.clear()
+        self._correlation_monitor.reset_all()
 
     def get_correlation_analytics(self) -> dict[str, dict]:
         """Return correlation monitoring analytics."""
-        return dict(self._leg_correlation_history)
+        return self._correlation_monitor.get_analytics()
 
     def get_leg_correlation_history(self) -> dict[str, dict]:
         """Return leg correlation monitoring history."""
-        return dict(self._leg_correlation_history)
+        return self._correlation_monitor.get_history()
 
     # ÔöÇÔöÇ Internal risk limits ÔöÇÔöÇ
     def _maybe_reset_daily_counter(self) -> None:
-        today = date.today()
+        # Use strategy clock so backtests advance per simulated bar date.
+        # In live trading _clock == datetime.now, so .date() == date.today().
+        today = self._clock().date()
         if self.daily_trade_date != today:
             self.daily_trade_count = 0
             self.daily_trade_date = today
@@ -332,185 +313,22 @@ class PairTradingStrategy(BaseStrategy):
         return True, ""
 
     def load_cached_pairs(self, max_age_hours: int | None = None) -> list[tuple] | None:
-        """
-        Load cached cointegrated pairs if recent.
-
-        Args:
-            max_age_hours: Maximum cache age in hours.  When *None* the
-                           adaptive regime-based TTL is used.
-
-        Returns:
-            Cached pairs list or None if cache is stale/missing
-        """
-        if max_age_hours is None:
-            max_age_hours = self.get_cache_ttl_hours()
-
-        cache_file = self.cache_dir / "cointegrated_pairs.json"
-
-        if cache_file.exists():
-            mod_time = datetime.fromtimestamp(cache_file.stat().st_mtime)
-            age = self._clock() - mod_time
-
-            if age < timedelta(hours=max_age_hours):
-                try:
-                    import json
-
-                    with open(cache_file) as f:
-                        pairs = json.load(f)
-                    # pairs are stored as list of [sym1, sym2, ...] lists
-                    pairs = [tuple(p) for p in pairs]
-                    logger.info(
-                        "loaded_cached_pairs", pairs_count=len(pairs), age_hours=round(age.total_seconds() / 3600, 2)
-                    )
-                    return pairs
-                except Exception as e:
-                    logger.warning("cache_load_failed", error=str(e))
-
-        return None
+        """Load cached cointegrated pairs if recent (delegates to PairCacheManager)."""
+        return self._cache_manager.load_cached_pairs(max_age_hours)
 
     def save_cached_pairs(self, pairs: list[tuple]) -> None:
-        """Save cointegrated pairs to cache."""
-        try:
-            import json
-
-            cache_file = self.cache_dir / "cointegrated_pairs.json"
-            # Write to temporary file first, then rename (atomic operation)
-            temp_file = cache_file.with_suffix(".tmp")
-            with open(temp_file, "w") as f:
-                json.dump([list(p) for p in pairs], f, indent=2)
-            # Atomic rename
-            temp_file.replace(cache_file)
-            logger.info("saved_cointegrated_pairs", count=len(pairs))
-        except Exception as e:
-            logger.warning("cache_save_failed", error=str(e))
+        """Save cointegrated pairs to cache (delegates to PairCacheManager)."""
+        self._cache_manager.save_cached_pairs(pairs)
 
     @staticmethod
     def _test_pair_cointegration(args: tuple) -> tuple[str, str, float, float] | None:
-        """
-        Test cointegration for a single pair (runs in worker process).
-
-        Args:
-            args: Tuple of (sym1, sym2, series1, series2, min_corr, max_hl,
-                            num_symbols, johansen_flag, nw_consensus_flag)
-                  -- 6-element legacy tuples are also supported.
-
-        Returns:
-            (sym1, sym2, pvalue, half_life) tuple or None if not cointegrated
-        """
-        # Support both 6-element (legacy) and 9-element tuples
-        if len(args) == 9:
-            sym1, sym2, series1, series2, min_corr, max_hl, num_symbols, _johansen_flag, nw_consensus_flag = args
-        else:
-            sym1, sym2, series1, series2, min_corr, max_hl = args[:6]
-            num_symbols = None
-            nw_consensus_flag = False
-
-        # Determine Bonferroni flag: apply when num_symbols is provided
-        apply_bonferroni = num_symbols is not None and num_symbols > 1
-
-        try:
-            # Check correlation threshold first (fast filter)
-            corr = series1.corr(series2)
-            if abs(corr) < min_corr:
-                return None
-
-            # Run Engle-Granger test with Bonferroni correction
-            result = engle_granger_test(
-                series1,
-                series2,
-                apply_bonferroni=apply_bonferroni,
-                num_symbols=num_symbols,
-            )
-
-            if result["is_cointegrated"]:
-                # Newey-West consensus gate
-                if nw_consensus_flag:
-                    cons = _newey_west_consensus(series1, series2)
-                    if not cons["consensus"]:
-                        return None
-
-                # Calculate half-life of mean reversion
-                hl = half_life_mean_reversion(pd.Series(result["residuals"]))
-
-                # Filter by half-life
-                if hl and hl <= max_hl:
-                    return (sym1, sym2, result["adf_pvalue"], hl)
-
-        except Exception:
-            pass
-
-        return None
+        """Delegates to PairValidator (backward-compatible alias)."""
+        return PairValidator.test_pair_cointegration(args)
 
     @staticmethod
     def _test_pair_candidate(args: tuple) -> tuple[str, str, float, float] | None:
-        """
-        Test cointegration and return candidate with raw p-value (for BH-FDR).
-
-        Unlike ``_test_pair_cointegration``, this does NOT apply any
-        multiple-testing correction.  The caller is responsible for
-        applying BH-FDR on the collected p-values.
-
-        Returns:
-            (sym1, sym2, raw_pvalue, half_life) or None if fails
-            correlation or half-life checks.
-        """
-        _args: Any = args
-        if len(args) >= 9:
-            sym1 = _args[0]
-            sym2 = _args[1]
-            series1 = _args[2]
-            series2 = _args[3]
-            min_corr = _args[4]
-            max_hl = _args[5]
-            _num_symbols = _args[6]
-            _johansen_flag = _args[7]
-            nw_consensus_flag = _args[8]
-        else:
-            sym1 = _args[0]
-            sym2 = _args[1]
-            series1 = _args[2]
-            series2 = _args[3]
-            min_corr = _args[4]
-            max_hl = _args[5]
-            nw_consensus_flag = False
-
-        try:
-            # Fast filter: correlation threshold
-            corr = series1.corr(series2)
-            if abs(corr) < min_corr:
-                return None
-
-            # Run EG test WITHOUT any multiple-testing correction
-            # check_integration_order=False because the caller
-            # pre-filters symbols via I(1) cache.
-            result = engle_granger_test(
-                series1,
-                series2,
-                apply_bonferroni=False,
-                check_integration_order=False,
-            )
-
-            pvalue = result.get("adf_pvalue", 1.0)
-
-            # Pre-filter: skip clearly insignificant pairs
-            if pvalue >= 0.20 or np.isnan(pvalue):
-                return None
-
-            # Newey-West consensus gate (if enabled)
-            if nw_consensus_flag:
-                cons = _newey_west_consensus(series1, series2)
-                if not cons["consensus"]:
-                    return None
-
-            # Calculate half-life of mean reversion
-            hl = half_life_mean_reversion(pd.Series(result["residuals"]))
-            if not hl or hl > max_hl:
-                return None
-
-            return (sym1, sym2, pvalue, hl)
-
-        except Exception:
-            return None
+        """Delegates to PairValidator (backward-compatible alias)."""
+        return PairValidator.test_pair_candidate(args)
 
     def set_clock(self, clock_fn: Callable[[], Any]) -> None:
         """Override the clock function (used by backtester for determinism)."""
@@ -846,6 +664,15 @@ class PairTradingStrategy(BaseStrategy):
         symbols = data.columns.tolist()
         cointegrated_pairs = []
 
+        # P1-05: I(1) pre-filter using persistent cache (mirrors parallel path)
+        _now_mono = _time_module.monotonic()
+        for sym in symbols:
+            cached = self._i1_verification_cache.get(sym)
+            if cached is None or (_now_mono - cached[1]) > self._i1_cache_ttl_seconds:
+                io = verify_integration_order(pd.Series(data[sym]), name=sym)
+                self._i1_verification_cache[sym] = (bool(io["is_I1"]), _now_mono)
+        symbols = [s for s in symbols if self._i1_verification_cache.get(s, (False, 0.0))[0]]
+
         for i, sym1 in enumerate(symbols):
             for _j, sym2 in enumerate(symbols[i + 1 :], start=i + 1):
                 try:
@@ -993,11 +820,7 @@ class PairTradingStrategy(BaseStrategy):
                     # Seuil configurable via config.strategy.adf_pvalue_threshold (default 0.10)
                     from config.settings import get_settings as _gs_adf
 
-                    adf_threshold = getattr(
-                        getattr(_gs_adf().strategy, "adf_pvalue_threshold", None), "__float__", lambda: None
-                    )()
-                    if adf_threshold is None:
-                        adf_threshold = 0.10
+                    adf_threshold = _gs_adf().strategy.adf_pvalue_threshold
                     if _adf_p > adf_threshold:
                         if pair_key in self.active_trades:
                             signals.append(
@@ -1161,6 +984,21 @@ class PairTradingStrategy(BaseStrategy):
                     self._last_composite = _composite
 
                 # Entry signals (z-score threshold + combiner confirmation)
+                if (
+                    current_z > effective_entry_z
+                    and pair_key not in self.active_trades
+                    and not (risk_ok and weekly_gate_ok and _spread_ok and _mom_gate)
+                ):
+                    logger.debug(
+                        "entry_blocked_gate",
+                        pair=pair_key,
+                        z=round(current_z, 3),
+                        risk_ok=risk_ok,
+                        risk_reason=_risk_reason,
+                        weekly_ok=weekly_gate_ok,
+                        spread_ok=_spread_ok,
+                        mom_ok=_mom_gate,
+                    )
                 if (
                     risk_ok
                     and weekly_gate_ok

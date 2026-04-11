@@ -101,10 +101,14 @@ class IBGatewaySync:
     - Utilisation synchrone (recommandee par IBKR)
     """
 
-    def __init__(self, host: str = "127.0.0.1", port: int | None = None, client_id: int = 1, timeout: int = 30) -> None:
+    def __init__(
+        self, host: str = "127.0.0.1", port: int | None = None, client_id: int | None = None, timeout: int = 30
+    ) -> None:
         self.host = host
         self.port = port if port is not None else int(os.getenv("IBKR_PORT", "4002"))
-        self.client_id = client_id
+        # Default 5 reserves EDGECORE's slot; AlphaEdge uses 3 (ALPHAEDGE_IB_CLIENT_ID).
+        # Override via IBKR_CLIENT_ID env var or pass client_id explicitly.
+        self.client_id = client_id if client_id is not None else int(os.getenv("IBKR_CLIENT_ID", "5"))
         self.timeout = timeout
         self.app = None
         self._lock = threading.Lock()

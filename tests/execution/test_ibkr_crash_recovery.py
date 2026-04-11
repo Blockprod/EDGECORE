@@ -48,6 +48,7 @@ def _build_engine(client_id: int = 77) -> IBKRExecutionEngine:
     engine._max_consecutive_failures = 5
     engine._last_failure_time = 0.0
     engine._cb_reset_timeout = 300
+    engine._pending_confirm_orders = set()  # P2-02
     # Prevent real disk I/O in most tests
     engine._load_order_map = MagicMock()
     engine._save_order_map = MagicMock()
@@ -227,5 +228,3 @@ class TestAtomicOrderMapWrite:
         engine._load_order_map()
 
         assert engine._persisted_order_ids == {"ORD-LOAD-001": 555, "ORD-LOAD-002": 666}
-
-

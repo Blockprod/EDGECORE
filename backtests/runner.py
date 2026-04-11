@@ -120,6 +120,8 @@ class BacktestRunner:
         oos_start_date: str | None = None,
         cost_model=None,
         momentum_filter=None,
+        spread_corr_guard=None,
+        blacklist_persist_path: str | None = None,
     ) -> BacktestMetrics:
         """Run backtest via the unified StrategyBacktestSimulator (no look-ahead).
 
@@ -195,6 +197,8 @@ class BacktestRunner:
             borrow_checker=borrow_checker,
             leverage_multiplier=leverage_multiplier,
             momentum_filter=momentum_filter,
+            spread_corr_guard=spread_corr_guard,
+            blacklist_persist_path=blacklist_persist_path,
         )
         return simulator.run(
             prices_df,
@@ -294,7 +298,7 @@ class BacktestRunner:
             # Timeout = 90s to allow HMDS to warm up after Gateway restart.
             from execution.ibkr_engine import IBGatewaySync
 
-            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=5000, timeout=90)
+            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=5055, timeout=90)
             engine.connect()
 
             # ÔöÇÔöÇ HMDS connectivity check ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ

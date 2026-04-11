@@ -51,13 +51,13 @@ class SpreadHalfLifeEstimator:
 
         data = spread.iloc[-self.lookback :].copy()
 
-        # STAT-4: Use exponentially-weighted mean to avoid look-ahead bias.
-        # The full-window arithmetic mean includes future data relative to
-        # earlier observations in the window.  An EWM with span ~ 2/3 of
-        # lookback centres the spread causally while remaining smooth enough
-        # for reliable AR(1) estimation.
+        # P3-01: strictly one-sided EWM to eliminate look-ahead bias.
+        # data.shift(1) makes the EWM at position t use only data[0..t-1],
+        # so the mean estimate is purely historical.  adjust=False enforces
+        # the recursive (causal) formula instead of the symmetric initialisation
+        # used by the default adjust=True variant.
         ewm_span = max(int(self.lookback * 2 / 3), 20)
-        ewm_mean = data.ewm(span=ewm_span).mean()
+        ewm_mean = data.shift(1).ewm(span=ewm_span, adjust=False).mean()
         data_centered = data - ewm_mean
 
         # AR(1) regression: X_t = ¤ü * X_{t-1}

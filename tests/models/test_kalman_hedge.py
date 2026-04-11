@@ -359,3 +359,87 @@ class TestKalmanSpreadComparison:
         assert abs(kf.beta - 3.0) < abs(ols_beta - 3.0), (
             f"Kalman ╬▓={kf.beta:.4f} should be closer to 3.0 than OLS ╬▓={ols_beta:.4f}"
         )
+
+
+# ---------------------------------------------------------------------------
+# P3-04: KalmanHedgeRatio.reset() — state isolation between pair sessions
+# ---------------------------------------------------------------------------
+
+
+class TestKalmanReset:
+    """P3-04 — reset() must clear all accumulated state."""
+
+    def _make_series(self, n: int = 100, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+        rng = np.random.default_rng(seed)
+        x = np.cumsum(rng.standard_normal(n)) + 100.0
+        y = 2.0 * x + rng.standard_normal(n) * 0.5
+        return y, x
+
+    def test_reset_clears_beta(self):
+        """After training and reset, beta must be None (uninitialized)."""
+        kf = KalmanHedgeRatio()
+        y, x = self._make_series()
+        for yi, xi in zip(y, x, strict=False):
+            kf.update(float(yi), float(xi))
+        assert kf.beta is not None
+        kf.reset()
+        assert kf.beta is None
+
+    def test_reset_clears_history(self):
+        """After reset all history lists must be empty."""
+        kf = KalmanHedgeRatio()
+        y, x = self._make_series()
+        for yi, xi in zip(y, x, strict=False):
+            kf.update(float(yi), float(xi))
+        assert len(kf.beta_history) > 0
+        kf.reset()
+        assert kf.beta_history == []
+        assert kf.spread_history == []
+        assert kf.innovation_history == []
+        assert kf.P_history == []
+
+    def test_reset_clears_breakdown_count(self):
+        """breakdown_count and bars_processed must be 0 after reset."""
+        kf = KalmanHedgeRatio()
+        y, x = self._make_series()
+        for yi, xi in zip(y, x, strict=False):
+            kf.update(float(yi), float(xi))
+        kf.reset()
+        assert kf.breakdown_count == 0
+        assert kf.bars_processed == 0
+
+    def test_reset_then_run_equals_fresh_instance(self):
+        """A reset filter fed the same data must produce the same beta as a new instance."""
+        y, x = self._make_series(n=150, seed=99)
+        kf_fresh = KalmanHedgeRatio(delta=1e-4, ve=1e-3)
+        kf_reused = KalmanHedgeRatio(delta=1e-4, ve=1e-3)
+
+        # Poison kf_reused with unrelated data
+        y_noise, x_noise = self._make_series(n=50, seed=7)
+        for yi, xi in zip(y_noise, x_noise, strict=False):
+            kf_reused.update(float(yi), float(xi))
+
+        # Reset and replay the target series
+        kf_reused.reset()
+        for yi, xi in zip(y, x, strict=False):
+            kf_fresh.update(float(yi), float(xi))
+            kf_reused.update(float(yi), float(xi))
+
+        assert kf_fresh.beta is not None
+        assert kf_reused.beta is not None
+        assert abs(kf_fresh.beta - kf_reused.beta) < 1e-10, (
+            f"Reset filter beta {kf_reused.beta:.6f} != fresh filter beta {kf_fresh.beta:.6f}"
+        )
+
+    def test_run_filter_uses_reset_internally(self):
+        """run_filter on a pre-trained filter must give same result as a fresh run."""
+        y, x = self._make_series(n=120, seed=42)
+        y_s = pd.Series(y)
+        x_s = pd.Series(x)
+        kf = KalmanHedgeRatio()
+
+        df1 = kf.run_filter(y_s, x_s)
+        # Second call: filter was left in trained state from df1 — must still match
+        df2 = kf.run_filter(y_s, x_s)
+
+        pd.testing.assert_frame_equal(df1, df2, rtol=1e-10)

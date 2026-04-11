@@ -47,6 +47,7 @@ def _make_strategy(max_positions=8, max_drawdown_pct=0.10, max_daily_trades=20):
     strat.daily_trade_date = None
     strat.peak_equity = None
     strat.current_equity = None
+    strat._clock = datetime.now  # required since __init__ is mocked out
     return strat
 
 

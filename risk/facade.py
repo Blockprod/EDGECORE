@@ -30,6 +30,8 @@ from structlog import get_logger
 
 from risk.engine import Position, RiskEngine
 from risk_engine.kill_switch import KillReason, KillSwitch, KillSwitchConfig
+from risk_engine.portfolio_risk import PortfolioRiskConfig, PortfolioRiskManager
+from risk_engine.position_risk import PositionRiskManager
 
 logger = get_logger(__name__)
 
@@ -55,6 +57,7 @@ class RiskFacade:
         kill_switch_config: KillSwitchConfig | None = None,
         sector_map: dict[str, str] | None = None,
         kill_switch: KillSwitch | None = None,
+        portfolio_risk_config: PortfolioRiskConfig | None = None,
     ):
         self.risk_engine = RiskEngine(
             initial_equity=initial_equity,
@@ -68,15 +71,37 @@ class RiskFacade:
         if kill_switch is not None:
             self.kill_switch = kill_switch
         else:
-            self.kill_switch = KillSwitch(
-                config=kill_switch_config or KillSwitchConfig(),
-            )
+            if kill_switch_config is None:
+                try:
+                    from config.settings import get_settings as _gs_ks
+
+                    _ks_cooldown = _gs_ks().risk.kill_switch_cooldown_seconds
+                    kill_switch_config = KillSwitchConfig(cooldown_seconds=_ks_cooldown)
+                except Exception:
+                    kill_switch_config = KillSwitchConfig()
+            self.kill_switch = KillSwitch(config=kill_switch_config)
+
+        # P0-01: owned sub-systems — single source of truth for equity state
+        self.portfolio_risk = PortfolioRiskManager(
+            initial_equity=initial_equity,
+            config=portfolio_risk_config,
+        )
+        self.position_risk = PositionRiskManager()
 
         logger.info(
             "risk_facade_initialized",
             initial_equity=initial_equity,
             kill_switch_active=self.kill_switch.is_active,
         )
+
+    # ------------------------------------------------------------------
+    # Unified equity update (P0-01 single source of truth)
+    # ------------------------------------------------------------------
+
+    def update_equity(self, equity: float) -> None:
+        """Propagate live equity to all sub-systems atomically."""
+        self.risk_engine.current_equity = equity
+        self.portfolio_risk.update_equity(equity)
 
     # ------------------------------------------------------------------
     # Trade gate (main entry point)
@@ -144,8 +169,7 @@ class RiskFacade:
     # RiskEngine delegation
     # ------------------------------------------------------------------
 
-    def register_entry(self, symbol_pair: str, entry_price: float,
-                       quantity: float, side: str) -> None:
+    def register_entry(self, symbol_pair: str, entry_price: float, quantity: float, side: str) -> None:
         self.risk_engine.register_entry(symbol_pair, entry_price, quantity, side)
 
     def register_exit(self, symbol_pair: str, exit_price: float, pnl: float) -> object | None:

@@ -33,7 +33,7 @@ execution:
 risk:
   # C-10: Tighter risk limits for paper mode — prevents inflated position sizing
   # that would shock the operator if they switch to live accidentally.
-  max_concurrent_positions: 6       # Half of prod to stay conservative
+  max_concurrent_positions: 12      # v63 certified value
   max_risk_per_trade: 0.005         # 0.5% of equity per trade
   max_consecutive_losses: 5
   max_daily_loss_pct: 0.02          # 2% daily loss circuit breaker
@@ -51,3 +51,41 @@ trading:
   min_order_quantity: 1.0
   limit_price_offset_pct: 0.01
   paper_fill_rate: 0.95             # 95% fill rate — model partial fills
+
+# ── v63 Sweet Set — CERT-03b certified (Combined Sharpe 0.5554) ──────────────
+# Applied on top of dev.yaml / prod.yaml when EDGECORE_MODE=paper.
+# DO NOT modify without re-running walk-forward validation.
+
+strategy:
+  entry_z_score: 1.8                # v63 certified
+  exit_z_score: 0.10                # v63 certified — faster profit capture
+  z_score_stop: 4.0
+  entry_z_min_spread: 0.0
+  lookback_window: 180
+  additional_lookback_windows: [63]
+  adf_pvalue_threshold: 0.15
+  min_correlation: 0.65
+  fdr_q_level: 0.30
+  max_half_life: 60
+  use_kalman: true
+  bonferroni_correction: false
+  johansen_confirmation: true
+  newey_west_consensus: true
+  weekly_zscore_entry_gate: 0.0
+  max_position_loss_pct: 0.05       # 5% per-position stop
+  internal_max_drawdown_pct: 0.25
+
+regime:
+  enabled: true
+  neutral_band_pct: 0.02            # v63 certified
+  neutral_sizing: 1.0
+  trend_favorable_sizing: 1.0
+  trend_unfavorable_sizing: 0.30    # v63 certified — key lever for W3 protection
+
+momentum:
+  enabled: false                    # Disabled in v63 Sweet Set
+
+pair_blacklist:
+  enabled: true                     # KEY v63 breakthrough — blocks chronic losers
+  max_consecutive_losses: 2
+  cooldown_days: 30

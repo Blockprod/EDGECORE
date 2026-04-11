@@ -15,7 +15,7 @@ sees portfolio-level metrics and enforces hard limits.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from structlog import get_logger
@@ -91,7 +91,7 @@ class PortfolioRiskManager:
 
         # Daily tracking
         self._daily_loss: float = 0.0
-        self._daily_date: date = date.today()
+        self._daily_date: date = datetime.now(UTC).date()
 
         # Streak tracking
         self._consecutive_losses: int = 0
@@ -279,7 +279,7 @@ class PortfolioRiskManager:
         logger.warning("portfolio_risk_manual_reset")
 
     def _maybe_reset_daily(self) -> None:
-        today = date.today()
+        today = datetime.now(UTC).date()
         if self._daily_date != today:
             self._daily_loss = 0.0
             self._daily_date = today

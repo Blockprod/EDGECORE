@@ -3,7 +3,7 @@ modele: sonnet-4.6
 mode: agent
 contexte: codebase
 produit: tasks/audits/fix_errors/BATCH_result.md
-derniere_revision: 2026-04-05
+derniere_revision: 2026-04-06
 creation: 2026-03-26
 ---
 
@@ -11,7 +11,117 @@ creation: 2026-03-26
 
 ---
 
-## SESSION 2026-04-05 — Plan rev. 2026-04-05 (7 batches)
+## SESSION 2026-04-06 (suite) — Batches 3–5 appliqués inline lors de P4 VERIFY
+
+### BATCH 3 — risk/engine.py + risk_engine/portfolio_risk.py ✅
+
+```
+BATCH_RESULT:
+  batch          : 3
+  module         : risk/ + risk_engine/
+  fixed_files    : 2  (risk/engine.py · risk_engine/portfolio_risk.py)
+  remaining_errors: 0
+  blockers       : []
+  tests          : 100 passed / 0 failed  (tests/risk/ + tests/risk_engine/)
+```
+
+| Fichier | Ligne | Code | Fix |
+|---------|-------|------|-----|
+| `risk/engine.py` | multiple | UP017×2 | `timezone.utc` → `datetime.UTC`; `timezone` import supprimé (F401); imports triés (I001) |
+| `risk_engine/portfolio_risk.py` | multiple | UP017×2 | idem |
+
+---
+
+### BATCH 4 — tests/models/test_kalman_hedge.py + tests/execution/ ✅
+
+```
+BATCH_RESULT:
+  batch          : 4
+  module         : tests/models/ + tests/execution/
+  fixed_files    : 3  (test_kalman_hedge.py · test_ibkr_crash_recovery.py · test_ibkr_disconnect_during_order.py)
+  remaining_errors: 0
+  blockers       : []
+  tests          : 42 passed / 0 failed
+```
+
+| Fichier | Ligne | Code | Fix |
+|---------|-------|------|-----|
+| `tests/models/test_kalman_hedge.py` | multiple | B905×5 | `zip(y, x)` → `zip(y, x, strict=False)` (unsafe-fix) |
+| `tests/execution/test_ibkr_crash_recovery.py` | 51 | reportInvalidTypeForm | `engine._pending_confirm_orders: set[str] = set()` → `engine._pending_confirm_orders = set()` |
+| `tests/execution/test_ibkr_disconnect_during_order.py` | 47 | reportInvalidTypeForm | idem |
+
+---
+
+### BATCH 5 — tests/live_trading/ + tests/monitoring/ + tests/universe/ ✅
+
+```
+BATCH_RESULT:
+  batch          : 5
+  module         : tests/live_trading/ + tests/monitoring/ + tests/universe/
+  fixed_files    : 3  (test_live_trading_recovery.py · 042_test_api.py · test_universe_pit.py)
+  remaining_errors: 0
+  blockers       : []
+  tests          : 84 passed / 0 failed
+```
+
+| Fichier | Ligne | Code | Fix |
+|---------|-------|------|-----|
+| `tests/live_trading/test_live_trading_recovery.py` | 29 | reportArgumentType | `threading.Lock()` → `threading.RLock()` (prod utilise RLock) |
+| `tests/monitoring/042_test_api.py` | 576 | reportAttributeAccessIssue | `app._system_metrics = metrics  # pyright: ignore[reportAttributeAccessIssue]` |
+| `tests/universe/test_universe_pit.py` | multiple | reportArgumentType (NaT) | `cast(pd.Timestamp, pd.Timestamp("..."))` ×3 |
+
+---
+
+### Régressions corrigées (suite P4 VERIFY)
+
+| Fichier | Fix |
+|---------|-----|
+| `strategies/pair_trading.py` | Re-ajout `newey_west_consensus as _newey_west_consensus  # noqa: F401` (re-export pour test patching — supprimé par erreur en batch 1) |
+| `tests/models/test_newey_west_hac.py` | Patch targets mis à jour : `strategies.pair_trading.*` → `strategies.pair_validator.*` pour `engle_granger_test`, `_newey_west_consensus`, `half_life_mean_reversion` (fonctions résident dans pair_validator depuis refactor PairValidator) |
+| `tests/phase4/test_phase4_signals.py` | `MagicMock()` manquait les valeurs numériques `zscore_weight=0.70`, `momentum_weight=0.30`, `entry_threshold=2.0`, `exit_threshold=0.5` → ajoutés dans les 2 tests `TestMarkovRegimeConcordance` |
+
+---
+
+## SESSION 2026-04-06 — Plan rev. 2026-04-06 (5 batches)
+
+### BATCH 1 — strategies/pair_trading.py ✅
+
+```
+BATCH_RESULT:
+  batch          : 1
+  module         : strategies/
+  fixed_files    : 1  (strategies/pair_trading.py)
+  remaining_errors: 0
+  blockers       : []
+  tests          : 92 passed / 0 failed  (tests/strategies/)
+```
+
+| Ligne | Code | Fix |
+|-------|------|-----|
+| 3 | F401 | Supprimé `timedelta` de `from datetime import date, datetime, timedelta` → `from datetime import date, datetime` |
+| 20 | F401 | Supprimé la ligne `from models.cointegration import newey_west_consensus as _newey_west_consensus` (jamais appelée comme fonction) |
+
+---
+
+### BATCH 2 — execution/ml_impact.py + execution_engine/router.py ✅
+
+```
+BATCH_RESULT:
+  batch          : 2
+  module         : execution/ + execution_engine/
+  fixed_files    : 2  (execution/ml_impact.py · execution_engine/router.py)
+  remaining_errors: 0
+  blockers       : []
+  tests          : 394 passed / 0 failed  (tests/execution/ · tests/execution_engine/)
+```
+
+| Fichier | Ligne | Code | Fix |
+|---------|-------|------|-----|
+| `execution/ml_impact.py` | 127 | reportArgumentType ×6 | Ajout guard `if self.W1 is None or ... raise RuntimeError(...)` avant `np.savez()` — W1/b1/W2/b2/W3/b3 garantis non-None après le guard |
+| `execution_engine/router.py` | 353 | F811 | Supprimé le `import time as _time` dupliqué — L243 déjà en scope dans `_live_fill()` |
+
+
+
 
 ### BATCH 1 — models/performance_optimizer_s41.py ✅
 

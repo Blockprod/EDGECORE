@@ -721,6 +721,10 @@ class TestMarkovRegimeConcordance:
 
         mock_settings = MagicMock()
         mock_settings.signal_combiner.use_markov_regime = True
+        mock_settings.signal_combiner.zscore_weight = 0.70
+        mock_settings.signal_combiner.momentum_weight = 0.30
+        mock_settings.signal_combiner.entry_threshold = 2.0
+        mock_settings.signal_combiner.exit_threshold = 0.5
 
         with patch("config.settings.get_settings", return_value=mock_settings):
             gen = SignalGenerator()
@@ -735,6 +739,10 @@ class TestMarkovRegimeConcordance:
 
         mock_settings = MagicMock()
         mock_settings.signal_combiner.use_markov_regime = False
+        mock_settings.signal_combiner.zscore_weight = 0.70
+        mock_settings.signal_combiner.momentum_weight = 0.30
+        mock_settings.signal_combiner.entry_threshold = 2.0
+        mock_settings.signal_combiner.exit_threshold = 0.5
 
         with patch("config.settings.get_settings", return_value=mock_settings):
             gen = SignalGenerator()

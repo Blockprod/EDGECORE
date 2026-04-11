@@ -25,6 +25,7 @@ from models.spread import SpreadModel
 from models.stationarity_monitor import StationarityMonitor
 from models.structural_break import StructuralBreakDetector
 from signal_engine.adaptive import AdaptiveThresholdEngine
+from signal_engine.combiner import SignalCombiner, SignalSource
 from signal_engine.momentum import MomentumOverlay
 from signal_engine.zscore import ZScoreCalculator
 
@@ -58,7 +59,7 @@ class Signal:
     strength: float
     z_score: float = 0.0
     entry_threshold: float = 2.0
-    exit_threshold: float = 0.0
+    exit_threshold: float = 0.5  # P1-06: was 0.0 — unreachable in float; aligned with config exit_z_score
     regime: VolatilityRegime = VolatilityRegime.NORMAL
     reason: str = ""
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -99,18 +100,34 @@ class SignalGenerator:
         momentum_overlay: MomentumOverlay | None = None,
     ):
         self.zscore_calc = zscore_calc or ZScoreCalculator()
-        self.threshold_engine = threshold_engine or AdaptiveThresholdEngine()
+        from config.settings import get_settings as _get_settings_gen
+
+        _settings = _get_settings_gen()
+        # P1-06: read entry/exit z-scores from config so adaptive engine is aligned with global settings
+        _strat = _settings.strategy
+        self.threshold_engine = threshold_engine or AdaptiveThresholdEngine(
+            base_entry=_strat.entry_z_score,
+            base_exit=_strat.exit_z_score,
+        )
         if regime_detector is not None:
             self.regime_detector: RegimeDetector | MarkovRegimeDetector = regime_detector
         else:
-            from config.settings import get_settings as _get_settings_gen
-
-            if _get_settings_gen().signal_combiner.use_markov_regime:
+            if _settings.signal_combiner.use_markov_regime:
                 self.regime_detector = MarkovRegimeDetector()
             else:
                 self.regime_detector = RegimeDetector()
         self.stationarity_monitor = stationarity_monitor or StationarityMonitor()
         self.momentum_overlay = momentum_overlay  # None = disabled
+        # P1-04: weighted combiner for documented formula composite = 0.70×z + 0.30×mom
+        _scfg = _settings.signal_combiner
+        self._signal_combiner = SignalCombiner(
+            sources=[
+                SignalSource("zscore", weight=_scfg.zscore_weight),
+                SignalSource("momentum", weight=_scfg.momentum_weight),
+            ],
+            entry_threshold=_scfg.entry_threshold,
+            exit_threshold=_scfg.exit_threshold,
+        )
 
         # Internal state
         self._spread_models: dict[str, SpreadModel] = {}
@@ -318,21 +335,26 @@ class SignalGenerator:
 
         # ENTRY signals (only if not already in position)
         if not in_position:
-            strength = min(abs(current_z) / 3.0, 1.0)
+            _z_norm = min(abs(current_z) / 3.0, 1.0)
 
             if current_z > thresh.entry_threshold:
                 side = "short"
-                # Apply momentum overlay if available
+                # P1-04: composite = z_weight×z + m_weight×mom (documented formula)
+                # Directional convention: negative composite = short leg A
                 if self.momentum_overlay is not None:
                     m_result = self.momentum_overlay.adjust_signal_strength(
                         side=side,
-                        raw_strength=strength,
+                        raw_strength=_z_norm,
                         prices_a=y,
                         prices_b=x,
                     )
-                    strength = m_result.adjusted_strength
+                    _composite = self._signal_combiner.combine(
+                        {"zscore": -_z_norm, "momentum": m_result.momentum_score}
+                    )
+                    strength = abs(_composite.composite_score)
                     mom_tag = f" [mom:{'C' if m_result.confirms_signal else 'X'}]"
                 else:
+                    strength = _z_norm
                     mom_tag = ""
 
                 return Signal(
@@ -348,17 +370,22 @@ class SignalGenerator:
 
             if current_z < -thresh.entry_threshold:
                 side = "long"
-                # Apply momentum overlay if available
+                # P1-04: composite = z_weight×z + m_weight×mom (documented formula)
+                # Directional convention: positive composite = long leg A
                 if self.momentum_overlay is not None:
                     m_result = self.momentum_overlay.adjust_signal_strength(
                         side=side,
-                        raw_strength=strength,
+                        raw_strength=_z_norm,
                         prices_a=y,
                         prices_b=x,
                     )
-                    strength = m_result.adjusted_strength
+                    _composite = self._signal_combiner.combine(
+                        {"zscore": +_z_norm, "momentum": m_result.momentum_score}
+                    )
+                    strength = abs(_composite.composite_score)
                     mom_tag = f" [mom:{'C' if m_result.confirms_signal else 'X'}]"
                 else:
+                    strength = _z_norm
                     mom_tag = ""
 
                 return Signal(
