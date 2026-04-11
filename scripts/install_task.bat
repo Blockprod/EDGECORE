@@ -166,12 +166,6 @@ if %errorlevel% neq 0 (
 )
 echo [OK] Tâche %TASK_BOT% créée.
 
-:: ── Démarrage immédiat ──
-echo.
-echo [*] Démarrage IB Gateway...
-schtasks /run /tn "%TASK_IB%"
-echo [*] Bot démarrera dans 90s automatiquement.
-
 echo.
 echo ╔══════════════════════════════════════════════════════════════╗
 echo ║                    Installation réussie !                    ║
@@ -181,7 +175,7 @@ echo ║  EDGECORE_Bot        →  démarre 90s après le login           ║
 echo ║  Redémarrage auto    →  toutes les 5 min si crash           ║
 echo ║  IBKR client_id      →  5  ^(AlphaEdge=3, pas de conflit^)   ║
 echo ║                                                              ║
-echo ║  Utilisez manage_task.bat pour gérer les tâches              ║
+echo ║  Utilisez manage_task.bat pour démarrer/arrêter              ║
 echo ╚══════════════════════════════════════════════════════════════╝
 echo.
 del "%TEMP%\edgecore_ibgateway.xml" >nul 2>&1
