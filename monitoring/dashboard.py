@@ -1,7 +1,9 @@
 ﻿"""Dashboard generator for real-time system metrics and status."""
 
+import json
 import os
 from datetime import datetime
+from pathlib import Path
 from typing import Any, cast
 
 import psutil
@@ -15,6 +17,9 @@ logger = structlog.get_logger(__name__)
 
 # Global state tracking
 _dashboard_start_time = datetime.now()
+
+# Path to the shared state file written by the trading bot process
+_LIVE_STATE_PATH = Path("data/dashboard_state.json")
 
 
 class DashboardGenerator:
@@ -42,6 +47,27 @@ class DashboardGenerator:
         self.process = psutil.Process(os.getpid())
         self.enable_cache = enable_cache
         self.cache = get_dashboard_cache() if enable_cache else None
+
+    def _load_live_state(self) -> dict[str, Any] | None:
+        """Load live trading state from shared JSON file (bot IPC).
+
+        Returns the parsed dict if the file exists and is fresh (< 120s),
+        otherwise None.
+        """
+        try:
+            if not _LIVE_STATE_PATH.exists():
+                return None
+            # Stale guard: ignore state older than 120 seconds
+            age = datetime.now().timestamp() - _LIVE_STATE_PATH.stat().st_mtime
+            if age > 120:
+                logger.debug("live_state_stale", age_seconds=round(age, 1))
+                return None
+            raw = _LIVE_STATE_PATH.read_text("utf-8")
+            state: dict[str, Any] = json.loads(raw)
+            return state
+        except Exception as exc:
+            logger.debug("live_state_load_failed", error=str(exc)[:100])
+            return None
 
     def generate_dashboard(self, bypass_cache: bool = False) -> dict[str, Any]:
         """
@@ -120,7 +146,34 @@ class DashboardGenerator:
             Dictionary with risk metrics
         """
         if not self.risk_engine:
-            return {"enabled": False, "message": "Risk engine not initialized"}
+            # Fallback: read from shared state file (bot IPC)
+            state = self._load_live_state()
+            if state is None:
+                return {"enabled": False, "message": "Risk engine not initialized"}
+            m = state.get("metrics", {})
+            equity = state.get("equity", 0)
+            initial = state.get("initial_capital", 100_000)
+            total_return = ((equity - initial) / initial * 100) if initial > 0 else 0
+            return {
+                "enabled": True,
+                "source": "live_state",
+                "current_equity": round(equity, 2),
+                "initial_equity": round(initial, 2),
+                "total_return_pct": round(total_return, 2),
+                "daily_loss": 0,
+                "daily_loss_pct": 0,
+                "max_daily_loss_limit_pct": 0,
+                "loss_streak": 0,
+                "max_consecutive_losses": 0,
+                "positions_count": len(state.get("positions", {})),
+                "max_concurrent_positions": 0,
+                "daily_trades": m.get("trades_today", 0),
+                "max_drawdown_pct": round(m.get("max_drawdown", 0) * 100, 2),
+                "trades_total": m.get("trades_total", 0),
+                "iteration": state.get("iteration", 0),
+                "bot_status": state.get("status", "unknown"),
+                "last_update": state.get("timestamp", ""),
+            }
 
         try:
             current_equity = self.risk_engine.equity_history[-1] if self.risk_engine.equity_history else 0
@@ -165,7 +218,40 @@ class DashboardGenerator:
             List of position dictionaries
         """
         if not self.risk_engine:
-            return []
+            # Fallback: read from shared state file (bot IPC)
+            state = self._load_live_state()
+            if state is None:
+                return []
+            positions = []
+            for _key, pos in state.get("positions", {}).items():
+                entry_time_str = pos.get("entry_time", "")
+                try:
+                    entry_dt = datetime.fromisoformat(entry_time_str) if entry_time_str else datetime.now()
+                except (ValueError, TypeError):
+                    entry_dt = datetime.now()
+                age_hours = (datetime.now() - entry_dt).total_seconds() / 3600
+                entry_price = float(pos.get("entry_price", 0))
+                quantity = float(pos.get("quantity", 0))
+                pnl = float(pos.get("pnl", 0))
+                positions.append(
+                    {
+                        "symbol": pos.get("symbol_pair", _key),
+                        "side": pos.get("side", "unknown"),
+                        "quantity": round(quantity, 8),
+                        "entry_price": round(entry_price, 2),
+                        "current_price": round(float(pos.get("marked_price", 0)), 2),
+                        "unrealized_pnl": round(pnl, 2),
+                        "pnl_percent": round((pnl / (entry_price * quantity) * 100), 2)
+                        if entry_price > 0 and quantity > 0
+                        else 0,
+                        "entry_time": entry_time_str,
+                        "age_hours": round(age_hours, 2),
+                        "current_z": pos.get("current_z", 0),
+                        "holding_bars": pos.get("holding_bars", 0),
+                        "status": pos.get("status", "open"),
+                    }
+                )
+            return positions
 
         try:
             positions = []
@@ -202,7 +288,17 @@ class DashboardGenerator:
             Dictionary with order info or empty/error state
         """
         if not self.execution_engine:
-            return {"enabled": False, "message": "Execution engine not initialized"}
+            # Fallback: indicate bot connection status from shared state
+            state = self._load_live_state()
+            if state is None:
+                return {"enabled": False, "message": "Execution engine not initialized"}
+            return {
+                "enabled": True,
+                "source": "live_state",
+                "total": 0,
+                "orders": [],
+                "message": "Order details not available via IPC bridge",
+            }
 
         try:
             # Try to fetch open orders
@@ -249,7 +345,30 @@ class DashboardGenerator:
             Dictionary with performance metrics
         """
         if not self.risk_engine:
-            return {"enabled": False}
+            # Fallback: read from shared state file (bot IPC)
+            state = self._load_live_state()
+            if state is None:
+                return {"enabled": False}
+            equity_history = state.get("equity_history", [])
+            m = state.get("metrics", {})
+            if len(equity_history) < 2:
+                return {
+                    "enabled": True,
+                    "source": "live_state",
+                    "total_return_pct": 0,
+                    "trades_total": m.get("trades_total", 0),
+                    "data_points": len(equity_history),
+                }
+            total_return = (equity_history[-1] - equity_history[0]) / equity_history[0] if equity_history[0] > 0 else 0
+            return {
+                "enabled": True,
+                "source": "live_state",
+                "total_return_pct": round(total_return * 100, 2),
+                "sharpe_ratio": round(m.get("sharpe_ratio", 0), 2),
+                "max_drawdown_pct": round(m.get("max_drawdown", 0) * 100, 2),
+                "data_points": len(equity_history),
+                "trades_total": m.get("trades_total", 0),
+            }
 
         try:
             equity_history = self.risk_engine.equity_history
@@ -307,10 +426,14 @@ class DashboardGenerator:
             Status dictionary
         """
         cache_stats = self.cache.get_stats() if self.cache else {}
+        state = self._load_live_state()
         return {
             "mode": self.mode,
             "risk_engine_available": self.risk_engine is not None,
             "execution_engine_available": self.execution_engine is not None,
+            "live_state_connected": state is not None,
+            "live_state_iteration": state.get("iteration", 0) if state else 0,
+            "live_state_bot_status": state.get("status", "disconnected") if state else "disconnected",
             "uptime_seconds": int((datetime.now() - _dashboard_start_time).total_seconds()),
             "cache_enabled": self.enable_cache,
             "cache_stats": cache_stats,

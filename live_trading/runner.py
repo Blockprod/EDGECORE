@@ -19,12 +19,14 @@ process under process supervision (systemd, Docker, etc.).
 from __future__ import annotations
 
 import asyncio
+import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import pandas as pd
@@ -690,6 +692,72 @@ class LiveTradingRunner:
 
         # MON-1: Update metrics snapshot for Prometheus / dashboard
         self._update_metrics(signals, equity=_tick_balance)
+
+        # MON-2: Write state snapshot to shared JSON file for web dashboard IPC
+        self._write_dashboard_state()
+
+    def _write_dashboard_state(self) -> None:
+        """Write current state snapshot to JSON for the web dashboard process."""
+        import json
+        import tempfile
+
+        try:
+            with self._positions_lock:
+                positions_snap = {}
+                for k, v in self._positions.items():
+                    pos = {}
+                    for pk, pv in v.items():
+                        if isinstance(pv, datetime):
+                            pos[pk] = pv.isoformat()
+                        elif isinstance(pv, (int, float, str, bool, type(None))):
+                            pos[pk] = pv
+                        else:
+                            pos[pk] = str(pv)
+                    positions_snap[k] = pos
+
+            state = {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "iteration": self._iteration,
+                "status": self._state.value if hasattr(self._state, "value") else str(self._state),
+                "equity": self._metrics.equity,
+                "initial_capital": self.config.initial_capital,
+                "equity_history": list(self._equity_history[-60:]),
+                "positions": positions_snap,
+                "active_pairs_count": len(self._active_pairs),
+                "metrics": {
+                    "trades_total": self._metrics.trades_total,
+                    "trades_today": self._metrics.trades_today,
+                    "max_drawdown": self._metrics.max_drawdown,
+                    "sharpe_ratio": getattr(self._metrics, "sharpe_ratio", 0.0),
+                    "winning_trades": getattr(self._metrics, "winning_trades", 0),
+                    "losing_trades": getattr(self._metrics, "losing_trades", 0),
+                },
+                "data": {
+                    "symbols_loaded": self._data_symbols_loaded,
+                    "symbols_total": self._data_symbols_total,
+                    "rows": self._data_load_rows,
+                },
+            }
+
+            state_path = Path("data/dashboard_state.json")
+            state_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # Atomic write: tmp file + rename to avoid partial reads
+            fd, tmp_path = tempfile.mkstemp(dir=str(state_path.parent), suffix=".tmp", prefix="dashboard_")
+            try:
+                with os.fdopen(fd, "w") as f:
+                    json.dump(state, f)
+                os.replace(tmp_path, str(state_path))
+            except BaseException:
+                # Clean up temp file on failure
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
+
+        except Exception as exc:
+            logger.debug("dashboard_state_write_failed", error=str(exc)[:100])
 
     def _step_check_kill_switch(self) -> bool:
         """Check if the kill-switch has been activated.
