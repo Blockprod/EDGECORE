@@ -131,7 +131,7 @@ echo.
 echo  [>>] Lancement EDGECORE Bot en mode console (paper)...
 echo.
 
-start "EDGECORE Bot Paper" cmd /k %PROJECT_DIR%\scripts\console_bot.bat
+start "EDGECORE Bot Paper" %PROJECT_DIR%\scripts\console_bot.bat
 
 echo.
 echo  [OK] Fenetre bot ouverte.

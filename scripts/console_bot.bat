@@ -6,3 +6,4 @@ set EDGECORE_MODE=paper
 set EDGECORE_ENV=dev
 set IBKR_CLIENT_ID=5
 C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe scripts\run_paper_tick.py --continuous
+pause
