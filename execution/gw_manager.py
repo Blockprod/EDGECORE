@@ -67,8 +67,9 @@ _GW_LOGIN_BTN_RE = r"Connexion|Login|Log In|Se connecter"
 # Stable in the Windows API since Windows 3.1.
 _SW_RESTORE: int = 9
 
-# Windows-only: detach child process so it survives bot restarts.
-_DETACHED_PROCESS = 0x00000008
+# Windows-only process creation flags (defined as int literals for cross-platform pyright compat).
+_DETACHED_PROCESS: int = 0x00000008  # DETACHED_PROCESS
+_CREATE_NEW_PROCESS_GROUP: int = 0x00000200  # CREATE_NEW_PROCESS_GROUP
 
 
 # ------------------------------------------------------------------
@@ -259,7 +260,7 @@ def _start_gateway_process(gateway_path: str) -> bool:
         subprocess.Popen(
             [str(exe)],
             cwd=str(exe.parent),
-            creationflags=_DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+            creationflags=_DETACHED_PROCESS | _CREATE_NEW_PROCESS_GROUP,
             close_fds=True,
         )
         logger.info("edgecore_gw_launched", path=str(exe))
