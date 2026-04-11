@@ -135,8 +135,8 @@ echo  [>>] Fenetre 1 : Bot
 echo  [>>] Fenetre 2 : Serveur dashboard web (port 5000)
 echo.
 
-start "EDGECORE Bot Paper" cmd /k "cd /d %PROJECT_DIR% && set EDGECORE_MODE=paper && set EDGECORE_ENV=dev && set IBKR_CLIENT_ID=5 && %PYTHON_EXE% scripts\run_paper_tick.py --continuous"
-start "EDGECORE Dashboard API" cmd /k "cd /d %PROJECT_DIR% && set EDGECORE_ENV=dev && set EDGECORE_MODE=paper && %PYTHON_EXE% scripts\start_api_server.py"
+start "EDGECORE Bot Paper"    cmd /k %PROJECT_DIR%\scripts\console_bot.bat
+start "EDGECORE Dashboard API" cmd /k %PROJECT_DIR%\scripts\console_api.bat
 
 echo.
 echo  [OK] Deux fenetres ouvertes.
@@ -150,7 +150,7 @@ goto MENU
 :OPT_API_SERVER
 echo.
 echo  [>>] Demarrage du serveur dashboard web (port 5000)...
-start "EDGECORE Dashboard API" cmd /k "cd /d %PROJECT_DIR% && set EDGECORE_ENV=dev && set EDGECORE_MODE=paper && set IBKR_CLIENT_ID=5 && %PYTHON_EXE% scripts\start_api_server.py"
+start "EDGECORE Dashboard API" cmd /k %PROJECT_DIR%\scripts\console_api.bat
 echo.
 echo  [OK] Serveur lance -> %DASHBOARD_URL%
 timeout /t 2 >nul
