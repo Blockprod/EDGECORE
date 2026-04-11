@@ -333,3 +333,12 @@
 **Ref** : `tests/execution/test_gw_manager_health.py` — commit `64dd28b` (2026-04-11)
 
 ---
+
+## L-35 · fix: install_task.bat XML malformed — use wrapper run_bot_paper.bat to avoid XML-escaping && and quotes [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `1b6c747` : fix: install_task.bat XML malformed — use wrapper run_bot_paper.bat to avoid XML-escaping && and quotes. Fichiers : scripts/install_task.bat, scripts/run_bot_paper.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/install_task.bat`, `scripts/run_bot_paper.bat` — commit `1b6c747` (2026-04-11)
+
+---

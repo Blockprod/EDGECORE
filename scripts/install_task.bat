@@ -152,7 +152,7 @@ echo   ^</Settings^>
 echo   ^<Actions Context="Author"^>
 echo     ^<Exec^>
 echo       ^<Command^>cmd.exe^</Command^>
-echo       ^<Arguments^>/c "set EDGECORE_MODE=paper ^&^& set EDGECORE_ENV=dev ^&^& set IBKR_CLIENT_ID=5 ^&^& "%PYTHONW_EXE%" scripts\run_paper_tick.py --continuous"^</Arguments^>
+echo       ^<Arguments^>/c "%PROJECT_DIR%\scripts\run_bot_paper.bat"^</Arguments^>
 echo       ^<WorkingDirectory^>%PROJECT_DIR%^</WorkingDirectory^>
 echo     ^</Exec^>
 echo   ^</Actions^>
