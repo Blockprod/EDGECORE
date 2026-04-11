@@ -35,7 +35,6 @@ echo  ^|  7. Lancer le bot en mode console  (paper)           ^|
 echo  ^|  8. Ouvrir le dashboard dans le navigateur      *      ^|
 echo  ^|  9. Ouvrir Planificateur de taches Windows           ^|
 echo  ^|  0. Quitter                                          ^|
-echo  ^| 10. Ouvrir le dashboard dans le navigateur   *      ^|
 echo  +------------------------------------------------------+
 echo.
 set /p CHOIX="  Votre choix : "
@@ -50,7 +49,6 @@ if "%CHOIX%"=="7"  goto OPT_CONSOLE
 if "%CHOIX%"=="8"  goto OPT_API_SERVER
 if "%CHOIX%"=="9"  goto OPT_SCHEDULER
 if "%CHOIX%"=="0"  goto OPT_QUIT
-if "%CHOIX%"=="10" goto OPT_DASHBOARD
 
 echo  [!] Choix invalide.
 timeout /t 1 >nul
@@ -151,13 +149,6 @@ goto MENU
 :: ============================================================
 :OPT_SCHEDULER
 start taskschd.msc
-goto MENU
-
-:: ============================================================
-:OPT_DASHBOARD
-echo.
-echo  [>>] Ouverture du dashboard dans le navigateur...
-start "" "%DASHBOARD_URL%"
 goto MENU
 
 :: ============================================================
