@@ -378,3 +378,12 @@
 **Ref** : `scripts/manage_task.bat` — commit `1a0c4bf` (2026-04-11)
 
 ---
+
+## L-40 · fix: manage_task.bat -- mirror AlphaEdge method (chcp 65001 + variables + &&) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `5fb33ca` : fix: manage_task.bat -- mirror AlphaEdge method (chcp 65001 + variables + &&). Fichiers : scripts/manage_task.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/manage_task.bat` — commit `5fb33ca` (2026-04-11)
+
+---

@@ -1,6 +1,13 @@
 @echo off
-cd /d "%~dp0.."
+chcp 65001 >nul 2>&1
 title EDGECORE V1 - Gestionnaire
+setlocal
+
+set "PROJECT_DIR=C:\Users\averr\EDGECORE_V1"
+set "PYTHON_EXE=C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe"
+set "LOG_DIR=C:\Users\averr\EDGECORE_V1\logs"
+set "TASK_IB=EDGECORE_IBGateway"
+set "TASK_BOT=EDGECORE_Bot"
 
 :MENU
 cls
@@ -85,9 +92,8 @@ cls
 echo.
 echo  == Dernieres lignes de log ==
 echo.
-set "LOGDIR=C:\Users\averr\EDGECORE_V1\logs"
-for /f "delims=" %%F in ('dir /b /o-d "%LOGDIR%\*.log" 2^>nul') do (echo  Fichier: %%F& powershell -Command "Get-Content '%LOGDIR%\%%F' -Tail 40"& goto LOG_DONE)
-echo  Aucun log trouve dans %LOGDIR%
+for /f "delims=" %%F in ('dir /b /o-d "%LOG_DIR%\*.log" 2^>nul') do (echo  Fichier: %%F& powershell -Command "Get-Content '%LOG_DIR%\%%F' -Tail 40"& goto LOG_DONE)
+echo  Aucun log trouve dans %LOG_DIR%
 :LOG_DONE
 echo.
 pause
@@ -96,8 +102,9 @@ goto MENU
 :OPT_CONSOLE
 echo.
 echo  [*] Lancement du bot dans une nouvelle fenetre (paper)...
-start "EDGECORE Bot" cmd /k "set EDGECORE_MODE=paper& set EDGECORE_ENV=dev& set IBKR_CLIENT_ID=5& cd /d C:\Users\averr\EDGECORE_V1& C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe scripts\run_paper_tick.py --continuous"
-echo  [OK] Fenetre bot ouverte.
+echo      Fermez la fenetre "EDGECORE Bot" pour arreter le bot.
+start "EDGECORE Bot" cmd /k "set EDGECORE_MODE=paper && set EDGECORE_ENV=dev && set IBKR_CLIENT_ID=5 && cd /d "%PROJECT_DIR%" && "%PYTHON_EXE%" scripts\run_paper_tick.py --continuous"
+echo  [OK] Bot demarre.
 timeout /t 2 >nul
 goto MENU
 
