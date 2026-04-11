@@ -342,3 +342,12 @@
 **Ref** : `scripts/install_task.bat`, `scripts/run_bot_paper.bat` — commit `1b6c747` (2026-04-11)
 
 ---
+
+## L-36 · fix: manage_task.bat -- rewrite as pure ASCII, fix start command titles [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `cfa5120` : fix: manage_task.bat -- rewrite as pure ASCII, fix start command titles. Fichiers : scripts/manage_task.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/manage_task.bat` — commit `cfa5120` (2026-04-11)
+
+---

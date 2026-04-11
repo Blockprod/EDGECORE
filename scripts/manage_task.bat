@@ -1,10 +1,8 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: ============================================================
-::  EDGECORE V1 — Gestionnaire de tâches
-::  Modèle : AlphaEdge/scripts/manage_task.bat
-:: ============================================================
+:: EDGECORE V1 -- Gestionnaire de taches
+:: Modele : AlphaEdge/scripts/manage_task.bat
 
 set "TASK_IB=EDGECORE_IBGateway"
 set "TASK_BOT=EDGECORE_Bot"
@@ -18,26 +16,26 @@ set "DASHBOARD_URL=http://127.0.0.1:5000/dashboard"
 cls
 echo.
 echo  +======================================================+
-echo  |      EDGECORE V1 -- Gestionnaire                     |
+echo  ^|      EDGECORE V1 -- Gestionnaire                     ^|
 echo  +======================================================+
 echo.
 
-:: Statut inline des tâches planifiées
+:: Statut inline des taches planifiees
 call :STATUS_INLINE "%TASK_IB%"   "IB Gateway  "
 call :STATUS_INLINE "%TASK_BOT%"  "Bot         "
 echo.
 echo  +------------------------------------------------------+
-echo  |  1. Statut detaille des taches                       |
-echo  |  2. Demarrer IB Gateway  (planificateur)             |
-echo  |  3. Arreter  IB Gateway  (planificateur)             |
-echo  |  4. Demarrer Bot         (planificateur)             |
-echo  |  5. Arreter  Bot         (planificateur)             |
-echo  |  6. Voir dernieres lignes de log                     |
-echo  |  7. Lancer en mode console  (paper)          *      |
-echo  |  8. Demarrer serveur dashboard web           *      |
-echo  |  9. Ouvrir Planificateur de taches Windows           |
-echo  |  0. Quitter                                          |
-echo  | 10. Ouvrir le dashboard dans le navigateur   *      |
+echo  ^|  1. Statut detaille des taches                       ^|
+echo  ^|  2. Demarrer IB Gateway  (planificateur)             ^|
+echo  ^|  3. Arreter  IB Gateway  (planificateur)             ^|
+echo  ^|  4. Demarrer Bot         (planificateur)             ^|
+echo  ^|  5. Arreter  Bot         (planificateur)             ^|
+echo  ^|  6. Voir dernieres lignes de log                     ^|
+echo  ^|  7. Lancer en mode console  (paper)          *      ^|
+echo  ^|  8. Demarrer serveur dashboard web           *      ^|
+echo  ^|  9. Ouvrir Planificateur de taches Windows           ^|
+echo  ^|  0. Quitter                                          ^|
+echo  ^| 10. Ouvrir le dashboard dans le navigateur   *      ^|
 echo  +------------------------------------------------------+
 echo.
 set /p CHOIX="  Votre choix : "
@@ -64,9 +62,9 @@ cls
 echo.
 echo  == Statut des taches planifiees ==
 echo.
-schtasks /query /fo TABLE /tn "%TASK_IB%"  2>nul || echo  [--] %TASK_IB% : non trouvé
+schtasks /query /fo TABLE /tn "%TASK_IB%"  2>nul || echo  [--] %TASK_IB% : non trouve
 echo.
-schtasks /query /fo TABLE /tn "%TASK_BOT%" 2>nul || echo  [--] %TASK_BOT% : non trouvé
+schtasks /query /fo TABLE /tn "%TASK_BOT%" 2>nul || echo  [--] %TASK_BOT% : non trouve
 echo.
 pause
 goto MENU
@@ -75,7 +73,7 @@ goto MENU
 :OPT_START_IB
 echo.
 echo  [>>] Demarrage IB Gateway via planificateur...
-schtasks /run /tn "%TASK_IB%" 2>nul || echo  [!] Tâche %TASK_IB% introuvable — créez-la dans le Planificateur.
+schtasks /run /tn "%TASK_IB%" 2>nul || echo  [!] Tache %TASK_IB% introuvable - creez-la avec install_task.bat
 timeout /t 2 >nul
 goto MENU
 
@@ -83,7 +81,7 @@ goto MENU
 :OPT_STOP_IB
 echo.
 echo  [||] Arret IB Gateway via planificateur...
-schtasks /end /tn "%TASK_IB%" 2>nul || echo  [!] Tâche %TASK_IB% introuvable.
+schtasks /end /tn "%TASK_IB%" 2>nul || echo  [!] Tache %TASK_IB% introuvable.
 timeout /t 2 >nul
 goto MENU
 
@@ -91,7 +89,7 @@ goto MENU
 :OPT_START_BOT
 echo.
 echo  [>>] Demarrage Bot via planificateur...
-schtasks /run /tn "%TASK_BOT%" 2>nul || echo  [!] Tâche %TASK_BOT% introuvable — créez-la dans le Planificateur.
+schtasks /run /tn "%TASK_BOT%" 2>nul || echo  [!] Tache %TASK_BOT% introuvable - creez-la avec install_task.bat
 timeout /t 2 >nul
 goto MENU
 
@@ -99,7 +97,7 @@ goto MENU
 :OPT_STOP_BOT
 echo.
 echo  [||] Arret Bot via planificateur...
-schtasks /end /tn "%TASK_BOT%" 2>nul || echo  [!] Tâche %TASK_BOT% introuvable.
+schtasks /end /tn "%TASK_BOT%" 2>nul || echo  [!] Tache %TASK_BOT% introuvable.
 timeout /t 2 >nul
 goto MENU
 
@@ -116,7 +114,7 @@ if not exist "%LOG_DIR%" (
 )
 for /f "delims=" %%F in ('dir /b /od "%LOG_DIR%\edgecore_paper_*.log" 2^>nul') do set "LAST_LOG=%%F"
 if not defined LAST_LOG (
-    echo  [!] Aucun fichier edgecore_paper_*.log trouvé dans %LOG_DIR%
+    echo  [!] Aucun fichier edgecore_paper_*.log trouve dans %LOG_DIR%
     pause
     goto MENU
 )
@@ -124,7 +122,7 @@ echo  Fichier : %LOG_DIR%\%LAST_LOG%
 echo.
 powershell -NoProfile -Command "Get-Content '%LOG_DIR%\%LAST_LOG%' | Select-Object -Last 40"
 echo.
-echo  --- Appuyez sur une touche pour suivre en temps réel (Ctrl+C pour quitter) ---
+echo  --- Appuyez sur une touche pour suivre en temps reel (Ctrl+C pour quitter) ---
 pause >nul
 powershell -NoProfile -Command "Get-Content '%LOG_DIR%\%LAST_LOG%' -Wait | Select-Object -Last 1 -Wait"
 goto MENU
@@ -133,19 +131,16 @@ goto MENU
 :OPT_CONSOLE
 echo.
 echo  [>>] Lancement EDGECORE en mode console (paper)...
-echo  [>>] Fenetre 1 : Bot (Rich terminal dashboard)
-echo  [>>] Fenetre 2 : Serveur dashboard web  (port 5000)
+echo  [>>] Fenetre 1 : Bot
+echo  [>>] Fenetre 2 : Serveur dashboard web (port 5000)
 echo.
 
-:: Lancer le bot paper dans une fenêtre console dédiée
-start "EDGECORE Bot — Paper" cmd /k "cd /d "%PROJECT_DIR%" && set EDGECORE_MODE=paper && set EDGECORE_ENV=dev && set IBKR_CLIENT_ID=5 && "%PYTHON_EXE%" scripts\run_paper_tick.py --continuous"
-
-:: Lancer le serveur Flask API dans une 2e fenêtre
+start "EDGECORE Bot Paper" cmd /k "cd /d "%PROJECT_DIR%" && set EDGECORE_MODE=paper && set EDGECORE_ENV=dev && set IBKR_CLIENT_ID=5 && "%PYTHON_EXE%" scripts\run_paper_tick.py --continuous"
 start "EDGECORE Dashboard API" cmd /k "cd /d "%PROJECT_DIR%" && set EDGECORE_ENV=dev && set EDGECORE_MODE=paper && "%PYTHON_EXE%" scripts\start_api_server.py"
 
 echo.
 echo  [OK] Deux fenetres ouvertes.
-echo       Dashboard → %DASHBOARD_URL%
+echo       Dashboard -^> %DASHBOARD_URL%
 echo       (Option 10 pour ouvrir dans le navigateur)
 echo.
 timeout /t 3 >nul
