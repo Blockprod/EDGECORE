@@ -1,8 +1,7 @@
-@echo off
-setlocal EnableDelayedExpansion
-
-:: EDGECORE V1 -- Gestionnaire de taches
-:: Modele : AlphaEdge/scripts/manage_task.bat
+﻿@echo off
+chcp 65001 >nul 2>&1
+title EDGECORE V1 -- Gestionnaire
+setlocal
 
 set "TASK_IB=EDGECORE_IBGateway"
 set "TASK_BOT=EDGECORE_Bot"
@@ -11,172 +10,140 @@ set "PYTHON_EXE=C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe"
 set "LOG_DIR=C:\Users\averr\EDGECORE_V1\logs"
 set "DASHBOARD_URL=http://127.0.0.1:5000/dashboard"
 
-:: ============================================================
 :MENU
 cls
 echo.
-echo  +======================================================+
-echo  ^|      EDGECORE V1 -- Gestionnaire                     ^|
-echo  +======================================================+
+echo ╔══════════════════════════════════════════════════════════════╗
+echo ║             EDGECORE V1 -- Gestionnaire                     ║
+echo ╚══════════════════════════════════════════════════════════════╝
 echo.
 
-:: Statut inline des taches planifiees
-call :STATUS_INLINE "%TASK_IB%"   "IB Gateway  "
-call :STATUS_INLINE "%TASK_BOT%"  "Bot         "
-echo.
-echo  +------------------------------------------------------+
-echo  ^|  1. Statut detaille des taches                       ^|
-echo  ^|  2. Demarrer IB Gateway  (planificateur)             ^|
-echo  ^|  3. Arreter  IB Gateway  (planificateur)             ^|
-echo  ^|  4. Demarrer Bot         (planificateur)             ^|
-echo  ^|  5. Arreter  Bot         (planificateur)             ^|
-echo  ^|  6. Voir dernieres lignes de log                     ^|
-echo  ^|  7. Lancer le bot en mode console  (paper)           ^|
-echo  ^|  8. Ouvrir le dashboard dans le navigateur      *      ^|
-echo  ^|  9. Ouvrir Planificateur de taches Windows           ^|
-echo  ^|  0. Quitter                                          ^|
-echo  +------------------------------------------------------+
-echo.
-set /p CHOIX="  Votre choix : "
+call :STATUS_INLINE %TASK_IB%  IB_STATUS
+call :STATUS_INLINE %TASK_BOT% BOT_STATUS
 
-if "%CHOIX%"=="1"  goto OPT_STATUS
-if "%CHOIX%"=="2"  goto OPT_START_IB
-if "%CHOIX%"=="3"  goto OPT_STOP_IB
-if "%CHOIX%"=="4"  goto OPT_START_BOT
-if "%CHOIX%"=="5"  goto OPT_STOP_BOT
-if "%CHOIX%"=="6"  goto OPT_LOGS
-if "%CHOIX%"=="7"  goto OPT_CONSOLE
-if "%CHOIX%"=="8"  goto OPT_API_SERVER
-if "%CHOIX%"=="9"  goto OPT_SCHEDULER
-if "%CHOIX%"=="0"  goto OPT_QUIT
+echo   IB Gateway  : %IB_STATUS%
+echo   Bot         : %BOT_STATUS%
+echo.
+echo   ──────────────────────────────────────────────
+echo   1. Statut détaillé des tâches
+echo   2. Démarrer IB Gateway  (planificateur)
+echo   3. Arrêter  IB Gateway  (planificateur)
+echo   4. Démarrer Bot         (planificateur)
+echo   5. Arrêter  Bot         (planificateur)
+echo   6. Voir les dernières lignes de log
+echo   7. Lancer le bot en mode console (paper)
+echo   8. Ouvrir le dashboard web (navigateur — port 5000)
+echo   9. Ouvrir le Planificateur de tâches Windows
+echo   0. Quitter
+echo.
+set /p CHOIX=Votre choix [0-9] :
 
-echo  [!] Choix invalide.
-timeout /t 1 >nul
+if "%CHOIX%"=="1" goto OPT_STATUS
+if "%CHOIX%"=="2" goto OPT_START_IB
+if "%CHOIX%"=="3" goto OPT_STOP_IB
+if "%CHOIX%"=="4" goto OPT_START_BOT
+if "%CHOIX%"=="5" goto OPT_STOP_BOT
+if "%CHOIX%"=="6" goto OPT_LOG
+if "%CHOIX%"=="7" goto OPT_CONSOLE
+if "%CHOIX%"=="8" goto OPT_DASHBOARD
+if "%CHOIX%"=="9" goto OPT_SCHEDULER
+if "%CHOIX%"=="0" goto END
 goto MENU
 
-:: ============================================================
 :OPT_STATUS
 cls
 echo.
-echo  == Statut des taches planifiees ==
+echo ══ Statut IB Gateway ══════════════════════════════════════════
+schtasks /query /tn "%TASK_IB%" /v /fo list 2>nul || echo   [!] Tâche introuvable
 echo.
-schtasks /query /fo TABLE /tn "%TASK_IB%"  2>nul || echo  [--] %TASK_IB% : non trouve
-echo.
-schtasks /query /fo TABLE /tn "%TASK_BOT%" 2>nul || echo  [--] %TASK_BOT% : non trouve
+echo ══ Statut Bot ══════════════════════════════════════════════════
+schtasks /query /tn "%TASK_BOT%" /v /fo list 2>nul || echo   [!] Tâche introuvable
 echo.
 pause
 goto MENU
 
-:: ============================================================
 :OPT_START_IB
 echo.
-echo  [>>] Demarrage IB Gateway via planificateur...
-schtasks /run /tn "%TASK_IB%" 2>nul || echo  [!] Tache %TASK_IB% introuvable - creez-la avec install_task.bat
-timeout /t 2 >nul
+echo [*] Démarrage IB Gateway...
+schtasks /run /tn "%TASK_IB%"
+if %errorlevel% neq 0 echo [ERREUR] Tâche introuvable — exécutez install_task.bat en admin
+pause
 goto MENU
 
-:: ============================================================
 :OPT_STOP_IB
 echo.
-echo  [||] Arret IB Gateway via planificateur...
-schtasks /end /tn "%TASK_IB%" 2>nul || echo  [!] Tache %TASK_IB% introuvable.
-timeout /t 2 >nul
+echo [*] Arrêt IB Gateway...
+schtasks /end /tn "%TASK_IB%" 2>nul
+echo [OK] Signal envoyé.
+pause
 goto MENU
 
-:: ============================================================
 :OPT_START_BOT
 echo.
-echo  [>>] Demarrage Bot via planificateur...
-schtasks /run /tn "%TASK_BOT%" 2>nul || echo  [!] Tache %TASK_BOT% introuvable - creez-la avec install_task.bat
-timeout /t 2 >nul
+echo [*] Démarrage Bot...
+schtasks /run /tn "%TASK_BOT%"
+if %errorlevel% neq 0 echo [ERREUR] Tâche introuvable — exécutez install_task.bat en admin
+pause
 goto MENU
 
-:: ============================================================
 :OPT_STOP_BOT
 echo.
-echo  [||] Arret Bot via planificateur...
-schtasks /end /tn "%TASK_BOT%" 2>nul || echo  [!] Tache %TASK_BOT% introuvable.
-timeout /t 2 >nul
+echo [*] Arrêt Bot...
+schtasks /end /tn "%TASK_BOT%" 2>nul
+echo [OK] Signal envoyé.
+pause
 goto MENU
 
-:: ============================================================
-:OPT_LOGS
+:OPT_LOG
 cls
 echo.
-echo  == Dernieres lignes de log ==
-echo.
-if not exist "%LOG_DIR%" (
-    echo  [!] Dossier logs introuvable : %LOG_DIR%
-    pause
-    goto MENU
+echo ══ Dernières lignes de log ════════════════════════════════════
+for /f "delims=" %%F in ('dir /b /o-d "%LOG_DIR%\*.log" 2^>nul') do (
+    echo [Fichier: %%F]
+    powershell -Command "Get-Content '%LOG_DIR%\%%F' -Tail 40 -ErrorAction SilentlyContinue"
+    goto :OPT_LOG_DONE
 )
-for /f "delims=" %%F in ('dir /b /od "%LOG_DIR%\edgecore_paper_*.log" 2^>nul') do set "LAST_LOG=%%F"
-if not defined LAST_LOG (
-    echo  [!] Aucun fichier edgecore_paper_*.log trouve dans %LOG_DIR%
-    pause
-    goto MENU
-)
-echo  Fichier : %LOG_DIR%\%LAST_LOG%
+echo [!] Aucun log trouvé dans %LOG_DIR%
+:OPT_LOG_DONE
 echo.
-powershell -NoProfile -Command "Get-Content '%LOG_DIR%\%LAST_LOG%' | Select-Object -Last 40"
-echo.
-echo  --- Appuyez sur une touche pour suivre en temps reel (Ctrl+C pour quitter) ---
-pause >nul
-powershell -NoProfile -Command "Get-Content '%LOG_DIR%\%LAST_LOG%' -Wait | Select-Object -Last 1 -Wait"
+pause
 goto MENU
 
-:: ============================================================
 :OPT_CONSOLE
 echo.
-echo  [>>] Lancement EDGECORE Bot en mode console (paper)...
-echo.
-
-start "EDGECORE Bot Paper" %PROJECT_DIR%\scripts\console_bot.bat
-
-echo.
-echo  [OK] Fenetre bot ouverte.
-echo.
+echo [*] Lancement du bot dans une nouvelle fenêtre (paper)...
+echo     Fermez la fenêtre "EDGECORE Bot" pour arrêter le bot.
+set EDGECORE_MODE=paper
+set EDGECORE_ENV=dev
+set IBKR_CLIENT_ID=5
+start "EDGECORE Bot" cmd /k "cd /d "%PROJECT_DIR%" && "%PYTHON_EXE%" scripts\run_paper_tick.py --continuous"
+echo [OK] Bot démarré.
 timeout /t 2 >nul
 goto MENU
 
-:: ============================================================
-:OPT_API_SERVER
+:OPT_DASHBOARD
 echo.
-echo  [>>] Ouverture du dashboard dans le navigateur...
-start "" "%DASHBOARD_URL%"
+echo [*] Ouverture du dashboard web (http://127.0.0.1:5000/dashboard)...
+echo     Le bot doit être déjà démarré (option 4 ou 7).
+start "" "http://127.0.0.1:5000/dashboard"
 goto MENU
 
-:: ============================================================
 :OPT_SCHEDULER
 start taskschd.msc
 goto MENU
 
-:: ============================================================
-:OPT_QUIT
-echo.
-echo  Au revoir.
-exit /b 0
-
-:: ============================================================
-:: Fonction : STATUS_INLINE <nom_tache> <label>
 :STATUS_INLINE
-set "_TASK=%~1"
-set "_LABEL=%~2"
-for /f "tokens=4 delims= " %%S in ('schtasks /query /fo CSV /tn "%_TASK%" 2^>nul ^| findstr /v "TaskName"') do (
-    set "_RAW=%%S"
-    goto :_STATUS_DONE
+schtasks /query /tn "%~1" /fo csv >nul 2>&1
+if %errorlevel% neq 0 (
+    set "%~2=[NON INSTALLEE]"
+    goto :eof
 )
-set "_RAW=N/A"
-:_STATUS_DONE
-set "_RAW=%_RAW:"=%"
-if /i "%_RAW%"=="Running"  echo     [* ACTIF ]  %_LABEL%
-if /i "%_RAW%"=="Ready"    echo     [- PRET  ]  %_LABEL%
-if /i "%_RAW%"=="N/A"      echo     [. ABSENT]  %_LABEL%
-if /i not "%_RAW%"=="Running" (
-    if /i not "%_RAW%"=="Ready" (
-        if /i not "%_RAW%"=="N/A" (
-            echo     [? %_RAW% ]  %_LABEL%
-        )
-    )
+for /f "tokens=3 delims=," %%S in ('schtasks /query /tn "%~1" /fo csv ^| findstr /v "TaskName"') do (
+    set "%~2=%%~S"
+    goto :eof
 )
-exit /b 0
+set "%~2=[inconnu]"
+goto :eof
+
+:END
+endlocal
