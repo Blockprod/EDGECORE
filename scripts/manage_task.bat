@@ -141,7 +141,7 @@ goto MENU
 echo.
 echo [*] Lancement du bot dans une nouvelle fenetre (paper)...
 echo     Fermez la fenetre "EDGECORE Bot" pour arreter le bot.
-start "EDGECORE Bot" %~dp0console_bot.bat
+start "EDGECORE Bot" cmd /k "cd /d C:\Users\averr\EDGECORE_V1 && set EDGECORE_MODE=paper && set EDGECORE_ENV=dev && set IBKR_CLIENT_ID=5 && C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe scripts\run_paper_tick.py --continuous"
 echo [OK] Bot demarre. Vous pouvez maintenant lancer l'option 10.
 timeout /t 2 >nul
 goto MENU
