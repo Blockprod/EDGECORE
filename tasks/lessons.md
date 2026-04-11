@@ -306,3 +306,12 @@
 **Ref** : `backtests/runner.py`, `backtests/walk_forward.py`, `data/corporate_actions.py` — commit `01319cc` (2026-04-06)
 
 ---
+
+## L-32 · feat(gw): IB Gateway auto-launch + auto-login (win32gui coordinate approach) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `9783dea` : feat(gw): IB Gateway auto-launch + auto-login (win32gui coordinate approach). Fichiers : config/settings.py, execution/gw_manager.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `config/settings.py`, `execution/gw_manager.py`, `live_trading/runner.py` — commit `9783dea` (2026-04-11)
+
+---

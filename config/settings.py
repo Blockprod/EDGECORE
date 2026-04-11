@@ -18,21 +18,41 @@ class StrategyConfig:
     lookback_window: int = 252  # Days for cointegration
     entry_z_score: float = 2.0  # Entry threshold (P0: raised from 1.0)
     exit_z_score: float = 0.5  # Exit threshold (was 0.0 ÔÇö unreachable in float)
-    entry_z_min_spread: float = 0.50  # Min absolute spread ($) to filter micro-deviations
-    short_sizing_multiplier: float = 0.50  # Sizing multiplier for shorts in TRENDING/NEUTRAL regime (P1 fix)
-    disable_shorts_in_bull_trend: bool = False  # If True, block all shorts in TRENDING regime
-    regime_directional_filter: bool = False  # When True, regime only blocks shorts; longs allowed in TRENDING
+    entry_z_min_spread: float = (
+        0.50  # Min absolute spread ($) to filter micro-deviations
+    )
+    short_sizing_multiplier: float = (
+        0.50  # Sizing multiplier for shorts in TRENDING/NEUTRAL regime (P1 fix)
+    )
+    disable_shorts_in_bull_trend: bool = (
+        False  # If True, block all shorts in TRENDING regime
+    )
+    regime_directional_filter: bool = (
+        False  # When True, regime only blocks shorts; longs allowed in TRENDING
+    )
     trend_long_sizing: float = 0.75  # Sizing multiplier for longs in TRENDING regime (when directional filter ON)
     min_correlation: float = 0.7  # Min correlation for pairs
     max_half_life: int = 60  # Max half-life (days) for spread mean reversion
-    bonferroni_correction: bool = True  # NEW: Apply Bonferroni correction to handle multiple testing
-    significance_level: float = 0.05  # NEW: Nominal significance level (before Bonferroni)
+    bonferroni_correction: bool = (
+        True  # NEW: Apply Bonferroni correction to handle multiple testing
+    )
+    significance_level: float = (
+        0.05  # NEW: Nominal significance level (before Bonferroni)
+    )
     use_kalman: bool = True  # Dynamic hedge ratio via Kalman filter
     max_position_loss_pct: float = 0.10  # P&L stop per position (10% default)
-    hedge_ratio_reestimation_days: int = 7  # Sprint 2.2: Reestimate hedge ratio every 7 days (was 30)
-    regime_min_duration: int = 1  # Sprint 2.2: Min bars before regime transition (was 3)
-    emergency_vol_threshold_sigma: float = 3.0  # Sprint 2.2: Emergency reestimate if spread vol > N¤â
-    instant_transition_percentile: float = 99.0  # Sprint 2.2: Instant regime transition for extreme vol
+    hedge_ratio_reestimation_days: int = (
+        7  # Sprint 2.2: Reestimate hedge ratio every 7 days (was 30)
+    )
+    regime_min_duration: int = (
+        1  # Sprint 2.2: Min bars before regime transition (was 3)
+    )
+    emergency_vol_threshold_sigma: float = (
+        3.0  # Sprint 2.2: Emergency reestimate if spread vol > N¤â
+    )
+    instant_transition_percentile: float = (
+        99.0  # Sprint 2.2: Instant regime transition for extreme vol
+    )
     # Sprint 3.5: Adaptive cache TTL by regime (hours)
     cache_ttl_high_vol: int = 2  # HIGH regime -> frequent re-discovery
     # Sprint 4.1: Johansen double-screening confirmation
@@ -42,14 +62,21 @@ class StrategyConfig:
     cache_ttl_normal_vol: int = 12  # NORMAL regime -> moderate TTL
     cache_ttl_low_vol: int = 24  # LOW regime -> stable, long TTL
     # Sprint 4.4: Self-contained internal risk limits (defense in depth)
-    internal_max_positions: int = 50  # Let simulator's portfolio-heat / risk-engine control position count
-    internal_max_drawdown_pct: float = (
-        0.20  # 20% strategy-internal DD breaker (Tier 3: after RiskConfig 10% and KillSwitch 15%)
+    internal_max_positions: int = (
+        50  # Let simulator's portfolio-heat / risk-engine control position count
     )
-    internal_max_daily_trades: int = 200  # Generous limit ÔÇö backtest runs all bars in one real-world day
+    internal_max_drawdown_pct: float = 0.20  # 20% strategy-internal DD breaker (Tier 3: after RiskConfig 10% and KillSwitch 15%)
+    internal_max_daily_trades: int = (
+        200  # Generous limit — backtest runs all bars in one real-world day
+    )
+    # ADF stationarity guard threshold inside generate_signals (default 0.10 = strict)
+    # Raise to 0.50 for bull-market OOS (spreads noisier but pairs already cointegration-screened)
+    adf_pvalue_threshold: float = 0.10
     # Sprint 4.6: Rolling leg correlation monitoring
     leg_correlation_window: int = 30  # Rolling window (bars) for recent correlation
-    leg_correlation_decay_threshold: float = 0.3  # Sweet spot ÔÇö proven by backtest optimization
+    leg_correlation_decay_threshold: float = (
+        0.3  # Sweet spot ÔÇö proven by backtest optimization
+    )
     # Multi-lookback discovery: additional lookback windows (union with primary)
     additional_lookback_windows: list[int] = field(default_factory=list)
     # Z-score based stop-loss (complements PnL stop ÔÇö more natural for stat-arb)
@@ -70,7 +97,9 @@ class StrategyConfig:
     # FDR (False Discovery Rate) q-level for multiple testing correction
     fdr_q_level: float = 0.20  # Benjamini-Hochberg q-level (relaxed default)
     # C-07: Periodic model retraining interval (bars = trading days)
-    retraining_interval_bars: int = 14  # Re-estimate hedge ratios every 2 weeks by default
+    retraining_interval_bars: int = (
+        14  # Re-estimate hedge ratios every 2 weeks by default
+    )
     # C-11: Kalman process noise — controls how fast the hedge ratio adapts (smaller = smoother)
     kalman_delta: float = 1e-4
     # C-11 (plan): Cointegration stability filter — min fraction of rolling windows that confirm coint.
@@ -121,7 +150,11 @@ class RiskConfig:
     # Drawdown Tier 1 (of 3): halt new entries. Tier 2 = kill_switch 15%. Tier 3 = strategy 20%.
     max_drawdown_pct: float = 0.10  # Portfolio drawdown hard stop (10% default)
     max_sector_weight: float = 0.40  # Max 40% of positions in a single sector
-    spread_correlation_max: float = 0.40  # Max |¤ü| between spreads (R-6)
+    spread_correlation_max: float = 0.40  # Max |ρ| between spreads (R-6)
+    # P2-03: kill switch cooldown read by RiskFacade/LiveTradingRunner
+    kill_switch_cooldown_seconds: int = (
+        300  # 0 = disabled (backwards-compatible default is prod=300)
+    )
 
 
 @dataclass
@@ -134,9 +167,7 @@ class CostConfig:
     """
 
     slippage_bps: float = 3.0  # Base slippage (adaptive on top)
-    commission_pct: float = (
-        0.00020  # IBKR Pro US equity commission (~2.0 bps/leg — aligned with CostModelConfig.taker_fee_bps)
-    )
+    commission_pct: float = 0.00020  # IBKR Pro US equity commission (~2.0 bps/leg — aligned with CostModelConfig.taker_fee_bps)
     maker_fee_bps: float = 1.5  # Exchange maker rebate/fee
     taker_fee_bps: float = 2.0  # Exchange taker fee
     borrowing_cost_annual: float = 0.005  # Short-borrow GC rate (0.5%)
@@ -181,7 +212,27 @@ class ExecutionConfig:
     paper_trading_loop_interval_seconds: int = 10  # Loop sleep interval
     initial_capital: float = 100000.0  # Starting capital for paper/live trading
     paper_slippage_model: str = "fixed_bps"  # fixed_bps, adaptive, volume_based
-    paper_commission_pct: float = 0.005  # Commission percentage (0.005% ≈ $0.005/share IBKR)
+    paper_commission_pct: float = (
+        0.005  # Commission percentage (0.005% ≈ $0.005/share IBKR)
+    )
+    # P1-02: configurable order polling params (replaces hardcoded 60s/0.5s in router)
+    order_fill_timeout_seconds: int = 60
+    order_poll_interval_seconds: float = 0.5
+    # P1-03: IBKR circuit-breaker exponential backoff config
+    ibkr_cb_base_reset_seconds: int = (
+        300  # initial CB reset window (doubles each cycle)
+    )
+    ibkr_cb_max_dead_cycles: int = 3  # cycles before gateway declared dead
+    # P2-03: IBKR reconnect retry delays (seconds, one attempt per entry)
+    ibkr_reconnect_retry_delays: list[int] = field(default_factory=lambda: [5, 15, 30])
+    # IB Gateway auto-launch + auto-login
+    gateway_path: str = (
+        ""  # path to ibgateway.exe directory (e.g. C:\Jts\ibgateway\1044)
+    )
+    username: str = ""  # IB Gateway username (loaded from IB_USERNAME env var)
+    password: str = field(
+        default="", repr=False
+    )  # IB Gateway password (loaded from IB_PASSWORD env var)
 
 
 @dataclass
@@ -236,15 +287,23 @@ class SignalCombinerConfig:
     momentum_weight: float = 0.30  # Weight for momentum signal
     entry_threshold: float = 0.6  # Composite score threshold for entry
     exit_threshold: float = 0.2  # Composite score threshold for exit
-    ml_combiner_shadow_mode: bool = True  # True=log ML predictions only; False=gate signals
+    ml_combiner_shadow_mode: bool = (
+        True  # True=log ML predictions only; False=gate signals
+    )
     # ML combiner entry/exit thresholds (applied to composite ML score, scale 0–1).
     # NOTE: These govern the BACKTEST gate (ML composite ≥ threshold → enter).
     # In LIVE trading, ml_combiner_shadow_mode=True means these thresholds are NOT
     # used for entry decisions — the live gate is StrategyConfig.entry_z_score (raw z-score).
     # Backtest metrics (Sharpe, PF) reflect ML-gated performance; live uses z-score alone.
-    ml_entry_threshold: float = 0.30  # ML composite score threshold for entry (backtest-calibrated)
-    ml_exit_threshold: float = 0.12  # ML composite score threshold for exit (backtest-calibrated)
-    use_markov_regime: bool = False  # True=use MarkovRegimeDetector (HMM) instead of RegimeDetector
+    ml_entry_threshold: float = (
+        0.30  # ML composite score threshold for entry (backtest-calibrated)
+    )
+    ml_exit_threshold: float = (
+        0.12  # ML composite score threshold for exit (backtest-calibrated)
+    )
+    use_markov_regime: bool = (
+        False  # True=use MarkovRegimeDetector (HMM) instead of RegimeDetector
+    )
 
 
 @dataclass
@@ -294,11 +353,18 @@ class RegimeConfig:
     vol_window: int = 20  # Rolling window for realized vol
     neutral_band_pct: float = 0.02  # MA spread % to distinguish NEUTRAL
     trend_favorable_sizing: float = 0.80  # Sizing for favorable side in trends
+    trend_unfavorable_sizing: float = (
+        0.0  # Sizing for unfavorable side (shorts in BULL, longs in BEAR)
+    )
     neutral_sizing: float = 0.65  # Sizing for both sides in NEUTRAL
     # C-02: Dispersion filter — block entries when market is highly correlated
     dispersion_filter_enabled: bool = False  # Off by default; ON in dev.yaml
-    dispersion_filter_lookback: int = 60  # Rolling window (bars) for correlation computation
-    dispersion_filter_min_index: float = 0.15  # Min std of pairwise correlations to allow entries
+    dispersion_filter_lookback: int = (
+        60  # Rolling window (bars) for correlation computation
+    )
+    dispersion_filter_min_index: float = (
+        0.15  # Min std of pairwise correlations to allow entries
+    )
     # C-09: Adaptive threshold ramp above blocking floor
     dispersion_ideal_index: float = 0.30  # Above this: no threshold penalty
     dispersion_max_entry_adj: float = 0.50  # Max z-score raise at min_index boundary
@@ -327,7 +393,8 @@ class PortfolioConfig:
 class Settings:
     """Global configuration manager."""
 
-    _instance = None
+    _instance: "Settings | None" = None
+    _initialized: bool = False
 
     def __new__(cls):
         if cls._instance is None:
@@ -340,7 +407,12 @@ class Settings:
             return
 
         # Support multiple environment variable names: EDGECORE_ENV, ENVIRONMENT, ENV
-        self.env = (os.getenv("EDGECORE_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or "dev").lower()
+        self.env = (
+            os.getenv("EDGECORE_ENV")
+            or os.getenv("ENVIRONMENT")
+            or os.getenv("ENV")
+            or "dev"
+        ).lower()
 
         # Validate environment
         valid_envs = ["dev", "test", "prod"]
@@ -393,6 +465,17 @@ class Settings:
             self.execution.mode = "paper"
             logger.info("paper_mode_active", use_sandbox=True)
 
+        # IB Gateway auto-launch + auto-login — override from env vars if set
+        _gw_path = os.getenv("IB_GATEWAY_PATH", "").strip()
+        if _gw_path:
+            self.execution.gateway_path = _gw_path
+        _ib_user = os.getenv("IB_USERNAME", "").strip()
+        if _ib_user:
+            self.execution.username = _ib_user
+        _ib_pass = os.getenv("IB_PASSWORD", "")
+        if _ib_pass:
+            self.execution.password = _ib_pass
+
         # Validate configuration using Pydantic schemas
         self._validate_config()
 
@@ -401,7 +484,9 @@ class Settings:
             if os.getenv("ENABLE_LIVE_TRADING") != "true":
                 logger.warning("LIVE_TRADING_DISABLED_BY_DEFAULT")
                 self.execution.use_sandbox = True  # Force sandbox mode
-                logger.info("sandbox_mode_forced", reason="ENABLE_LIVE_TRADING env var not set")
+                logger.info(
+                    "sandbox_mode_forced", reason="ENABLE_LIVE_TRADING env var not set"
+                )
 
         logger.info(
             "config_loaded",
@@ -430,7 +515,8 @@ class Settings:
 
             # Validate risk config
             RiskConfigSchema(
-                max_drawdown_pct=self.risk.max_drawdown_pct * 100,  # schema expects 0-100
+                max_drawdown_pct=self.risk.max_drawdown_pct
+                * 100,  # schema expects 0-100
                 max_loss_per_trade=self.risk.max_risk_per_trade,
             )
             # Validate strategy config
@@ -541,7 +627,9 @@ class Settings:
 
         if "trading_universe" in config:
             # F-8: Use _apply_section for strict validation (was manual)
-            self._apply_section(self.trading_universe, config["trading_universe"], "trading_universe")
+            self._apply_section(
+                self.trading_universe, config["trading_universe"], "trading_universe"
+            )
 
         if "risk" in config:
             self._apply_section(self.risk, config["risk"], "risk")
@@ -571,10 +659,14 @@ class Settings:
             self._apply_section(self.momentum, config["momentum"], "momentum")
 
         if "signal_combiner" in config:
-            self._apply_section(self.signal_combiner, config["signal_combiner"], "signal_combiner")
+            self._apply_section(
+                self.signal_combiner, config["signal_combiner"], "signal_combiner"
+            )
 
         if "pair_blacklist" in config:
-            self._apply_section(self.pair_blacklist, config["pair_blacklist"], "pair_blacklist")
+            self._apply_section(
+                self.pair_blacklist, config["pair_blacklist"], "pair_blacklist"
+            )
 
         if "portfolio" in config:
             self._apply_section(self.portfolio, config["portfolio"], "portfolio")
@@ -595,7 +687,9 @@ class Settings:
                     key=key,
                     hint=f"Valid keys: {sorted(known)}",
                 )
-                raise ValueError(f"Unknown config key '{key}' in section '{section_name}'. Valid keys: {sorted(known)}")
+                raise ValueError(
+                    f"Unknown config key '{key}' in section '{section_name}'. Valid keys: {sorted(known)}"
+                )
 
     def reload_symbols(self, symbols: list[str] | None = None) -> None:
         """
@@ -629,8 +723,13 @@ class Settings:
                 with open(config_path, encoding="utf-8") as f:
                     config = yaml.safe_load(f) or {}
 
-                if "trading_universe" in config and "symbols" in config["trading_universe"]:
-                    self.trading_universe.symbols = config["trading_universe"]["symbols"]
+                if (
+                    "trading_universe" in config
+                    and "symbols" in config["trading_universe"]
+                ):
+                    self.trading_universe.symbols = config["trading_universe"][
+                        "symbols"
+                    ]
                     logger.info(
                         "symbols_reloaded_from_config",
                         env=self.env,
@@ -666,7 +765,10 @@ class Settings:
         if config_path.exists():
             self._load_yaml(config_path)
             logger.info(
-                "environment_switched", old_env=old_env, new_env=env, num_symbols=len(self.trading_universe.symbols)
+                "environment_switched",
+                old_env=old_env,
+                new_env=env,
+                num_symbols=len(self.trading_universe.symbols),
             )
         else:
             logger.error("config_file_not_found", path=str(config_path))

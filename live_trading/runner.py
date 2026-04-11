@@ -61,6 +61,8 @@ class TradingLoopConfig:
     allocation_per_pair_pct: float = 90.0  # % of capital per pair
     max_portfolio_heat: float = 4.0  # max concurrent notional / capital
     mode: str = "live"  # "live" or "paper"
+    # P1-01: max seconds to wait for IBKR data before returning the last snapshot
+    data_fetch_timeout_seconds: int = 30
 
 
 class LiveTradingRunner:
@@ -99,7 +101,9 @@ class LiveTradingRunner:
         self._state = TradingState.INITIALIZING
         self._active_pairs: list[tuple] = []
         self._positions: dict[str, Any] = {}
-        self._positions_lock = threading.Lock()
+        self._positions_lock = (
+            threading.RLock()
+        )  # P2-01: reentrant — safe for nested lock acquisition
         self._last_discovery: datetime | None = None
         self._iteration = 0
         # Data load tracking (for dashboard)
@@ -112,9 +116,11 @@ class LiveTradingRunner:
         # Alerters (Email + Slack) ÔÇö initialised from env or passed in
         self._email_alerter = email_alerter
         self._slack_alerter = slack_alerter
-        # C-11: dedicated single-worker executor for alert dispatch
-        # (avoids blocking the tick thread on SMTP/HTTP timeouts)
-        self._alert_executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="alerts")
+        # C-11: dedicated 2-worker executor for alert dispatch (P2-05: buffer so
+        # a hanging SMTP call does not block all subsequent alerts).
+        self._alert_executor: ThreadPoolExecutor = ThreadPoolExecutor(
+            max_workers=2, thread_name_prefix="alerts"
+        )
 
         # Module references (lazy-initialized in _initialize)
         self._universe_mgr = None
@@ -126,9 +132,13 @@ class LiveTradingRunner:
         self._risk_facade = None
         self._allocator = None
         self._router = None
-        self._audit_trail = None  # A-17: crash-recovery audit trail (lazy-init at startup)
+        self._audit_trail = (
+            None  # A-17: crash-recovery audit trail (lazy-init at startup)
+        )
         self._ml_combiner = None  # C-04: ML signal shadow mode (MLSignalCombiner)
         self._retraining_task = None  # C-07: periodic hedge-ratio re-estimation
+        # P1-01: last successfully-fetched market data (fallback on timeout)
+        self._last_market_data: pd.DataFrame | None = None
 
     # ------------------------------------------------------------------
     # Alerting helpers
@@ -140,16 +150,22 @@ class LiveTradingRunner:
         Cancels all pending IBKR orders to prevent runaway fills, then
         sends a CRITICAL alert to all configured channels.
         """
-        logger.critical("live_trading_kill_switch_activated", reason=str(reason), message=message)
+        logger.critical(
+            "live_trading_kill_switch_activated", reason=str(reason), message=message
+        )
         # Cancel pending orders at the broker level
         if self._router is not None:
             ibkr_engine = getattr(self._router, "_ibkr_engine", None)
             if ibkr_engine is not None:
                 try:
                     cancelled = ibkr_engine.cancel_all_pending()
-                    logger.info("live_trading_kill_switch_orders_cancelled", count=cancelled)
+                    logger.info(
+                        "live_trading_kill_switch_orders_cancelled", count=cancelled
+                    )
                 except Exception as exc:
-                    logger.error("live_trading_kill_switch_cancel_failed", error=str(exc)[:200])
+                    logger.error(
+                        "live_trading_kill_switch_cancel_failed", error=str(exc)[:200]
+                    )
         self._send_alert(
             "CRITICAL",
             "Kill-switch activated",
@@ -174,14 +190,40 @@ class LiveTradingRunner:
         message: str,
         data: dict | None = None,
     ) -> None:
-        """Dispatch alert to Email + Slack.  Never raises — fire-and-forget."""
+        """Dispatch alert to Email + Slack.  Never raises — fire-and-forget.
+
+        P2-05 hardening:
+        - Calls each alerter directly (no extra threading overhead).
+        - EmailAlerter / SlackAlerter already apply their own send-level
+          timeouts (10 s SMTP socket timeout, 5 s HTTP request timeout).
+        - Any timeout-related exception is logged at WARNING (not DEBUG) so
+          that a hung SMTP server surfaces in the logs without crashing the
+          loop.  Other exceptions remain DEBUG (expected in paper mode with
+          no credentials).
+        - The caller (``self._alert_executor``) has ``max_workers=2`` so one
+          hung alerter call cannot starve the second worker indefinitely.
+        """
         for alerter in (self._email_alerter, self._slack_alerter):
             if alerter is None:
                 continue
             try:
                 alerter.send_alert(level=level, title=title, message=message, data=data)
             except Exception as exc:
-                logger.debug("alert_dispatch_failed", alerter=type(alerter).__name__, error=str(exc)[:120])
+                err_str = str(exc)
+                if "timeout" in err_str.lower() or "timed out" in err_str.lower():
+                    logger.warning(
+                        "alert_dispatch_timeout",
+                        alerter=type(alerter).__name__,
+                        level=level,
+                        title=title[:80],
+                        error=err_str[:120],
+                    )
+                else:
+                    logger.debug(
+                        "alert_dispatch_failed",
+                        alerter=type(alerter).__name__,
+                        error=err_str[:120],
+                    )
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -198,7 +240,9 @@ class LiveTradingRunner:
             while self._state == TradingState.RUNNING:
                 # Check ShutdownManager for graceful shutdown signals
                 if self._shutdown_mgr and self._shutdown_mgr.is_shutdown_requested():
-                    reason = self._shutdown_mgr.get_shutdown_reason() or "shutdown_requested"
+                    reason = (
+                        self._shutdown_mgr.get_shutdown_reason() or "shutdown_requested"
+                    )
                     logger.warning("live_trading_shutdown_signal", reason=reason)
                     break
                 self._tick()
@@ -233,6 +277,20 @@ class LiveTradingRunner:
                 "Cython extension not compiled. Run 'python setup.py build_ext --inplace' before starting live trading."
             )
 
+        # Ensure IB Gateway is running and authenticated before initialising
+        # any module that requires a broker connection.
+        from config.settings import get_settings as _get_settings
+        from execution.gw_manager import ensure_gateway_ready
+
+        _exec_cfg = _get_settings().execution
+        if not asyncio.get_event_loop().run_until_complete(
+            ensure_gateway_ready(_exec_cfg)
+        ):
+            raise RuntimeError(
+                "IB Gateway is not reachable — check gateway_path / credentials in .env "
+                "and ensure IB Gateway is running."
+            )
+
         from config.settings import get_settings
         from execution.partial_profit import PartialProfitManager
         from execution.reconciler import BrokerReconciler
@@ -246,7 +304,8 @@ class LiveTradingRunner:
         from pair_selection.discovery import DiscoveryConfig
         from portfolio_engine import PortfolioAllocator
         from risk.facade import RiskFacade
-        from risk_engine import KillSwitch, PortfolioRiskManager, PositionRiskManager
+        from risk_engine import KillSwitch
+        from risk_engine.kill_switch import KillSwitchConfig
         from risk_engine.portfolio_risk import PortfolioRiskConfig
         from signal_engine import SignalGenerator
         from signal_engine.adaptive import AdaptiveThresholdEngine
@@ -295,23 +354,27 @@ class LiveTradingRunner:
             momentum_overlay=_overlay,
         )
 
-        self._position_risk = PositionRiskManager()
+        self._kill_switch = KillSwitch(
+            config=KillSwitchConfig(
+                cooldown_seconds=get_settings().risk.kill_switch_cooldown_seconds,
+            ),
+            on_activate=self._on_kill_switch_activated,
+        )
+        # P0-01: RiskFacade owns PortfolioRiskManager + PositionRiskManager.
+        # Single source of truth for equity — no more parallel instances.
         _strat_risk = get_settings().risk
-        self._portfolio_risk = PortfolioRiskManager(
+        self._risk_facade = RiskFacade(
             initial_equity=self.config.initial_capital,
-            config=PortfolioRiskConfig(
+            kill_switch=self._kill_switch,
+            portfolio_risk_config=PortfolioRiskConfig(
                 max_drawdown_pct=_strat_risk.max_drawdown_pct,  # T1 = 0.10
                 max_daily_loss_pct=_strat_risk.max_daily_loss_pct,
                 max_concurrent_positions=_strat_risk.max_concurrent_positions,
             ),
         )
-        self._kill_switch = KillSwitch(on_activate=self._on_kill_switch_activated)
-        # Inject the shared KillSwitch into RiskFacade so both references
-        # point to the same object — prevents divergent halt states (B2-02).
-        self._risk_facade = RiskFacade(
-            initial_equity=self.config.initial_capital,
-            kill_switch=self._kill_switch,
-        )
+        # Aliases so all existing call-sites work without change.
+        self._portfolio_risk = self._risk_facade.portfolio_risk
+        self._position_risk = self._risk_facade.position_risk
 
         # Wire portfolio heat and allocation from config
         alloc_pct = getattr(self.config, "allocation_per_pair_pct", 90.0) / 100.0
@@ -339,7 +402,9 @@ class LiveTradingRunner:
         self._reconciliation_interval = timedelta(minutes=5)
 
         mode_map = {"live": ExecutionMode.LIVE, "paper": ExecutionMode.PAPER}
-        self._router = ExecutionRouter(mode=mode_map.get(self.config.mode, ExecutionMode.PAPER))
+        self._router = ExecutionRouter(
+            mode=mode_map.get(self.config.mode, ExecutionMode.PAPER)
+        )
 
         self._state = TradingState.INITIALIZING
 
@@ -389,7 +454,9 @@ class LiveTradingRunner:
             recovered_positions, _ = self._audit_trail.recover_state()
             if recovered_positions:
                 with self._positions_lock:
-                    self._positions = {k: vars(v) for k, v in recovered_positions.items()}
+                    self._positions = {
+                        k: vars(v) for k, v in recovered_positions.items()
+                    }
                 logger.info(
                     "positions_restored_from_audit_trail",
                     count=len(recovered_positions),
@@ -408,17 +475,23 @@ class LiveTradingRunner:
 
             self._reconciler = BrokerReconciler(
                 internal_equity=self.config.initial_capital,
-                internal_positions={k: v for k, v in self._positions.items()},
+                internal_positions=dict(self._positions),  # P2-01: snapshot under lock
                 equity_tolerance_pct=0.02,
             )
             broker_positions: dict[str, dict[str, Any]] = {}
             try:
                 _raw_pos = self._router.get_positions() if self._router else {}
-                broker_positions = {sym: {"quantity": qty} for sym, qty in _raw_pos.items()}
+                broker_positions = {
+                    sym: {"quantity": qty} for sym, qty in _raw_pos.items()
+                }
             except Exception as exc:
                 if self.config.mode == "live":
-                    raise RuntimeError(f"Cannot start live trading: broker position fetch failed: {exc}") from exc
-                logger.warning("startup_reconciliation_positions_unavailable", error=str(exc)[:200])
+                    raise RuntimeError(
+                        f"Cannot start live trading: broker position fetch failed: {exc}"
+                    ) from exc
+                logger.warning(
+                    "startup_reconciliation_positions_unavailable", error=str(exc)[:200]
+                )
 
             report = self._reconciler.full_reconciliation(
                 broker_equity=broker_equity,
@@ -427,7 +500,10 @@ class LiveTradingRunner:
             )
             self._last_reconciliation = datetime.now()
             if report.status.value == "critical":
-                logger.critical("startup_reconciliation_critical", divergences=len(report.divergences))
+                logger.critical(
+                    "startup_reconciliation_critical",
+                    divergences=len(report.divergences),
+                )
                 self._state = TradingState.HALTED
                 self._send_alert(
                     "CRITICAL",
@@ -459,7 +535,10 @@ class LiveTradingRunner:
         if self.config.mode != "live":
             return
         now = datetime.now()
-        if self._last_reconciliation and (now - self._last_reconciliation) < self._reconciliation_interval:
+        if (
+            self._last_reconciliation
+            and (now - self._last_reconciliation) < self._reconciliation_interval
+        ):
             return
         try:
             broker_equity = self._router.get_account_balance() if self._router else 0
@@ -470,13 +549,20 @@ class LiveTradingRunner:
                 if hasattr(self, "_metrics") and self._metrics.equity > 0
                 else self.config.initial_capital
             )
-            self._reconciler.internal_positions = {k: v for k, v in self._positions.items()}
+            self._reconciler.internal_positions = dict(
+                self._positions
+            )  # P2-01: snapshot under lock
             broker_positions: dict[str, dict[str, Any]] = {}
             try:
                 _raw_pos = self._router.get_positions() if self._router else {}
-                broker_positions = {sym: {"quantity": qty} for sym, qty in _raw_pos.items()}
+                broker_positions = {
+                    sym: {"quantity": qty} for sym, qty in _raw_pos.items()
+                }
             except Exception as exc:
-                logger.warning("periodic_reconciliation_positions_unavailable", error=str(exc)[:200])
+                logger.warning(
+                    "periodic_reconciliation_positions_unavailable",
+                    error=str(exc)[:200],
+                )
                 return  # skip ce tick, réessayer au prochain intervalle
             report = self._reconciler.full_reconciliation(
                 broker_equity=broker_equity,
@@ -485,14 +571,20 @@ class LiveTradingRunner:
             )
             self._last_reconciliation = now
             if report.status.value == "critical":
-                logger.critical("periodic_reconciliation_critical", divergences=len(report.divergences))
+                logger.critical(
+                    "periodic_reconciliation_critical",
+                    divergences=len(report.divergences),
+                )
                 self._state = TradingState.HALTED
                 self._send_alert(
                     "CRITICAL",
                     "Periodic reconciliation CRITICAL",
                     f"Broker/internal positions diverge critically ({len(report.divergences)} divergences). "
                     f"Trading halted at iteration {self._iteration}.",
-                    {"divergences": len(report.divergences), "iteration": self._iteration},
+                    {
+                        "divergences": len(report.divergences),
+                        "iteration": self._iteration,
+                    },
                 )
         except Exception as exc:
             logger.error("periodic_reconciliation_failed", error=str(exc)[:200])
@@ -520,7 +612,11 @@ class LiveTradingRunner:
         from execution.base import OrderStatus
 
         with self._positions_lock:
-            pending = {k: v for k, v in self._positions.items() if v.get("status") == "pending_close"}
+            pending = {
+                k: v
+                for k, v in self._positions.items()
+                if v.get("status") == "pending_close"
+            }
 
         for pair_key, pos_info in pending.items():
             order_id = pos_info.get("close_order_id")
@@ -594,7 +690,8 @@ class LiveTradingRunner:
         try:
             market_data = (
                 prefetched_data
-                if isinstance(prefetched_data, pd.DataFrame) and not prefetched_data.empty
+                if isinstance(prefetched_data, pd.DataFrame)
+                and not prefetched_data.empty
                 else self._fetch_market_data()
             )
         except Exception as exc:
@@ -618,13 +715,15 @@ class LiveTradingRunner:
 
         # 4. Process each signal through risk checks, sizing, execution
         # C-10: fetch account balance once per tick instead of once per signal
-        _tick_balance = self._router.get_account_balance() if self._router else self.config.initial_capital
+        _tick_balance = (
+            self._router.get_account_balance()
+            if self._router
+            else self.config.initial_capital
+        )
 
-        # C-06: propagate live equity to risk managers so drawdown calculations stay current
-        if self._portfolio_risk is not None and _tick_balance > 0:
-            self._portfolio_risk.update_equity(_tick_balance)
+        # C-06 / P0-01: single equity update through facade (single source of truth)
         if self._risk_facade is not None and _tick_balance > 0:
-            self._risk_facade.risk_engine.current_equity = _tick_balance
+            self._risk_facade.update_equity(_tick_balance)
 
         self._step_execute_signals(signals, market_data, account_balance=_tick_balance)
 
@@ -639,6 +738,14 @@ class LiveTradingRunner:
         Returns:
             True if halted (caller should return immediately), False if clear.
         """
+        # P0-03: proactively check data staleness so kill switch fires on frozen data
+        if self._kill_switch is not None:
+            _elapsed = (
+                (datetime.now(UTC) - self._data_load_at).total_seconds()
+                if self._data_load_at is not None
+                else 0.0
+            )
+            self._kill_switch.check(seconds_since_last_data=_elapsed)
         if self._risk_facade and self._risk_facade.is_halted:
             self._state = TradingState.HALTED
             logger.critical("live_trading_halted_by_kill_switch")
@@ -672,9 +779,11 @@ class LiveTradingRunner:
 
                 # Trailing stop: exit if Z-score diverges too far from entry
                 if self._trailing_stop:
-                    ts_exit, ts_reason = self._trailing_stop.should_exit_on_trailing_stop(
-                        symbol_pair=pair_key,
-                        current_z=current_z,
+                    ts_exit, ts_reason = (
+                        self._trailing_stop.should_exit_on_trailing_stop(
+                            symbol_pair=pair_key,
+                            current_z=current_z,
+                        )
                     )
                     if ts_exit:
                         exit_signals_from_stops.append((pair_key, ts_reason))
@@ -709,22 +818,33 @@ class LiveTradingRunner:
                 # Ongoing correlation monitor: exit if pair correlation degrades
                 if self._correlation_monitor and market_data is not None:
                     syms = pair_key.split("_")
-                    if len(syms) == 2 and syms[0] in market_data.columns and syms[1] in market_data.columns:
+                    if (
+                        len(syms) == 2
+                        and syms[0] in market_data.columns
+                        and syms[1] in market_data.columns
+                    ):
                         pa = float(market_data[syms[0]].iloc[-1])
                         pb = float(market_data[syms[1]].iloc[-1])
                         corr_alert = self._correlation_monitor.update(pair_key, pa, pb)
                         if corr_alert and corr_alert.get("hard_exit"):
                             exit_signals_from_stops.append(
-                                (pair_key, f"correlation_degraded_{corr_alert['correlation']:.2f}")
+                                (
+                                    pair_key,
+                                    f"correlation_degraded_{corr_alert['correlation']:.2f}",
+                                )
                             )
                             continue
                         elif corr_alert and corr_alert.get("degraded"):
                             logger.warning(
-                                "live_trading_correlation_warning", pair=pair_key, corr=corr_alert["correlation"]
+                                "live_trading_correlation_warning",
+                                pair=pair_key,
+                                corr=corr_alert["correlation"],
                             )
 
             except Exception as exc:
-                logger.error("live_trading_stop_check_error", pair=pair_key, error=str(exc)[:200])
+                logger.error(
+                    "live_trading_stop_check_error", pair=pair_key, error=str(exc)[:200]
+                )
                 self._send_alert(
                     "ERROR",
                     f"Stop-check error: {pair_key}",
@@ -733,9 +853,11 @@ class LiveTradingRunner:
                 )
 
         # Execute stop-triggered exits
+        # P2-01: use the snapshot taken under lock above — avoids TOCTOU with concurrent close threads
+        positions_snap = dict(positions_snapshot)  # O(n) copy, O(1) lookup
         for pair_key, reason in exit_signals_from_stops:
             logger.info("live_trading_stop_exit", pair=pair_key, reason=reason)
-            if pair_key in self._positions:
+            if pair_key in positions_snap:
                 # Route a close order through the execution router
                 try:
                     if self._router:
@@ -743,7 +865,7 @@ class LiveTradingRunner:
 
                         from execution.base import Order, OrderSide
 
-                        pos = self._positions[pair_key]
+                        pos = positions_snap[pair_key]
                         qty = pos.get("quantity", 0)
                         close_side = OrderSide.SELL if qty > 0 else OrderSide.BUY
                         close_order_id = str(uuid4())
@@ -763,7 +885,9 @@ class LiveTradingRunner:
                             from monitoring.events import TradingEvent as _TE_stop
 
                             _exit_equity = (
-                                self._metrics.equity if self._metrics.equity > 0 else self.config.initial_capital
+                                self._metrics.equity
+                                if self._metrics.equity > 0
+                                else self.config.initial_capital
                             )
                             _exit_event = _TE_stop(
                                 event_type=_ET_stop.TRADE_EXIT,
@@ -791,9 +915,15 @@ class LiveTradingRunner:
                         with self._positions_lock:
                             if pair_key in self._positions:
                                 self._positions[pair_key]["status"] = "pending_close"
-                                self._positions[pair_key]["close_order_id"] = close_order_id
+                                self._positions[pair_key]["close_order_id"] = (
+                                    close_order_id
+                                )
                 except Exception as exc:
-                    logger.error("live_trading_stop_exit_failed", pair=pair_key, error=str(exc)[:200])
+                    logger.error(
+                        "live_trading_stop_exit_failed",
+                        pair=pair_key,
+                        error=str(exc)[:200],
+                    )
                     self._send_alert(
                         "ERROR",
                         f"Stop-exit order failed: {pair_key}",
@@ -811,17 +941,23 @@ class LiveTradingRunner:
         signals: list = []
         if self._active_pairs and self._signal_gen:
             try:
+                # P2-01: pass a snapshot — signal gen must not hold a live reference to _positions
+                with self._positions_lock:
+                    _positions_snap = dict(self._positions)
                 signals = self._signal_gen.generate(
                     market_data=market_data,
                     active_pairs=self._active_pairs,
-                    active_positions=self._positions,
+                    active_positions=_positions_snap,
                 )
             except Exception as exc:
                 logger.error("live_trading_signal_error", error=str(exc)[:200])
         return signals
 
     def _step_execute_signals(
-        self, signals: list, market_data: pd.DataFrame, account_balance: float | None = None
+        self,
+        signals: list,
+        market_data: pd.DataFrame,
+        account_balance: float | None = None,
     ) -> None:
         """Process each alpha signal through risk, sizing, and execution.
 
@@ -832,7 +968,11 @@ class LiveTradingRunner:
         _balance = (
             account_balance
             if account_balance is not None
-            else (self._router.get_account_balance() if self._router else self.config.initial_capital)
+            else (
+                self._router.get_account_balance()
+                if self._router
+                else self.config.initial_capital
+            )
         )
         for sig in signals:
             try:
@@ -848,7 +988,11 @@ class LiveTradingRunner:
                     # PortfolioRiskManager is the single source of truth for drawdown.
                     # Pass its live drawdown_pct so the KillSwitch receives the real value
                     # (previously hardcoded to 0.0 — CERT-03 fix).
-                    _dd_pct = self._portfolio_risk.drawdown_pct if self._portfolio_risk is not None else 0.0
+                    _dd_pct = (
+                        self._portfolio_risk.drawdown_pct
+                        if self._portfolio_risk is not None
+                        else 0.0
+                    )
                     facade_ok, facade_reason = self._risk_facade.can_enter_trade(
                         symbol_pair=sig.pair_key,
                         position_size=0.0,
@@ -857,7 +1001,11 @@ class LiveTradingRunner:
                         drawdown_pct=_dd_pct,
                     )
                     if not facade_ok:
-                        logger.info("live_trading_signal_blocked_risk_facade", pair=sig.pair_key, reason=facade_reason)
+                        logger.info(
+                            "live_trading_signal_blocked_risk_facade",
+                            pair=sig.pair_key,
+                            reason=facade_reason,
+                        )
                         continue
 
                 # 4b. PortfolioRiskManager gate (T1: heat, position count, consecutive losses)
@@ -884,7 +1032,9 @@ class LiveTradingRunner:
                     # Normalize z-score to [-1, 1] for the feature vector
                     _z_norm = float(max(-1.0, min(1.0, sig.z_score / 3.0)))
                     _features = {"zscore": _z_norm}
-                    _ml_pred = self._ml_combiner.combine(_features, current_bar=self._iteration)
+                    _ml_pred = self._ml_combiner.combine(
+                        _features, current_bar=self._iteration
+                    )
                     logger.info(
                         "ml_signal_shadow",
                         pair=sig.pair_key,
@@ -902,7 +1052,12 @@ class LiveTradingRunner:
                         and sig.side in ("long", "short")
                         and _ml_pred.direction != sig.side
                     ):
-                        logger.info("ml_signal_gated", pair=sig.pair_key, signal=sig.side, ml=_ml_pred.direction)
+                        logger.info(
+                            "ml_signal_gated",
+                            pair=sig.pair_key,
+                            signal=sig.side,
+                            ml=_ml_pred.direction,
+                        )
                         continue
 
                 # 4c. Size the position via allocator
@@ -922,7 +1077,9 @@ class LiveTradingRunner:
                     )
                     if _alloc.notional > 0:
                         _sym1 = sig.pair_key.split("_")[0]
-                        _leg_side = _OrderSide.BUY if sig.side == "long" else _OrderSide.SELL
+                        _leg_side = (
+                            _OrderSide.BUY if sig.side == "long" else _OrderSide.SELL
+                        )
                         _sized_order = _Order(
                             order_id=str(_uuid4()),
                             symbol=_sym1,
@@ -945,7 +1102,9 @@ class LiveTradingRunner:
                         from monitoring.events import EventType, TradingEvent
 
                         _entry_equity = (
-                            self._metrics.equity if self._metrics.equity > 0 else self.config.initial_capital
+                            self._metrics.equity
+                            if self._metrics.equity > 0
+                            else self.config.initial_capital
                         )
                         _entry_event = TradingEvent(
                             event_type=EventType.TRADE_ENTRY,
@@ -953,7 +1112,8 @@ class LiveTradingRunner:
                             if sig.timestamp.tzinfo is None
                             else sig.timestamp,
                             symbol_pair=sig.pair_key,
-                            position_size=_exec_result.filled_qty or (_sized_order.quantity if _sized_order else 0.0),
+                            position_size=_exec_result.filled_qty
+                            or (_sized_order.quantity if _sized_order else 0.0),
                             entry_price=_exec_result.fill_price or None,
                             z_score=sig.z_score,
                             hedge_ratio=getattr(sig, "hedge_ratio", None),
@@ -986,7 +1146,10 @@ class LiveTradingRunner:
                     "ERROR",
                     f"Order processing error: {getattr(sig, 'pair_key', '?')}",
                     f"Failed to process signal/submit order: {exc}",
-                    {"pair": getattr(sig, "pair_key", "unknown"), "iteration": self._iteration},
+                    {
+                        "pair": getattr(sig, "pair_key", "unknown"),
+                        "iteration": self._iteration,
+                    },
                 )
 
     def _step_periodic_tasks(self, market_data: pd.DataFrame, signals: list) -> None:
@@ -1019,13 +1182,24 @@ class LiveTradingRunner:
                     "WARNING",
                     "ML feature drift detected",
                     f"PSI critical: {drift_report.critical_features}",
-                    {"overall_psi": round(drift_report.overall_psi, 4), "critical": drift_report.critical_features},
+                    {
+                        "overall_psi": round(drift_report.overall_psi, 4),
+                        "critical": drift_report.critical_features,
+                    },
                 )
 
         # C-07: Periodic hedge-ratio re-estimation (every retraining_interval_bars bars)
-        if self._retraining_task is not None and self._active_pairs and market_data is not None:
+        if (
+            self._retraining_task is not None
+            and self._active_pairs
+            and market_data is not None
+        ):
             _sym_pairs = [(t[0], t[1]) for t in self._active_pairs if len(t) >= 2]
-            _regime_det = getattr(self._signal_gen, "regime_detector", None) if self._signal_gen else None
+            _regime_det = (
+                getattr(self._signal_gen, "regime_detector", None)
+                if self._signal_gen
+                else None
+            )
             self._retraining_task.maybe_run(
                 current_bar=self._iteration,
                 price_data=market_data,
@@ -1041,7 +1215,11 @@ class LiveTradingRunner:
             equity = (
                 equity
                 if equity is not None
-                else (self._router.get_account_balance() if self._router else self.config.initial_capital)
+                else (
+                    self._router.get_account_balance()
+                    if self._router
+                    else self.config.initial_capital
+                )
             )
             # Fallback: if router returns 0 (paper engine has no balance tracker),
             # keep initial_capital as equity to avoid false -100% PnL display.
@@ -1086,18 +1264,41 @@ class LiveTradingRunner:
                     symbols = active
             lookback = getattr(self, "_lookback", 252)
             try:
-                df = load_price_data(symbols=symbols, limit=lookback)
+                # P1-01: run fetch in a thread so we can enforce a hard timeout
+                # If IBKR hangs, fallback to last valid snapshot instead of blocking forever
+                from concurrent.futures import Future
+                from concurrent.futures import ThreadPoolExecutor as _FetchExecutor
+                from concurrent.futures import TimeoutError as _FutureTimeout
+
+                _timeout = self.config.data_fetch_timeout_seconds
+                with _FetchExecutor(
+                    max_workers=1, thread_name_prefix="data_fetch"
+                ) as _ex:
+                    _fut: Future[pd.DataFrame | None] = _ex.submit(
+                        load_price_data, symbols=symbols, limit=lookback
+                    )
+                    try:
+                        df = _fut.result(timeout=_timeout)
+                    except _FutureTimeout:
+                        logger.critical(
+                            "data_fetch_timeout",
+                            timeout_seconds=_timeout,
+                            fallback=self._last_market_data is not None,
+                        )
+                        if self._last_market_data is not None:
+                            return self._last_market_data
+                        return None
             except DataUnavailableError as duc:
                 logger.critical("live_trading_data_unavailable", error=str(duc)[:200])
                 if self._kill_switch is not None:
                     elapsed = (
-                        (datetime.now(UTC) - self._data_load_at.replace(tzinfo=UTC)).total_seconds()
+                        (datetime.now(UTC) - self._data_load_at).total_seconds()
                         if self._data_load_at is not None
                         else self._kill_switch.config.max_data_stale_seconds + 1
                     )
                     self._kill_switch.check(seconds_since_last_data=elapsed)
                 self._data_symbols_loaded = 0
-                self._data_load_at = datetime.now()
+                self._data_load_at = datetime.now(UTC)
                 return None
             # C-09: freshness guard — warn if any symbol's latest bar is stale (> 10 min)
             _MAX_DATA_LAG = timedelta(minutes=10)
@@ -1122,15 +1323,16 @@ class LiveTradingRunner:
             if df is not None and not df.empty:
                 self._data_symbols_loaded = len(df.columns)
                 self._data_load_rows = len(df)
+                self._last_market_data = df  # P1-01: keep as fallback for next timeout
             else:
                 self._data_symbols_loaded = 0
                 self._data_load_rows = 0
-            self._data_load_at = datetime.now()
+            self._data_load_at = datetime.now(UTC)
             return df
         except Exception as exc:
             logger.error("live_trading_data_fetch_error", error=str(exc)[:200])
             self._data_symbols_loaded = 0
-            self._data_load_at = datetime.now()
+            self._data_load_at = datetime.now(UTC)
             return None
 
     # ------------------------------------------------------------------
@@ -1221,7 +1423,9 @@ class LiveTradingRunner:
                     self._router.submit_order(close_order)
                     logger.info("live_trading_position_closed", symbol=symbol, qty=qty)
                 except Exception as exc:
-                    logger.error("live_trading_close_failed", symbol=symbol, error=str(exc)[:120])
+                    logger.error(
+                        "live_trading_close_failed", symbol=symbol, error=str(exc)[:120]
+                    )
 
         self._state = TradingState.STOPPED
         # Cleanup shutdown manager (remove trading_enabled file)
