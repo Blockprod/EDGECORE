@@ -19,7 +19,7 @@ def test_ibkr_engine_default_params():
     # Reads from IBKR_HOST / IBKR_PORT / IBKR_CLIENT_ID env vars (or fallback defaults)
     assert engine.host == os.getenv("IBKR_HOST", "127.0.0.1")
     assert engine.port == int(os.getenv("IBKR_PORT", "4002"))
-    assert engine.client_id == int(os.getenv("IBKR_CLIENT_ID", "1"))
+    assert engine.client_id == int(os.getenv("IBKR_CLIENT_ID", "5"))
     assert engine.timeout == 30
 
 
@@ -40,14 +40,14 @@ def test_submit_order_equity():
 def test_get_account_balance_structure():
     """Test get_current_time method exists and is callable for IBGatewaySync."""
     engine = IBGatewaySync()
-    assert hasattr(engine, 'get_current_time')
+    assert hasattr(engine, "get_current_time")
     assert callable(engine.get_current_time)
 
 
 def test_get_positions_structure():
     """Test get_contract_details method exists for IBGatewaySync."""
     engine = IBGatewaySync()
-    assert hasattr(engine, 'get_contract_details')
+    assert hasattr(engine, "get_contract_details")
     assert callable(engine.get_contract_details)
 
 

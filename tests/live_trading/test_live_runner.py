@@ -2,7 +2,15 @@
 Tests for LiveTradingRunner ÔÇö verifies initialization, tick, and lifecycle.
 """
 
+from unittest.mock import AsyncMock, patch
+
 from live_trading.runner import LiveTradingRunner, TradingLoopConfig, TradingState
+
+_MOCK_GATEWAY_READY = patch(
+    "execution.gw_manager.ensure_gateway_ready",
+    new_callable=AsyncMock,
+    return_value=True,
+)
 
 
 class TestLiveTradingRunnerInit:
@@ -62,7 +70,8 @@ class TestKillSwitchSharedInstance:
     def test_kill_switch_shared_after_initialize(self):
         """After _initialize(), kill_switch inside RiskFacade is the same object as runner._kill_switch."""
         runner = LiveTradingRunner()
-        runner._initialize()
+        with _MOCK_GATEWAY_READY:
+            runner._initialize()
         assert runner._kill_switch is not None
         assert runner._risk_facade is not None
         assert runner._kill_switch is runner._risk_facade.kill_switch, (
@@ -74,7 +83,8 @@ class TestKillSwitchSharedInstance:
         from risk_engine.kill_switch import KillReason
 
         runner = LiveTradingRunner()
-        runner._initialize()
+        with _MOCK_GATEWAY_READY:
+            runner._initialize()
         assert runner._kill_switch is not None
         runner._kill_switch.activate(KillReason.MANUAL, message="test")
         assert runner._risk_facade is not None
@@ -89,7 +99,8 @@ class TestKillSwitchIBKRWiring:
     def test_on_activate_callback_wired(self):
         """KillSwitch must be initialized with on_activate pointing to runner method."""
         runner = LiveTradingRunner()
-        runner._initialize()
+        with _MOCK_GATEWAY_READY:
+            runner._initialize()
         assert runner._kill_switch is not None
         assert runner._kill_switch._on_activate is not None, (
             "C-03: KillSwitch._on_activate must be set — callback not wired"
@@ -105,7 +116,8 @@ class TestKillSwitchIBKRWiring:
         from risk_engine.kill_switch import KillReason
 
         runner = LiveTradingRunner()
-        runner._initialize()
+        with _MOCK_GATEWAY_READY:
+            runner._initialize()
 
         # Inject a mock router with a mock IBKR engine
         mock_ibkr = MagicMock()
@@ -127,7 +139,8 @@ class TestKillSwitchIBKRWiring:
         from risk_engine.kill_switch import KillReason
 
         runner = LiveTradingRunner()
-        runner._initialize()
+        with _MOCK_GATEWAY_READY:
+            runner._initialize()
         runner._router = None  # simulate not-yet-initialized
 
         # Must not raise
@@ -140,7 +153,8 @@ class TestKillSwitchIBKRWiring:
         from risk_engine.kill_switch import KillReason
 
         runner = LiveTradingRunner()
-        runner._initialize()
+        with _MOCK_GATEWAY_READY:
+            runner._initialize()
 
         mock_router = MagicMock(spec=[])  # spec=[] → no _ibkr_engine attribute
         runner._router = mock_router

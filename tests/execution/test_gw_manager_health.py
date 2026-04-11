@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pathlib
 import subprocess
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -465,6 +466,7 @@ class TestFillGatewayLoginSync:
             result = _fill_gateway_login_sync("user", "pass")
         assert result is False
 
+    @pytest.mark.skipif(sys.platform != "win32", reason="pywinauto requires Windows")
     def test_window_not_found_returns_false(self) -> None:
         """If the login window is not visible, returns False (will retry)."""
         with patch("execution.gw_manager._do_login_fill", return_value=False):
