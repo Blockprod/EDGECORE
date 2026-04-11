@@ -1,6 +1,6 @@
 {
-  "is_active": false,
-  "reason": "unknown",
-  "message": "",
-  "activated_at": null
+  "is_active": true,
+  "reason": "manual_activation",
+  "message": "test",
+  "activated_at": "2026-04-11T18:49:29.415051"
 }
