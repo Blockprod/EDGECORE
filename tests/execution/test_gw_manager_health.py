@@ -12,6 +12,7 @@ import subprocess
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from execution.gw_manager import (
     _do_login_fill,
     _escape_sendkeys,
@@ -51,16 +52,12 @@ class TestIsGatewayProcessRunning:
 
     @patch("execution.gw_manager.subprocess.run")
     def test_process_found(self, mock_run: MagicMock) -> None:
-        mock_run.return_value = MagicMock(
-            stdout="ibgateway.exe  12345 Console  1  456,789 K"
-        )
+        mock_run.return_value = MagicMock(stdout="ibgateway.exe  12345 Console  1  456,789 K")
         assert _is_gateway_process_running() is True
 
     @patch("execution.gw_manager.subprocess.run")
     def test_process_not_found(self, mock_run: MagicMock) -> None:
-        mock_run.return_value = MagicMock(
-            stdout="INFO: No tasks are running which match."
-        )
+        mock_run.return_value = MagicMock(stdout="INFO: No tasks are running which match.")
         assert _is_gateway_process_running() is False
 
     @patch("execution.gw_manager.subprocess.run")
@@ -184,17 +181,13 @@ class TestEnsureGatewayReady:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
-            patch(
-                "execution.gw_manager._is_api_port_open", side_effect=_port_side_effect
-            ),
+            patch("execution.gw_manager._is_api_port_open", side_effect=_port_side_effect),
             patch(
                 "execution.gw_manager._validate_api_connection",
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=False
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=False),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await ensure_gateway_ready(config)
@@ -207,9 +200,7 @@ class TestEnsureGatewayReady:
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=False
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=False),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await ensure_gateway_ready(config)
@@ -237,9 +228,7 @@ class TestEnsureGatewayReady:
                 "execution.gw_manager._validate_api_connection",
                 side_effect=_validate_effect,
             ),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=True
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=True),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await ensure_gateway_ready(config)
@@ -268,9 +257,7 @@ class TestEnsureGatewayReady:
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=True
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=True),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await ensure_gateway_ready(config)
@@ -284,9 +271,7 @@ class TestStartGatewayProcess:
     """Auto-launch of ibgateway.exe."""
 
     @patch("execution.gw_manager.subprocess.Popen")
-    def test_launch_success(
-        self, mock_popen: MagicMock, tmp_path: pathlib.Path
-    ) -> None:
+    def test_launch_success(self, mock_popen: MagicMock, tmp_path: pathlib.Path) -> None:
         """Exe exists → Popen called → True."""
         exe = tmp_path / "ibgateway.exe"
         exe.write_text("fake")
@@ -336,9 +321,7 @@ class TestEnsureGatewayReadyAutoLaunch:
                 new_callable=AsyncMock,
                 return_value=True,
             ),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=False
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=False),
             patch("execution.gw_manager.subprocess.Popen"),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
         ):
@@ -353,9 +336,7 @@ class TestEnsureGatewayReadyAutoLaunch:
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=False
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=False),
         ):
             result = await ensure_gateway_ready(config)
         assert result is False
@@ -368,9 +349,7 @@ class TestEnsureGatewayReadyAutoLaunch:
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=False
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=False),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
         ):
             result = await ensure_gateway_ready(config)
@@ -401,9 +380,7 @@ class TestTryEnableJavaAccessBridge:
     def test_oserror_does_not_raise(self, tmp_path: pathlib.Path) -> None:
         jabswitch = tmp_path / "jabswitch.exe"
         jabswitch.write_text("fake")
-        with patch(
-            "execution.gw_manager.subprocess.run", side_effect=OSError("denied")
-        ):
+        with patch("execution.gw_manager.subprocess.run", side_effect=OSError("denied")):
             _try_enable_java_access_bridge(tmp_path)  # must not raise
 
 
@@ -531,9 +508,7 @@ class TestFillGatewayLoginIfNeeded:
     @pytest.mark.asyncio
     async def test_delegates_to_sync(self) -> None:
         """Async wrapper returns the result from _fill_gateway_login_sync."""
-        with patch(
-            "execution.gw_manager._fill_gateway_login_sync", return_value=True
-        ) as mock_sync:
+        with patch("execution.gw_manager._fill_gateway_login_sync", return_value=True) as mock_sync:
             result = await _fill_gateway_login_if_needed("u", "p")
         assert result is True
         mock_sync.assert_called_once_with("u", "p")
@@ -564,9 +539,7 @@ class TestDoLoginFill:
     def test_fills_credentials_and_clicks_login(self) -> None:
         mock_w32gui, mock_kb, mock_mouse = self._make_mocks()
         with patch("execution.gw_manager._find_gateway_hwnd", return_value=0x1234):
-            result = _do_login_fill(
-                "myuser", "mypass", mock_w32gui, mock_kb, mock_mouse
-            )
+            result = _do_login_fill("myuser", "mypass", mock_w32gui, mock_kb, mock_mouse)
         assert result is True
         # 3 clicks: username field, password field, login button
         assert mock_mouse.click.call_count == 3
@@ -601,9 +574,7 @@ class TestEnsureGatewayReadyLogin:
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=True
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=True),
             patch(
                 "execution.gw_manager._fill_gateway_login_if_needed",
                 side_effect=_mock_fill,
@@ -622,9 +593,7 @@ class TestEnsureGatewayReadyLogin:
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
-            patch(
-                "execution.gw_manager._is_gateway_process_running", return_value=True
-            ),
+            patch("execution.gw_manager._is_gateway_process_running", return_value=True),
             patch(
                 "execution.gw_manager._fill_gateway_login_if_needed",
                 new_callable=AsyncMock,

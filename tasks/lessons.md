@@ -324,3 +324,12 @@
 **Ref** : `backtests/position_tracker.py`, `backtests/runner.py`, `backtests/sector_exposure_manager.py` — commit `064d76c` (2026-04-11)
 
 ---
+
+## L-34 · fix: ruff I001 — add blank line between pytest and first-party import block [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `64dd28b` : fix: ruff I001 — add blank line between pytest and first-party import block. Fichiers : tests/execution/test_gw_manager_health.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `tests/execution/test_gw_manager_health.py` — commit `64dd28b` (2026-04-11)
+
+---
