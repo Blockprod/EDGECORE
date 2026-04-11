@@ -36,7 +36,7 @@ echo   8. Ouvrir le dashboard web (navigateur -- port 5000)
 echo   9. Ouvrir le Planificateur de taches Windows
 echo   0. Quitter
 echo.
-set /p CHOIX=Votre choix [0-9] :
+set /p CHOIX=Votre choix [0-9] : 
 
 if "%CHOIX%"=="1" goto OPT_STATUS
 if "%CHOIX%"=="2" goto OPT_START_IB
@@ -112,7 +112,7 @@ goto MENU
 :OPT_CONSOLE
 echo.
 echo [*] Lancement du bot dans une nouvelle fenetre (paper)...
-echo     Fermez la fenetre "EDGECORE Bot" pour arreter le bot.
+echo     Fermez la fenetre EDGECORE Bot pour arreter le bot.
 start "EDGECORE Bot" cmd /k "set EDGECORE_MODE=paper& set EDGECORE_ENV=dev& set IBKR_CLIENT_ID=5& cd /d C:\Users\averr\EDGECORE_V1& C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe scripts\run_paper_tick.py --continuous"
 echo [OK] Bot demarre.
 timeout /t 2 >nul

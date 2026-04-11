@@ -1,3 +1,6 @@
+# Batch files must keep CRLF line endings for cmd.exe
+*.bat text eol=crlf
+
 *.pyd filter=lfs diff=lfs merge=lfs -text
 bt_results_* filter=lfs diff=lfs merge=lfs -text
 results/** filter=lfs diff=lfs merge=lfs -text

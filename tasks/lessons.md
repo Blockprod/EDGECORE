@@ -360,3 +360,12 @@
 **Ref** : `scripts/manage_task.bat` — commit `0d4fbc3` (2026-04-11)
 
 ---
+
+## L-38 · fix: manage_task.bat CRLF line endings + gitattributes force eol=crlf for *.bat [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `2ce45a8` : fix: manage_task.bat CRLF line endings + gitattributes force eol=crlf for *.bat. Fichiers : .gitattributes, scripts/manage_task.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `.gitattributes`, `scripts/manage_task.bat` — commit `2ce45a8` (2026-04-11)
+
+---
