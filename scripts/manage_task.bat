@@ -100,7 +100,7 @@ goto MENU
 :OPT_CONSOLE
 echo.
 echo  [*] Lancement du bot dans une nouvelle fenetre (paper)...
-start "EDGECORE Bot" "%~dp0console_bot.bat"
+start "EDGECORE Bot" cmd /c "C:\Users\averr\EDGECORE_V1\scripts\console_bot.bat"
 echo  [OK] Fenetre bot ouverte.
 timeout /t 2 >nul
 goto MENU

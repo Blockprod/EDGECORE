@@ -369,3 +369,12 @@
 **Ref** : `.gitattributes`, `scripts/manage_task.bat` — commit `2ce45a8` (2026-04-11)
 
 ---
+
+## L-39 · fix: option 7 -- start cmd /c with absolute path to console_bot.bat [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `1a0c4bf` : fix: option 7 -- start cmd /c with absolute path to console_bot.bat. Fichiers : scripts/manage_task.bat
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `scripts/manage_task.bat` — commit `1a0c4bf` (2026-04-11)
+
+---
