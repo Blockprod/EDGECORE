@@ -33,7 +33,7 @@ echo   6. Suivre le log en temps reel (Ctrl+C pour sortir)
 echo   7. Lancer le bot en mode console (paper)
 echo   8. Ouvrir le Planificateur de taches Windows
 echo   9. Quitter
-echo  10. Ouvrir le dashboard web (navigateur -- port 5000)
+echo  10. Lancer le dashboard web + ouvrir navigateur (port 5000)
 echo.
 set /p CHOICE=Votre choix [1-10] :
 
@@ -152,9 +152,14 @@ goto MENU
 
 :OPT_DASHBOARD
 echo.
-echo [*] Ouverture du dashboard web (http://127.0.0.1:5000/dashboard)...
-echo     Le bot doit etre deja demarre (option 2 ou 7).
+echo [*] Lancement du serveur API dashboard dans une nouvelle fenetre...
+start "EDGECORE Dashboard API" cmd /k "cd /d C:\Users\averr\EDGECORE_V1 && set EDGECORE_ENV=dev && set EDGECORE_MODE=paper && C:\Users\averr\EDGECORE_V1\venv\Scripts\python.exe scripts\start_api_server.py"
+echo [*] Attente du demarrage du serveur (3s)...
+timeout /t 3 >nul
+echo [*] Ouverture du navigateur...
 start "" "http://127.0.0.1:5000/dashboard"
+echo [OK] Dashboard lance. Gardez la fenetre "EDGECORE Dashboard API" ouverte.
+timeout /t 2 >nul
 goto MENU
 
 :STATUS_INLINE
