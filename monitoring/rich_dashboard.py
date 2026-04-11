@@ -1,4 +1,4 @@
-﻿"""EDGECORE Premium Rich Dashboard ÔÇö Terminal UI for paper/live trading.
+"""EDGECORE Premium Rich Dashboard -- Terminal UI for paper/live trading.
 
 This module provides the premium Rich-based dashboard used by:
   - run_paper_tick.py (paper trading, terminal UI)
@@ -28,9 +28,9 @@ from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 
-# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
-# PALETTE ÔÇö Premium Gradient Colors
-# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+# ---------------------------------------------------------------------
+# PALETTE -- Premium Gradient Colors
+# ---------------------------------------------------------------------
 _C_PRIMARY = "#00D9FF"  # Bright cyan - main accent
 _C_SECONDARY = "#7C3AED"  # Vibrant purple
 _C_ACCENT = "#6366F1"  # Indigo
@@ -71,7 +71,7 @@ def format_duration(seconds: float) -> str:
 
 def sparkline(values: list, width: int = 26) -> str:
     """Render a Unicode block sparkline."""
-    blocks = "ÔûüÔûéÔûâÔûäÔûàÔûåÔûçÔûê"
+    blocks = " _.:-=+#"
     if len(values) < 2:
         # Not enough data - show a simple line with hint
         return f"[{_C_DIM}]no history yet (waiting for ticks)[/{_C_DIM}]"
@@ -82,7 +82,7 @@ def sparkline(values: list, width: int = 26) -> str:
     # If all values are identical (flat), show a different pattern
     if rng < 0.01:
         # Show a flat sparkline or alternate
-        flat_pattern = "ÔöÇ" * width
+        flat_pattern = "-" * width
         return f"[{_C_YELLOW}]{flat_pattern}[/{_C_YELLOW}] [flat]"
 
     # Normal sparkline with range
@@ -173,19 +173,19 @@ def build_dashboard(
     dd_c = _C_RED if max_dd > 10 else _C_YELLOW if max_dd > 3 else _C_GREEN2
     wr_c = _C_GREEN if win_rate >= 55 else _C_YELLOW if win_rate >= 45 else _C_RED
 
-    # ÔöÇÔöÇ Status config ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+    # -- Status config -------------------------------------------------
     _status_cfg = {
-        "RUNNING": ("bold " + _C_GREEN, "Ô¼ñ  RUNNING", _C_BORDER),
-        "COMPUTING": ("bold " + _C_YELLOW, "Ôùò  COMPUTINGÔÇª", "#7A5800"),
-        "INITIALIZING": ("bold " + _C_ACCENT, "Ôùë  INITIALIZING", "#0E3460"),
-        "STOPPED": ("bold " + _C_RED, "Ôù╝  STOPPED", "#7B1C1C"),
-        "ERROR": ("bold " + _C_RED, "Ô£û  ERROR", "#7B1C1C"),
+        "RUNNING": ("bold " + _C_GREEN, ">>  RUNNING", _C_BORDER),
+        "COMPUTING": ("bold " + _C_YELLOW, "..  COMPUTING...", "#7A5800"),
+        "INITIALIZING": ("bold " + _C_ACCENT, ">>  INITIALIZING", "#0E3460"),
+        "STOPPED": ("bold " + _C_RED, "XX  STOPPED", "#7B1C1C"),
+        "ERROR": ("bold " + _C_RED, "XX  ERROR", "#7B1C1C"),
     }
     st_style, st_label, _border_color = _status_cfg.get(status, _status_cfg["RUNNING"])
 
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     # HEADER
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     hdr = Table.grid(expand=True, padding=(0, 2))
     hdr.add_column(justify="left", ratio=3)
     hdr.add_column(justify="center", ratio=4)
@@ -193,9 +193,9 @@ def build_dashboard(
     hdr.add_row(
         Text.from_markup(f"[{_C_DIM}]{now:%Y-%m-%d}[/{_C_DIM}]  [bold {_C_VAL}]{now:%H:%M:%S}[/bold {_C_VAL}]"),
         Text.from_markup(
-            f"[bold yellow]ÔÜí[/bold yellow] "
+            f"[bold yellow]::[/bold yellow] "
             f"[bold white]EDGECORE[/bold white]"
-            f"[{_C_DIM}]  ┬À  [/{_C_DIM}]"
+            f"[{_C_DIM}]  |  [/{_C_DIM}]"
             f"[bold {_C_ACCENT}]Paper Trading[/bold {_C_ACCENT}]"
         ),
         Text.from_markup(f"[{st_style}]{st_label}[/{st_style}]"),
@@ -207,9 +207,9 @@ def build_dashboard(
         padding=(0, 1),
     )
 
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     # STATUS
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     st_tbl = Table.grid(padding=(0, 2))
     st_tbl.add_column(style=_C_DIM, min_width=10)
     st_tbl.add_column(style=_C_VAL, min_width=28)
@@ -219,18 +219,18 @@ def build_dashboard(
     st_tbl.add_row(
         "Tick",
         f"[bold {_C_CYAN}]#{tick_count}[/bold {_C_CYAN}]"
-        + (f"   [{_C_DIM}]ÔÅ▒ {tick_elapsed:.1f}s[/{_C_DIM}]" if tick_elapsed > 0 else ""),
+        + (f"   [{_C_DIM}]T: {tick_elapsed:.1f}s[/{_C_DIM}]" if tick_elapsed > 0 else ""),
     )
 
     if tick_count == 0 or data_total == 0:
-        data_cell = f"[{_C_DIM}]pendingÔÇª[/{_C_DIM}]"
+        data_cell = f"[{_C_DIM}]pending...[/{_C_DIM}]"
     elif data_loaded == data_total:
         data_cell = (
-            f"[bold {_C_GREEN}]Ô£ô  {data_loaded}/{data_total}[/bold {_C_GREEN}]  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]"
+            f"[bold {_C_GREEN}]OK  {data_loaded}/{data_total}[/bold {_C_GREEN}]  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]"
         )
     else:
         data_cell = (
-            f"[bold {_C_YELLOW}]ÔÜá  {data_loaded}/{data_total}[/bold {_C_YELLOW}]"
+            f"[bold {_C_YELLOW}]!!  {data_loaded}/{data_total}[/bold {_C_YELLOW}]"
             f"  [{_C_DIM}]{data_rows} bars[/{_C_DIM}]"
         )
     st_tbl.add_row("Data", Text.from_markup(data_cell))
@@ -243,9 +243,9 @@ def build_dashboard(
         filled = int(pct * bar_w)
         bar = (
             f"[{_C_ACCENT}]"
-            + "Ôûê" * filled
+            + "#" * filled
             + f"[/{_C_ACCENT}][{_C_DIM}]"
-            + "Ôûæ" * (bar_w - filled)
+            + "." * (bar_w - filled)
             + f"[/{_C_DIM}]  [{_C_DIM}]{pct * 100:.0f}%[/{_C_DIM}]"
         )
         st_tbl.add_row(
@@ -267,9 +267,9 @@ def build_dashboard(
         padding=(0, 1),
     )
 
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     # PORTFOLIO
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     eq_txt = Text(justify="center")
     eq_txt.append(f"$ {equity:,.2f}", style=f"bold {pnl_c}")
     eq_txt.append("    ")
@@ -293,7 +293,7 @@ def build_dashboard(
 
     mstrip.add_row(
         _metric("CAPITAL", f"${initial_capital:,.0f}", _C_VAL),
-        _metric("MAX DD", f"ÔêÆ{max_dd:.2f}%", dd_c),
+        _metric("MAX DD", f"v{max_dd:.2f}%", dd_c),
         _metric("TRADES", f"{trades_total}  (W{winning}/L{losing})", _C_VAL),
     )
     if trades_total > 0:
@@ -317,9 +317,9 @@ def build_dashboard(
         padding=(0, 1),
     )
 
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     # COINTEGRATED PAIRS
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     pairs_tbl = Table(
         box=box.MINIMAL_HEAVY_HEAD,
         header_style=f"bold {_C_TITLE}",
@@ -352,16 +352,16 @@ def build_dashboard(
                 )
                 sym_sector = sector_map.get(pair[0], "")
                 sec_col = SECTOR_COLORS.get(sym_sector, _C_DIM)
-                sec_short = SECTOR_SHORT.get(sym_sector, sym_sector[:4].upper() if sym_sector else "ÔÇö")
+                sec_short = SECTOR_SHORT.get(sym_sector, sym_sector[:4].upper() if sym_sector else "--")
                 pos_data = positions.get(pair_key, {})
                 curr_z = pos_data.get("current_z", None)
-                z_str = f"{curr_z:+.2f}" if curr_z is not None else f"[{_C_DIM}]ÔÇö[/{_C_DIM}]"
+                z_str = f"{curr_z:+.2f}" if curr_z is not None else f"[{_C_DIM}]--[/{_C_DIM}]"
                 if pair_key in positions:
                     side = pos_data.get("side", "?")
                     sc = _C_GREEN if side == "LONG" else _C_RED
-                    status_cell = Text.from_markup(f"[bold {sc}]Ô¼ñ {side}[/bold {sc}]")
+                    status_cell = Text.from_markup(f"[bold {sc}]>> {side}[/bold {sc}]")
                 else:
-                    status_cell = Text.from_markup(f"[{_C_DIM}]Ôù» waiting[/{_C_DIM}]")
+                    status_cell = Text.from_markup(f"[{_C_DIM}].. waiting[/{_C_DIM}]")
                 pairs_tbl.add_row(
                     str(i),
                     pair_key,
@@ -373,13 +373,13 @@ def build_dashboard(
                 )
     else:
         pairs_tbl.add_row(
-            "ÔÇö",
+            "--",
             Text.from_markup(f"[italic {_C_DIM}]none discovered yet[/italic {_C_DIM}]"),
-            "ÔÇö",
-            "ÔÇö",
-            "ÔÇö",
-            "ÔÇö",
-            "ÔÇö",
+            "--",
+            "--",
+            "--",
+            "--",
+            "--",
         )
 
     pairs_panel = Panel(
@@ -393,9 +393,9 @@ def build_dashboard(
         padding=(0, 1),
     )
 
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     # OPEN POSITIONS
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     if positions:
         pos_tbl = Table(
             box=box.MINIMAL_HEAVY_HEAD,
@@ -423,9 +423,9 @@ def build_dashboard(
             sym_a = pair_key.split("_")[0] if "_" in pair_key else pair_key
             sym_sector = sector_map.get(sym_a, "")
             sec_col = SECTOR_COLORS.get(sym_sector, _C_DIM)
-            sec_short = SECTOR_SHORT.get(sym_sector, "ÔÇö")
+            sec_short = SECTOR_SHORT.get(sym_sector, "--")
             bar_fill = int(min(abs(pnl_pct) / 5.0, 1.0) * 8)
-            pnl_bar = f"[{pc}]{'Ôûê' * bar_fill}{'Ôûæ' * (8 - bar_fill)}[/{pc}]"
+            pnl_bar = f"[{pc}]{'#' * bar_fill}{'.' * (8 - bar_fill)}[/{pc}]"
             pos_tbl.add_row(
                 pair_key,
                 Text.from_markup(f"[bold {sec_col}]{sec_short}[/bold {sec_col}]"),
@@ -440,7 +440,7 @@ def build_dashboard(
         pos_content = Padding(
             Align.center(
                 Text(
-                    "No open positions  ÔÇö  waiting for signal",
+                    "No open positions  --  waiting for signal",
                     style=f"italic {_C_DIM}",
                 )
             ),
@@ -455,19 +455,19 @@ def build_dashboard(
         padding=(0, 1),
     )
 
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     # FOOTER
-    # ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+    # ================================================================
     if status == "STOPPED":
         footer_txt = Text.from_markup(
-            f"[bold {_C_RED}]Ôù╝  Bot stopped ÔÇö terminal restored in a momentÔÇª[/bold {_C_RED}]"
+            f"[bold {_C_RED}]XX  Bot stopped -- terminal restored in a moment...[/bold {_C_RED}]"
         )
     else:
         footer_txt = Text.from_markup(
             f"[bold {_C_YELLOW}]Ctrl+C[/bold {_C_YELLOW}]"
-            f"[{_C_DIM}] to stop     ┬À     Logs: [/{_C_DIM}]"
+            f"[{_C_DIM}] to stop     |     Logs: [/{_C_DIM}]"
             f"[bold {_C_ACCENT}]logs/[/bold {_C_ACCENT}]"
-            f"[{_C_DIM}]     ┬À     IB Gateway [/{_C_DIM}]"
+            f"[{_C_DIM}]     |     IB Gateway [/{_C_DIM}]"
             f"[bold {_C_ACCENT}]:4002[/bold {_C_ACCENT}]"
         )
     footer = Panel(

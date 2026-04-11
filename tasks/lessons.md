@@ -396,3 +396,12 @@
 **Ref** : `scripts/manage_task.bat` — commit `bbc0abb` (2026-04-11)
 
 ---
+
+## L-42 · fix: replace all Unicode/emoji chars with ASCII in rich_dashboard.py [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `c60a3f5` : fix: replace all Unicode/emoji chars with ASCII in rich_dashboard.py. Fichiers : monitoring/rich_dashboard.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/rich_dashboard.py` — commit `c60a3f5` (2026-04-12)
+
+---
