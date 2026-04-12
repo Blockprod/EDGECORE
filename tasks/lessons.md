@@ -405,3 +405,12 @@
 **Ref** : `monitoring/rich_dashboard.py` — commit `c60a3f5` (2026-04-12)
 
 ---
+
+## L-43 · fix: dashboard shows '--' when disconnected, fix P&L sign, reduce log noise [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `d8d6249` : fix: dashboard shows '--' when disconnected, fix P&L sign, reduce log noise. Fichiers : monitoring/templates/dashboard.html
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/templates/dashboard.html` — commit `d8d6249` (2026-04-12)
+
+---

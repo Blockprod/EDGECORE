@@ -595,7 +595,10 @@
       return sec + 's';
     }
     function pnlClass(v) { return v >= 0 ? 'positive' : 'negative'; }
-    function pnlSign(v) { return v >= 0 ? '+' : ''; }
+    function pnlSign(v) { return v > 0 ? '+' : v < 0 ? '-' : ''; }
+    let _lastEquity = null;
+    let _lastPosCount = null;
+    let _lastConnected = null;
 
     function addLog(level, msg) {
       const now = new Date();
@@ -714,6 +717,33 @@
           badge.className = 'mode-badge disconnected';
           dot.className = 'status-dot err';
           $('mode-text').textContent = 'DISCONNECTED';
+          // Reset KPIs to avoid misleading numbers
+          $('kpi-equity').textContent = '--';
+          $('kpi-equity').className = 'kpi-value accent';
+          $('kpi-equity-sub').textContent = 'awaiting bot connection';
+          $('kpi-pnl').textContent = '--';
+          $('kpi-pnl').className = 'kpi-value accent';
+          $('kpi-pnl-pct').innerHTML = '&nbsp;';
+          $('kpi-dd').textContent = '--'; $('kpi-dd').className = 'kpi-value accent';
+          $('kpi-dd-sub').textContent = '--';
+          $('kpi-sharpe').textContent = '--'; $('kpi-sharpe').className = 'kpi-value accent';
+          $('kpi-positions').textContent = '--';
+          $('kpi-pairs').textContent = '--';
+          $('kpi-trades-today').textContent = '--';
+          $('kpi-trades-total').textContent = '--';
+          $('kpi-winrate').textContent = '--'; $('kpi-winrate').className = 'kpi-value accent';
+          $('kpi-wl').textContent = '--';
+          $('tick-count').textContent = '--';
+          $('bot-status').textContent = 'DISCONNECTED';
+          renderEquityChart([]);
+          renderPositions([]);
+          // Log only on state change
+          if (_lastConnected !== false) {
+            addLog('WARN', 'Bot disconnected -- no live state file');
+            _lastConnected = false;
+          }
+          renderLog();
+          return;
         } else {
           banner.classList.remove('visible');
           const mode = (d.system && d.system.mode) || 'paper';
@@ -806,8 +836,22 @@
         $('m-daily').textContent = risk.daily_trades || 0;
         $('m-points').textContent = perf.data_points || 0;
 
-        // Log
-        addLog('OK', 'Data refreshed | Equity: ' + fmtMoney(equity) + ' | Positions: ' + (risk.positions_count || 0));
+        // Log — only on meaningful state changes
+        const posCount = risk.positions_count || 0;
+        if (_lastConnected !== true) {
+          addLog('OK', 'Bot connected | Tick #' + (risk.iteration || '?'));
+          _lastConnected = true;
+        }
+        if (_lastEquity !== null && Math.abs(equity - _lastEquity) > 0.01) {
+          const delta = equity - _lastEquity;
+          addLog(delta >= 0 ? 'OK' : 'WARN', 'Equity ' + (delta >= 0 ? '+' : '') + fmtMoney(delta) + ' -> ' + fmtMoney(equity));
+        }
+        if (_lastPosCount !== null && posCount !== _lastPosCount) {
+          const verb = posCount > _lastPosCount ? 'opened' : 'closed';
+          addLog('OK', 'Position ' + verb + ' | Active: ' + posCount);
+        }
+        _lastEquity = equity;
+        _lastPosCount = posCount;
         renderLog();
 
       } catch (e) {
