@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EDGECORE | Stat-Arb Monitor</title>
+  <style>
+    /* ================================================================
+       EDGECORE Institutional Dashboard
+       Style: Bloomberg Terminal x Datadog — dark, dense, precise
+       ================================================================ */
+    :root {
+      --bg-0: #06080d;
+      --bg-1: #0c1017;
+      --bg-2: #111820;
+      --bg-3: #19212d;
+      --border: #1e2a3a;
+      --border-accent: #2a3a52;
+      --text-0: #e8edf5;
+      --text-1: #a4b1c7;
+      --text-2: #6b7a94;
+      --text-3: #3f4f66;
+      --accent: #3b82f6;
+      --accent-dim: #1e3a5f;
+      --green: #10b981;
+      --green-dim: #064e3b;
+      --red: #ef4444;
+      --red-dim: #4c1414;
+      --yellow: #f59e0b;
+      --yellow-dim: #4a3508;
+      --cyan: #06b6d4;
+      --purple: #8b5cf6;
+      --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-0);
+      color: var(--text-0);
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ---- TOP BAR ---- */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 20px;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+    .logo span { color: var(--text-2); font-weight: 400; }
+    .mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .mode-badge.paper { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+    .mode-badge.live { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+    .mode-badge.disconnected { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block;
+    }
+    .status-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .status-dot.warn { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+    .status-dot.err { background: var(--red); box-shadow: 0 0 6px var(--red); animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    .topbar-right .tick {
+      color: var(--text-1);
+    }
+
+    /* ---- MAIN GRID ---- */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      grid-template-rows: auto auto 1fr;
+      gap: 1px;
+      padding: 1px;
+      background: var(--border);
+      min-height: calc(100vh - 42px);
+    }
+
+    /* ---- PANELS ---- */
+    .panel {
+      background: var(--bg-1);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-2);
+    }
+    .panel-badge {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--bg-3);
+      color: var(--text-2);
+    }
+
+    /* ---- KPI CARDS (top row) ---- */
+    .kpi-strip {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 1px;
+      background: var(--border);
+    }
+    .kpi {
+      background: var(--bg-1);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-2);
+    }
+    .kpi-value {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-0);
+      line-height: 1.2;
+    }
+    .kpi-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    .kpi-value.positive { color: var(--green); }
+    .kpi-value.negative { color: var(--red); }
+    .kpi-value.warn { color: var(--yellow); }
+    .kpi-value.accent { color: var(--accent); }
+
+    /* ---- EQUITY CHART ---- */
+    .equity-panel {
+      grid-column: 1 / 4;
+    }
+    .chart-container {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      gap: 1px;
+      padding-top: 8px;
+      min-height: 80px;
+    }
+    .chart-bar {
+      flex: 1;
+      min-width: 2px;
+      border-radius: 1px 1px 0 0;
+      transition: height 0.3s ease;
+    }
+    .chart-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-3);
+      margin-top: 4px;
+    }
+
+    /* ---- SYSTEM PANEL ---- */
+    .system-panel {
+      grid-column: 4 / 5;
+    }
+    .sys-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--bg-3);
+    }
+    .sys-row:last-child { border-bottom: none; }
+    .sys-label {
+      font-size: 11px;
+      color: var(--text-2);
+    }
+    .sys-value {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-1);
+    }
+
+    /* ---- POSITIONS TABLE ---- */
+    .positions-panel {
+      grid-column: 1 / 3;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 6px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-3);
+      border-bottom: 1px solid var(--border-accent);
+      white-space: nowrap;
+    }
+    .data-table th.right, .data-table td.right {
+      text-align: right;
+    }
+    .data-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--bg-3);
+      color: var(--text-1);
+      white-space: nowrap;
+    }
+    .data-table tr:hover td {
+      background: var(--bg-2);
+    }
+    .side-long {
+      color: var(--green);
+      font-weight: 600;
+    }
+    .side-short {
+      color: var(--red);
+      font-weight: 600;
+    }
+    .pnl-pos { color: var(--green); }
+    .pnl-neg { color: var(--red); }
+    .empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      color: var(--text-3);
+      font-size: 12px;
+      font-style: italic;
+      min-height: 60px;
+    }
+
+    /* ---- METRICS PANEL ---- */
+    .metrics-panel {
+      grid-column: 3 / 5;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .metric {
+      background: var(--bg-1);
+      padding: 10px 12px;
+    }
+    .metric-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-3);
+      margin-bottom: 2px;
+    }
+    .metric-value {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-0);
+    }
+
+    /* ---- ALERTS / LOG ---- */
+    .alerts-panel {
+      grid-column: 1 / -1;
+    }
+    .log-line {
+      display: flex;
+      gap: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--bg-3);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+    .log-time { color: var(--text-3); min-width: 70px; }
+    .log-level {
+      min-width: 50px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .log-level.ok { color: var(--green); }
+    .log-level.warn { color: var(--yellow); }
+    .log-level.err { color: var(--red); }
+    .log-msg { color: var(--text-1); }
+
+    /* ---- PROGRESS BAR ---- */
+    .progress-track {
+      height: 4px;
+      background: var(--bg-3);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+
+    /* ---- RESPONSIVE ---- */
+    @media (max-width: 1200px) {
+      .kpi-strip { grid-template-columns: repeat(4, 1fr); }
+      .dashboard { grid-template-columns: 1fr 1fr; }
+      .equity-panel { grid-column: 1 / -1; }
+      .system-panel { grid-column: 1 / -1; }
+      .positions-panel { grid-column: 1 / -1; }
+      .metrics-panel { grid-column: 1 / -1; }
+      .alerts-panel { grid-column: 1 / -1; }
+    }
+    @media (max-width: 768px) {
+      .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+      .topbar { flex-direction: column; gap: 8px; }
+    }
+
+    /* ---- DISCONNECTED OVERLAY ---- */
+    .disconnected-banner {
+      display: none;
+      grid-column: 1 / -1;
+      background: var(--red-dim);
+      border: 1px solid var(--red);
+      padding: 8px 16px;
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--red);
+    }
+    .disconnected-banner.visible { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo">EDGECORE <span>| STAT-ARB MONITOR</span></div>
+      <div class="mode-badge paper" id="mode-badge">
+        <span class="status-dot ok" id="status-dot"></span>
+        <span id="mode-text">PAPER</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span>TICK <span class="tick" id="tick-count">--</span></span>
+      <span>|</span>
+      <span id="bot-status">--</span>
+      <span>|</span>
+      <span id="clock">--:--:--</span>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+
+    <!-- DISCONNECTED BANNER -->
+    <div class="disconnected-banner" id="disconnect-banner">
+      BOT DISCONNECTED -- No live state available. Start the bot (Option 7) to see live data.
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi">
+        <div class="kpi-label">Equity</div>
+        <div class="kpi-value accent" id="kpi-equity">--</div>
+        <div class="kpi-sub" id="kpi-equity-sub">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Total P&amp;L</div>
+        <div class="kpi-value" id="kpi-pnl">--</div>
+        <div class="kpi-sub" id="kpi-pnl-pct">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Max Drawdown</div>
+        <div class="kpi-value" id="kpi-dd">--</div>
+        <div class="kpi-sub" id="kpi-dd-sub">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Sharpe Ratio</div>
+        <div class="kpi-value" id="kpi-sharpe">--</div>
+        <div class="kpi-sub">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Positions</div>
+        <div class="kpi-value accent" id="kpi-positions">--</div>
+        <div class="kpi-sub" id="kpi-pairs">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Trades Today</div>
+        <div class="kpi-value" id="kpi-trades-today">--</div>
+        <div class="kpi-sub" id="kpi-trades-total">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Win Rate</div>
+        <div class="kpi-value" id="kpi-winrate">--</div>
+        <div class="kpi-sub" id="kpi-wl">&nbsp;</div>
+      </div>
+    </div>
+
+    <!-- EQUITY CHART -->
+    <div class="panel equity-panel">
+      <div class="panel-header">
+        <div class="panel-title">Equity Curve</div>
+        <div class="panel-badge" id="eq-points">-- pts</div>
+      </div>
+      <div class="chart-container" id="equity-chart"></div>
+      <div class="chart-labels">
+        <span id="eq-min">--</span>
+        <span id="eq-max">--</span>
+      </div>
+    </div>
+
+    <!-- SYSTEM STATUS -->
+    <div class="panel system-panel">
+      <div class="panel-header">
+        <div class="panel-title">System</div>
+        <div class="panel-badge" id="sys-version">--</div>
+      </div>
+      <div id="system-rows">
+        <div class="sys-row"><span class="sys-label">Uptime</span><span class="sys-value" id="sys-uptime">--</span></div>
+        <div class="sys-row"><span class="sys-label">Memory</span><span class="sys-value" id="sys-mem">--</span></div>
+        <div class="sys-row"><span class="sys-label">CPU</span><span class="sys-value" id="sys-cpu">--</span></div>
+        <div class="sys-row"><span class="sys-label">PID</span><span class="sys-value" id="sys-pid">--</span></div>
+        <div class="sys-row"><span class="sys-label">Data Loaded</span><span class="sys-value" id="sys-data">--</span></div>
+        <div class="sys-row">
+          <span class="sys-label">Daily Loss</span>
+          <span class="sys-value" id="sys-dloss">--</span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">Loss Streak</span>
+          <span class="sys-value" id="sys-streak">--</span>
+        </div>
+        <div class="sys-row">
+          <span class="sys-label">Last Update</span>
+          <span class="sys-value" id="sys-update">--</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- POSITIONS TABLE -->
+    <div class="panel positions-panel">
+      <div class="panel-header">
+        <div class="panel-title">Open Positions</div>
+        <div class="panel-badge" id="pos-count">0</div>
+      </div>
+      <div id="positions-body">
+        <div class="empty-state">No open positions</div>
+      </div>
+    </div>
+
+    <!-- PERFORMANCE METRICS -->
+    <div class="panel metrics-panel">
+      <div class="panel-header">
+        <div class="panel-title">Performance &amp; Risk</div>
+        <div class="panel-badge" id="perf-source">--</div>
+      </div>
+      <div class="metrics-grid" id="metrics-grid">
+        <div class="metric">
+          <div class="metric-label">Total Return</div>
+          <div class="metric-value" id="m-return">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Sharpe Ratio</div>
+          <div class="metric-value" id="m-sharpe">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Max Drawdown</div>
+          <div class="metric-value" id="m-dd">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total Trades</div>
+          <div class="metric-value" id="m-trades">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Winning</div>
+          <div class="metric-value" id="m-wins" style="color:var(--green)">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Losing</div>
+          <div class="metric-value" id="m-losses" style="color:var(--red)">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Daily Trades</div>
+          <div class="metric-value" id="m-daily">--</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Data Points</div>
+          <div class="metric-value" id="m-points">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOG -->
+    <div class="panel alerts-panel">
+      <div class="panel-header">
+        <div class="panel-title">Activity Log</div>
+        <div class="panel-badge" id="log-count">0</div>
+      </div>
+      <div id="log-body">
+        <div class="empty-state">Waiting for data...</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ================================================================
+    // EDGECORE Dashboard — Data Engine
+    // Polls /api/dashboard/full every 5 seconds (public, no auth)
+    // ================================================================
+    const POLL_MS = 5000;
+    const LOG_MAX = 30;
+    const logEntries = [];
+    let consecutiveErrors = 0;
+
+    function $(id) { return document.getElementById(id); }
+
+    function fmtMoney(v) {
+      if (v === null || v === undefined) return '--';
+      return '$' + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
+    }
+    function fmtPct(v) {
+      if (v === null || v === undefined) return '--';
+      return Number(v).toFixed(2) + '%';
+    }
+    function fmtNum(v, d) {
+      if (v === null || v === undefined) return '--';
+      return Number(v).toFixed(d !== undefined ? d : 2);
+    }
+    function fmtDuration(s) {
+      if (!s && s !== 0) return '--';
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = Math.floor(s % 60);
+      if (h > 0) return h + 'h ' + m + 'm';
+      if (m > 0) return m + 'm ' + sec + 's';
+      return sec + 's';
+    }
+    function pnlClass(v) { return v >= 0 ? 'positive' : 'negative'; }
+    function pnlSign(v) { return v >= 0 ? '+' : ''; }
+
+    function addLog(level, msg) {
+      const now = new Date();
+      const ts = now.toLocaleTimeString('en-US', { hour12: false });
+      logEntries.unshift({ ts, level, msg });
+      if (logEntries.length > LOG_MAX) logEntries.length = LOG_MAX;
+    }
+
+    function renderLog() {
+      const el = $('log-body');
+      if (logEntries.length === 0) {
+        el.innerHTML = '<div class="empty-state">Waiting for data...</div>';
+        return;
+      }
+      let html = '';
+      for (const e of logEntries) {
+        const cls = e.level === 'OK' ? 'ok' : e.level === 'WARN' ? 'warn' : 'err';
+        html += '<div class="log-line">'
+          + '<span class="log-time">' + e.ts + '</span>'
+          + '<span class="log-level ' + cls + '">' + e.level + '</span>'
+          + '<span class="log-msg">' + e.msg + '</span>'
+          + '</div>';
+      }
+      el.innerHTML = html;
+      $('log-count').textContent = logEntries.length;
+    }
+
+    function renderEquityChart(history) {
+      const container = $('equity-chart');
+      if (!history || history.length === 0) {
+        container.innerHTML = '<div class="empty-state">No equity data</div>';
+        $('eq-points').textContent = '0 pts';
+        return;
+      }
+      const min = Math.min(...history);
+      const max = Math.max(...history);
+      const range = max - min || 1;
+      $('eq-min').textContent = fmtMoney(min);
+      $('eq-max').textContent = fmtMoney(max);
+      $('eq-points').textContent = history.length + ' pts';
+
+      let html = '';
+      for (let i = 0; i < history.length; i++) {
+        const v = history[i];
+        const pct = ((v - min) / range) * 100;
+        const h = Math.max(4, pct);
+        const positive = i === 0 || v >= history[i - 1];
+        const color = positive ? 'var(--green)' : 'var(--red)';
+        html += '<div class="chart-bar" style="height:' + h + '%;background:' + color + '" title="' + fmtMoney(v) + '"></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function renderPositions(positions) {
+      const el = $('positions-body');
+      $('pos-count').textContent = positions ? positions.length : 0;
+      if (!positions || positions.length === 0) {
+        el.innerHTML = '<div class="empty-state">No open positions</div>';
+        return;
+      }
+      let html = '<table class="data-table"><thead><tr>'
+        + '<th>Pair</th>'
+        + '<th>Side</th>'
+        + '<th class="right">Entry</th>'
+        + '<th class="right">Current</th>'
+        + '<th class="right">PnL</th>'
+        + '<th class="right">PnL %</th>'
+        + '<th class="right">Z-Score</th>'
+        + '<th class="right">Bars</th>'
+        + '<th class="right">Age</th>'
+        + '<th>Status</th>'
+        + '</tr></thead><tbody>';
+
+      for (const p of positions) {
+        const pnl = p.unrealized_pnl || 0;
+        const pnlPct = p.pnl_percent || 0;
+        const cls = pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+        const sideCls = (p.side || '').toLowerCase() === 'long' ? 'side-long' : 'side-short';
+        const ageH = p.age_hours !== undefined ? fmtNum(p.age_hours, 1) + 'h' : '--';
+        html += '<tr>'
+          + '<td>' + (p.symbol || '--') + '</td>'
+          + '<td class="' + sideCls + '">' + (p.side || '--').toUpperCase() + '</td>'
+          + '<td class="right">' + fmtNum(p.entry_price) + '</td>'
+          + '<td class="right">' + fmtNum(p.current_price) + '</td>'
+          + '<td class="right ' + cls + '">' + pnlSign(pnl) + fmtNum(pnl) + '</td>'
+          + '<td class="right ' + cls + '">' + pnlSign(pnlPct) + fmtPct(pnlPct) + '</td>'
+          + '<td class="right">' + fmtNum(p.current_z, 2) + '</td>'
+          + '<td class="right">' + (p.holding_bars || '--') + '</td>'
+          + '<td class="right">' + ageH + '</td>'
+          + '<td>' + (p.status || 'open') + '</td>'
+          + '</tr>';
+      }
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
+
+    function updateClock() {
+      $('clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+    }
+
+    async function refresh() {
+      try {
+        const r = await fetch('/api/dashboard/full');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        consecutiveErrors = 0;
+
+        // Connection status
+        const connected = d.risk && d.risk.enabled;
+        const banner = $('disconnect-banner');
+        const badge = $('mode-badge');
+        const dot = $('status-dot');
+
+        if (!connected) {
+          banner.classList.add('visible');
+          badge.className = 'mode-badge disconnected';
+          dot.className = 'status-dot err';
+          $('mode-text').textContent = 'DISCONNECTED';
+        } else {
+          banner.classList.remove('visible');
+          const mode = (d.system && d.system.mode) || 'paper';
+          badge.className = 'mode-badge ' + mode;
+          $('mode-text').textContent = mode.toUpperCase();
+
+          const botStatus = d.risk.bot_status || d.status_info?.live_state_bot_status || 'running';
+          if (botStatus === 'running' || botStatus === 'RUNNING') {
+            dot.className = 'status-dot ok';
+          } else if (botStatus === 'halted' || botStatus === 'error' || botStatus === 'ERROR') {
+            dot.className = 'status-dot err';
+          } else {
+            dot.className = 'status-dot warn';
+          }
+
+          $('bot-status').textContent = botStatus.toUpperCase();
+        }
+
+        // KPIs
+        const risk = d.risk || {};
+        const perf = d.performance || {};
+        const equity = risk.current_equity || 0;
+        const initial = risk.initial_equity || 100000;
+        const pnl = equity - initial;
+        const pnlPct = initial > 0 ? (pnl / initial * 100) : 0;
+
+        $('kpi-equity').textContent = fmtMoney(equity);
+        $('kpi-equity').className = 'kpi-value accent';
+        $('kpi-equity-sub').textContent = 'initial: ' + fmtMoney(initial);
+
+        $('kpi-pnl').textContent = pnlSign(pnl) + fmtMoney(Math.abs(pnl));
+        $('kpi-pnl').className = 'kpi-value ' + pnlClass(pnl);
+        $('kpi-pnl-pct').textContent = pnlSign(pnlPct) + fmtPct(Math.abs(pnlPct));
+
+        const dd = risk.max_drawdown_pct || (perf.max_drawdown_pct) || 0;
+        $('kpi-dd').textContent = fmtPct(dd);
+        $('kpi-dd').className = 'kpi-value ' + (dd > 10 ? 'negative' : dd > 3 ? 'warn' : 'positive');
+        $('kpi-dd-sub').textContent = dd > 10 ? 'CRITICAL' : dd > 3 ? 'ELEVATED' : 'NOMINAL';
+
+        const sharpe = perf.sharpe_ratio || 0;
+        $('kpi-sharpe').textContent = fmtNum(sharpe, 3);
+        $('kpi-sharpe').className = 'kpi-value ' + (sharpe >= 1 ? 'positive' : sharpe >= 0.5 ? 'accent' : sharpe >= 0 ? 'warn' : 'negative');
+
+        $('kpi-positions').textContent = risk.positions_count || 0;
+        $('kpi-pairs').textContent = (risk.active_pairs_count || '--') + ' pairs monitored';
+
+        $('kpi-trades-today').textContent = risk.daily_trades || 0;
+        $('kpi-trades-total').textContent = 'total: ' + (risk.trades_total || perf.trades_total || 0);
+
+        const wins = risk.winning_trades || 0;
+        const losses = risk.losing_trades || 0;
+        const totalWL = wins + losses;
+        const wr = totalWL > 0 ? (wins / totalWL * 100) : 0;
+        $('kpi-winrate').textContent = totalWL > 0 ? fmtPct(wr) : '--';
+        $('kpi-winrate').className = 'kpi-value ' + (wr >= 55 ? 'positive' : wr >= 45 ? 'warn' : 'negative');
+        $('kpi-wl').textContent = wins + 'W / ' + losses + 'L';
+
+        // Tick
+        $('tick-count').textContent = risk.iteration || '--';
+
+        // Equity chart
+        renderEquityChart(d.equity_history || []);
+
+        // System
+        const sys = d.system || {};
+        $('sys-version').textContent = 'v' + (sys.version || '?');
+        $('sys-uptime').textContent = fmtDuration(sys.uptime_seconds);
+        $('sys-mem').textContent = (sys.memory_mb || '--') + ' MB';
+        $('sys-cpu').textContent = (sys.cpu_percent || '--') + '%';
+        $('sys-pid').textContent = sys.pid || '--';
+        $('sys-data').textContent = (risk.data_symbols_loaded || '--') + ' / ' + (risk.data_symbols_total || '--') + ' sym';
+        $('sys-dloss').textContent = fmtMoney(risk.daily_loss || 0);
+        $('sys-streak').textContent = risk.loss_streak || '0';
+        $('sys-update').textContent = risk.last_update ? new Date(risk.last_update).toLocaleTimeString('en-US', { hour12: false }) : '--';
+
+        // Positions
+        renderPositions(d.positions || []);
+
+        // Performance metrics
+        $('perf-source').textContent = perf.source || (connected ? 'live' : 'static');
+        $('m-return').textContent = fmtPct(perf.total_return_pct || 0);
+        $('m-return').className = 'metric-value ' + (perf.total_return_pct >= 0 ? '' : '');
+        $('m-return').style.color = (perf.total_return_pct || 0) >= 0 ? 'var(--green)' : 'var(--red)';
+        $('m-sharpe').textContent = fmtNum(perf.sharpe_ratio || 0, 3);
+        $('m-dd').textContent = fmtPct(perf.max_drawdown_pct || 0);
+        $('m-dd').style.color = 'var(--red)';
+        $('m-trades').textContent = perf.trades_total || risk.trades_total || 0;
+        $('m-wins').textContent = wins;
+        $('m-losses').textContent = losses;
+        $('m-daily').textContent = risk.daily_trades || 0;
+        $('m-points').textContent = perf.data_points || 0;
+
+        // Log
+        addLog('OK', 'Data refreshed | Equity: ' + fmtMoney(equity) + ' | Positions: ' + (risk.positions_count || 0));
+        renderLog();
+
+      } catch (e) {
+        consecutiveErrors++;
+        addLog('ERR', 'Fetch failed: ' + e.message);
+        renderLog();
+        if (consecutiveErrors >= 3) {
+          $('disconnect-banner').classList.add('visible');
+          $('status-dot').className = 'status-dot err';
+        }
+      }
+    }
+
+    // Boot
+    updateClock();
+    setInterval(updateClock, 1000);
+    refresh();
+    setInterval(refresh, POLL_MS);
+  </script>
+</body>
+</html>

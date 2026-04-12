@@ -247,6 +247,55 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
             "risk_violations": metrics.risk_violations,
         }, 200
 
+    @app.route("/api/dashboard/full", methods=["GET"])
+    @require_rate_limit
+    @log_api_call
+    def api_dashboard_full() -> tuple[dict[str, Any], int]:
+        """
+        Full dashboard snapshot for the web UI — no auth required.
+
+        Merges system, risk, positions, orders, performance, equity_history
+        and status info into a single response. This is the data source for
+        the institutional dashboard HTML page.
+        """
+        if dashboard is None:
+            return {"error": "Dashboard not initialized", "timestamp": datetime.now().isoformat()}, 503
+
+        try:
+            risk = dashboard._risk_metrics()
+            positions = dashboard._positions()
+            performance = dashboard._performance_metrics()
+            orders = dashboard._orders()
+            system = dashboard._system_status()
+            status_info = dashboard.get_status()
+
+            # Equity history: read from live state file if available
+            equity_history: list = []
+            live_state = dashboard._load_live_state()
+            if live_state:
+                equity_history = live_state.get("equity_history", [])
+                # Enrich risk metrics with data from live state
+                data_info = live_state.get("data", {})
+                risk["data_symbols_loaded"] = data_info.get("symbols_loaded", 0)
+                risk["data_symbols_total"] = data_info.get("symbols_total", 0)
+                risk["active_pairs_count"] = live_state.get("active_pairs_count", 0)
+                risk["winning_trades"] = live_state.get("metrics", {}).get("winning_trades", 0)
+                risk["losing_trades"] = live_state.get("metrics", {}).get("losing_trades", 0)
+
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "system": system,
+                "risk": risk,
+                "positions": positions,
+                "orders": orders,
+                "performance": performance,
+                "equity_history": equity_history,
+                "status_info": status_info,
+            }, 200
+        except Exception as e:
+            logger.error("dashboard_full_api_error", error=str(e))
+            return {"error": str(e), "timestamp": datetime.now().isoformat()}, 500
+
     _DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -341,11 +390,17 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
     @log_api_call
     def dashboard_ui():
         """
-        Browser-accessible live dashboard (G3-01).
+        Browser-accessible institutional monitoring dashboard (G3-01).
 
-        No auth required. Pulls live metrics from /api/public/summary
-        via JavaScript and auto-refreshes every 10 seconds.
+        No auth required. Serves the full dashboard HTML which polls
+        /api/dashboard/full via JavaScript every 5 seconds.
         """
+        from pathlib import Path as _Path
+
+        _tpl = _Path(__file__).parent / "templates" / "dashboard.html"
+        if _tpl.exists():
+            return _tpl.read_text("utf-8"), 200, {"Content-Type": "text/html; charset=utf-8"}
+        # Fallback to legacy inline template
         return render_template_string(_DASHBOARD_HTML)
 
     @app.route("/metrics", methods=["GET"])
@@ -400,6 +455,7 @@ def create_app(dashboard: DashboardGenerator | None = None) -> Flask:
                 "/dashboard",
                 "/api/public/summary",
                 "/api/dashboard",
+                "/api/dashboard/full",
                 "/api/dashboard/system",
                 "/api/dashboard/risk",
                 "/api/dashboard/positions",
