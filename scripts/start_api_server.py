@@ -36,7 +36,7 @@ def main() -> None:
     from monitoring.api import initialize_dashboard_api, run_api_server
 
     mode = os.environ.get("EDGECORE_MODE", "paper")
-    dashboard = DashboardGenerator(mode=mode)
+    dashboard = DashboardGenerator(mode=mode, enable_live_bridge=True)
     initialize_dashboard_api(dashboard)
 
     logger.info(

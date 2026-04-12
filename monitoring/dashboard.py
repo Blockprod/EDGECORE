@@ -31,6 +31,7 @@ class DashboardGenerator:
         execution_engine: BaseExecutionEngine | None = None,
         mode: str = "paper",
         enable_cache: bool = True,
+        enable_live_bridge: bool = False,
     ):
         """
         Initialize dashboard generator.
@@ -40,6 +41,7 @@ class DashboardGenerator:
             execution_engine: Execution engine for order metrics
             mode: Trading mode ('paper', 'live', 'backtest')
             enable_cache: Enable caching of dashboard data
+            enable_live_bridge: Read live state from bot IPC file when engines are None
         """
         self.risk_engine = risk_engine
         self.execution_engine = execution_engine
@@ -47,13 +49,16 @@ class DashboardGenerator:
         self.process = psutil.Process(os.getpid())
         self.enable_cache = enable_cache
         self.cache = get_dashboard_cache() if enable_cache else None
+        self.enable_live_bridge = enable_live_bridge
 
     def _load_live_state(self) -> dict[str, Any] | None:
         """Load live trading state from shared JSON file (bot IPC).
 
         Returns the parsed dict if the file exists and is fresh (< 120s),
-        otherwise None.
+        otherwise None. Only active when enable_live_bridge=True.
         """
+        if not self.enable_live_bridge:
+            return None
         try:
             if not _LIVE_STATE_PATH.exists():
                 return None

@@ -414,3 +414,12 @@
 **Ref** : `monitoring/templates/dashboard.html` — commit `d8d6249` (2026-04-12)
 
 ---
+
+## L-44 · fix: add enable_live_bridge flag to prevent test interference [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `b3d7a29` : fix: add enable_live_bridge flag to prevent test interference. Fichiers : monitoring/dashboard.py, scripts/start_api_server.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/dashboard.py`, `scripts/start_api_server.py` — commit `b3d7a29` (2026-04-12)
+
+---
