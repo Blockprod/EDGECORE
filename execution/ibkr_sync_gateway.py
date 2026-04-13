@@ -7,8 +7,8 @@ Callers that still import IBGatewaySync from execution.ibkr_engine will
 continue to work via the backward-compatibility re-export in that module.
 """
 
-import logging
 import os
+import random
 import threading
 import time
 from typing import Any
@@ -16,10 +16,14 @@ from typing import Any
 from ibapi.client import EClient
 from ibapi.contract import Contract
 from ibapi.wrapper import EWrapper
+from structlog import get_logger
 
 from common.ibkr_rate_limiter import GLOBAL_IBKR_RATE_LIMITER as _ibkr_rate_limiter
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
+# CX-03: retry delays for IBGatewaySync.connect() (seconds, with ±30% jitter)
+_SYNC_GW_RETRY_DELAYS: list[int] = [2, 5, 10]
 
 
 class IBWrapper(EWrapper):
@@ -47,29 +51,29 @@ class IBWrapper(EWrapper):
     def contractDetails(self, reqId: int, contractDetails: Any) -> None:
         with self._lock:
             self.contract_details.append(contractDetails)
-        logger.debug("[IBWrapper] contractDetails reqId=%d count=%d", reqId, len(self.contract_details))
+        logger.debug("ibw_contract_details", req_id=reqId, count=len(self.contract_details))
 
     def contractDetailsEnd(self, reqId: int) -> None:
         with self._lock:
             self.contract_details_done = True
-        logger.debug("[IBWrapper] contractDetailsEnd reqId=%d", reqId)
+        logger.debug("ibw_contract_details_end", req_id=reqId)
 
     def historicalData(self, reqId: int, bar: Any) -> None:
         with self._lock:
             self.historical_data.append(bar)
-        logger.debug("[IBWrapper] historicalData reqId=%d bars=%d", reqId, len(self.historical_data))
+        logger.debug("ibw_historical_data", req_id=reqId, bars=len(self.historical_data))
 
     def historicalDataEnd(self, reqId: int, start: str, end: str) -> None:
         with self._lock:
             self.historical_data_done = True
-        logger.debug("[IBWrapper] historicalDataEnd reqId=%d start=%s end=%s", reqId, start, end)
+        logger.debug("ibw_historical_data_end", req_id=reqId, start=start, end=end)
         self._hist_done_event.set()  # C-08: wake up get_historical_data immediately
 
     def fundamentalData(self, reqId: int, data: str) -> None:
         with self._lock:
             self.fundamental_data = data
             self.fundamental_data_done = True
-        logger.debug("[IBWrapper] fundamentalData reqId=%d bytes=%d", reqId, len(data))
+        logger.debug("ibw_fundamental_data", req_id=reqId, bytes=len(data))
 
     def tickGeneric(self, reqId: int, tickType: int, value: float) -> None:
         """A-08: Capture tick type 236 (shortable shares) from reqMktData snapshot."""
@@ -77,16 +81,16 @@ class IBWrapper(EWrapper):
             if tickType == 236:
                 self.shortable_shares = value
                 self.shortable_shares_received = True
-        logger.debug("[IBWrapper] tickGeneric reqId=%d tickType=%d value=%s", reqId, tickType, value)
+        logger.debug("ibw_tick_generic", req_id=reqId, tick_type=tickType, value=value)
 
     def error(self, reqId: int, errorCode: int, errorString: str, *args: Any) -> None:
         with self._lock:
             self.error_msg = (reqId, errorCode, errorString)
         # Error codes 2104, 2106, 2158 are informational - not real errors
         if errorCode not in (2104, 2106, 2158):
-            logger.warning("[IBWrapper] Error %d: %s (reqId=%d)", errorCode, errorString, reqId)
+            logger.warning("ibw_error", error_code=errorCode, error_string=errorString, req_id=reqId)
         if args:
-            logger.debug("[IBWrapper] error extra data reqId=%d extra=%s", reqId, args)
+            logger.debug("ibw_error_extra", req_id=reqId, extra=args)
         # C-08: unblock get_historical_data immediately on fatal data errors for the current request
         if errorCode in (162, 200, 354) and reqId == self._hist_req_id:
             self._hist_done_event.set()
@@ -127,26 +131,72 @@ class IBGatewaySync:
 
     def connect(self) -> bool:
         with self._lock:
-            if not self.connected:
+            # CX-01: validate REAL socket state, not just the internal flag
+            if self.connected and self.client.isConnected():
+                return True
+
+            # CX-05: stale flag — socket died but flag stayed True → cleanup
+            if self.connected:
+                logger.warning(
+                    "ibgw_stale_connection_detected",
+                    host=self.host,
+                    port=self.port,
+                    client_id=self.client_id,
+                )
+                try:
+                    self.client.disconnect()
+                except Exception:
+                    pass
+                self.connected = False
+                self._msg_thread = None
+                # Rebuild EClient+Wrapper so the reader thread starts fresh
+                self.wrapper = IBWrapper()
+                self.client = EClient(self.wrapper)
+
+            # CX-03: retry with backoff and jitter (3 attempts: 2s, 5s, 10s)
+            last_error: Exception | None = None
+            for attempt, base_delay in enumerate(_SYNC_GW_RETRY_DELAYS, 1):
                 try:
                     self.client.connect(self.host, self.port, self.client_id)
                     # Start the message processing loop in a background thread
-                    # Without this, EClient sends requests but never reads responses
                     self._msg_thread = threading.Thread(target=self.client.run, daemon=True)
                     self._msg_thread.start()
                     # Give the reader thread a moment to initialize
                     time.sleep(0.5)
                     self.connected = True
                     logger.info(
-                        "[IBGatewaySync] Connecte a IB Gateway %s:%d (client_id=%d)",
-                        self.host,
-                        self.port,
-                        self.client_id,
+                        "ibgw_connected",
+                        host=self.host,
+                        port=self.port,
+                        client_id=self.client_id,
+                        attempt=attempt,
                     )
+                    return True
                 except Exception as e:
-                    logger.error("[IBGatewaySync] Connexion echouee: %s", e)
-                    self.connected = False
-            return self.connected
+                    last_error = e
+                    logger.warning(
+                        "ibgw_connect_attempt_failed",
+                        attempt=attempt,
+                        max_attempts=len(_SYNC_GW_RETRY_DELAYS),
+                        host=self.host,
+                        port=self.port,
+                        error=str(e)[:120],
+                    )
+                    # Rebuild EClient for a clean retry (ibapi rejects reconnect on same instance)
+                    self.wrapper = IBWrapper()
+                    self.client = EClient(self.wrapper)
+                    if attempt < len(_SYNC_GW_RETRY_DELAYS):
+                        jitter = random.uniform(0, base_delay * 0.3)
+                        time.sleep(base_delay + jitter)
+
+            logger.error(
+                "ibgw_connect_failed_all_retries",
+                host=self.host,
+                port=self.port,
+                error=str(last_error)[:120] if last_error else "unknown",
+            )
+            self.connected = False
+            return False
 
     def disconnect(self) -> None:
         with self._lock:
@@ -154,7 +204,7 @@ class IBGatewaySync:
                 self.client.disconnect()
                 self.connected = False
                 self._msg_thread = None
-                logger.info("[IBGatewaySync] Deconnecte.")
+                logger.info("ibgw_disconnected", host=self.host, port=self.port)
 
     def is_connected(self) -> bool:
         return self.connected
@@ -329,9 +379,9 @@ class IBGatewaySync:
                 break
             if err and err[1] in (162, 200, 354, 430):
                 logger.warning(
-                    "[IBGatewaySync] Fundamental data unavailable for %s: %s",
-                    symbol,
-                    err[2],
+                    "ibgw_fundamental_data_unavailable",
+                    symbol=symbol,
+                    error=err[2],
                 )
                 break
             time.sleep(0.1)

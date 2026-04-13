@@ -37,8 +37,8 @@ class IBKRExecutionEngine(BaseExecutionEngine):
     Interactive Brokers execution via ib_insync.
 
     Requires TWS / IB Gateway running:
-      - Paper trading: port 7497
-      - Live trading:  port 7496
+      - Paper trading: port 4002 (Gateway) / 7497 (TWS)
+      - Live trading:  port 4001 (Gateway) / 7496 (TWS)
     """
 
     # Path for persisting order_id ��� IB permId mapping (crash recovery)
@@ -57,7 +57,7 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         timeout: int = 30,
     ):
         self.host = host or os.getenv("IBKR_HOST", "127.0.0.1")
-        self.port = port or int(os.getenv("IBKR_PORT", "7497"))
+        self.port = port or int(os.getenv("IBKR_PORT", "4002"))
         self.client_id = client_id if client_id is not None else int(os.getenv("IBKR_CLIENT_ID", "1"))
         self.readonly = readonly
         self.timeout = timeout
@@ -221,6 +221,16 @@ class IBKRExecutionEngine(BaseExecutionEngine):
 
     def _on_disconnect(self) -> None:
         """Callback fired when IBKR connection drops."""
+        stale_orders = list(self._order_map.keys())
+        if stale_orders:
+            self._pending_confirm_orders.update(stale_orders)
+            self._order_map.clear()
+            self._save_order_map()
+            logger.warning(
+                "ibkr_disconnect_order_map_invalidated",
+                stale_count=len(stale_orders),
+                moved_to_pending=stale_orders[:10],
+            )
         logger.warning("ibkr_disconnected_event", host=self.host, port=self.port)
         self._ib = None  # force reconnect on next call
 
@@ -524,6 +534,7 @@ class IBKRExecutionEngine(BaseExecutionEngine):
         from ib_insync import Stock
 
         contract = Stock(symbol, "SMART", "USD")
+        _ibkr_rate_limiter.acquire()
         bars = self._ib.reqHistoricalData(
             contract,
             endDateTime="",

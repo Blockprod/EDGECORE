@@ -59,13 +59,17 @@ def load_price_data(
     _cache_dir.mkdir(parents=True, exist_ok=True)
 
     ibkr_ok = True
+    _acquired_cid: int | None = None
     try:
-        engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id(), timeout=30)
+        _acquired_cid = _next_client_id()
+        engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_acquired_cid, timeout=30)
         engine.connect()
     except Exception as exc:
         logger.warning("load_price_data_ibkr_connect_failed", error=str(exc)[:120])
         ibkr_ok = False
         engine = None
+        if _acquired_cid is not None:
+            _release_client_id(_acquired_cid)
 
     frames: dict[str, pd.Series] = {}
     try:
@@ -138,6 +142,8 @@ def load_price_data(
                 engine.disconnect()
             except Exception:
                 pass
+            if _acquired_cid is not None:
+                _release_client_id(_acquired_cid)
 
     if not frames:
         raise DataUnavailableError(
@@ -150,16 +156,34 @@ def load_price_data(
 
 # Fixed pool of IBKR client IDs for data workers (cycles, never grows unbounded)
 _IBKR_CLIENT_ID_POOL = list(range(2001, 2009))  # 2001���2008
-_ibkr_client_id_index = 0
+# CX-08: track active IDs to prevent Error 326 "clientId already in use"
+_active_data_client_ids: set[int] = set()
 _ibkr_client_id_lock = threading.Lock()
+_ibkr_client_id_available = threading.Condition(_ibkr_client_id_lock)
 
 
 def _next_client_id() -> int:
-    global _ibkr_client_id_index
-    with _ibkr_client_id_lock:
-        client_id = _IBKR_CLIENT_ID_POOL[_ibkr_client_id_index % len(_IBKR_CLIENT_ID_POOL)]
-        _ibkr_client_id_index += 1
-        return client_id
+    """Acquire a client ID from the pool, blocking if all are in use.
+
+    CX-08: Replaces the blind round-robin which could hand out the same ID
+    to two concurrent threads before the first disconnected.
+    """
+    with _ibkr_client_id_available:
+        while True:
+            for cid in _IBKR_CLIENT_ID_POOL:
+                if cid not in _active_data_client_ids:
+                    _active_data_client_ids.add(cid)
+                    return cid
+            # All 8 IDs in use — wait for one to be released
+            logger.warning("ibkr_client_id_pool_exhausted", active=len(_active_data_client_ids))
+            _ibkr_client_id_available.wait(timeout=30)
+
+
+def _release_client_id(client_id: int) -> None:
+    """Return a client ID to the pool so other threads can use it."""
+    with _ibkr_client_id_available:
+        _active_data_client_ids.discard(client_id)
+        _ibkr_client_id_available.notify()
 
 
 class DataLoader:
@@ -233,7 +257,8 @@ class DataLoader:
                 else:
                     duration = f"{max(1, limit * 60)} S"
 
-            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id())
+            _cid = _next_client_id()
+            engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_cid)
             engine.connect()
             try:
                 bars = engine.get_historical_data(
@@ -255,6 +280,7 @@ class DataLoader:
                     df.index.name = "date"
             finally:
                 engine.disconnect()
+                _release_client_id(_cid)
 
             if df is None or df.empty:
                 raise RuntimeError(f"No data returned from IBKR for {symbol}")
@@ -336,7 +362,8 @@ class DataLoader:
             else:
                 duration = f"{max(1, limit * 60)} S"
 
-        engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_next_client_id())
+        _cid = _next_client_id()
+        engine = IBGatewaySync(host="127.0.0.1", port=4002, client_id=_cid)
         engine.connect()
         results: dict[str, pd.DataFrame] = {}
         try:
@@ -374,6 +401,7 @@ class DataLoader:
                     logger.error("ibkr_batch_symbol_failed", symbol=symbol, error=str(exc)[:120])
         finally:
             engine.disconnect()
+            _release_client_id(_cid)
 
         return results
 
