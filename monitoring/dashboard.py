@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
@@ -50,28 +51,43 @@ class DashboardGenerator:
         self.enable_cache = enable_cache
         self.cache = get_dashboard_cache() if enable_cache else None
         self.enable_live_bridge = enable_live_bridge
+        # 1-second memoization: avoids re-reading the IPC file on every sub-method call
+        self._live_state_cache_ts: float = 0.0
+        self._live_state_cache_val: dict[str, Any] | None = None
 
     def _load_live_state(self) -> dict[str, Any] | None:
         """Load live trading state from shared JSON file (bot IPC).
 
         Returns the parsed dict if the file exists and is fresh (< 120s),
         otherwise None. Only active when enable_live_bridge=True.
+        Memoized for 1 second to avoid redundant reads/logs within a single request.
         """
         if not self.enable_live_bridge:
             return None
+        # Return memoized result if called within the last second
+        if time.monotonic() - self._live_state_cache_ts < 1.0:
+            return self._live_state_cache_val
         try:
             if not _LIVE_STATE_PATH.exists():
+                self._live_state_cache_ts = time.monotonic()
+                self._live_state_cache_val = None
                 return None
             # Stale guard: ignore state older than 120 seconds
             age = datetime.now().timestamp() - _LIVE_STATE_PATH.stat().st_mtime
             if age > 120:
                 logger.debug("live_state_stale", age_seconds=round(age, 1))
+                self._live_state_cache_ts = time.monotonic()
+                self._live_state_cache_val = None
                 return None
             raw = _LIVE_STATE_PATH.read_text("utf-8")
             state: dict[str, Any] = json.loads(raw)
+            self._live_state_cache_ts = time.monotonic()
+            self._live_state_cache_val = state
             return state
         except Exception as exc:
             logger.debug("live_state_load_failed", error=str(exc)[:100])
+            self._live_state_cache_ts = time.monotonic()
+            self._live_state_cache_val = None
             return None
 
     def generate_dashboard(self, bypass_cache: bool = False) -> dict[str, Any]:

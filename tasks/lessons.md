@@ -432,3 +432,12 @@
 **Ref** : `live_trading/runner.py` — commit `320cc5d` (2026-04-13)
 
 ---
+
+## L-46 · fix(dashboard): memoize _load_live_state 1s to prevent 6x log spam per request [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `bbf686a` : fix(dashboard): memoize _load_live_state 1s to prevent 6x log spam per request. Fichiers : monitoring/dashboard.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/dashboard.py` — commit `bbf686a` (2026-04-13)
+
+---
