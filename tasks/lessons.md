@@ -423,3 +423,12 @@
 **Ref** : `monitoring/dashboard.py`, `scripts/start_api_server.py` — commit `b3d7a29` (2026-04-12)
 
 ---
+
+## L-45 · fix(runner): resolve Pylance reportOptionalMemberAccess on reconcile_pending_confirm [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `320cc5d` : fix(runner): resolve Pylance reportOptionalMemberAccess on reconcile_pending_confirm. Fichiers : live_trading/runner.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `live_trading/runner.py` — commit `320cc5d` (2026-04-13)
+
+---

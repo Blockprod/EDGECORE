@@ -448,8 +448,9 @@ class LiveTradingRunner:
             logger.warning("audit_trail_recovery_failed", error=str(exc)[:200])
         # CX-17: Reconcile orders whose permId timed out on a previous run
         try:
-            if self._router and getattr(self._router, "_ibkr_engine", None):
-                resolved = self._router._ibkr_engine.reconcile_pending_confirm()
+            _ibkr_engine = getattr(self._router, "_ibkr_engine", None) if self._router else None
+            if _ibkr_engine is not None:
+                resolved = _ibkr_engine.reconcile_pending_confirm()
                 if resolved:
                     logger.info("startup_pending_confirm_resolved", count=resolved)
         except Exception as exc:
