@@ -543,9 +543,9 @@ class TestDoLoginFill:
         with patch("execution.gw_manager._find_gateway_hwnd", return_value=0x1234):
             result = _do_login_fill("myuser", "mypass", mock_w32gui, mock_kb, mock_mouse)
         assert result is True
-        # 3 clicks: username field, password field, login button
-        assert mock_mouse.click.call_count == 3
-        # 4 keyboard calls: ^a + text for each field
+        # 7 clicks: triple-click username (3) + triple-click password (3) + login button (1)
+        assert mock_mouse.click.call_count == 7
+        # keyboard calls: TAB + text for each field
         assert mock_kb.send_keys.call_count >= 4
 
     def test_focus_error_returns_false(self) -> None:

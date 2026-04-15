@@ -459,3 +459,12 @@
 **Ref** : `monitoring/rich_dashboard.py`, `scripts/run_v68_wf3.py` — commit `80fd5ce` (2026-04-15)
 
 ---
+
+## L-49 · fix(test): update click_count assertion to 7 (triple-click per field) [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `720d53a` : fix(test): update click_count assertion to 7 (triple-click per field). Fichiers : tests/execution/test_gw_manager_health.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `tests/execution/test_gw_manager_health.py` — commit `720d53a` (2026-04-15)
+
+---
