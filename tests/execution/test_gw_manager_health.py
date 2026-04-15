@@ -545,8 +545,9 @@ class TestDoLoginFill:
         assert result is True
         # 7 clicks: triple-click username (3) + triple-click password (3) + login button (1)
         assert mock_mouse.click.call_count == 7
-        # keyboard calls: TAB + text for each field
-        assert mock_kb.send_keys.call_count >= 4
+        # 3 keyboard calls: username text + {TAB} + password text
+        # (triple-click replaced Ctrl+A, so no extra ^a calls)
+        assert mock_kb.send_keys.call_count >= 3
 
     def test_focus_error_returns_false(self) -> None:
         mock_w32gui, mock_kb, mock_mouse = self._make_mocks()
