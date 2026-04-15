@@ -20,7 +20,6 @@ from typing import Any
 
 from rich import box
 from rich.align import Align
-from rich.columns import Columns
 from rich.console import Group
 from rich.padding import Padding
 from rich.panel import Panel

@@ -450,3 +450,12 @@
 **Ref** : `execution/gw_manager.py`, `live_trading/runner.py`, `monitoring/rich_dashboard.py` — commit `f3544fb` (2026-04-15)
 
 ---
+
+## L-48 · fix: ruff F401 F541 - remove unused Columns import and spurious f-prefixes [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `80fd5ce` : fix: ruff F401 F541 - remove unused Columns import and spurious f-prefixes. Fichiers : monitoring/rich_dashboard.py, scripts/run_v68_wf3.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `monitoring/rich_dashboard.py`, `scripts/run_v68_wf3.py` — commit `80fd5ce` (2026-04-15)
+
+---
