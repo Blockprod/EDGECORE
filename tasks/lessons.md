@@ -441,3 +441,12 @@
 **Ref** : `monitoring/dashboard.py` — commit `bbf686a` (2026-04-13)
 
 ---
+
+## L-47 · feat: backtest optimization campaign v63-v70 + paper.yaml allocation 20%->15% [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `f3544fb` : feat: backtest optimization campaign v63-v70 + paper.yaml allocation 20%->15%. Fichiers : execution/gw_manager.py, live_trading/runner.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `execution/gw_manager.py`, `live_trading/runner.py`, `monitoring/rich_dashboard.py` — commit `f3544fb` (2026-04-15)
+
+---

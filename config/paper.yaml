@@ -44,7 +44,7 @@ trading:
   max_loop_iterations: 999999       # Run indefinitely in paper mode
   max_consecutive_errors: 10
   data_max_age_hours: 4.0           # Accept up to 4h stale data in paper
-  max_allocation_pct: 0.20          # 20% per pair
+  max_allocation_pct: 0.15          # 15% per pair — réduit après analyse robustesse 2025
   equity_tolerance_pct: 0.01
   reconciliation_divergence_pct: 0.10
   fallback_spread_vol: 0.02

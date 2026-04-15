@@ -1360,6 +1360,7 @@ class LiveTradingRunner:
             from strategies.pair_trading import PairTradingStrategy
 
             strategy = PairTradingStrategy()
+            strategy.sector_map = getattr(self.config, "sector_map", None)
             settings = get_settings()
             lookback = getattr(settings.strategy, "lookback_window", 120)
             pairs = strategy.find_cointegrated_pairs(market_data, lookback)

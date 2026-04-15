@@ -377,9 +377,10 @@ def main() -> int:
                         len(runner._positions),
                     )
 
-                    # ÔöÇÔöÇ Countdown ÔÇö poll stop event every 0.1 s ÔöÇÔöÇÔöÇÔöÇÔöÇ
+                    # ── Countdown — poll stop event every 0.1 s ─────
                     remaining = interval
                     last_render = 0.0
+                    last_state_write = 0.0
                     while remaining >= 0 and not _stop_event.is_set():
                         now_t = time.monotonic()
                         if now_t - last_render >= 1.0:
@@ -398,6 +399,13 @@ def main() -> int:
                             live.refresh()
                             last_render = now_t
                             remaining -= 1
+                        # Keep IPC file fresh for web dashboard (every 30s)
+                        if now_t - last_state_write >= 30.0:
+                            try:
+                                runner._write_dashboard_state()
+                            except Exception:
+                                pass  # non-critical
+                            last_state_write = now_t
                         time.sleep(0.1)
 
                 # ÔöÇÔöÇ STOPPED state: shown for 2 s then terminal restored ÔöÇÔöÇ
