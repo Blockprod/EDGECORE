@@ -39,6 +39,7 @@ import os
 import pathlib
 import socket
 import subprocess
+import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Protocol, cast
 
@@ -77,6 +78,13 @@ _LOGIN_SUBMIT_COOLDOWN_SECONDS: float = 90.0
 # Windows-only process creation flags (defined as int literals for cross-platform pyright compat).
 _DETACHED_PROCESS: int = 0x00000008  # DETACHED_PROCESS
 _CREATE_NEW_PROCESS_GROUP: int = 0x00000200  # CREATE_NEW_PROCESS_GROUP
+
+# Shared mutex file that prevents concurrent gateway launches by multiple projects
+# (e.g. EDGECORE_V1 and AlphaEdge starting simultaneously).  Whichever process
+# successfully creates the file wins; the other sees the file already present and
+# falls through to the "already running" path.
+_GW_LAUNCH_MUTEX_PATH = pathlib.Path(r"C:\Jts\ibgateway\.launch.lock")
+_GW_LAUNCH_MUTEX_TTL_SECONDS: float = 30.0  # stale-lock guard
 
 
 # ------------------------------------------------------------------
@@ -164,9 +172,7 @@ async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
             note="gateway may be restarting",
         )
 
-    has_credentials = bool(
-        getattr(config, "username", "") and getattr(config, "password", "")
-    )
+    has_credentials = bool(getattr(config, "username", "") and getattr(config, "password", ""))
 
     # Auto-launch or wait for external startup
     launched = False
@@ -188,9 +194,7 @@ async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
         )
 
     if has_credentials:
-        logger.info(
-            "edgecore_gw_credentials_configured", note="will auto-fill login form"
-        )
+        logger.info("edgecore_gw_credentials_configured", note="will auto-fill login form")
     else:
         logger.info(
             "edgecore_gw_no_credentials",
@@ -198,11 +202,7 @@ async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
         )
 
     # More retries after a fresh launch (gateway needs time to start Java + auth)
-    max_retries = (
-        _STARTUP_TIMEOUT_SECONDS // _HEALTH_RETRY_DELAY_SECONDS
-        if launched
-        else _HEALTH_RETRIES
-    )
+    max_retries = _STARTUP_TIMEOUT_SECONDS // _HEALTH_RETRY_DELAY_SECONDS if launched else _HEALTH_RETRIES
 
     # Poll until API becomes reachable
     for attempt in range(1, max_retries + 1):
@@ -263,6 +263,36 @@ def _start_gateway_process(gateway_path: str) -> bool:
         logger.error("edgecore_gw_executable_not_found", path=str(exe))
         return False
 
+    # Cross-project mutex: prevent EDGECORE and AlphaEdge from both launching
+    # ibgateway.exe when they start at the same moment (race window ≈ tasklist
+    # latency).  We use an exclusive O_CREAT|O_EXCL open so only one process
+    # wins.  The lock file is cleaned up by the winner after the process starts.
+    # A stale lock (older than TTL) is removed and retried.
+    lock = _GW_LAUNCH_MUTEX_PATH
+    try:
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        if lock.exists():
+            age = time.time() - lock.stat().st_mtime
+            if age < _GW_LAUNCH_MUTEX_TTL_SECONDS:
+                logger.info(
+                    "edgecore_gw_launch_deferred",
+                    reason="another process is already launching gateway",
+                    lock_age_s=round(age, 1),
+                )
+                return False  # let the other project's launch complete
+            lock.unlink(missing_ok=True)  # stale lock — remove and proceed
+        # Exclusive create: raises FileExistsError if another process beats us
+        lock.touch(exist_ok=False)
+    except FileExistsError:
+        logger.info(
+            "edgecore_gw_launch_deferred",
+            reason="concurrent launch detected via mutex",
+        )
+        return False
+    except OSError as exc:
+        logger.warning("edgecore_gw_mutex_unavailable", error=str(exc))
+        # Proceed without mutex rather than aborting entirely
+
     try:
         subprocess.Popen(
             [str(exe)],
@@ -275,6 +305,8 @@ def _start_gateway_process(gateway_path: str) -> bool:
     except OSError as exc:
         logger.error("edgecore_gw_launch_failed", error=str(exc))
         return False
+    finally:
+        lock.unlink(missing_ok=True)
 
 
 def _try_enable_java_access_bridge(gateway_dir: pathlib.Path) -> None:
