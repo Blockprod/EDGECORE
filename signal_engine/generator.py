@@ -133,6 +133,9 @@ class SignalGenerator:
         self._spread_models: dict[str, SpreadModel] = {}
         self._spreads: dict[str, pd.Series] = {}
         self._break_detectors: dict[str, StructuralBreakDetector] = {}
+        # P2-01: cooldown counter per pair after structural break detection.
+        # Key = pair_key, value = remaining bars to suppress signals.
+        self._break_cooldown: dict[str, int] = {}
         self._current_disp_idx: float | None = None  # C-09: latest dispersion index
 
     # ------------------------------------------------------------------
@@ -274,6 +277,25 @@ class SignalGenerator:
             self._break_detectors[pair_key] = StructuralBreakDetector()
         has_break, break_details = self._break_detectors[pair_key].check(residuals=spread, y=y, x=x)
         if has_break:
+            # P2-01: start/reset cooldown on confirmed break
+            try:
+                from config.settings import get_settings as _gs_sb
+
+                _cooldown_bars = _gs_sb().strategy.structural_break_cooldown_bars
+            except Exception:
+                _cooldown_bars = 10
+            _both_criteria = break_details.get("cusum_break") and break_details.get("beta_break")
+            self._break_cooldown[pair_key] = _cooldown_bars
+            # P2-03: log pair suspension
+            logger.warning(
+                "pair_suspended",
+                pair=pair_key,
+                reason="structural_break",
+                cusum_break=break_details.get("cusum_break"),
+                beta_break=break_details.get("beta_break"),
+                cooldown_bars=_cooldown_bars,
+                both_criteria=_both_criteria,
+            )
             if pair_key in active_positions:
                 return Signal(
                     pair_key=pair_key,
@@ -285,6 +307,15 @@ class SignalGenerator:
                         f"beta={break_details.get('beta_break')})"
                     ),
                 )
+            return None
+        # P2-01: decrement cooldown — block entry signals during cooldown period
+        if pair_key in self._break_cooldown and self._break_cooldown[pair_key] > 0:
+            self._break_cooldown[pair_key] -= 1
+            logger.info(
+                "pair_in_cooldown",
+                pair=pair_key,
+                bars_remaining=self._break_cooldown[pair_key],
+            )
             return None
         # 4. Z-score
         z_series = self.zscore_calc.compute(spread, half_life=half_life)

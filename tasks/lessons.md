@@ -468,3 +468,12 @@
 **Ref** : `tests/execution/test_gw_manager_health.py` — commit `720d53a` (2026-04-15)
 
 ---
+
+## L-50 · fix(staleness+break+encoding): data freshness guard, structural break cooldown, UTF-8 logs [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `d859af1` : fix(staleness+break+encoding): data freshness guard, structural break cooldown, UTF-8 logs. Fichiers : config/settings.py, live_trading/runner.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `config/settings.py`, `live_trading/runner.py`, `monitoring/logging_config.py` — commit `d859af1` (2026-04-16)
+
+---

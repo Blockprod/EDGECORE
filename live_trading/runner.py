@@ -682,6 +682,37 @@ class LiveTradingRunner:
             logger.warning("live_trading_no_market_data", iteration=self._iteration)
             return
 
+        # P1-01/P1-02: Staleness guard — block signal generation if all active-pair
+        # symbols have data older than trading.data_max_age_hours (4h paper, 2h prod).
+        # Stops are still processed so open positions can be protected.
+        _max_lag_h: float = getattr(self.config, "data_max_age_hours", 99999.0)
+        _max_lag_td = timedelta(hours=_max_lag_h)
+        _now_utc = datetime.now(UTC)
+        _active_syms = {s for p in self._active_pairs for s in (p[0], p[1])} if self._active_pairs else set()
+        _stale_syms: list[str] = []
+        for _sym in _active_syms:
+            if _sym not in market_data.columns:
+                continue
+            _col = market_data[_sym].dropna()
+            if _col.empty:
+                _stale_syms.append(_sym)
+                continue
+            _last_ts = cast(pd.Timestamp, pd.Timestamp(str(_col.index[-1])))
+            if _last_ts.tzinfo is None:
+                _last_ts = _last_ts.tz_localize("UTC")
+            if (_now_utc - _last_ts) > _max_lag_td:
+                _stale_syms.append(_sym)
+        if _stale_syms and len(_stale_syms) == len(_active_syms):
+            logger.critical(
+                "live_trading_all_data_stale_signals_blocked",
+                stale_symbols=sorted(_stale_syms),
+                max_lag_hours=_max_lag_h,
+                iteration=self._iteration,
+            )
+            self._step_process_stops(market_data)
+            self._write_dashboard_state()
+            return
+
         self._step_process_stops(market_data)
 
         # 3. Generate signals for active pairs

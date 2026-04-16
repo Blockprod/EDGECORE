@@ -144,6 +144,11 @@ def setup_logging(
 
     # Console handler
     console_handler = logging.StreamHandler()
+    # P3-02: force UTF-8 encoding on Windows to prevent cp1252 mangling of │
+    import io as _io
+
+    if isinstance(console_handler.stream, _io.TextIOWrapper):
+        console_handler.stream.reconfigure(encoding="utf-8")
     console_handler.setLevel(console_level)
     console_handler.addFilter(context_filter)
 

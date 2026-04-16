@@ -53,7 +53,13 @@ log_file = LOG_DIR / f"edgecore_paper_{datetime.now():%Y%m%d}.log"
 # In single-tick mode: file + console logging
 _handlers: list[logging.Handler] = [logging.FileHandler(log_file, encoding="utf-8")]
 if not CONTINUOUS_MODE:
-    _handlers.append(logging.StreamHandler(sys.stdout))
+    _stream_handler = logging.StreamHandler(sys.stdout)
+    # P3-02: force UTF-8 on Windows (default cp1252 mangles │ → Ã"Ã‡Ã¶)
+    import io as _io
+
+    if isinstance(_stream_handler.stream, _io.TextIOWrapper):
+        _stream_handler.stream.reconfigure(encoding="utf-8")
+    _handlers.append(_stream_handler)
 
 logging.basicConfig(
     level=logging.INFO,
