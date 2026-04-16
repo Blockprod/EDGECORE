@@ -708,7 +708,6 @@ class LiveTradingRunner:
     def _write_dashboard_state(self) -> None:
         """Write current state snapshot to JSON for the web dashboard process."""
         import json
-        import tempfile
 
         try:
             with self._positions_lock:
@@ -751,14 +750,16 @@ class LiveTradingRunner:
             state_path = Path("data/dashboard_state.json")
             state_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Atomic write: tmp file + rename to avoid partial reads
-            fd, tmp_path = tempfile.mkstemp(dir=str(state_path.parent), suffix=".tmp", prefix="dashboard_")
+            # Atomic write: write to .tmp then rename to avoid partial reads.
+            # Use open() instead of mkstemp() so the file inherits standard
+            # OS permissions — mkstemp on Windows can produce files with
+            # restrictive ACLs that cause PermissionError on the reader side.
+            tmp_path = str(state_path.parent / "dashboard_.tmp")
             try:
-                with os.fdopen(fd, "w") as f:
+                with open(tmp_path, "w", encoding="utf-8") as f:
                     json.dump(state, f)
                 os.replace(tmp_path, str(state_path))
             except BaseException:
-                # Clean up temp file on failure
                 try:
                     os.unlink(tmp_path)
                 except OSError:

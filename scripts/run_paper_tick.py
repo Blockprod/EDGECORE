@@ -300,6 +300,9 @@ def main() -> int:
         )
         log.info("Initializing modules...")
         runner._initialize()
+        from live_trading.runner import TradingState
+
+        runner._state = TradingState.RUNNING
         log.info("Modules initialized OK")
 
         # ÔöÇÔöÇ 3. Execute tick(s) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
