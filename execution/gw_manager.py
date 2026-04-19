@@ -145,15 +145,11 @@ def _is_weekend() -> bool:
     return datetime.now(_PARIS_TZ).weekday() >= 5
 
 
-async def ensure_gateway_ready(
-    config: ExecutionConfig,
-    *,
-    skip_weekend_guard: bool = False,
-) -> bool:
+async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
     """Ensure IB Gateway is running and the API is reachable.
 
     Returns False immediately on weekends (market closed, no gateway
-    needed) unless *skip_weekend_guard* is True (e.g. paper/test mode).
+    needed).
 
     Strategy:
     1. If port open + API responds → return True immediately.
@@ -176,8 +172,7 @@ async def ensure_gateway_ready(
         True if gateway is healthy and API is reachable.
     """
     # Weekend guard — market closed Sat & Sun, do not launch gateway
-    # (bypassed for paper/test mode via skip_weekend_guard=True)
-    if not skip_weekend_guard and _is_weekend():
+    if _is_weekend():
         logger.info(
             "edgecore_gw_weekend_skip",
             note="market closed, skipping gateway launch",

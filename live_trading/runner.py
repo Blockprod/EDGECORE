@@ -293,18 +293,18 @@ class LiveTradingRunner:
 
         # Ensure IB Gateway is running and authenticated before initialising
         # any module that requires a broker connection.
-        from config.settings import get_settings as _get_settings
-        from execution.gw_manager import ensure_gateway_ready
-
-        _exec_cfg = _get_settings().execution
+        # Paper mode uses simulated fills — no broker connection needed.
         _paper_mode = getattr(self.config, "mode", "live") == "paper"
-        if not asyncio.get_event_loop().run_until_complete(
-            ensure_gateway_ready(_exec_cfg, skip_weekend_guard=_paper_mode)
-        ):
-            raise RuntimeError(
-                "IB Gateway is not reachable — check gateway_path / credentials in .env "
-                "and ensure IB Gateway is running."
-            )
+        if not _paper_mode:
+            from config.settings import get_settings as _get_settings
+            from execution.gw_manager import ensure_gateway_ready
+
+            _exec_cfg = _get_settings().execution
+            if not asyncio.get_event_loop().run_until_complete(ensure_gateway_ready(_exec_cfg)):
+                raise RuntimeError(
+                    "IB Gateway is not reachable — check gateway_path / credentials in .env "
+                    "and ensure IB Gateway is running."
+                )
 
         from config.settings import get_settings
         from execution.partial_profit import PartialProfitManager
