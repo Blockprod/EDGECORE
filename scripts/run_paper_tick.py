@@ -304,6 +304,20 @@ def main() -> int:
             email_alerter=email_alerter,
             slack_alerter=slack_alerter,
         )
+
+        # Weekend guard — friendly message instead of RuntimeError
+        from execution.gw_manager import _is_weekend
+
+        if _is_weekend():
+            msg = (
+                "Marché fermé (week-end heure de Paris).\n"
+                "IB Gateway ne sera pas lancé.\n"
+                "Le bot ne peut fonctionner que du lundi au vendredi."
+            )
+            log.info(msg)
+            _rich_console.print(f"[bold yellow]\n{msg}[/bold yellow]")
+            return 0
+
         log.info("Initializing modules...")
         runner._initialize()
         from live_trading.runner import TradingState

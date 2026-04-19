@@ -300,6 +300,13 @@ class LiveTradingRunner:
 
         _exec_cfg = _get_settings().execution
         if not asyncio.get_event_loop().run_until_complete(ensure_gateway_ready(_exec_cfg)):
+            from execution.gw_manager import _is_weekend
+
+            if _is_weekend():
+                raise RuntimeError(
+                    "Marché fermé (week-end heure de Paris) — IB Gateway non lancé. "
+                    "Le bot ne peut fonctionner que du lundi au vendredi."
+                )
             raise RuntimeError(
                 "IB Gateway is not reachable — check gateway_path / credentials in .env "
                 "and ensure IB Gateway is running."
