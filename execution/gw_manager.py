@@ -525,13 +525,14 @@ def _find_gateway_hwnd(win32gui: _Win32Gui) -> int:
     import re
 
     pattern = re.compile(_GW_WINDOW_TITLE_RE, re.IGNORECASE)
-    found = [0]
+    result_hwnd = 0
 
     def _cb(hwnd: int, _: object) -> bool:
+        nonlocal result_hwnd
         if win32gui.IsWindowVisible(hwnd):
             title: str = win32gui.GetWindowText(hwnd)
             if pattern.search(title):
-                found[0] = hwnd
+                result_hwnd = hwnd
                 return False  # stop enumeration
         return True
 
@@ -540,7 +541,7 @@ def _find_gateway_hwnd(win32gui: _Win32Gui) -> int:
     except Exception:
         pass
 
-    return found[0]
+    return result_hwnd
 
 
 def _escape_sendkeys(text: str) -> str:

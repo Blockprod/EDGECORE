@@ -63,7 +63,7 @@ if not CONTINUOUS_MODE:
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s ÔÇö %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
     handlers=_handlers,
 )
 log = logging.getLogger("edgecore.paper")
@@ -309,14 +309,26 @@ def main() -> int:
         from execution.gw_manager import _is_weekend
 
         if _is_weekend():
-            msg = (
-                "Marché fermé (week-end heure de Paris).\n"
-                "IB Gateway ne sera pas lancé.\n"
-                "Le bot ne peut fonctionner que du lundi au vendredi."
-            )
-            log.info(msg)
-            _rich_console.print(f"[bold yellow]\n{msg}[/bold yellow]")
-            return 0
+            if not CONTINUOUS_MODE:
+                # Single-tick mode: exit cleanly (Task Scheduler runs daily)
+                msg = (
+                    "Marché fermé (week-end heure de Paris).\n"
+                    "IB Gateway ne sera pas lancé.\n"
+                    "Le bot ne peut fonctionner que du lundi au vendredi."
+                )
+                log.info(msg)
+                _rich_console.print(f"[bold yellow]\n{msg}[/bold yellow]")
+                return 0
+
+            # Continuous mode: wait for Monday
+            import time as _time
+
+            _rich_console.print("[bold yellow]\n⏸  Marché fermé (week-end). En attente du lundi...[/bold yellow]")
+            log.info("Weekend detected — continuous mode, waiting for Monday")
+            while _is_weekend():
+                _time.sleep(60)
+            _rich_console.print("[bold green]✓  Lundi détecté — démarrage...[/bold green]")
+            log.info("Weekday detected — proceeding with initialization")
 
         log.info("Initializing modules...")
         runner._initialize()
@@ -373,6 +385,43 @@ def main() -> int:
                 transient=False,
             ) as live:
                 while not _stop_event.is_set():
+                    # Weekend guard — pause until Monday, then re-initialize
+                    if _is_weekend():
+                        log.info("Weekend started — pausing until Monday")
+                        while _is_weekend() and not _stop_event.is_set():
+                            live.update(
+                                build_dashboard(
+                                    runner,
+                                    tick_count=tick_count,
+                                    tick_elapsed=tick_elapsed,
+                                    start_time=start,
+                                    interval=interval,
+                                    status="WEEKEND",
+                                    sector_map=SECTOR_MAP,
+                                )
+                            )
+                            live.refresh()
+                            time.sleep(60)
+                        if _stop_event.is_set():
+                            break
+                        # Monday — re-initialize IB Gateway connection
+                        log.info("Monday — re-initializing IB Gateway connection...")
+                        live.update(
+                            build_dashboard(
+                                runner,
+                                tick_count=tick_count,
+                                tick_elapsed=tick_elapsed,
+                                start_time=start,
+                                interval=interval,
+                                status="INITIALIZING",
+                                sector_map=SECTOR_MAP,
+                            )
+                        )
+                        live.refresh()
+                        runner._initialize()
+                        runner._state = TradingState.RUNNING
+                        log.info("Modules re-initialized OK")
+
                     tick_count += 1
                     tick_start = datetime.now()
                     log.info("Tick #%d starting at %s", tick_count, tick_start.isoformat())

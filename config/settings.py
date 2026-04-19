@@ -361,7 +361,7 @@ class Settings:
             return
 
         # Support multiple environment variable names: EDGECORE_ENV, ENVIRONMENT, ENV
-        self.env = (os.getenv("EDGECORE_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or "dev").lower()
+        self.env = (os.getenv("EDGECORE_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or "dev").strip().lower()
 
         # Validate environment
         valid_envs = ["dev", "test", "prod"]

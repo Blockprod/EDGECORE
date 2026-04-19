@@ -115,7 +115,7 @@ echo.
 echo == Dernieres lignes de log ====================================
 for /f "delims=" %%F in ('dir /b /o-d "%LOG_DIR%\*.log" 2^>nul') do (
     echo [Fichier: %%F]
-    powershell -Command "Get-Content '%LOG_DIR%\%%F' -Tail 40 -ErrorAction SilentlyContinue"
+    powershell -Command "Get-Content '%LOG_DIR%\%%F' -Tail 40 -Encoding UTF8 -ErrorAction SilentlyContinue"
     goto :OPT_LOG_DONE
 )
 echo [!] Aucun log trouve dans %LOG_DIR%
@@ -129,7 +129,7 @@ cls
 echo Ctrl+C pour revenir au menu.
 echo ==============================================================
 for /f "delims=" %%F in ('dir /b /o-d "%LOG_DIR%\*.log" 2^>nul') do (
-    powershell -Command "Get-Content '%LOG_DIR%\%%F' -Tail 20 -Wait -ErrorAction SilentlyContinue"
+    powershell -Command "Get-Content '%LOG_DIR%\%%F' -Tail 20 -Wait -Encoding UTF8 -ErrorAction SilentlyContinue"
     goto :OPT_TAIL_DONE
 )
 echo [!] Aucun log pour l'instant. Le bot est-il demarre ?

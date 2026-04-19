@@ -230,16 +230,22 @@ class LiveTradingRunner:
     # ------------------------------------------------------------------
 
     def start(self) -> None:
-        """Start the trading loop (blocking)."""
+        """Start the trading loop (blocking).
+
+        Runs 24/7: on weekends the loop sleeps until Monday then
+        re-initialises the IB Gateway connection automatically.
+        """
         logger.info("live_trading_starting", config=self.config)
 
-        # Weekend guard — do not start/connect on Saturday or Sunday (Paris time)
+        # Weekend guard — wait for weekday before first initialization
         if _is_weekend_paris():
             logger.info(
-                "live_trading_weekend_skip",
-                note="market closed Sat/Sun (Paris time), skipping initialization",
+                "live_trading_weekend_wait",
+                note="market closed Sat/Sun (Paris time), waiting for Monday",
             )
-            return
+            while _is_weekend_paris():
+                time.sleep(60)
+            logger.info("live_trading_weekday_detected", note="proceeding with initialization")
 
         self._initialize()
         self._state = TradingState.RUNNING
@@ -252,13 +258,23 @@ class LiveTradingRunner:
                     reason = self._shutdown_mgr.get_shutdown_reason() or "shutdown_requested"
                     logger.warning("live_trading_shutdown_signal", reason=reason)
                     break
-                # Weekend guard — stop gracefully when the weekend starts (Paris time)
+                # Weekend guard — pause until Monday, then re-initialize
                 if _is_weekend_paris():
                     logger.info(
-                        "live_trading_weekend_shutdown",
-                        note="weekend started (Paris time), shutting down gracefully",
+                        "live_trading_weekend_pause",
+                        note="weekend started (Paris time), waiting for Monday",
                     )
-                    break
+                    while _is_weekend_paris() and self._state == TradingState.RUNNING:
+                        time.sleep(60)
+                    if self._state != TradingState.RUNNING:
+                        break
+                    logger.info(
+                        "live_trading_weekend_resume",
+                        note="Monday detected, re-initializing IB Gateway",
+                    )
+                    self._initialize()
+                    self._state = TradingState.RUNNING
+                    continue
                 self._tick()
                 time.sleep(self.config.bar_interval_seconds)
         except KeyboardInterrupt:

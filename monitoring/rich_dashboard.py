@@ -52,6 +52,7 @@ _STATUS_MAP: dict[str, tuple[str, str, str]] = {
     "RUNNING": (_GREEN, "RUNNING", _FAINT),
     "COMPUTING": (_AMBER, "COMPUTING", "#7A5800"),
     "INITIALIZING": (_BLUE, "INITIALIZING", _FAINT),
+    "WEEKEND": (_AMBER, "WEEKEND — EN ATTENTE", "#7A5800"),
     "STOPPED": (_RED, "STOPPED", "#7B1C1C"),
     "ERROR": (_RED, "ERROR", "#7B1C1C"),
 }
