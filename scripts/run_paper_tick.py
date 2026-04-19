@@ -464,6 +464,12 @@ def main() -> int:
 
     except Exception as exc:
         log.exception("FATAL ERROR during paper trading tick: %s", exc)
+        # Always show fatal errors on console, even in continuous mode
+        # (in --continuous mode all log output goes to file only)
+        import traceback as _tb
+
+        _rich_console.print(f"[bold red]\n[FATAL] {exc}[/bold red]")
+        _rich_console.print(f"[dim]{_tb.format_exc()}[/dim]")
         # Send alert for fatal crash
         for alerter in (email_alerter, slack_alerter):
             if alerter:

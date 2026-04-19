@@ -297,7 +297,10 @@ class LiveTradingRunner:
         from execution.gw_manager import ensure_gateway_ready
 
         _exec_cfg = _get_settings().execution
-        if not asyncio.get_event_loop().run_until_complete(ensure_gateway_ready(_exec_cfg)):
+        _paper_mode = getattr(self.config, "mode", "live") == "paper"
+        if not asyncio.get_event_loop().run_until_complete(
+            ensure_gateway_ready(_exec_cfg, skip_weekend_guard=_paper_mode)
+        ):
             raise RuntimeError(
                 "IB Gateway is not reachable — check gateway_path / credentials in .env "
                 "and ensure IB Gateway is running."

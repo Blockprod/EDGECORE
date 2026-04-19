@@ -477,3 +477,12 @@
 **Ref** : `config/settings.py`, `live_trading/runner.py`, `monitoring/logging_config.py` — commit `d859af1` (2026-04-16)
 
 ---
+
+## L-51 · fix: paper mode bypasses weekend guard in ensure_gateway_ready() [DRAFT — À COMPLÉTER]
+
+**Contexte** : Commit `92f95c9` : fix: paper mode bypasses weekend guard in ensure_gateway_ready(). Fichiers : execution/gw_manager.py, live_trading/runner.py
+**Erreur** : [À COMPLÉTER — décrire le problème exact]
+**Règle** : [À COMPLÉTER — décrire la règle à appliquer]
+**Ref** : `execution/gw_manager.py`, `live_trading/runner.py`, `scripts/run_paper_tick.py` — commit `92f95c9` (2026-04-19)
+
+---
