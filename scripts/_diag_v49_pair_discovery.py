@@ -9,6 +9,9 @@ Exécution : ~5 min (10 symboles, 2 secteurs)
 import os
 import sys
 import time
+from typing import cast
+
+import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -95,7 +98,9 @@ def main():
     elapsed_load = time.time() - t0
     print(f"  ✅ Données chargées : {prices.shape} en {elapsed_load:.0f}s")
     print(f"  Symboles dispo      : {list(prices.columns)}")
-    print(f"  Période             : {prices.index[0].date()} → {prices.index[-1].date()}")
+    first_dt = cast(pd.Timestamp, prices.index[0])
+    last_dt = cast(pd.Timestamp, prices.index[-1])
+    print(f"  Période             : {first_dt.date()} → {last_dt.date()}")
 
     # 2. Pair discovery
     print("\n[2] Pair discovery (intra-secteur)...")

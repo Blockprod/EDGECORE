@@ -28,6 +28,7 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from structlog import get_logger
@@ -38,6 +39,14 @@ if TYPE_CHECKING:
 from risk_engine.kill_switch import KillReason
 
 logger = get_logger(__name__)
+
+# Paris timezone — weekend guard (market closed Sat/Sun local Paris time)
+_PARIS_TZ = ZoneInfo("Europe/Paris")
+
+
+def _is_weekend_paris() -> bool:
+    """Return True on Saturday or Sunday in Paris time (Europe/Paris)."""
+    return datetime.now(_PARIS_TZ).weekday() >= 5
 
 
 class TradingState(Enum):
@@ -223,6 +232,15 @@ class LiveTradingRunner:
     def start(self) -> None:
         """Start the trading loop (blocking)."""
         logger.info("live_trading_starting", config=self.config)
+
+        # Weekend guard — do not start/connect on Saturday or Sunday (Paris time)
+        if _is_weekend_paris():
+            logger.info(
+                "live_trading_weekend_skip",
+                note="market closed Sat/Sun (Paris time), skipping initialization",
+            )
+            return
+
         self._initialize()
         self._state = TradingState.RUNNING
         logger.info("live_trading_running")
@@ -233,6 +251,13 @@ class LiveTradingRunner:
                 if self._shutdown_mgr and self._shutdown_mgr.is_shutdown_requested():
                     reason = self._shutdown_mgr.get_shutdown_reason() or "shutdown_requested"
                     logger.warning("live_trading_shutdown_signal", reason=reason)
+                    break
+                # Weekend guard — stop gracefully when the weekend starts (Paris time)
+                if _is_weekend_paris():
+                    logger.info(
+                        "live_trading_weekend_shutdown",
+                        note="weekend started (Paris time), shutting down gracefully",
+                    )
                     break
                 self._tick()
                 time.sleep(self.config.bar_interval_seconds)

@@ -41,7 +41,9 @@ import socket
 import subprocess
 import time
 from collections.abc import Callable
+from datetime import datetime
 from typing import TYPE_CHECKING, Protocol, cast
+from zoneinfo import ZoneInfo
 
 from structlog import get_logger
 
@@ -49,6 +51,9 @@ if TYPE_CHECKING:
     from config.settings import ExecutionConfig
 
 logger = get_logger(__name__)
+
+# Paris timezone — used for weekend guard (market closed Sat/Sun local Paris time)
+_PARIS_TZ = ZoneInfo("Europe/Paris")
 
 # ------------------------------------------------------------------
 # Module-level constants (mirror of AlphaEdge IB_GATEWAY_* constants)
@@ -135,8 +140,16 @@ class _PwMouse(Protocol):
 # ------------------------------------------------------------------
 # Public API
 # ------------------------------------------------------------------
+def _is_weekend() -> bool:
+    """Return True on Saturday (5) or Sunday (6) in Paris time (Europe/Paris)."""
+    return datetime.now(_PARIS_TZ).weekday() >= 5
+
+
 async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
     """Ensure IB Gateway is running and the API is reachable.
+
+    Returns False immediately on weekends (market closed, no gateway
+    needed).
 
     Strategy:
     1. If port open + API responds → return True immediately.
@@ -158,6 +171,14 @@ async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
     bool
         True if gateway is healthy and API is reachable.
     """
+    # Weekend guard — market closed Sat & Sun, do not launch gateway
+    if _is_weekend():
+        logger.info(
+            "edgecore_gw_weekend_skip",
+            note="market closed, skipping gateway launch",
+        )
+        return False
+
     host = os.getenv("IBKR_HOST", "127.0.0.1")
     port = int(os.getenv("IBKR_PORT", "4002"))
     client_id = int(os.getenv("IBKR_CLIENT_ID", "1"))
@@ -481,10 +502,10 @@ def _do_login_fill(
         pw_mouse.click(coords=(cx, btn_y))
 
         logger.info("edgecore_gw_login_submitted")
-        # Post-submit check: if the login window is still visible after 2 s the
+        # Post-submit check: if the login window is still visible after 5 s the
         # button click may have missed.  The cooldown guard prevents re-submit for
         # 90 s — the next cycle will retry once the cooldown expires.
-        time.sleep(2.0)
+        time.sleep(5.0)
         if _find_gateway_hwnd(cast(_Win32Gui, win32gui)):
             logger.warning(
                 "edgecore_gw_login_window_still_visible",

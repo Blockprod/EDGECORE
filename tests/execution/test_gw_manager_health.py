@@ -155,6 +155,7 @@ class TestEnsureGatewayReady:
         config = _make_config()
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=True),
             patch(
                 "execution.gw_manager._validate_api_connection",
@@ -182,6 +183,7 @@ class TestEnsureGatewayReady:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", side_effect=_port_side_effect),
             patch(
                 "execution.gw_manager._validate_api_connection",
@@ -200,6 +202,7 @@ class TestEnsureGatewayReady:
         config = _make_config()
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
             patch("execution.gw_manager._is_gateway_process_running", return_value=False),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
@@ -224,6 +227,7 @@ class TestEnsureGatewayReady:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=True),
             patch(
                 "execution.gw_manager._validate_api_connection",
@@ -252,6 +256,7 @@ class TestEnsureGatewayReady:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", side_effect=_port_effect),
             patch(
                 "execution.gw_manager._validate_api_connection",
@@ -316,6 +321,7 @@ class TestEnsureGatewayReadyAutoLaunch:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", side_effect=_port_effect),
             patch(
                 "execution.gw_manager._validate_api_connection",
@@ -336,6 +342,7 @@ class TestEnsureGatewayReadyAutoLaunch:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
             patch("execution.gw_manager._is_gateway_process_running", return_value=False),
         ):
@@ -349,6 +356,7 @@ class TestEnsureGatewayReadyAutoLaunch:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
             patch("execution.gw_manager._is_gateway_process_running", return_value=False),
             patch("execution.gw_manager.asyncio.sleep", new_callable=AsyncMock),
@@ -576,6 +584,7 @@ class TestEnsureGatewayReadyLogin:
 
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
             patch("execution.gw_manager._is_gateway_process_running", return_value=True),
             patch(
@@ -595,6 +604,7 @@ class TestEnsureGatewayReadyLogin:
         config = _make_config()  # username="" password=""
         with (
             patch.dict("os.environ", _ENV_DEFAULTS),
+            patch("execution.gw_manager._is_weekend", return_value=False),
             patch("execution.gw_manager._is_api_port_open", return_value=False),
             patch("execution.gw_manager._is_gateway_process_running", return_value=True),
             patch(
