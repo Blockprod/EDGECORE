@@ -145,6 +145,78 @@ def _is_weekend() -> bool:
     return datetime.now(_PARIS_TZ).weekday() >= 5
 
 
+# Lightweight health check constants (for runtime use, not init)
+_HEALTH_CHECK_RETRIES: int = 3
+_HEALTH_CHECK_DELAY_SECONDS: int = 10
+
+
+async def check_gateway_health(config: ExecutionConfig) -> bool:
+    """Lightweight runtime health probe — reconnect after daily 5:30 restart.
+
+    Unlike :func:`ensure_gateway_ready` (used at init, heavyweight, up to
+    120 s), this function is designed to be called **before each tick** with
+    minimal overhead:
+
+    - **Fast path** (normal operation): one TCP connect → ~3 ms.  No impact
+      on tick latency.
+    - **Slow path** (gateway restarting): auto-launch process if crashed,
+      fill login form if credentials are configured, poll up to 3 × 10 s.
+
+    Handles the three cases:
+    1. Gateway **closed** → re-launch process + fill login.
+    2. Gateway **open but login form showing** → fill login.
+    3. Gateway **open and authenticated** → return True immediately.
+
+    Returns False on weekends (no gateway needed).
+    """
+    if _is_weekend():
+        return False
+
+    host = os.getenv("IBKR_HOST", "127.0.0.1")
+    port = int(os.getenv("IBKR_PORT", "4002"))
+
+    # Fast path: port open → gateway authenticated, nothing to do
+    if _is_api_port_open(host, port):
+        return True
+
+    # Slow path: gateway is restarting (daily 5:30) or crashed
+    logger.warning(
+        "edgecore_gw_health_check_failed",
+        note="API port closed, attempting recovery (daily restart?)",
+    )
+
+    has_credentials = bool(getattr(config, "username", "") and getattr(config, "password", ""))
+    gateway_path: str = getattr(config, "gateway_path", "")
+
+    # If process is not running at all, try to re-launch it
+    if not _is_gateway_process_running() and gateway_path:
+        logger.info("edgecore_gw_health_relaunching")
+        _start_gateway_process(gateway_path)
+
+    # Poll with login-fill attempts
+    for attempt in range(1, _HEALTH_CHECK_RETRIES + 1):
+        await asyncio.sleep(_HEALTH_CHECK_DELAY_SECONDS)
+
+        if not _is_api_port_open(host, port):
+            if has_credentials:
+                await _fill_gateway_login_if_needed(
+                    getattr(config, "username", ""),
+                    getattr(config, "password", ""),
+                )
+            continue
+
+        logger.info("edgecore_gw_health_recovered", attempts=attempt)
+        return True
+
+    # Could not recover in 30 s — caller should use full ensure_gateway_ready
+    logger.warning(
+        "edgecore_gw_health_check_exhausted",
+        retries=_HEALTH_CHECK_RETRIES,
+        note="will attempt full re-init",
+    )
+    return False
+
+
 async def ensure_gateway_ready(config: ExecutionConfig) -> bool:
     """Ensure IB Gateway is running and the API is reachable.
 

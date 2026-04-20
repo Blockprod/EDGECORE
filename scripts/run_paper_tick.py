@@ -484,6 +484,31 @@ def main() -> int:
                     )
                     live.refresh()
 
+                    # Pre-tick: verify IB Gateway health (daily 5:30 restart)
+                    import asyncio as _asyncio
+                    from execution.gw_manager import check_gateway_health as _chk_gw
+                    from config.settings import get_settings as _gs_fn
+
+                    _exec_cfg = _gs_fn().execution
+                    _gw_ok = _asyncio.get_event_loop().run_until_complete(_chk_gw(_exec_cfg))
+                    if not _gw_ok:
+                        log.warning("Gateway health check failed — attempting full re-init")
+                        live.update(
+                            build_dashboard(
+                                runner,
+                                tick_count=tick_count,
+                                tick_elapsed=tick_elapsed,
+                                start_time=start,
+                                interval=interval,
+                                status="INITIALIZING",
+                                sector_map=SECTOR_MAP,
+                            )
+                        )
+                        live.refresh()
+                        _init_with_retry(runner)
+                        runner._state = TradingState.RUNNING
+                        log.info("Gateway recovered after full re-init")
+
                     runner._tick()
                     tick_elapsed = (datetime.now() - tick_start).total_seconds()
                     log.info(

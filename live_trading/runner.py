@@ -323,6 +323,37 @@ class LiveTradingRunner:
                 )
                 time.sleep(delay)
 
+    def _check_gateway_health(self) -> bool:
+        """Lightweight pre-tick gateway health probe.
+
+        Handles the daily 05:30 IB Gateway restart by detecting the
+        closed API port and re-filling the login form automatically.
+        Returns True if the gateway is reachable, False otherwise.
+        """
+        from config.settings import get_settings as _gs
+        from execution.gw_manager import check_gateway_health
+
+        _exec_cfg = _gs().execution
+        return asyncio.get_event_loop().run_until_complete(
+            check_gateway_health(_exec_cfg),
+        )
+
+    def _attempt_gateway_reinit(self) -> None:
+        """Full re-initialization after gateway health check failure.
+
+        Called when the lightweight health probe cannot recover the
+        connection within 30 s (e.g. gateway process crashed, not just
+        restarting).  Uses the same retry logic as Monday wake-up.
+        """
+        try:
+            self._initialize_with_retry()
+            logger.info("live_trading_gateway_reinit_success")
+        except RuntimeError:
+            logger.critical(
+                "live_trading_gateway_reinit_failed",
+                note="all re-init attempts exhausted, will retry next tick",
+            )
+
     def _initialize(self) -> None:
         """Initialize all trading modules.
 
@@ -728,6 +759,18 @@ class LiveTradingRunner:
     def _tick(self) -> None:
         """Execute one iteration of the trading loop."""
         self._iteration += 1
+
+        # Pre-tick: verify IB Gateway is healthy (handles daily 5:30 restart).
+        # Fast path (~3 ms) when gateway is up; slow path (≤30 s) with
+        # auto-login when gateway is restarting.
+        if not self._check_gateway_health():
+            logger.warning(
+                "live_trading_gateway_down",
+                iteration=self._iteration,
+                note="skipping tick, will attempt full re-init",
+            )
+            self._attempt_gateway_reinit()
+            return
 
         # 0a. Process fill confirmations from pending close orders (A-02)
         self._process_fill_confirmations()
