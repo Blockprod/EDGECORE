@@ -154,6 +154,51 @@ def _render_shutdown(tick_count: int, start_time: datetime) -> None:
     _rich_console.print()
 
 
+# ------------------------------------------------------------------
+# Resilient initialization with retry
+# ------------------------------------------------------------------
+_INIT_MAX_ATTEMPTS = 5
+_INIT_BASE_DELAY = 30  # seconds between retries (doubles each attempt)
+
+
+def _init_with_retry(
+    runner: object,
+    max_attempts: int = _INIT_MAX_ATTEMPTS,
+    base_delay: int = _INIT_BASE_DELAY,
+) -> None:
+    """Call runner._initialize() with exponential backoff.
+
+    IB Gateway may take several minutes to start Java, render the login
+    form, and authenticate.  A single 120 s poll inside ensure_gateway_ready
+    is sometimes not enough (cold start, slow login server, stale mutex).
+    This wrapper retries the whole initialization sequence so the bot
+    never crashes on a transient gateway failure.
+    """
+    import time as _time
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            log.info("Initialization attempt %d/%d...", attempt, max_attempts)
+            runner._initialize()  # type: ignore[attr-defined]
+            return  # success
+        except RuntimeError as exc:
+            if attempt == max_attempts:
+                raise  # all attempts exhausted — propagate
+            delay = base_delay * (2 ** (attempt - 1))
+            log.warning(
+                "Initialization failed (attempt %d/%d): %s — retrying in %ds",
+                attempt,
+                max_attempts,
+                exc,
+                delay,
+            )
+            _rich_console.print(
+                f"[bold yellow]⚠  Tentative {attempt}/{max_attempts} échouée — "
+                f"nouvelle tentative dans {delay}s...[/bold yellow]"
+            )
+            _time.sleep(delay)
+
+
 # ÔöÇÔöÇ Universe (same 31 symbols as backtest v22) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 SYMBOLS = [
     "AAPL",
@@ -331,7 +376,7 @@ def main() -> int:
             log.info("Weekday detected — proceeding with initialization")
 
         log.info("Initializing modules...")
-        runner._initialize()
+        _init_with_retry(runner, max_attempts=5, base_delay=30)
         from live_trading.runner import TradingState
 
         runner._state = TradingState.RUNNING
@@ -418,7 +463,7 @@ def main() -> int:
                             )
                         )
                         live.refresh()
-                        runner._initialize()
+                        _init_with_retry(runner)
                         runner._state = TradingState.RUNNING
                         log.info("Modules re-initialized OK")
 

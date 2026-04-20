@@ -247,7 +247,7 @@ class LiveTradingRunner:
                 time.sleep(60)
             logger.info("live_trading_weekday_detected", note="proceeding with initialization")
 
-        self._initialize()
+        self._initialize_with_retry()
         self._state = TradingState.RUNNING
         logger.info("live_trading_running")
 
@@ -272,7 +272,7 @@ class LiveTradingRunner:
                         "live_trading_weekend_resume",
                         note="Monday detected, re-initializing IB Gateway",
                     )
-                    self._initialize()
+                    self._initialize_with_retry()
                     self._state = TradingState.RUNNING
                     continue
                 self._tick()
@@ -291,6 +291,37 @@ class LiveTradingRunner:
     # ------------------------------------------------------------------
     # Initialization
     # ------------------------------------------------------------------
+
+    _INIT_MAX_ATTEMPTS: int = 5
+    _INIT_BASE_DELAY: int = 30  # seconds, doubles each attempt
+
+    def _initialize_with_retry(self) -> None:
+        """Call _initialize() with exponential backoff.
+
+        IB Gateway may need several minutes after a cold start (Java
+        bootstrap, login form rendering, authentication).  Retrying
+        avoids a permanent crash on a transient gateway failure.
+        """
+        for attempt in range(1, self._INIT_MAX_ATTEMPTS + 1):
+            try:
+                logger.info(
+                    "live_trading_init_attempt",
+                    attempt=attempt,
+                    max_attempts=self._INIT_MAX_ATTEMPTS,
+                )
+                self._initialize()
+                return
+            except RuntimeError as exc:
+                if attempt == self._INIT_MAX_ATTEMPTS:
+                    raise
+                delay = self._INIT_BASE_DELAY * (2 ** (attempt - 1))
+                logger.warning(
+                    "live_trading_init_retry",
+                    attempt=attempt,
+                    error=str(exc),
+                    retry_in_seconds=delay,
+                )
+                time.sleep(delay)
 
     def _initialize(self) -> None:
         """Initialize all trading modules.
