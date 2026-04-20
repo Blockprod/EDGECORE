@@ -145,6 +145,10 @@ class LiveTradingRunner:
         self._retraining_task = None  # C-07: periodic hedge-ratio re-estimation
         # P1-01: last successfully-fetched market data (fallback on timeout)
         self._last_market_data: pd.DataFrame | None = None
+        # Set to True by _initialize() once ensure_gateway_ready() succeeds.
+        # Pre-tick gateway health check is skipped until the gateway has been
+        # confirmed reachable at least once (keeps unit tests working).
+        self._gateway_initialized: bool = False
 
     # ------------------------------------------------------------------
     # Alerting helpers
@@ -389,6 +393,9 @@ class LiveTradingRunner:
                 "IB Gateway is not reachable — check gateway_path / credentials in .env "
                 "and ensure IB Gateway is running."
             )
+
+        # Gateway confirmed reachable — enable pre-tick health checks.
+        self._gateway_initialized = True
 
         from config.settings import get_settings
         from execution.partial_profit import PartialProfitManager
@@ -763,7 +770,9 @@ class LiveTradingRunner:
         # Pre-tick: verify IB Gateway is healthy (handles daily 5:30 restart).
         # Fast path (~3 ms) when gateway is up; slow path (≤30 s) with
         # auto-login when gateway is restarting.
-        if not self._check_gateway_health():
+        # Guard: only active after _initialize() confirmed the gateway once
+        # (prevents false failures in unit tests that bypass _initialize()).
+        if self._gateway_initialized and not self._check_gateway_health():
             logger.warning(
                 "live_trading_gateway_down",
                 iteration=self._iteration,
